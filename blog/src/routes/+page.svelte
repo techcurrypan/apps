@@ -1,20 +1,5 @@
 ﻿<script lang="ts">
-type Meta = { title?: string; date?: string; summary?: string; tags?: string[] };
-const modules = import.meta.glob('./blog/*/+page.md', { eager: true });
-
-const posts = Object.entries(modules)
-.map(([path, mod]) => {
-const meta = ((mod as { metadata?: Meta }).metadata ?? {}) as Meta;
-const parts = path.split('/');
-return {
-slug: parts[parts.length - 2],
-title: meta.title ?? '(無題)',
-date: meta.date ?? '',
-summary: meta.summary ?? '',
-tags: meta.tags ?? []
-};
-})
-.sort((a, b) => b.date.localeCompare(a.date));
+import { posts } from '../lib/posts';
 </script>
 
 <header class="head">

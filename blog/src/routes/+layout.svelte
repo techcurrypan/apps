@@ -1,31 +1,6 @@
 ﻿<script lang="ts">
-type Meta = { tags?: string[]; series?: string; icon?: string };
+import { groups } from '../lib/posts';
 let { children } = $props();
-
-const modules = import.meta.glob('./blog/*/+page.md', { eager: true });
-const metas = Object.values(modules).map(
-(mod) => ((mod as { metadata?: Meta }).metadata ?? {}) as Meta
-);
-
-const series = metas
-.filter((m) => m.series)
-.reduce(
-(acc, m) => {
-const name = m.series as string;
-const found = acc.find((s) => s.name === name);
-if (found) {
-found.count += 1;
-if (!found.icon && m.icon) found.icon = m.icon;
-} else {
-acc.push({ name, icon: m.icon ?? '', count: 1 });
-}
-return acc;
-},
-[] as { name: string; icon: string; count: number }[]
-)
-.sort((a, b) => b.count - a.count);
-
-const tags = [...new Set(metas.flatMap((m) => m.tags ?? []))].sort();
 </script>
 
 <div class="shell">
@@ -38,29 +13,18 @@ const tags = [...new Set(metas.flatMap((m) => m.tags ?? []))].sort();
 <a href="/blog">記事一覧</a>
 </nav>
 
-{#if series.length > 0}
+{#if groups.length > 0}
 <section class="block">
-<h2>シリーズ</h2>
+<h2>トピック</h2>
 <ul class="series">
-{#each series as s (s.name)}
+{#each groups as g (g.tag)}
 <li>
-<a href="/series/{s.name}">
-<span class="ring"><span class="icon">{s.icon}</span></span>
-<span class="name">{s.name}</span>
-<span class="count">{s.count}</span>
+<a href="/tag/{g.tag}">
+<span class="ring"><span class="icon">{g.icon}</span></span>
+<span class="name">{g.tag}</span>
+<span class="count">{g.count}</span>
 </a>
 </li>
-{/each}
-</ul>
-</section>
-{/if}
-
-{#if tags.length > 0}
-<section class="block">
-<h2>タグ</h2>
-<ul class="tags">
-{#each tags as tag (tag)}
-<li><a href="/tag/{tag}">{tag}</a></li>
 {/each}
 </ul>
 </section>
@@ -265,7 +229,7 @@ margin-top: 2.25rem;
 }
 
 .block h2 {
-margin: 0 0 0.75rem;
+margin: 0 0 0.9rem;
 font-size: 0.72rem;
 letter-spacing: 0.14em;
 color: var(--ink-dim);
@@ -323,30 +287,6 @@ color: var(--ink-dim);
 }
 
 .series a:hover .name {
-color: var(--accent);
-}
-
-.tags {
-list-style: none;
-margin: 0;
-padding: 0;
-display: flex;
-flex-wrap: wrap;
-gap: 0.4rem;
-}
-
-.tags a {
-display: inline-block;
-padding: 0.12rem 0.65rem;
-background: var(--surface-2);
-border-radius: 999px;
-font-size: 0.78rem;
-text-decoration: none;
-color: var(--ink-soft);
-}
-
-.tags a:hover {
-background: var(--accent-soft);
 color: var(--accent);
 }
 
