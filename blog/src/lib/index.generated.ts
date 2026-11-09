@@ -17,10 +17,10 @@ export const allPosts: Post[] = [
 		"series": "blog-setup",
 		"title": "無料でブログを作る (10) つまずいた所まとめ",
 		"date": "2026-11-09",
-		"summary": "この連載で実際に詰まった 13 か所。症状・原因・直し方。同じ所で止まったときに読む回。",
+		"summary": "実際に詰まった 13 か所。症状・原因・直し方。上から読まず、症状で探す回。",
 		"icon": "",
 		"cover": "",
-		"minutes": 8,
+		"minutes": 6,
 		"tags": [
 			"ci",
 			"cloudflare",
@@ -33,10 +33,10 @@ export const allPosts: Post[] = [
 		"series": "blog-setup",
 		"title": "無料でブログを作る (9) 見つけてもらう",
 		"date": "2026-11-08",
-		"summary": "検索と SNS に出る形を整える。title と description、OGP、RSS、sitemap、robots.txt、アクセス解析。全部で 1 時間かからない。",
+		"summary": "title と description、OGP、RSS、sitemap、robots.txt、アクセス解析。全部で 1 時間かからない。",
 		"icon": "",
 		"cover": "",
-		"minutes": 8,
+		"minutes": 7,
 		"tags": [
 			"cloudflare",
 			"svelte"
@@ -47,10 +47,10 @@ export const allPosts: Post[] = [
 		"series": "blog-setup",
 		"title": "無料でブログを作る (8) 読みやすくする",
 		"date": "2026-11-07",
-		"summary": "コードの色分けと行番号、コピー釦、追従する目次、ダークモード、アイキャッチ、検索。殺風景な技術ブログを読める形にするまで。",
+		"summary": "コードの色分けと行番号、コピー釦、追従する目次、ダークモード、アイキャッチ、検索。殺風景な技術ブログを読める形にする。",
 		"icon": "",
 		"cover": "",
-		"minutes": 7,
+		"minutes": 5,
 		"tags": [
 			"css",
 			"svelte",
@@ -91,16 +91,14 @@ export const allPosts: Post[] = [
 		"series": "blog-setup",
 		"title": "無料でブログを作る (5) 自動公開の道を通す",
 		"date": "2026-11-04",
-		"summary": "git push したら検査して Cloudflare へ出す。API トークンの権限、Secrets、ワークフローの全文。gen と check と build が何をしているか。",
+		"summary": "push したら検査して Cloudflare へ出す。トークンの権限、Secrets、ワークフローの全文、gen と check と build の役割。",
 		"icon": "",
 		"cover": "",
-		"minutes": 15,
+		"minutes": 12,
 		"tags": [
 			"ci",
 			"cloudflare",
-			"git",
-			"security",
-			"svelte"
+			"security"
 		]
 	},
 	{
