@@ -73,6 +73,8 @@ series: parts.length > 1 ? parts[0] : '',
 title: fm.title ?? '(無題)',
 date: String(fm.date ?? ''),
 summary: fm.summary ?? '',
+icon: fm.icon ?? '',
+cover: fm.cover ?? '',
 minutes,
 tags: [...new Set([...(fm.tags ?? []), ...auto])].sort()
 };
@@ -83,7 +85,7 @@ mkdirSync('src/lib', { recursive: true });
 writeFileSync(
 OUT,
 `// 自動生成。直接編集しない。npm run index で作り直す。\n` +
-`export type Post = {\n\tslug: string;\n\tseries: string;\n\ttitle: string;\n\tdate: string;\n\tsummary: string;\n\tminutes: number;\n\ttags: string[];\n};\n\n` +
+`export type Post = {\n\tslug: string;\n\tseries: string;\n\ttitle: string;\n\tdate: string;\n\tsummary: string;\n\ticon: string;\n\tcover: string;\n\tminutes: number;\n\ttags: string[];\n};\n\n` +
 `export const allPosts: Post[] = ${JSON.stringify(posts, null, '\t')};\n`,
 'utf8'
 );

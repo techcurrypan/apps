@@ -11,6 +11,7 @@ let { children } = $props();
 <nav>
 <a href="/">ホーム</a>
 <a href="/blog">記事一覧</a>
+<a href="/search">検索</a>
       <a href="/rss.xml">RSS</a>
 </nav>
 
