@@ -401,6 +401,25 @@ async function main() {
 		}
 	}
 
+	// 入口と地図も、携帯の幅ではみ出さない
+	for (const path of ['/', '/map']) {
+		for (const dark of [false, true]) {
+			await tab.size(390, 844, true);
+			await tab.scheme(dark);
+			await tab.go(`${base}${path}`);
+			const overflow = await tab.eval<number>(
+				'document.documentElement.scrollWidth - document.documentElement.clientWidth'
+			);
+			check(
+				`phone ${dark ? '暗' : '明'} ${path}：横にはみ出さない`,
+				overflow <= 0,
+				`はみ出し ${overflow}px`
+			);
+			const name = path === '/' ? 'home' : 'map';
+			await tab.shot(join(outDir, `phase-6-phone-${dark ? 'dark' : 'light'}-${name}.png`));
+		}
+	}
+
 	ws.close();
 	chrome.kill();
 	const ng = results.filter((r) => !r.ok);
