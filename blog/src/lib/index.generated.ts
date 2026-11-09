@@ -78,10 +78,10 @@ export const allPosts: Post[] = [
 		"series": "blog-setup",
 		"title": "無料でブログを作る (6) 書く手順をコマンドにする",
 		"date": "2026-11-05",
-		"summary": "記事を 1 本足すのに 6 手かかっていたのを 4 つのコマンドに畳む。new・dev・check・publish だけ覚えればよい形にする。",
+		"summary": "記事を 1 本足すのに 6 手かかっていたのを、4 つのコマンドに畳む。覚えることを減らす回。",
 		"icon": "",
 		"cover": "",
-		"minutes": 7,
+		"minutes": 5,
 		"tags": [
 			"git"
 		]
@@ -111,7 +111,7 @@ export const allPosts: Post[] = [
 		"summary": "mdsvex を入れて、Markdown のファイルがそのままページになる形にする。記事の置き場所と URL の対応、frontmatter、連載はフォルダで分ける話。",
 		"icon": "",
 		"cover": "",
-		"minutes": 7,
+		"minutes": 9,
 		"tags": [
 			"docker",
 			"svelte"
