@@ -1,0 +1,17 @@
+# Package Managers
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+bun.lock
+bun.lockb
+
+# Miscellaneous
+/static/
+
+# 指示書と記録は prettier で整えない
+/docs/
+CLAUDE.md
+PROMPT.txt
+
+# 生成物
+worker-configuration.d.ts

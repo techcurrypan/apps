@@ -1,0 +1,64 @@
+name: Deploy devlearn
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "devlearn/**"
+      - ".github/workflows/deploy-devlearn.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-devlearn
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: devlearn
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: devlearn/package-lock.json
+
+      - run: npm ci
+
+      - name: 型定義を生成
+        run: npm run gen
+
+      - name: 型の検査
+        run: npm run check
+
+      - name: 書式と lint
+        run: npm run lint
+
+      - name: 単体テスト
+        run: npm run test
+
+      - name: 説明の中身の検査
+        run: npm run content:check
+
+      - name: 秘密情報の検査
+        run: npm run secrets
+
+      - name: 組み立て
+        run: npm run build
+
+      - name: 配信物の秘密情報の検査
+        run: npm run secrets
+
+      - name: Cloudflare へ配信
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: devlearn
