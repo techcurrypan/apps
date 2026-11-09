@@ -10,9 +10,6 @@
 	"scripts": {
 		"dev": "vite dev",
 		"index": "node scripts/build-index.mjs",
-		"predev": "node scripts/build-index.mjs",
-		"prebuild": "node scripts/build-index.mjs",
-		"precheck": "node scripts/clean-build.mjs",
 		"new": "node scripts/new-post.mjs",
 		"publish": "node scripts/publish.mjs",
 		"build": "wrangler types --check && vite build",
@@ -22,7 +19,8 @@
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"lint": "prettier --check . && eslint .",
 		"format": "prettier --write .",
-		"gen": "wrangler types"
+		"gen": "wrangler types",
+		"precheck": "node scripts/clean-build.mjs && node scripts/build-index.mjs"
 	},
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",

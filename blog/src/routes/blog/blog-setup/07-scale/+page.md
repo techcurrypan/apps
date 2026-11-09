@@ -140,89 +140,37 @@ tags: [...new Set([...(fm.tags ?? []), ...auto])].sort()
 
 生成されたファイルは Git に入れない。`.gitignore` に書く。
 
-## 今のところの制約
+## 書いている間も作り直す
 
-索引は **dev の起動時に 1 回**しか作られない。だから、
+最初は `npm run dev` の起動時に 1 回作るだけにしていた。記事を足すたびに dev を止めて起動し直す必要があり、面倒だった。
 
-- 記事を新しく作った
-- frontmatter を書き換えた
-
-このときは dev サーバを止めて起動し直す必要がある。本文だけの書き換えなら再起動は要らない。
-
-`npm run new` は索引を作り直してくれるが、起動中の dev サーバはそれを読み直さない。
-
-ファイルの変更を見張って索引を作り直す形にすれば直る。まだ入れていない。
-
-## 速さを測る
-
-作りを変えたら、思い込みではなく測る。ダミー記事を大量に作って、組み立て時間と一覧の表示を見る。
-
-`scripts/dummy.mjs` を置く。
+Vite のプラグインにして、`+page.md` の追加・削除・変更を見張るようにした。
 
 ```typescript
-import { mkdirSync, writeFileSync } from 'node:fs';
-
-const N = Number(process.argv[2] ?? 2000);
-for (let i = 0; i < N; i++) {
-	const dir = `src/routes/blog/dummy/p${String(i).padStart(4, '0')}`;
-	mkdirSync(dir, { recursive: true });
-	writeFileSync(
-		`${dir}/+page.md`,
-		`---\ntitle: 'ダミー ${i}'\ndate: '2020-01-01'\nsummary: '計測用'\n---\n\n本文。\n`,
-		'utf8'
-	);
-}
-console.log(`${N} 本作りました。`);
+const blogIndex = (): Plugin => ({
+	name: 'blog-index',
+	buildStart() {
+		buildIndex();
+	},
+	configureServer(server) {
+		const touch = (file: string) => {
+			if (!/[/\\]\+page\.md$/.test(file)) return;
+			buildIndex();
+		};
+		server.watcher.on('add', touch);
+		server.watcher.on('unlink', touch);
+		server.watcher.on('change', touch);
+	}
+});
 ```
 
-日付を古くしておくと、一覧の先頭に出てこないので本物の記事が隠れない。
-
-```bash
-node scripts/dummy.mjs 2000
-npm run index
-npm run build
-```
-
-測ったら**ダミーを消す**。消し忘れたまま公開すると、空の記事 2000 本が検索に出る。
-
-Windows。
-
-```powershell
-Remove-Item -Recurse -Force src\routes\blog\dummy
-npm run index
-```
-
-Mac・Linux。
-
-```bash
-rm -rf src/routes/blog/dummy
-npm run index
-```
-
-### 測った結果
-
-Windows / Node 24.19 / 2026-11-09 に実測した。
-
-| 記事数 | 索引の生成 | 索引ファイル | 組み立て |
-|---|---|---|---|
-| 10 本（現状） | 75 ms | 4 KB | 5.1 秒 |
-| 210 本 | 78 ms | 41 KB | 9.6 秒 |
-| 1010 本 | 141 ms | 189 KB | 28.4 秒 |
-| 2010 本 | 224 ms | 374 KB | 52.3 秒 |
-
-**索引の生成は問題にならない。** 2000 本でも 0.2 秒。
-
-**組み立ては 1 本あたり約 24 ms** で、ほぼ線形に伸びる。2000 本で 52 秒。待てる範囲に収まった。
-
-次の壁は**索引ファイルそのもの**。2000 本で 374 KB になる。一覧と検索がこれを読むので、閲覧者のブラウザにも届く。数千本まで増えたら、一覧用（最新の数十件）と検索用を分けるか、検索のときだけ読み込む形にする必要がある。
-
-この計測は `node scripts/bench.mjs` で再現できる。
+索引を書き換えると Vite がそれを読み直すので、画面も自動で更新される。**中身が変わらないときは書かない**ようにしておかないと、本文を 1 文字直すたびに無駄な再読み込みが起きる。
 
 ## ここまでの確認
 
 - 一覧は索引だけを読んでいる
 - 記事本文は、その記事を開いた人にだけ届く
 - タグが自動で付く
-- 記事を足したら dev を再起動する、という制約を知っている
+- 記事を足しても dev の再起動が要らない
 
 次は、読む側の見やすさを整える。

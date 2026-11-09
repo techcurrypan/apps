@@ -1,0 +1,36 @@
+/* 自動分割。+layout.svelte から import している。 */
+blockquote {
+margin: 1.75rem 0;
+padding: 0.1rem 1.25rem;
+border-left: 4px solid var(--accent);
+background: var(--surface);
+border-radius: 0 8px 8px 0;
+color: var(--ink-soft);
+}
+
+table {
+border-collapse: collapse;
+width: 100%;
+}
+
+th, td {
+border: 1px solid var(--line);
+padding: 0.5rem 0.85rem;
+text-align: left;
+}
+
+th {
+background: var(--surface);
+}
+
+img {
+max-width: 100%;
+height: auto;
+border-radius: 10px;
+}
+
+hr {
+border: 0;
+border-top: 1px solid var(--line);
+margin: 3rem 0;
+}

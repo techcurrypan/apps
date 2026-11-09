@@ -154,7 +154,7 @@ git remote set-url origin https://github.com/techcurrypan/apps.git
 
 ### dev に新しい記事が出ない
 
-索引は dev の**起動時に 1 回**しか作られない（第 7 回）。止めて起動し直す。本文だけの書き換えなら不要。
+frontmatter に `draft: true` が残っていないか見る。索引は Vite のプラグインが見張っているので、再起動は要らない（第 7 回）。
 
 ### 一覧の並びが逆になる
 

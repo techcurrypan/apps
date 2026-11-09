@@ -62,7 +62,7 @@ withImg
 
 const tail: Line[] = [
 { kind: 'cmd', text: 'npm run dev' },
-{ kind: 'note', text: 'frontmatter を直したときは dev を再起動する' },
+{ kind: 'note', text: '一覧に出ないときは draft: true が残っていないか見る' },
 { kind: 'cmd', text: 'npm run check' },
 { kind: 'note', text: 'found 0 errors を確認する' },
 { kind: 'cmd', text: 'npm run publish -- "何を書いたか"' }

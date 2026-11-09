@@ -28,7 +28,7 @@ const LABELS = { k8s: 'Kubernetes 入門' };
 
 | 症状 | 対処 |
 |---|---|
-| 一覧に出ない | dev を再起動 |
+| 一覧に出ない | `draft: true` が残っていないか見る |
 | `Types file not found` | `npm run gen` |
 | 型の誤りで check が落ちる | 直す。dev では出ない |
 | 公開されない | Actions タブで赤い段を開く（第 5 回） |

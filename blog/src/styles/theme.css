@@ -1,0 +1,45 @@
+/* 自動分割。+layout.svelte から import している。 */
+:root {
+--bg: #ffffff;
+--surface: #f7f9fc;
+--surface-2: #eef2f8;
+--line: #e2e8f2;
+--ink: #1a2234;
+--ink-soft: #3d4a61;
+--ink-dim: #6b7a93;
+--accent: #2563eb;
+--accent-soft: #eaf1ff;
+--mono: ui-monospace, "Cascadia Mono", Consolas, monospace;
+--sans: system-ui, "Hiragino Sans", "Noto Sans JP", sans-serif;
+}
+
+:root[data-theme="dark"] {
+--bg: #0f1419;
+--surface: #161b22;
+--surface-2: #1f262e;
+--line: #2a323c;
+--ink: #e6edf3;
+--ink-soft: #c2ccd6;
+--ink-dim: #8b98a5;
+--accent: #6cb6ff;
+--accent-soft: #1a2838;
+}
+
+html {
+scroll-behavior: smooth;
+scroll-padding-top: 2rem;
+}
+
+body {
+margin: 0;
+background: var(--bg);
+color: var(--ink);
+font-family: var(--sans);
+font-size: 1.0625rem;
+line-height: 1.95;
+-webkit-font-smoothing: antialiased;
+}
+
+a {
+color: var(--accent);
+}

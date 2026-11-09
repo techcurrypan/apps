@@ -65,7 +65,7 @@ export const allPosts: Post[] = [
 		"summary": "全記事を読み込む作りは 2000 本で破綻する。組み立て時に索引だけを作る形に変えた理由と、自動タグの閾値の話。",
 		"icon": "",
 		"cover": "",
-		"minutes": 8,
+		"minutes": 7,
 		"tags": [
 			"ci",
 			"cloudflare",
