@@ -15,9 +15,7 @@ export const allPosts: Post[] = [
 		"title": "無料でブログを作る (6) 書くのを楽にする道具と、つまずいた所",
 		"date": "2026-11-09",
 		"summary": "記事 1 本を足すのに毎回同じ手順を踏むのは続かない。対話で選ぶだけにした。最後に全部のつまずきをまとめる。",
-		"tags": [
-			"cloudflare"
-		]
+		"tags": []
 	},
 	{
 		"slug": "blog-setup/05-deploy",

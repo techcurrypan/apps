@@ -73,6 +73,24 @@ Manage account → Account API Tokens → Create Token。
 ### workers.dev のサブドメインが無い
 
 前述。ダッシュボードで 1 回登録する。
+## 公開する前に手元で検査する
+
+ここが一番はまる。**`npm run dev` は型を検査しない。** 型の誤りがあっても手元では普通に動き、push して初めて Actions で止まる。
+
+公開前にこれを回す。
+
+```
+npm run check
+```
+
+「Types file not found」と言われたら、型定義ファイルが手元に無い。先に作る。
+
+```
+npm run gen
+npm run check
+```
+
+`found 0 errors` になってから公開する。
 
 ## 動いたか確かめる
 
