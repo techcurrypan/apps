@@ -1,0 +1,48 @@
+name: Record devlearn real outputs
+
+# devlearn の模擬の道具が比べる「本物の出力」を、Ubuntu の上で本物の命令を打って記録する。
+# 記録（devlearn/tools-real/out/）はコミットして戻す。GITHUB_TOKEN の push は他の workflow を起こさない。
+on:
+  push:
+    branches: [main]
+    paths:
+      - "devlearn/tools-real/scenarios/**"
+      - "devlearn/tools-real/record.ts"
+      - ".github/workflows/record-devlearn-real.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: record-devlearn-real
+  cancel-in-progress: false
+
+jobs:
+  record:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: 利用者 learner を作る
+        run: sudo useradd -m -s /bin/bash learner
+
+      - name: 本物の命令を打って記録する
+        run: node devlearn/tools-real/record.ts
+
+      - name: 記録をコミットして戻す
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add devlearn/tools-real/out
+          if git diff --cached --quiet; then
+            echo "記録に変わりは無い"
+            exit 0
+          fi
+          git commit -m "devlearn: 本物の出力を記録（CI）"
+          git pull --rebase origin main
+          git push origin HEAD:main

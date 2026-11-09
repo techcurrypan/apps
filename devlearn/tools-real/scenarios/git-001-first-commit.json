@@ -1,0 +1,32 @@
+{
+	"id": "git-001-first-commit",
+	"tool": "git",
+	"lesson": "git-001",
+	"note": "最初の記録を作るまでと、実戦の 3 つの間違い",
+	"steps": [
+		"git init",
+		"git status",
+		"printf 'hello world\n' > hello.txt",
+		"ls",
+		"cat hello.txt",
+		"git status",
+		"git status --short",
+		"git commit -m \"first commit\"",
+		"git add hello.tx",
+		"git add hello.txt",
+		"git status",
+		"git status --short",
+		"git commit -m \"first commit\"",
+		"git status",
+		"git status --short",
+		"git log --oneline",
+		"git log",
+		"git cat-file -t HEAD",
+		"git cat-file -p HEAD",
+		"git cat-file -p 'HEAD^{tree}'",
+		"git cat-file -t 3b18e51",
+		"git cat-file -p 3b18e51",
+		"git commit -m \"again\"",
+		"git init"
+	]
+}

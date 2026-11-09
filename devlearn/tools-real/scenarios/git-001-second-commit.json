@@ -1,0 +1,27 @@
+{
+	"id": "git-001-second-commit",
+	"tool": "git",
+	"lesson": "git-001",
+	"note": "2 件目の記録。親を持つ commit と、変更の数え方",
+	"steps": [
+		"git init -b main",
+		"printf 'hello world\n' > hello.txt",
+		"git add hello.txt",
+		"git commit -m \"first commit\"",
+		"printf 'hello world\nhello git\n' > hello.txt",
+		"git status",
+		"git status --short",
+		"git add hello.txt",
+		"git status --short",
+		"git commit -m \"add a line\"",
+		"git log --oneline",
+		"git cat-file -p HEAD",
+		"printf 'note\n' > note.txt",
+		"echo hi >> hello.txt",
+		"git add .",
+		"git status",
+		"git commit -m \"two files\"",
+		"git log --oneline",
+		"cat hello.txt"
+	]
+}
