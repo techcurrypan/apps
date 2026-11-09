@@ -31,6 +31,9 @@ jobs:
 
       - run: npm ci
 
+      - name: 型定義を生成
+        run: npm run gen
+
       - name: 型と書式の検査
         run: npm run check
 
