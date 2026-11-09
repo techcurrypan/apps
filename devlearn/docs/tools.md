@@ -93,3 +93,28 @@
 - `js`：書いた式・関数を、ブラウザの JavaScript でその場で走らせる。`console.log` の出力と、投げられたエラーを返す。
   止まらない繰り返しに備え、走らせる時間に上限を置く
 - `sql`：sql.js（SQLite）。レッスンの場面の表を作った状態から始め、打った SQL の結果の表とエラーを返す
+
+---
+
+## 4. 実戦のデータの形（`Practice.setup` / `success`）
+
+道具ごとに決める。`setup` は初めの状態、`success` は合格の判定。
+
+### 4.1 `git`
+
+```ts
+type GitSetup = {
+  initialized: boolean;              // git init 済みか
+  files: Record<string, string>;     // 作業場所（/home/learner/demo）のファイル
+};
+type GitSuccess = {
+  commits: number;                   // HEAD から辿れる commit の数
+  tracked: string[];                 // 索引にあるファイル（順は問わない）
+  statusShort: string;               // git status --short の出力
+};
+```
+
+### 4.2 間違いの見分け方
+
+`mistakes` の `match` が、打った 1 行の出力（標準出力と標準エラーを合わせた物）に含まれたら、その間違いの `why` と `next` を返す。
+`match` が当たらない失敗（終了コードが 0 でない）は、出力そのものを返す。

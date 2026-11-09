@@ -401,6 +401,76 @@ async function main() {
 		}
 	}
 
+	// 段 7：実戦（道具）。間違い → なぜと次の一手、合格 → 修了の記録、巻き戻し
+	await tab.size(1280, 900, false);
+	await tab.scheme(false);
+	await tab.go(url);
+	await tab.eval('localStorage.removeItem("devlearn.progress")');
+	await tab.key('ArrowRight', true);
+	await tab.key('ArrowRight', true);
+	const typeIn = async (text: string) => {
+		await tab.eval('document.getElementById("tool-line").focus()');
+		await tab.send('Input.insertText', { text });
+		await tab.send('Input.dispatchKeyEvent', {
+			type: 'keyDown',
+			key: 'Enter',
+			code: 'Enter',
+			windowsVirtualKeyCode: 13,
+			text: '\r'
+		});
+		await tab.send('Input.dispatchKeyEvent', {
+			type: 'keyUp',
+			key: 'Enter',
+			code: 'Enter',
+			windowsVirtualKeyCode: 13
+		});
+		await sleep(200);
+	};
+	const hasInput = await tab.eval<boolean>('!!document.getElementById("tool-line")');
+	check('Shift + 矢印で実戦の段へ行くと、端末の入力がある', hasInput);
+	if (hasInput) {
+		await typeIn('git commit -m "first commit"');
+		const why = await tab.eval<string>('document.querySelector(".reply.wrong")?.textContent ?? ""');
+		check(
+			'add をせずに commit すると、なぜ駄目かと次の一手が出る',
+			why.includes('なぜ駄目か') && why.includes('次の一手'),
+			why.replace(/\s+/g, ' ').slice(0, 60)
+		);
+		await typeIn('git add hello.tx');
+		await typeIn('git add hello.txt');
+		await sleep(400);
+		await tab.shot(join(outDir, 'phase-7-practice-moving.png'));
+		await typeIn('git commit -m "first commit"');
+		await sleep(1200);
+		const passed = await tab.eval<string>('document.querySelector(".reply.ok")?.textContent ?? ""');
+		const saved = await tab.eval<string>('localStorage.getItem("devlearn.progress") ?? ""');
+		check(
+			'add と commit で合格し、修了がブラウザに残る',
+			passed.includes('合格') && saved.includes('git-001'),
+			saved
+		);
+		const term = await tab.eval<string>('document.querySelector(".terminal")?.textContent ?? ""');
+		check(
+			'端末に本物と同じ形の出力が出る',
+			term.includes('(root-commit)') &&
+				term.includes("fatal: pathspec 'hello.tx' did not match any files")
+		);
+		await tab.shot(join(outDir, 'phase-7-practice-passed.png'));
+		await tab.eval('document.querySelectorAll(".log ol button")[3].click()');
+		await sleep(900);
+		const after = await tab.eval<{ passed: boolean; steps: string; commits: string }>(`(() => ({
+			passed: !!document.querySelector('.band .ok'),
+			steps: document.querySelector('.grid[data-steps]')?.getAttribute('data-steps') ?? '',
+			commits: document.querySelector('[aria-label="リポジトリ"]')?.textContent ?? ''
+		}))()`);
+		check(
+			'記録の 3 行目まで戻すと、commit の前の状態に戻る',
+			!after.passed && after.steps === '3' && after.commits.includes('記録は無い'),
+			JSON.stringify(after)
+		);
+		await tab.shot(join(outDir, 'phase-7-practice-rewound.png'));
+	}
+
 	// 入口と地図も、携帯の幅ではみ出さない
 	for (const path of ['/', '/map']) {
 		for (const dark of [false, true]) {

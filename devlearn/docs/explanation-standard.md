@@ -113,6 +113,7 @@ export type Mistake = {
   when: string;               // どういう操作をしたとき
   why: string;                // なぜそれでは駄目か
   next: string;               // では次に何をするか
+  match?: string;             // 道具の実戦で、出力にこの文字列が出たら、この間違い（段 7 で足した。D-13）
 };
 
 export type CheckItem = { ask: string; how: string };  // 何を / どう確かめるか

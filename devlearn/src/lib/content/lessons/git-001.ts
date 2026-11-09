@@ -243,17 +243,20 @@ export const git001: Lesson = {
 			{
 				when: 'git add をせずに git commit を打った',
 				why: 'ステージが空で、記録に入れる物が無い。git は nothing added to commit but untracked files present と返す',
-				next: '先に git add hello.txt を打ち、git status --short が A になったのを見てから commit する'
+				next: '先に git add hello.txt を打ち、git status --short が A になったのを見てから commit する',
+				match: 'nothing added to commit but untracked files present'
 			},
 			{
 				when: 'git add hello.tx と名前を打ち違えた',
 				why: "そのファイルは無いので、git は fatal: pathspec 'hello.tx' did not match any files と返す",
-				next: 'ls で名前を確かめ、git add hello.txt と打ち直す'
+				next: 'ls で名前を確かめ、git add hello.txt と打ち直す',
+				match: 'did not match any files'
 			},
 			{
 				when: 'commit の後に、もう一度 git commit を打った',
 				why: '前の記録から何も変わっていない。git は nothing to commit, working tree clean と返す',
-				next: 'git log --oneline で、記録が 1 件できているかを確かめる'
+				next: 'git log --oneline で、記録が 1 件できているかを確かめる',
+				match: 'nothing to commit, working tree clean'
 			}
 		]
 	},

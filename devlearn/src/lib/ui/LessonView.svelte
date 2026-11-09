@@ -16,6 +16,9 @@
 	import ScriptPanel from './ScriptPanel.svelte';
 	import Stage from './Stage.svelte';
 	import { inField, wideQuery } from './dom.ts';
+	import ToolPractice from './ToolPractice.svelte';
+	import { practiceTools } from '../practice/tool-practice.ts';
+	import { loadProgress, markDone, saveProgress } from '../progress.ts';
 
 	type Props = { lesson: Lesson; known: ReadonlyMap<string, string> };
 	let { lesson, known }: Props = $props();
@@ -23,6 +26,13 @@
 	let part = $state<Part>('explain');
 	let player = $state<PlayerState>(initial(1));
 	let checked = $state<boolean[]>([]);
+	let practiceReplay = $state(0);
+	const hasTool = $derived(
+		(practiceTools as readonly string[]).includes(lesson.practice.tool?.name ?? '')
+	);
+	function onpass() {
+		saveProgress(markDone(loadProgress(), lesson.id));
+	}
 
 	// レッスンが替わったら最初から
 	$effect.pre(() => {
@@ -74,6 +84,8 @@
 			return; // 枠（+layout）が受け持つ
 		} else if (part === 'explain') {
 			command(c);
+		} else if (part === 'practice' && c.type === 'replay') {
+			practiceReplay++;
 		} else return;
 		e.preventDefault();
 	}
@@ -134,6 +146,10 @@
 				<ScriptPanel state={step} {slots} />
 			</div>
 		</div>
+	{:else if part === 'practice' && hasTool}
+		<div role="tabpanel" aria-label={partLabel(part)}>
+			<ToolPractice practice={lesson.practice} replay={practiceReplay} {onpass} />
+		</div>
 	{:else}
 		<div class="panel" role="tabpanel" aria-label={partLabel(part)}>
 			{#if part === 'goal'}
@@ -158,16 +174,11 @@
 			{:else if part === 'example'}
 				<ExampleView example={lesson.example} />
 			{:else if part === 'practice'}
-				<h2>実戦</h2>
-				<p class="goal">{lesson.practice.goal}</p>
-				{#if lesson.practice.tool}
-					<p class="meta">
-						道具：<code>{lesson.practice.tool.name}</code>（{lesson.practice.tool.mode === 'real'
-							? '本物'
-							: '模擬'}）
-					</p>
+				{#if !hasTool}
+					<h2>実戦</h2>
+					<p class="goal">{lesson.practice.goal}</p>
+					<p>この実戦の道具は準備中。</p>
 				{/if}
-				<p>道具は準備中。</p>
 			{:else if part === 'check'}
 				<h2>確認</h2>
 				<ul class="checks">
