@@ -39,6 +39,6 @@ devlearn が使う、他者が作った公開物の記録。ライセンスが�
 
 ### 注意
 
-- `@scope` を使うので、`@scope` を解するブラウザが要る（Chrome / Edge 118 以降、Safari 17.4 以降。Firefox の対応版は段 6 で互換表を見て確かめ、ここに書き足す）
+- `@scope` を使うので、`@scope` を解するブラウザが要る。互換表（MDN の browser-compat-data `css/at-rules/scope.json`、2026-11-10 に確かめた）では、Chrome / Edge 118 以降、Firefox 146 以降、Safari 17.4 以降（26.0〜26.3 は `<input>` と `<textarea>` に効かない部分の対応、26.4 から全て）
 - `theme.css` は見出し（`h1`〜`h6`）と段落（`p`）の書体・大きさを `@layer reset` で当てる。devlearn の
   `--dl-*`（`screen-design.md` 4 章）で上書きする

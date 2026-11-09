@@ -1,0 +1,157 @@
+/* 見た目の値（docs/screen-design.md 第 4 章）。
+   色・角丸・影・動きの長さは Astryx theme-neutral の変数を土台にし、devlearn の部品は --dl-* だけを使う。 */
+
+:root {
+	/* 4.2 色 */
+	--dl-bg: var(--color-background-body);
+	--dl-surface: var(--color-background-card);
+	--dl-surface-raised: var(--color-background-surface);
+	--dl-text: var(--color-text-primary);
+	--dl-text-muted: var(--color-text-secondary);
+	--dl-text-disabled: var(--color-text-disabled);
+	--dl-border: var(--color-border);
+	--dl-border-strong: var(--color-border-emphasized);
+	--dl-focus: var(--color-info);
+	--dl-now: var(--color-text-info);
+	--dl-done: var(--color-text-success);
+	--dl-wrong: var(--color-text-error);
+	--dl-warn: var(--color-text-warning);
+	--dl-kind-1-fg: var(--color-text-blue);
+	--dl-kind-1-bg: var(--color-background-blue);
+	--dl-kind-2-fg: var(--color-text-purple);
+	--dl-kind-2-bg: var(--color-background-purple);
+	--dl-kind-3-fg: var(--color-text-teal);
+	--dl-kind-3-bg: var(--color-background-teal);
+	--dl-kind-4-fg: var(--color-text-orange);
+	--dl-kind-4-bg: var(--color-background-orange);
+	--dl-kind-5-fg: var(--color-text-gray);
+	--dl-kind-5-bg: var(--color-background-gray);
+	--dl-code-bg: var(--color-syntax-background);
+
+	/* 4.3 文字 */
+	--dl-font:
+		'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', 'Yu Gothic UI', Meiryo, system-ui,
+		sans-serif;
+	--dl-font-code:
+		ui-monospace, 'SF Mono', Consolas, 'BIZ UDGothic', 'Noto Sans Mono CJK JP', monospace;
+	--dl-text-small: 0.875rem;
+	--dl-text-body: 1rem;
+	--dl-text-lead: 1.125rem;
+	--dl-text-h2: 1.25rem;
+	--dl-text-h1: 1.5rem;
+	--dl-leading: 1.75;
+	--dl-leading-tight: 1.4;
+
+	/* 4.4 余白・角丸・影 */
+	--dl-space-1: 0.25rem;
+	--dl-space-2: 0.5rem;
+	--dl-space-3: 0.75rem;
+	--dl-space-4: 1rem;
+	--dl-space-5: 1.25rem;
+	--dl-space-6: 1.5rem;
+	--dl-space-7: 1.75rem;
+	--dl-space-8: 2rem;
+	--dl-radius-inner: var(--radius-inner);
+	--dl-radius: var(--radius-element);
+	--dl-radius-box: var(--radius-container);
+	--dl-shadow: var(--shadow-low);
+	--dl-tap: 2.75rem;
+
+	/* 4.5 動きの速さ（再生の時間は src/lib/player/timeline.ts と同じ値） */
+	--dl-motion-op: var(--duration-slow);
+	--dl-motion-hold: var(--duration-medium-max);
+	--dl-motion-ui: var(--duration-fast);
+	--dl-auto-wait: 1500ms;
+
+	/* 4.6 配置 */
+	--dl-page-max: 80rem;
+	--dl-stage-min: 18rem;
+}
+
+html {
+	background: var(--dl-bg);
+	color: var(--dl-text);
+}
+
+body {
+	margin: 0;
+	font-family: var(--dl-font);
+	font-size: var(--dl-text-body);
+	line-height: var(--dl-leading);
+	background: var(--dl-bg);
+	color: var(--dl-text);
+}
+
+/* Astryx の @layer reset が見出しと段落に当てる書体と大きさを、日本語用に上書きする */
+h1,
+h2,
+h3,
+p {
+	font-family: var(--dl-font);
+	color: var(--dl-text);
+}
+h1 {
+	font-size: var(--dl-text-h1);
+	line-height: var(--dl-leading-tight);
+	margin: 0 0 var(--dl-space-3);
+}
+h2 {
+	font-size: var(--dl-text-h2);
+	line-height: var(--dl-leading-tight);
+	margin: 0 0 var(--dl-space-2);
+}
+h3 {
+	font-size: var(--dl-text-body);
+	line-height: var(--dl-leading-tight);
+	margin: 0 0 var(--dl-space-2);
+}
+p {
+	font-size: var(--dl-text-body);
+	line-height: var(--dl-leading);
+	margin: 0 0 var(--dl-space-2);
+}
+
+a {
+	color: var(--dl-now);
+}
+
+code,
+kbd,
+pre {
+	font-family: var(--dl-font-code);
+}
+
+:focus-visible {
+	outline: 3px solid var(--dl-focus);
+	outline-offset: 2px;
+}
+
+button {
+	font: inherit;
+	color: var(--dl-text);
+	background: var(--dl-surface);
+	border: 1px solid var(--dl-border-strong);
+	border-radius: var(--dl-radius);
+	min-height: var(--dl-tap);
+	min-width: var(--dl-tap);
+	padding: 0 var(--dl-space-3);
+	cursor: pointer;
+	transition: background-color var(--dl-motion-ui);
+}
+button:hover:not(:disabled) {
+	background: var(--dl-surface-raised);
+	border-color: var(--dl-text-muted);
+}
+button:disabled {
+	color: var(--dl-text-disabled);
+	cursor: not-allowed;
+}
+
+.dl-visually-hidden {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
+}
