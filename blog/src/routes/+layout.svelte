@@ -2,19 +2,42 @@
 import { groups, tagList } from '../lib/posts';
 
 let { children } = $props();
-let theme = $state('auto');
+let theme = $state<'light' | 'dark'>('light');
 
 $effect(() => {
 const saved = localStorage.getItem('theme');
-if (saved) theme = saved;
+theme =
+saved === 'dark' || saved === 'light'
+? saved
+: window.matchMedia('(prefers-color-scheme: dark)').matches
+? 'dark'
+: 'light';
 });
 
 $effect(() => {
-if (theme === 'auto') return;
 document.documentElement.dataset.theme = theme;
 localStorage.setItem('theme', theme);
 });
 </script>
+
+<button
+class="theme"
+onclick={() => (theme = theme === 'dark' ? 'light' : 'dark')}
+aria-label={theme === 'dark' ? 'ライトモードにする' : 'ダークモードにする'}
+>
+{#if theme === 'dark'}
+<svg viewBox="0 0 24 24" aria-hidden="true">
+<circle cx="12" cy="12" r="4.2" />
+<path d="M12 2.5v2.4M12 19.1v2.4M4.2 4.2l1.7 1.7M18.1 18.1l1.7 1.7M2.5 12h2.4M19.1 12h2.4M4.2 19.8l1.7-1.7M18.1 5.9l1.7-1.7" />
+</svg>
+<span>ライトモード</span>
+{:else}
+<svg viewBox="0 0 24 24" aria-hidden="true">
+<path d="M20 14.2A8.3 8.3 0 1 1 9.8 4 6.6 6.6 0 0 0 20 14.2z" />
+</svg>
+<span>ダークモード</span>
+{/if}
+</button>
 
 <div class="shell">
 <aside>
@@ -27,9 +50,6 @@ localStorage.setItem('theme', theme);
 <a href="/search">検索</a>
 <a href="/about">このサイトについて</a>
 <a href="/rss.xml">RSS</a>
-<button class="theme" onclick={() => (theme = theme === 'dark' ? 'light' : 'dark')}>
-{theme === 'dark' ? '明るくする' : '暗くする'}
-</button>
 </nav>
 
 {#if groups.length > 0}
@@ -81,20 +101,6 @@ localStorage.setItem('theme', theme);
 --sans: system-ui, "Hiragino Sans", "Noto Sans JP", sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-:global(:root:not([data-theme="light"])) {
---bg: #0f1419;
---surface: #161b22;
---surface-2: #1f262e;
---line: #2a323c;
---ink: #e6edf3;
---ink-soft: #c2ccd6;
---ink-dim: #8b98a5;
---accent: #6cb6ff;
---accent-soft: #1a2838;
-}
-}
-
 :global(:root[data-theme="dark"]) {
 --bg: #0f1419;
 --surface: #161b22;
@@ -105,6 +111,11 @@ localStorage.setItem('theme', theme);
 --ink-dim: #8b98a5;
 --accent: #6cb6ff;
 --accent-soft: #1a2838;
+}
+
+:global(html) {
+scroll-behavior: smooth;
+scroll-padding-top: 2rem;
 }
 
 :global(body) {
@@ -136,22 +147,6 @@ color: var(--accent);
 :global(.token.selector) { color: #116329; }
 :global(.token.builtin) { color: #0550ae; }
 :global(.token.class-name) { color: #953800; }
-
-@media (prefers-color-scheme: dark) {
-:global(:root:not([data-theme="light"]) .token.comment) { color: #8b949e; }
-:global(:root:not([data-theme="light"]) .token.keyword) { color: #ff7b72; }
-:global(:root:not([data-theme="light"]) .token.string) { color: #a5d6ff; }
-:global(:root:not([data-theme="light"]) .token.function) { color: #d2a8ff; }
-:global(:root:not([data-theme="light"]) .token.number) { color: #79c0ff; }
-:global(:root:not([data-theme="light"]) .token.boolean) { color: #79c0ff; }
-:global(:root:not([data-theme="light"]) .token.operator) { color: #ff7b72; }
-:global(:root:not([data-theme="light"]) .token.punctuation) { color: #8b949e; }
-:global(:root:not([data-theme="light"]) .token.property) { color: #79c0ff; }
-:global(:root:not([data-theme="light"]) .token.tag) { color: #7ee787; }
-:global(:root:not([data-theme="light"]) .token.attr-name) { color: #d2a8ff; }
-:global(:root:not([data-theme="light"]) .token.attr-value) { color: #a5d6ff; }
-:global(:root:not([data-theme="light"]) .token.class-name) { color: #ffa657; }
-}
 
 :global(:root[data-theme="dark"] .token.comment) { color: #8b949e; }
 :global(:root[data-theme="dark"] .token.keyword) { color: #ff7b72; }
@@ -279,6 +274,38 @@ border-top: 1px solid var(--line);
 margin: 3rem 0;
 }
 
+.theme {
+position: fixed;
+top: 1rem;
+right: 1.25rem;
+z-index: 20;
+display: inline-flex;
+align-items: center;
+gap: 0.4rem;
+padding: 0.35rem 0.85rem;
+background: var(--bg);
+border: 1px solid var(--line);
+border-radius: 999px;
+font: inherit;
+font-size: 0.8rem;
+color: var(--ink-soft);
+cursor: pointer;
+}
+
+.theme:hover {
+color: var(--accent);
+border-color: var(--accent);
+}
+
+.theme svg {
+width: 1rem;
+height: 1rem;
+fill: none;
+stroke: currentColor;
+stroke-width: 1.7;
+stroke-linecap: round;
+}
+
 .shell {
 display: grid;
 grid-template-columns: 1fr;
@@ -337,21 +364,6 @@ font-weight: 500;
 }
 
 nav a:hover {
-color: var(--accent);
-}
-
-.theme {
-margin-top: 0.3rem;
-padding: 0;
-background: none;
-border: 0;
-font: inherit;
-color: var(--ink-dim);
-cursor: pointer;
-text-align: left;
-}
-
-.theme:hover {
 color: var(--accent);
 }
 
