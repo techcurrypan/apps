@@ -18,7 +18,6 @@
 		"git status",
 		"git status --short",
 		"cat site.txt",
-		"git diff",
 		"git commit -m \"try\"",
 		"printf 'title: shop\\ncolor: blue\\n' > site.txt",
 		"git add site.txt",
