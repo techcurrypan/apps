@@ -5,18 +5,18 @@ const ROOT = 'src/routes/blog';
 const OUT = 'src/lib/index.generated.ts';
 
 const KEYWORDS = {
-svelte: ['svelte', 'sveltekit', 'mdsvex', 'runes', 'vite'],
-cloudflare: ['cloudflare', 'wrangler', 'workers', 'r2', 'd1'],
-ci: ['github actions', 'ci/cd', 'workflow', '配信', 'デプロイ'],
-k8s: ['kubernetes', 'k8s', 'kubectl', 'pod'],
-docker: ['docker', 'dockerfile', 'コンテナ'],
-git: ['git ', 'commit', 'ブランチ', 'push'],
-typescript: ['typescript', 'tsconfig', '型定義'],
-linux: ['linux', 'bash', 'systemd'],
-network: ['dns', 'tcp', 'http', 'ネットワーク'],
-security: ['tls', '証明書', 'トークン', '秘密情報'],
-database: ['sql', 'データベース', 'postgres', 'sqlite'],
-ai: ['llm', '機械学習', 'mcp', '生成ai']
+svelte: ['svelte', 'sveltekit', 'mdsvex', 'runes'],
+cloudflare: ['cloudflare', 'wrangler', 'workers'],
+ci: ['github actions', 'ci/cd', 'workflow'],
+k8s: ['kubernetes', 'kubectl'],
+docker: ['docker', 'dockerfile'],
+git: ['git commit', 'git push', 'ブランチ'],
+typescript: ['typescript', 'tsconfig'],
+linux: ['linux', 'systemd'],
+network: ['dns', 'tcp/ip', 'ネットワーク'],
+security: ['tls', '証明書', '秘密情報'],
+database: ['sql', 'データベース'],
+ai: ['llm', '機械学習', 'mcp']
 };
 
 const walk = (dir) => {
@@ -53,17 +53,21 @@ data[key] = unquote(value);
 return data;
 };
 
+const countOf = (text, word) => text.split(word).length - 1;
+
 const posts = walk(ROOT)
 .map((file) => {
 const text = readFileSync(file, 'utf8');
 const fm = parseFront(text);
-const slug = relative(ROOT, file).split(sep).slice(0, -1).join('/');
-const lower = text.replace(/^---[\s\S]*?---/, '').toLowerCase();
+const parts = relative(ROOT, file).split(sep).slice(0, -1);
+const slug = parts.join('/');
+const body = text.replace(/^---[\s\S]*?---/, '').toLowerCase();
 const auto = Object.entries(KEYWORDS)
-.filter(([, words]) => words.some((w) => lower.includes(w)))
+.filter(([, words]) => words.reduce((n, w) => n + countOf(body, w), 0) >= 3)
 .map(([tag]) => tag);
 return {
 slug,
+series: parts.length > 1 ? parts[0] : '',
 title: fm.title ?? '(無題)',
 date: String(fm.date ?? ''),
 summary: fm.summary ?? '',
@@ -76,7 +80,7 @@ mkdirSync('src/lib', { recursive: true });
 writeFileSync(
 OUT,
 `// 自動生成。直接編集しない。npm run index で作り直す。\n` +
-`export type Post = {\n\tslug: string;\n\ttitle: string;\n\tdate: string;\n\tsummary: string;\n\ttags: string[];\n};\n\n` +
+`export type Post = {\n\tslug: string;\n\tseries: string;\n\ttitle: string;\n\tdate: string;\n\tsummary: string;\n\ttags: string[];\n};\n\n` +
 `export const allPosts: Post[] = ${JSON.stringify(posts, null, '\t')};\n`,
 'utf8'
 );

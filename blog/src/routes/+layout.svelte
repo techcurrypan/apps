@@ -1,5 +1,5 @@
 ﻿<script lang="ts">
-import { groups } from '../lib/posts';
+import { groups, tagList } from '../lib/posts';
 let { children } = $props();
 </script>
 
@@ -15,13 +15,13 @@ let { children } = $props();
 
 {#if groups.length > 0}
 <section class="block">
-<h2>トピック</h2>
+<h2>連載</h2>
 <ul class="series">
-{#each groups as g (g.tag)}
+{#each groups as g (g.name)}
 <li>
-<a href="/tag/{g.tag}">
+<a href="/series/{g.name}">
 <span class="ring"><span class="icon">{g.icon}</span></span>
-<span class="name">{g.tag}</span>
+<span class="name">{g.label}</span>
 <span class="count">{g.count}</span>
 </a>
 </li>
@@ -29,7 +29,17 @@ let { children } = $props();
 </ul>
 </section>
 {/if}
-</aside>
+{#if tagList.length > 0}
+  <section class="block">
+    <h2>タグ</h2>
+    <ul class="tags">
+      {#each tagList as t (t.tag)}
+        <li><a href="/tag/{t.tag}">{t.tag}<span>{t.count}</span></a></li>
+      {/each}
+    </ul>
+  </section>
+{/if}
+  </aside>
 
 <main>
 {@render children()}
@@ -290,7 +300,38 @@ color: var(--ink-dim);
 color: var(--accent);
 }
 
-main {
+.tags {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+
+  .tags a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.1rem 0.6rem;
+    background: var(--surface-2);
+    border-radius: 999px;
+    font-size: 0.78rem;
+    text-decoration: none;
+    color: var(--ink-soft);
+  }
+
+  .tags a:hover {
+    background: var(--accent-soft);
+    color: var(--accent);
+  }
+
+  .tags span {
+    font-size: 0.68rem;
+    color: var(--ink-dim);
+  }
+
+  main {
 min-width: 0;
 padding-bottom: 6rem;
 }
