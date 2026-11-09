@@ -1,0 +1,45 @@
+﻿name: Deploy blog
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "blog/**"
+      - ".github/workflows/deploy-blog.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: blog
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: blog/package-lock.json
+
+      - run: npm ci
+
+      - name: 型と書式の検査
+        run: npm run check
+
+      - name: 組み立て
+        run: npm run build
+
+      - name: Cloudflare へ配信
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: blog
