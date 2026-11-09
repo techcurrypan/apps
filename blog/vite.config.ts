@@ -1,19 +1,41 @@
-import { mdsvex } from 'mdsvex';
+﻿import { mdsvex } from 'mdsvex';
 import adapter from '@sveltejs/adapter-cloudflare';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
 
+const escape = (s) =>
+s
+.replace(/&/g, '&amp;')
+.replace(/</g, '&lt;')
+.replace(/>/g, '&gt;')
+.replace(/\{/g, '&#123;')
+.replace(/\}/g, '&#125;');
+
+const highlighter = (code, lang) => {
+const lines = code
+.replace(/\n$/, '')
+.split('\n')
+.map((line) => `<span class="line">${escape(line) || ' '}</span>`)
+.join('');
+const label = lang ? ` data-lang="${lang}"` : '';
+return `<pre class="code"${label}><code>${lines}</code></pre>`;
+};
+
 export default defineConfig({
-	plugins: [
-		sveltekit({
-			compilerOptions: {
-				// Force runes mode for the project, except for libraries. Can be removed in svelte 6.
-				runes: ({ filename }) =>
-					filename.split(/[/\\]/).includes('node_modules') ? undefined : true
-			},
-			adapter: adapter(),
-			preprocess: [mdsvex({ extensions: ['.svx', '.md'] })],
-			extensions: ['.svelte', '.svx', '.md']
-		})
-	]
+plugins: [
+sveltekit({
+compilerOptions: {
+runes: ({ filename }) =>
+filename.split(/[/\\]/).includes('node_modules') ? undefined : true
+},
+adapter: adapter(),
+preprocess: [
+mdsvex({
+extensions: ['.svx', '.md'],
+highlight: { highlighter }
+})
+],
+extensions: ['.svelte', '.svx', '.md']
+})
+]
 });

@@ -1,12 +1,385 @@
-<script lang="ts">
-	import favicon from '#lib/assets/favicon.svg';
-	import type { LayoutProps } from './$types';
+﻿<script lang="ts">
+type Meta = { tags?: string[]; series?: string; icon?: string };
+let { children } = $props();
 
-	let { children }: LayoutProps = $props();
+const modules = import.meta.glob('./blog/*/+page.md', { eager: true });
+const metas = Object.values(modules).map(
+(mod) => ((mod as { metadata?: Meta }).metadata ?? {}) as Meta
+);
+
+const series = metas
+.filter((m) => m.series)
+.reduce(
+(acc, m) => {
+const name = m.series as string;
+const found = acc.find((s) => s.name === name);
+if (found) {
+found.count += 1;
+if (!found.icon && m.icon) found.icon = m.icon;
+} else {
+acc.push({ name, icon: m.icon ?? '', count: 1 });
+}
+return acc;
+},
+[] as { name: string; icon: string; count: number }[]
+)
+.sort((a, b) => b.count - a.count);
+
+const tags = [...new Set(metas.flatMap((m) => m.tags ?? []))].sort();
 </script>
 
-<svelte:head>
-	<link rel="icon" href={favicon} />
-</svelte:head>
+<div class="shell">
+<aside>
+<a class="brand" href="/">techcurrypan</a>
+<p class="tagline">作った物と、調べた事の記録</p>
 
+<nav>
+<a href="/">ホーム</a>
+<a href="/blog">記事一覧</a>
+</nav>
+
+{#if series.length > 0}
+<section class="block">
+<h2>シリーズ</h2>
+<ul class="series">
+{#each series as s (s.name)}
+<li>
+<a href="/series/{s.name}">
+<span class="ring"><span class="icon">{s.icon}</span></span>
+<span class="name">{s.name}</span>
+<span class="count">{s.count}</span>
+</a>
+</li>
+{/each}
+</ul>
+</section>
+{/if}
+
+{#if tags.length > 0}
+<section class="block">
+<h2>タグ</h2>
+<ul class="tags">
+{#each tags as tag (tag)}
+<li><a href="/tag/{tag}">{tag}</a></li>
+{/each}
+</ul>
+</section>
+{/if}
+</aside>
+
+<main>
 {@render children()}
+</main>
+</div>
+
+<style>
+:global(:root) {
+--bg: #ffffff;
+--surface: #f7f9fc;
+--surface-2: #eef2f8;
+--line: #e2e8f2;
+--ink: #1a2234;
+--ink-soft: #3d4a61;
+--ink-dim: #6b7a93;
+--accent: #2563eb;
+--accent-soft: #eaf1ff;
+--mono: ui-monospace, "Cascadia Mono", Consolas, monospace;
+--sans: system-ui, "Hiragino Sans", "Noto Sans JP", sans-serif;
+}
+
+:global(body) {
+margin: 0;
+background: var(--bg);
+color: var(--ink);
+font-family: var(--sans);
+font-size: 1.0625rem;
+line-height: 1.95;
+-webkit-font-smoothing: antialiased;
+}
+
+:global(a) {
+color: var(--accent);
+}
+
+:global(pre.code) {
+counter-reset: line;
+position: relative;
+background: var(--surface);
+border: 1px solid var(--line);
+border-radius: 10px;
+padding: 2.6rem 0 1.1rem;
+overflow-x: auto;
+max-width: 84ch;
+font-size: 0.88rem;
+line-height: 1.8;
+}
+
+:global(pre.code::before) {
+content: attr(data-lang);
+position: absolute;
+top: 0;
+left: 0;
+right: 0;
+padding: 0.35rem 1rem;
+background: var(--surface-2);
+border-bottom: 1px solid var(--line);
+border-radius: 10px 10px 0 0;
+font-family: var(--mono);
+font-size: 0.7rem;
+letter-spacing: 0.14em;
+text-transform: uppercase;
+color: var(--ink-dim);
+}
+
+:global(pre.code .line) {
+counter-increment: line;
+display: block;
+padding: 0 1.1rem;
+}
+
+:global(pre.code .line::before) {
+content: counter(line);
+display: inline-block;
+width: 2.2em;
+margin-right: 1.1em;
+text-align: right;
+color: var(--ink-dim);
+opacity: 0.55;
+user-select: none;
+}
+
+:global(pre.code .line:hover) {
+background: rgba(37, 99, 235, 0.05);
+}
+
+:global(code) {
+font-family: var(--mono);
+font-size: 0.9em;
+}
+
+:global(:not(pre) > code) {
+background: var(--accent-soft);
+color: #1746a8;
+border-radius: 4px;
+padding: 0.12em 0.42em;
+}
+
+:global(blockquote) {
+margin: 1.75rem 0;
+padding: 0.1rem 1.25rem;
+border-left: 4px solid var(--accent);
+background: var(--surface);
+border-radius: 0 8px 8px 0;
+color: var(--ink-soft);
+}
+
+:global(table) {
+border-collapse: collapse;
+width: 100%;
+}
+
+:global(th),
+:global(td) {
+border: 1px solid var(--line);
+padding: 0.5rem 0.85rem;
+text-align: left;
+}
+
+:global(th) {
+background: var(--surface);
+}
+
+:global(img) {
+max-width: 100%;
+border-radius: 10px;
+}
+
+:global(hr) {
+border: 0;
+border-top: 1px solid var(--line);
+margin: 3rem 0;
+}
+
+.shell {
+display: grid;
+grid-template-columns: 1fr;
+gap: 2rem;
+padding: 1.5rem;
+}
+
+@media (min-width: 60rem) {
+.shell {
+grid-template-columns: 13rem minmax(0, 1fr);
+gap: 4rem;
+padding: 3rem;
+}
+
+aside {
+position: sticky;
+top: 3rem;
+align-self: start;
+}
+}
+
+.brand {
+display: block;
+font-size: 1.15rem;
+font-weight: 800;
+text-decoration: none;
+color: var(--ink);
+}
+
+.tagline {
+margin: 0.2rem 0 0;
+font-size: 0.8rem;
+line-height: 1.6;
+color: var(--ink-dim);
+}
+
+nav {
+display: flex;
+gap: 1.25rem;
+margin-top: 1.5rem;
+font-size: 0.95rem;
+}
+
+@media (min-width: 60rem) {
+nav {
+flex-direction: column;
+gap: 0.1rem;
+}
+}
+
+nav a {
+text-decoration: none;
+color: var(--ink-soft);
+font-weight: 500;
+}
+
+nav a:hover {
+color: var(--accent);
+}
+
+.block {
+margin-top: 2.25rem;
+}
+
+.block h2 {
+margin: 0 0 0.75rem;
+font-size: 0.72rem;
+letter-spacing: 0.14em;
+color: var(--ink-dim);
+font-weight: 700;
+}
+
+.series {
+list-style: none;
+margin: 0;
+padding: 0;
+display: flex;
+flex-wrap: wrap;
+gap: 0.9rem;
+}
+
+.series a {
+display: grid;
+justify-items: center;
+width: 3.5rem;
+text-decoration: none;
+color: var(--ink-soft);
+}
+
+.ring {
+display: grid;
+place-items: center;
+width: 3.1rem;
+height: 3.1rem;
+border-radius: 50%;
+background: linear-gradient(135deg, #2563eb, #7c3aed, #db2777);
+padding: 2.5px;
+}
+
+.icon {
+display: grid;
+place-items: center;
+width: 100%;
+height: 100%;
+border-radius: 50%;
+background: var(--bg);
+font-size: 1.25rem;
+}
+
+.series .name {
+margin-top: 0.3rem;
+font-size: 0.72rem;
+line-height: 1.3;
+text-align: center;
+word-break: break-all;
+}
+
+.series .count {
+font-size: 0.65rem;
+color: var(--ink-dim);
+}
+
+.series a:hover .name {
+color: var(--accent);
+}
+
+.tags {
+list-style: none;
+margin: 0;
+padding: 0;
+display: flex;
+flex-wrap: wrap;
+gap: 0.4rem;
+}
+
+.tags a {
+display: inline-block;
+padding: 0.12rem 0.65rem;
+background: var(--surface-2);
+border-radius: 999px;
+font-size: 0.78rem;
+text-decoration: none;
+color: var(--ink-soft);
+}
+
+.tags a:hover {
+background: var(--accent-soft);
+color: var(--accent);
+}
+
+main {
+min-width: 0;
+padding-bottom: 6rem;
+}
+
+main :global(h1) {
+margin: 0 0 1.5rem;
+font-size: 2rem;
+line-height: 1.5;
+}
+
+main :global(h2) {
+margin-top: 3.5rem;
+padding-bottom: 0.4rem;
+border-bottom: 2px solid var(--surface-2);
+font-size: 1.4rem;
+}
+
+main :global(h3) {
+margin-top: 2.25rem;
+font-size: 1.12rem;
+}
+
+main :global(p),
+main :global(li),
+main :global(blockquote) {
+max-width: 72ch;
+}
+
+main :global(p) {
+color: var(--ink-soft);
+}
+</style>

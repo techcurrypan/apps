@@ -1,6 +1,8 @@
 ﻿---
 title: 最初の記事
 date: '2026-11-09'
+summary: SvelteKit と Cloudflare でブログを作った記録。
+tags: ['svelte', 'cloudflare']
 ---
 
 # 最初の記事
