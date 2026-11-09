@@ -19,6 +19,7 @@ const next = $derived(at >= 0 && at < siblings.length - 1 ? siblings[at + 1] : u
 
 let body: HTMLElement | undefined = $state();
 let headings = $state<{ id: string; text: string; level: number }[]>([]);
+let active = $state('');
 
 $effect(() => {
 data.pathname;
@@ -44,6 +45,25 @@ setTimeout(() => (btn.textContent = 'コピー'), 1500);
 });
 pre.appendChild(btn);
 }
+});
+
+$effect(() => {
+const els = headings
+.map((h) => document.getElementById(h.id))
+.filter((e): e is HTMLElement => e !== null);
+if (els.length === 0) return;
+
+const onScroll = () => {
+let cur = els[0].id;
+for (const el of els) {
+if (el.getBoundingClientRect().top <= 140) cur = el.id;
+}
+active = cur;
+};
+
+onScroll();
+window.addEventListener('scroll', onScroll, { passive: true });
+return () => window.removeEventListener('scroll', onScroll);
 });
 </script>
 
@@ -104,7 +124,7 @@ pre.appendChild(btn);
 <h2>目次</h2>
 <ul>
 {#each headings as h (h.id)}
-<li class:sub={h.level === 3}>
+<li class:sub={h.level === 3} class:on={h.id === active}>
 <a href="#{h.id}">{h.text}</a>
 </li>
 {/each}
@@ -160,10 +180,23 @@ padding: 0;
 .toc li {
 line-height: 1.6;
 margin-bottom: 0.3rem;
+border-left: 2px solid transparent;
+margin-left: -1rem;
+padding-left: calc(1rem - 2px);
+transition: border-color 0.15s;
 }
 
 .toc li.sub {
-padding-left: 0.9rem;
+padding-left: calc(1.9rem - 2px);
+}
+
+.toc li.on {
+border-left-color: var(--accent);
+}
+
+.toc li.on a {
+color: var(--accent);
+font-weight: 600;
 }
 
 .toc a {
