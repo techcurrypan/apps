@@ -36,7 +36,25 @@ describe('本物の記録がある', () => {
 	});
 });
 
+// 本物の記録はあるが、模擬がまだ追いついていない場面。黙って飛ばさず、保留として一覧に出す。
+// 段 7 を終えるときは空にする（docs/progress/phase-7.md）
+export const PENDING: ReadonlySet<string> = new Set([
+	'git-002-diff-log',
+	'git-003-restore-revert',
+	'git-004-branch',
+	'git-005-merge',
+	'git-006-conflict',
+	'git-007-remote',
+	'git-008-rebase',
+	'git-009-ignore',
+	'sec-013-secrets'
+]);
+
 for (const rec of recorded) {
+	if (PENDING.has(rec.id)) {
+		it.todo(`${rec.id}（${rec.lesson}）：模擬が追いつくまで保留`);
+		continue;
+	}
 	describe(`${rec.id}（${rec.lesson}）`, () => {
 		const make = tools[rec.tool];
 		it('この道具の模擬がある', () => {

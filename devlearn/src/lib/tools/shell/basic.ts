@@ -1,5 +1,14 @@
 // どの模擬の道具にも入れる、基本の命令：cd・pwd・echo・printf・ls・cat。
-import { baseName, isDir, listDir, readFile, stat } from '../fs.ts';
+import {
+	baseName,
+	isDir,
+	listDir,
+	mkdir as mkdirFs,
+	parentOf,
+	readFile,
+	remove,
+	stat
+} from '../fs.ts';
 import { fail, ok, pathOf, type Cmd, type Commands } from './run.ts';
 
 // 端末で見たときの字の幅（日本語などは 2）
@@ -154,8 +163,63 @@ const cat: Cmd<unknown> = (s, args, io) => {
 	return { state: s, out, err, code };
 };
 
+const mkdir: Cmd<unknown> = (s, args, io) => {
+	const parents = args.includes('-p');
+	let fs = s.fs;
+	let err = '';
+	for (const a of args.filter((x) => !x.startsWith('-'))) {
+		const path = pathOf(s, a);
+		if (stat(fs, path)) {
+			if (!parents) err += `mkdir: cannot create directory '${a}': File exists\n`;
+			continue;
+		}
+		if (!isDir(fs, parentOf(path))) {
+			if (!parents) {
+				err += `mkdir: cannot create directory '${a}': No such file or directory\n`;
+				continue;
+			}
+			const parts = path.split('/').filter(Boolean);
+			let cur = '';
+			for (const part of parts) {
+				cur += `/${part}`;
+				if (!stat(fs, cur)) fs = mkdirFs(fs, cur, io.now);
+			}
+			continue;
+		}
+		fs = mkdirFs(fs, path, io.now);
+	}
+	return { state: { ...s, fs }, out: '', err, code: err ? 1 : 0 };
+};
+
+const rm: Cmd<unknown> = (s, args) => {
+	const flags = args.filter((a) => a.startsWith('-')).join('');
+	const recursive = /[rR]/.test(flags);
+	const force = flags.includes('f');
+	let fs = s.fs;
+	let err = '';
+	for (const a of args.filter((x) => !x.startsWith('-'))) {
+		const path = pathOf(s, a);
+		const node = stat(fs, path);
+		if (!node) {
+			if (!force) err += `rm: cannot remove '${a}': No such file or directory\n`;
+		} else if (node.kind === 'dir' && !recursive) {
+			err += `rm: cannot remove '${a}': Is a directory\n`;
+		} else fs = remove(fs, path);
+	}
+	return { state: { ...s, fs }, out: '', err, code: err ? 1 : 0 };
+};
+
 export function basicCommands<X>(): Commands<X> {
-	return { cd, pwd, echo, printf, ls, cat } as Commands<unknown> as unknown as Commands<X>;
+	return {
+		cd,
+		pwd,
+		echo,
+		printf,
+		ls,
+		cat,
+		mkdir,
+		rm
+	} as Commands<unknown> as unknown as Commands<X>;
 }
 
 export { baseName };
