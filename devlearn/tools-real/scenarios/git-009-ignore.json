@@ -1,0 +1,27 @@
+{
+	"id": "git-009-ignore",
+	"tool": "git",
+	"lesson": "git-009",
+	"note": ".gitignore で記録に入れないファイルを決める",
+	"steps": [
+		"git init",
+		"printf 'print(1)\\n' > app.py",
+		"printf 'SECRET=abc\\n' > .env",
+		"mkdir logs",
+		"printf 'log\\n' > logs/app.log",
+		"git status",
+		"git status --short",
+		"printf '.env\\nlogs/\\n' > .gitignore",
+		"git status",
+		"git status --short",
+		"git check-ignore -v .env",
+		"git check-ignore -v logs/app.log",
+		"git check-ignore -v app.py",
+		"git add .",
+		"git status --short",
+		"git add .env",
+		"git commit -m \"app\"",
+		"git log --oneline",
+		"git cat-file -p 'HEAD^{tree}'"
+	]
+}

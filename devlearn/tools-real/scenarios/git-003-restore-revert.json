@@ -1,0 +1,31 @@
+{
+	"id": "git-003-restore-revert",
+	"tool": "git",
+	"lesson": "git-003",
+	"note": "restore で変更を戻し、revert で記録を打ち消す",
+	"steps": [
+		"git init",
+		"printf 'v1\\n' > app.txt",
+		"git add app.txt",
+		"git commit -m \"v1\"",
+		"printf 'broken\\n' > app.txt",
+		"git status --short",
+		"git restore app.txt",
+		"cat app.txt",
+		"git status --short",
+		"printf 'v2\\n' > app.txt",
+		"git add app.txt",
+		"git status --short",
+		"git restore --staged app.txt",
+		"git status --short",
+		"git restore app.txt",
+		"git restore nope.txt",
+		"printf 'v2 with bug\\n' > app.txt",
+		"git commit -am \"v2\"",
+		"git log --oneline",
+		"git revert --no-edit HEAD",
+		"git log --oneline",
+		"cat app.txt",
+		"git show --stat HEAD"
+	]
+}

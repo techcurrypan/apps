@@ -1,0 +1,31 @@
+{
+	"id": "git-005-merge",
+	"tool": "git",
+	"lesson": "git-005",
+	"note": "merge が早送りか合流の記録かを見分ける",
+	"steps": [
+		"git init",
+		"printf 'one\\n' > a.txt",
+		"git add a.txt",
+		"git commit -m \"one\"",
+		"git switch -c feature",
+		"printf 'two\\n' >> a.txt",
+		"git commit -am \"two\"",
+		"git switch main",
+		"git merge feature",
+		"git log --oneline --graph",
+		"git switch -c topic",
+		"printf 'topic\\n' > t.txt",
+		"git add t.txt",
+		"git commit -m \"topic\"",
+		"git switch main",
+		"printf 'main\\n' > m.txt",
+		"git add m.txt",
+		"git commit -m \"main side\"",
+		"git merge topic",
+		"git log --oneline --graph",
+		"git cat-file -p HEAD",
+		"git merge topic",
+		"git merge nope"
+	]
+}

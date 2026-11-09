@@ -1,0 +1,32 @@
+{
+	"id": "git-007-remote",
+	"tool": "git",
+	"lesson": "git-007",
+	"note": "push・fetch・pull で遠くのリポジトリと記録を合わせる",
+	"steps": [
+		"git init --bare ../remote.git",
+		"git init",
+		"printf 'hello\\n' > a.txt",
+		"git add a.txt",
+		"git commit -m \"first\"",
+		"git remote add origin ../remote.git",
+		"git remote -v",
+		"git push -u origin main",
+		"git status",
+		"git clone ../remote.git ../other",
+		"cd ../other",
+		"git log --oneline",
+		"printf 'from other\\n' >> a.txt",
+		"git commit -am \"from other\"",
+		"git push",
+		"cd ../demo",
+		"git status",
+		"git fetch",
+		"git status",
+		"git log --oneline --all",
+		"git pull",
+		"git log --oneline",
+		"cat a.txt",
+		"git push"
+	]
+}

@@ -1,0 +1,31 @@
+{
+	"id": "git-006-conflict",
+	"tool": "git",
+	"lesson": "git-006",
+	"note": "同じ行を変えた 2 本の枝の衝突を解く",
+	"steps": [
+		"git init",
+		"printf 'title: shop\\ncolor: red\\n' > site.txt",
+		"git add site.txt",
+		"git commit -m \"site\"",
+		"git switch -c blue",
+		"printf 'title: shop\\ncolor: blue\\n' > site.txt",
+		"git commit -am \"blue\"",
+		"git switch main",
+		"printf 'title: shop\\ncolor: green\\n' > site.txt",
+		"git commit -am \"green\"",
+		"git merge blue",
+		"git status",
+		"git status --short",
+		"cat site.txt",
+		"git diff",
+		"git commit -m \"try\"",
+		"printf 'title: shop\\ncolor: blue\\n' > site.txt",
+		"git add site.txt",
+		"git status",
+		"git status --short",
+		"git commit -m \"merge blue\"",
+		"git log --oneline --graph",
+		"cat site.txt"
+	]
+}

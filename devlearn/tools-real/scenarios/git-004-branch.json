@@ -1,0 +1,33 @@
+{
+	"id": "git-004-branch",
+	"tool": "git",
+	"lesson": "git-004",
+	"note": "branch と switch で枝を作り、記録を分けて積む",
+	"steps": [
+		"git init",
+		"printf 'base\\n' > a.txt",
+		"git add a.txt",
+		"git commit -m \"base\"",
+		"git branch",
+		"git branch feature",
+		"git branch",
+		"git switch feature",
+		"git branch",
+		"printf 'feature\\n' > b.txt",
+		"git add b.txt",
+		"git commit -m \"add b\"",
+		"git log --oneline",
+		"git switch main",
+		"ls",
+		"git log --oneline",
+		"git log --oneline --all",
+		"git log --oneline --graph --all",
+		"git switch -c fix",
+		"printf 'fix\\n' >> a.txt",
+		"git commit -am \"fix a\"",
+		"git log --oneline --graph --all",
+		"git switch nope",
+		"git switch -c feature",
+		"git branch -v"
+	]
+}

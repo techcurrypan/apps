@@ -1,0 +1,29 @@
+{
+	"id": "git-008-rebase",
+	"tool": "git",
+	"lesson": "git-008",
+	"note": "rebase で枝の記録を別の土台の上に積み直す",
+	"steps": [
+		"git init",
+		"printf 'base\\n' > a.txt",
+		"git add a.txt",
+		"git commit -m \"base\"",
+		"git switch -c feature",
+		"printf 'f1\\n' > f.txt",
+		"git add f.txt",
+		"git commit -m \"f1\"",
+		"printf 'f2\\n' >> f.txt",
+		"git commit -am \"f2\"",
+		"git switch main",
+		"printf 'm1\\n' > m.txt",
+		"git add m.txt",
+		"git commit -m \"m1\"",
+		"git log --oneline --graph --all",
+		"git switch feature",
+		"git rebase main",
+		"git log --oneline --graph --all",
+		"git switch main",
+		"git merge feature",
+		"git log --oneline --graph"
+	]
+}

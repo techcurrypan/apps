@@ -6,7 +6,7 @@
 	"steps": [
 		"git init",
 		"git status",
-		"printf 'hello world\n' > hello.txt",
+		"printf 'hello world\\n' > hello.txt",
 		"ls",
 		"cat hello.txt",
 		"git status",
