@@ -13,66 +13,133 @@ export type Post = {
 
 export const allPosts: Post[] = [
 	{
-		"slug": "blog-setup/06-scripts",
+		"slug": "blog-setup/10-troubles",
 		"series": "blog-setup",
-		"title": "無料でブログを作る (6) 書くのを楽にする道具と、つまずいた所",
+		"title": "無料でブログを作る (10) つまずいた所まとめ",
 		"date": "2026-11-09",
-		"summary": "記事 1 本を足すのに毎回同じ手順を踏むのは続かない。対話で選ぶだけにした。最後に全部のつまずきをまとめる。",
+		"summary": "この連載で実際に詰まった 13 か所。症状・原因・直し方。同じ所で止まったときに読む回。",
 		"icon": "",
 		"cover": "",
-		"minutes": 1,
-		"tags": []
+		"minutes": 5,
+		"tags": [
+			"ci",
+			"cloudflare",
+			"git",
+			"svelte"
+		]
 	},
 	{
-		"slug": "blog-setup/05-deploy",
+		"slug": "blog-setup/09-discovery",
 		"series": "blog-setup",
-		"title": "無料でブログを作る (5) GitHub Actions で自動公開する",
+		"title": "無料でブログを作る (9) 見つけてもらう",
 		"date": "2026-11-08",
-		"summary": "push したら検査して Cloudflare へ出すまで。トークンの作り方と、途中で止まった 3 か所。",
+		"summary": "検索と SNS に出る形を整える。title と description、OGP、RSS、sitemap、robots.txt、アクセス解析。全部で 1 時間かからない。",
 		"icon": "",
 		"cover": "",
 		"minutes": 3,
-		"tags": [
-			"cloudflare"
-		]
-	},
-	{
-		"slug": "blog-setup/04-markdown",
-		"series": "blog-setup",
-		"title": "無料でブログを作る (4) Markdown で記事を書けるようにする",
-		"date": "2026-11-07",
-		"summary": "md ファイルを置くだけで記事になり、一覧とタグに自動で載る形を作る。記事が増えても重くならない組み方も。",
-		"icon": "",
-		"cover": "",
-		"minutes": 2,
-		"tags": [
-			"docker",
-			"k8s"
-		]
-	},
-	{
-		"slug": "blog-setup/03-sveltekit",
-		"series": "blog-setup",
-		"title": "無料でブログを作る (3) SvelteKit で土台を作る",
-		"date": "2026-11-06",
-		"summary": "Node を入れ、SvelteKit のひな形を作り、手元で動かすところまで。選択肢をどう選んだかも書く。",
-		"icon": "",
-		"cover": "",
-		"minutes": 2,
 		"tags": [
 			"cloudflare",
 			"svelte"
 		]
 	},
 	{
-		"slug": "blog-setup/02-cloudflare",
+		"slug": "blog-setup/08-readable",
 		"series": "blog-setup",
-		"title": "無料でブログを作る (2) Cloudflare とは何か",
+		"title": "無料でブログを作る (8) 読みやすくする",
+		"date": "2026-11-07",
+		"summary": "コードの色分けと行番号、コピー釦、追従する目次、ダークモード、アイキャッチ、検索。殺風景な技術ブログを読める形にするまで。",
+		"icon": "",
+		"cover": "",
+		"minutes": 4,
+		"tags": [
+			"css",
+			"svelte",
+			"typescript"
+		]
+	},
+	{
+		"slug": "blog-setup/07-scale",
+		"series": "blog-setup",
+		"title": "無料でブログを作る (7) 記事が増えても重くしない",
+		"date": "2026-11-06",
+		"summary": "全記事を読み込む作りは 2000 本で破綻する。組み立て時に索引だけを作る形に変えた理由と、自動タグの閾値の話。",
+		"icon": "",
+		"cover": "",
+		"minutes": 4,
+		"tags": [
+			"ci",
+			"cloudflare",
+			"svelte",
+			"typescript"
+		]
+	},
+	{
+		"slug": "blog-setup/06-scripts",
+		"series": "blog-setup",
+		"title": "無料でブログを作る (6) 書く手順をコマンドにする",
 		"date": "2026-11-05",
-		"summary": "公開先に Cloudflare を選んだ。CDN から始まった会社が、今は何を提供しているのか。Workers と Pages の違いと、無料枠の考え方。",
+		"summary": "記事を 1 本足すのに 6 手かかっていたのを 4 つのコマンドに畳む。new・dev・check・publish だけ覚えればよい形にする。",
 		"icon": "",
 		"cover": "",
 		"minutes": 3,
+		"tags": [
+			"git"
+		]
+	},
+	{
+		"slug": "blog-setup/05-deploy",
+		"series": "blog-setup",
+		"title": "無料でブログを作る (5) 自動公開の道を通す",
+		"date": "2026-11-04",
+		"summary": "git push したら検査して Cloudflare へ出す。API トークンの権限、Secrets、ワークフローの全文。gen と check と build が何をしているか。",
+		"icon": "",
+		"cover": "",
+		"minutes": 6,
+		"tags": [
+			"ci",
+			"cloudflare",
+			"git",
+			"security",
+			"svelte"
+		]
+	},
+	{
+		"slug": "blog-setup/04-markdown",
+		"series": "blog-setup",
+		"title": "無料でブログを作る (4) Markdown で記事を書く",
+		"date": "2026-11-03",
+		"summary": "mdsvex を入れて、Markdown のファイルがそのままページになる形にする。記事の置き場所と URL の対応、frontmatter、連載はフォルダで分ける話。",
+		"icon": "",
+		"cover": "",
+		"minutes": 3,
+		"tags": [
+			"svelte"
+		]
+	},
+	{
+		"slug": "blog-setup/03-sveltekit",
+		"series": "blog-setup",
+		"title": "無料でブログを作る (3) 手元の準備",
+		"date": "2026-11-02",
+		"summary": "Node を確認して SvelteKit の土台を作る。作られたフォルダが何なのか、設定がどこに書かれているか。手元で画面が出るまで。",
+		"icon": "",
+		"cover": "",
+		"minutes": 3,
+		"tags": [
+			"cloudflare",
+			"svelte",
+			"typescript"
+		]
+	},
+	{
+		"slug": "blog-setup/02-cloudflare",
+		"series": "blog-setup",
+		"title": "無料でブログを作る (2) Cloudflare とは何か",
+		"date": "2026-11-01",
+		"summary": "公開先に Cloudflare を選んだ理由。Workers と Pages の違い、無料枠の具体値、課金が始まる条件。アカウントを作って公開用のサブドメインを登録する。",
+		"icon": "",
+		"cover": "",
+		"minutes": 5,
 		"tags": [
 			"cloudflare"
 		]
@@ -81,12 +148,13 @@ export const allPosts: Post[] = [
 		"slug": "blog-setup/01-overview",
 		"series": "blog-setup",
 		"title": "無料でブログを作る (1) 全体像",
-		"date": "2026-11-04",
-		"summary": "SvelteKit と Cloudflare で技術ブログを作る。完成形と、使う道具と、かかる費用。",
+		"date": "2026-10-31",
+		"summary": "SvelteKit と Cloudflare で技術ブログを一から作る。何ができるか、どういう流れで動くか、本当に無料なのか。連載の地図。",
 		"icon": "",
 		"cover": "",
-		"minutes": 1,
+		"minutes": 3,
 		"tags": [
+			"ci",
 			"cloudflare",
 			"svelte"
 		]

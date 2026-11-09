@@ -1,73 +1,135 @@
 ---
-title: '無料でブログを作る (3) SvelteKit で土台を作る'
-date: '2026-11-06'
-summary: Node を入れ、SvelteKit のひな形を作り、手元で動かすところまで。選択肢をどう選んだかも書く。
+title: '無料でブログを作る (3) 手元の準備'
+date: '2026-11-02'
+summary: Node を確認して SvelteKit の土台を作る。作られたフォルダが何なのか、設定がどこに書かれているか。手元で画面が出るまで。
+tags: ['svelte', 'typescript']
 ---
 
-土台を作る。ここまでで手元にブログの原型ができる。
+手元でサイトが表示されるところまで進める。
 
-## Node を入れる
+**この回が終わると**、`npm run dev` で手元のブラウザにページが出る。
 
-SvelteKit は Node の上で動く。入っているか確認する。
+**前提**: 第 2 回で Cloudflare のアカウントとサブドメインができていること。
 
-```
+## 手順 1: Node があるか確認する
+
+```bash
 node -v
 npm -v
 ```
 
-数字が出れば入っている。出なければ `nodejs.org` から **LTS** を入れる。インストーラーは既定のまま進めてよい。終わったらターミナルを開き直す。開きっぱなしだと新しく入れたものが見えない。
-
-Node は手元に入れなくても、GitHub 側で動かせば作れる。ただ、書き換えた結果がすぐ見えるかどうかで、覚える速さが大きく変わる。入れた方がいい。
-
-## ひな形を作る
+**成功したらこう見える**: 両方とも版が表示される。
 
 ```
+v24.19.0
+11.17.0
+```
+
+Node は 20 以上あれば足りる。無ければ公式サイトから入れる。`npm` は Node に付いてくるので別に入れなくてよい。
+
+## 手順 2: 土台を作る
+
+リポジトリのフォルダに移り、`blog` という名前で作る。
+
+```bash
+cd X:\git\apps
 npx sv create blog
 ```
 
-対話で聞かれる。選んだものは次のとおり。
+`sv` は Svelte の公式のコマンド。初回は取得の確認が出るので `y` で進める。
 
-| 質問 | 選んだもの |
-|---|---|
-| template | SvelteKit minimal |
-| type checking | TypeScript |
-| add-ons | prettier, eslint, sveltekit-adapter, mdsvex |
-| adapter | cloudflare |
-| Workers か Pages か | Workers |
-| package manager | npm |
+いくつか選択肢を聞かれる。選んだものと理由。
 
-**mdsvex** が Markdown を記事にする部品。**sveltekit-adapter** は、どこに公開するかに合わせて出力の形を変える部品で、ここで cloudflare を選ぶ。
+| 聞かれること | 選んだもの | 理由 |
+|---|---|---|
+| テンプレート | SvelteKit minimal | 余計な例が入らない |
+| 型 | TypeScript | 誤りを公開前に見つけたい |
+| 追加する物 | prettier, eslint | 書式と誤りの検査 |
+| アダプタ | cloudflare | 公開先が Workers |
 
-## 動かす
+**アダプタ**というのは、同じコードをどこに配信するかを切り替える部品。Cloudflare 用を選ぶと `@sveltejs/adapter-cloudflare` が入り、Workers 向けに組み立てられる形になる。
 
-```
+## 手順 3: 依存を入れて起動する
+
+```bash
 cd blog
+npm install
 npm run dev
 ```
 
-`http://localhost:5173/` が出る。開くと初期画面が表示される。止めるときは `Ctrl+C`。
+**成功したらこう見える**:
 
-この状態で、書き換えると即座にブラウザに反映される。
+```
+VITE v8.3.6  ready in 823 ms
 
-## できたファイル
-
-| 場所 | 中身 |
-|---|---|
-| `src/routes/` | ページ。フォルダが URL になる |
-| `src/lib/` | 共通で使うコード |
-| `static/` | そのまま配信されるファイル |
-| `vite.config.ts` | 組み立ての設定。mdsvex もここ |
-| `wrangler.jsonc` | Cloudflare の設定 |
-
-SvelteKit は「フォルダ ＝ URL」という作り。`src/routes/about/+page.svelte` を置けば `/about` で開ける。覚えることはこれだけ。
-
-## 設定の確認
-
-`vite.config.ts` に mdsvex の行が入っている。
-
-```ts
-preprocess: [mdsvex({ extensions: ['.svx', '.md'] })],
-extensions: ['.svelte', '.svx', '.md']
+➜  Local:   http://localhost:5173/
 ```
 
-これで `.md` がページとして扱われる。次の記事で記事を書く。
+その URL を開くと、素のページが表示される。
+
+止めるときは `Ctrl + C`。
+
+## 作られたフォルダの意味
+
+| 場所 | 何か |
+|---|---|
+| `src/routes/` | **URL になるフォルダ**。ここの構造がそのまま URL になる |
+| `src/lib/` | 使い回す部品や関数 |
+| `static/` | そのまま配信されるファイル（画像・`robots.txt` など） |
+| `vite.config.ts` | 組み立ての設定。SvelteKit の設定もここに入る |
+| `tsconfig.json` | 型検査の設定 |
+| `wrangler.jsonc` | Cloudflare 側の設定 |
+| `package.json` | 依存と、`npm run ...` で呼べるコマンドの一覧 |
+| `.svelte-kit/` | 自動生成。触らない。Git にも入らない |
+
+`src/routes/` だけ覚えておけば当面は困らない。
+
+### はまった点: `svelte.config.js` が無い
+
+解説記事を見ると `svelte.config.js` を編集せよと書いてあることが多い。しかし新しい雛形にはこのファイルが無い。
+
+今は **SvelteKit の設定も `vite.config.ts` の中に書く**形になっている。`sveltekit()` を呼ぶところに引数として渡す。
+
+```typescript
+export default defineConfig({
+	plugins: [
+		sveltekit({
+			adapter: adapter()
+		})
+	]
+});
+```
+
+古い記事を見て `svelte.config.js` を自分で作ると、設定が二重になって混乱する。作らないこと。
+
+## wrangler.jsonc の中身
+
+Cloudflare 側の設定。最初はこれだけ分かれば足りる。
+
+```json
+{
+	"name": "blog",
+	"compatibility_date": "2026-11-08",
+	"main": ".svelte-kit/cloudflare/_worker.js",
+	"assets": {
+		"binding": "ASSETS",
+		"directory": ".svelte-kit/cloudflare"
+	},
+	"workers_dev": true
+}
+```
+
+- `name` — Worker の名前。公開 URL の一部になる
+- `main` — 組み立て後の、動かすファイル
+- `assets` — 静的ファイルの置き場。ここにある物は無料・無制限で配信される
+- `workers_dev` — `workers.dev` の URL で公開するか
+
+`compatibility_date` は、Cloudflare 側の挙動をその日の仕様に固定するもの。日付を進めない限り、勝手に動きが変わらない。
+
+## ここまでの確認
+
+- `npm run dev` でページが出る
+- `src/routes/` の構造が URL になると分かっている
+- 設定は `vite.config.ts` と `wrangler.jsonc` にあると分かっている
+
+次は Markdown で記事を書けるようにする。
