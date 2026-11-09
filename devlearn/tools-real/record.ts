@@ -37,67 +37,80 @@ function versions(): Record<string, string> {
 	};
 }
 
+const ENV = [
+	`HOME=${HOME}`,
+	'USER=learner',
+	'LOGNAME=learner',
+	'SHELL=/bin/bash',
+	'PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin',
+	'TZ=Asia/Tokyo',
+	'LANG=C.UTF-8',
+	// 端末は色の無い幅 80 の物。git は頁送りをしない（模擬の端末も同じ）
+	'TERM=dumb',
+	'GIT_PAGER=cat',
+	'PAGER=cat'
+];
+
+// 1 行ずつ、別の bash で打つ。今いる場所と export した変数は、ファイルに書いて次の行へ渡す。
+// 標準出力は擬似端末（pty.py）、標準エラーはファイル。
 function record(s: Scenario) {
-	const tmp = `/tmp/rec/${s.id}`;
-	rmSync(tmp, { recursive: true, force: true });
-	mkdirSync(tmp, { recursive: true });
-	chmodSync(tmp, 0o777);
-	// 1 行ずつ打つ台本。eval で今のシェルの中で打つので、cd や export は次の行に残る
-	const lines: string[] = [
-		'set +e',
-		`cd ${WORK}`,
-		...s.steps.flatMap((step, j) => {
-			writeFileSync(`${tmp}/${j}.cmd`, step);
-			const t = BASE + 60 * j;
-			return [
-				`export GIT_AUTHOR_DATE="${t} +0900" GIT_COMMITTER_DATE="${t} +0900"`,
-				`eval "$(cat ${tmp}/${j}.cmd)" > ${tmp}/${j}.out 2> ${tmp}/${j}.err < /dev/null`,
-				`echo $? > ${tmp}/${j}.code`
-			];
-		})
-	];
-	writeFileSync(`${tmp}/run.sh`, lines.join('\n') + '\n');
-	chmodSync(`${tmp}/run.sh`, 0o755);
-	// 作業場所を空にし、利用者 learner として打つ
+	const st = `/tmp/rec/${s.id}`;
+	rmSync(st, { recursive: true, force: true });
+	mkdirSync(st, { recursive: true });
+	chmodSync(st, 0o777);
 	sh(`sudo rm -rf ${WORK} && sudo -u learner mkdir -p ${WORK}`);
-	writeFileSync(`${tmp}/gitconfig`, GITCONFIG);
-	sh(`sudo -u learner cp ${tmp}/gitconfig ${HOME}/.gitconfig`);
-	const r = spawnSync(
-		'sudo',
-		[
-			'-u',
-			'learner',
-			'env',
-			'-i',
-			`HOME=${HOME}`,
-			'USER=learner',
-			'LOGNAME=learner',
-			'SHELL=/bin/bash',
-			'PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin',
-			'TZ=Asia/Tokyo',
-			'LANG=C.UTF-8',
-			'bash',
-			'--norc',
-			'--noprofile',
-			`${tmp}/run.sh`
-		],
-		{ encoding: 'utf8' }
-	);
-	if (r.status !== 0) throw new Error(`${s.id}: 台本が止まった ${r.stderr}`);
-	const read = (f: string) => readFileSync(`${tmp}/${f}`, 'utf8');
-	return {
-		id: s.id,
-		tool: s.tool,
-		lesson: s.lesson,
-		recordedOn: versions(),
-		steps: s.steps.map((line, j) => ({
+	writeFileSync(`${st}/gitconfig`, GITCONFIG);
+	sh(`sudo -u learner cp ${st}/gitconfig ${HOME}/.gitconfig`);
+	writeFileSync(`${st}/cwd`, WORK);
+	writeFileSync(`${st}/env`, '');
+	chmodSync(`${st}/cwd`, 0o666);
+	chmodSync(`${st}/env`, 0o666);
+
+	const steps = s.steps.map((line, j) => {
+		writeFileSync(`${st}/${j}.cmd`, line);
+		const t = BASE + 60 * j;
+		const script = [
+			`cd "$(cat ${st}/cwd)"`,
+			`. ${st}/env`,
+			`export GIT_AUTHOR_DATE="${t} +0900" GIT_COMMITTER_DATE="${t} +0900"`,
+			`eval "$(cat ${st}/${j}.cmd)" 2> ${st}/${j}.err`,
+			`echo $? > ${st}/${j}.code`,
+			`pwd > ${st}/cwd`,
+			`export -p | grep -v -E '^declare -x (GIT_AUTHOR_DATE|GIT_COMMITTER_DATE|OLDPWD|PWD|SHLVL|_)=' > ${st}/env`
+		].join('\n');
+		const r = spawnSync(
+			'sudo',
+			[
+				'-u',
+				'learner',
+				'env',
+				'-i',
+				...ENV,
+				'python3',
+				'/tmp/rec/pty.py',
+				`${st}/${j}.out`,
+				script
+			],
+			{ encoding: 'utf8', timeout: 30000 }
+		);
+		if (r.status !== 0) throw new Error(`${s.id} の ${j} 行目で止まった: ${r.stderr}`);
+		const read = (f: string) => readFileSync(`${st}/${f}`, 'utf8');
+		return {
 			line,
-			out: read(`${j}.out`),
+			// 端末は改行を \r\n で返すので \n に戻す
+			out: read(`${j}.out`).replace(/\r\n/g, '\n'),
 			err: read(`${j}.err`),
 			code: Number(read(`${j}.code`).trim())
-		}))
-	};
+		};
+	});
+	return { id: s.id, tool: s.tool, lesson: s.lesson, recordedOn: versions(), steps };
 }
+
+// 利用者 learner から読めるように、擬似端末の台本を /tmp に写す
+mkdirSync('/tmp/rec', { recursive: true });
+chmodSync('/tmp/rec', 0o777);
+writeFileSync('/tmp/rec/pty.py', readFileSync(join(here, 'pty.py')));
+chmodSync('/tmp/rec/pty.py', 0o644);
 
 const only = process.argv[2];
 for (const f of readdirSync(join(here, 'scenarios')).sort()) {

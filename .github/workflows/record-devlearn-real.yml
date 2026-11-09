@@ -8,6 +8,7 @@ on:
     paths:
       - "devlearn/tools-real/scenarios/**"
       - "devlearn/tools-real/record.ts"
+      - "devlearn/tools-real/pty.py"
       - ".github/workflows/record-devlearn-real.yml"
   workflow_dispatch:
 
