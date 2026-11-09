@@ -18,3 +18,6 @@ export function formatBuiltAt(iso: string): string {
 	const time = `${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}:${pad(d.getUTCSeconds())}`;
 	return `${date} ${time}（日本時間）`;
 }
+
+// 段 1 の完成条件 3 を確かめるための、わざと入れた型の誤り。直後に戻す。
+export const typeErrorProbe: number = 'これは数ではない';
