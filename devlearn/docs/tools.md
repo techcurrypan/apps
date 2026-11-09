@@ -21,7 +21,7 @@
 
 - 場面（`tools-real/scenarios/*.json`）に、前準備の命令と、記録する命令を並べる
 - GitHub Actions の Ubuntu の上で、場面ごとに空の作業場所を作り、**本物の命令**を打って、
-  標準出力・標準エラー・終了コードを `tools-real/out/<場面>.json` に記録する（`.github/workflows/record-devlearn-real.yml`）。
+  標準出力・標準エラー・終了コードを `tools-real/recorded/<場面>.json` に記録する（`.github/workflows/record-devlearn-real.yml`）。
   記録は CI がコミットして戻す。手元の機械（Windows）では Linux の本物が動かないため
 - 単体テストは、同じ場面を模擬で打ち、記録と一字ずつ比べる
 - 時計・利用者・機械の名前は固定する（`TZ=UTC`、利用者 `learner`、`HOME=/home/learner`、git の日時は環境変数で固定）。

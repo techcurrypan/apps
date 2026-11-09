@@ -1,7 +1,7 @@
 // 本物の出力を記録する（docs/tools.md 2 章）。GitHub Actions の Ubuntu の上でだけ走らせる。
 //   node devlearn/tools-real/record.ts [場面の ID]
 // 場面（scenarios/*.json）ごとに、利用者 learner の空の作業場所で本物の命令を 1 行ずつ打ち、
-// 標準出力・標準エラー・終了コードを out/<場面>.json に書く。
+// 標準出力・標準エラー・終了コードを recorded/<場面>.json に書く。
 import { execFileSync, spawnSync } from 'node:child_process';
 import { chmodSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -62,7 +62,7 @@ function versions(): Record<string, string> {
 }
 
 // 1 行ずつ、別の bash で打つ。今いる場所と export した変数は、ファイルに書いて次の行へ渡す。
-// 標準出力は擬似端末（pty.py）、標準エラーはファイル。
+// 標準出力は擬似端末（ttyrun.py）、標準エラーはファイル。
 function record(s: Scenario) {
 	const st = `/tmp/rec/${s.id}`;
 	rmSync(st, { recursive: true, force: true });
@@ -100,7 +100,8 @@ function record(s: Scenario) {
 				'-i',
 				...ENV,
 				'python3',
-				'/tmp/rec/pty.py',
+				'-I',
+				'/tmp/rec/ttyrun.py',
 				`${st}/${j}.out`,
 				script
 			],
@@ -128,8 +129,8 @@ function record(s: Scenario) {
 // 利用者 learner から読めるように、擬似端末の台本を /tmp に写す
 mkdirSync('/tmp/rec', { recursive: true });
 chmodSync('/tmp/rec', 0o777);
-writeFileSync('/tmp/rec/pty.py', readFileSync(join(here, 'pty.py')));
-chmodSync('/tmp/rec/pty.py', 0o644);
+writeFileSync('/tmp/rec/ttyrun.py', readFileSync(join(here, 'ttyrun.py')));
+chmodSync('/tmp/rec/ttyrun.py', 0o644);
 
 const only = process.argv[2];
 let failed = 0;
@@ -139,7 +140,7 @@ for (const f of readdirSync(join(here, 'scenarios')).sort()) {
 	if (only && s.id !== only) continue;
 	try {
 		const out = record(s);
-		writeFileSync(join(here, 'out', `${s.id}.json`), JSON.stringify(out, null, TAB) + NL);
+		writeFileSync(join(here, 'recorded', `${s.id}.json`), JSON.stringify(out, null, TAB) + NL);
 		console.log(`記録した: ${s.id}（${s.steps.length} 行）`);
 	} catch (e) {
 		// CI の注記に出す（注記は認証なしで読める）。他の場面は続ける
