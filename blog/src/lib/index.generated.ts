@@ -20,7 +20,7 @@ export const allPosts: Post[] = [
 		"summary": "この連載で実際に詰まった 13 か所。症状・原因・直し方。同じ所で止まったときに読む回。",
 		"icon": "",
 		"cover": "",
-		"minutes": 5,
+		"minutes": 8,
 		"tags": [
 			"ci",
 			"cloudflare",
@@ -36,7 +36,7 @@ export const allPosts: Post[] = [
 		"summary": "検索と SNS に出る形を整える。title と description、OGP、RSS、sitemap、robots.txt、アクセス解析。全部で 1 時間かからない。",
 		"icon": "",
 		"cover": "",
-		"minutes": 3,
+		"minutes": 8,
 		"tags": [
 			"cloudflare",
 			"svelte"
@@ -50,7 +50,7 @@ export const allPosts: Post[] = [
 		"summary": "コードの色分けと行番号、コピー釦、追従する目次、ダークモード、アイキャッチ、検索。殺風景な技術ブログを読める形にするまで。",
 		"icon": "",
 		"cover": "",
-		"minutes": 4,
+		"minutes": 7,
 		"tags": [
 			"css",
 			"svelte",
@@ -65,7 +65,7 @@ export const allPosts: Post[] = [
 		"summary": "全記事を読み込む作りは 2000 本で破綻する。組み立て時に索引だけを作る形に変えた理由と、自動タグの閾値の話。",
 		"icon": "",
 		"cover": "",
-		"minutes": 4,
+		"minutes": 8,
 		"tags": [
 			"ci",
 			"cloudflare",
@@ -81,7 +81,7 @@ export const allPosts: Post[] = [
 		"summary": "記事を 1 本足すのに 6 手かかっていたのを 4 つのコマンドに畳む。new・dev・check・publish だけ覚えればよい形にする。",
 		"icon": "",
 		"cover": "",
-		"minutes": 3,
+		"minutes": 7,
 		"tags": [
 			"git"
 		]
@@ -94,7 +94,7 @@ export const allPosts: Post[] = [
 		"summary": "git push したら検査して Cloudflare へ出す。API トークンの権限、Secrets、ワークフローの全文。gen と check と build が何をしているか。",
 		"icon": "",
 		"cover": "",
-		"minutes": 6,
+		"minutes": 15,
 		"tags": [
 			"ci",
 			"cloudflare",
@@ -111,8 +111,9 @@ export const allPosts: Post[] = [
 		"summary": "mdsvex を入れて、Markdown のファイルがそのままページになる形にする。記事の置き場所と URL の対応、frontmatter、連載はフォルダで分ける話。",
 		"icon": "",
 		"cover": "",
-		"minutes": 3,
+		"minutes": 7,
 		"tags": [
+			"docker",
 			"svelte"
 		]
 	},
@@ -124,7 +125,7 @@ export const allPosts: Post[] = [
 		"summary": "Node を確認して SvelteKit の土台を作る。作られたフォルダが何なのか、設定がどこに書かれているか。手元で画面が出るまで。",
 		"icon": "",
 		"cover": "",
-		"minutes": 3,
+		"minutes": 6,
 		"tags": [
 			"cloudflare",
 			"svelte",
@@ -139,7 +140,7 @@ export const allPosts: Post[] = [
 		"summary": "公開先に Cloudflare を選んだ理由。Workers と Pages の違い、無料枠の具体値、課金が始まる条件。アカウントを作って公開用のサブドメインを登録する。",
 		"icon": "",
 		"cover": "",
-		"minutes": 5,
+		"minutes": 8,
 		"tags": [
 			"cloudflare"
 		]
@@ -152,7 +153,7 @@ export const allPosts: Post[] = [
 		"summary": "SvelteKit と Cloudflare で技術ブログを一から作る。何ができるか、どういう流れで動くか、本当に無料なのか。連載の地図。",
 		"icon": "",
 		"cover": "",
-		"minutes": 3,
+		"minutes": 6,
 		"tags": [
 			"ci",
 			"cloudflare",

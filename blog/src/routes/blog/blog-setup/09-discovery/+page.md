@@ -9,6 +9,13 @@ tags: ['cloudflare']
 
 **この回が終わると**、検索に載る形になり、SNS に貼ったときに見た目が付き、何が読まれているかが分かる。
 
+<figure class="fig">
+<svg viewBox="0 0 440 320" role="img" aria-label="記事が検索エンジン・SNS・購読者に届くために、どの指定がどこに効くか">
+<rect class="fig-box-a" x="132" y="16" width="176" height="40" rx="8"/><text class="fig-t" x="220.0" y="41.0" text-anchor="middle">書いた記事</text><line class="fig-a" x1="72" y1="56" x2="72" y2="89"/><polygon class="fig-ah" points="67.5,88 76.5,88 72,96"/><rect class="fig-box" x="8" y="96" width="128" height="32" rx="8"/><text class="fig-t" x="72.0" y="117.0" text-anchor="middle">検索エンジン</text><rect class="fig-box" x="18" y="140" width="108" height="24" rx="8"/><text class="fig-m-s" x="72.0" y="157.0" text-anchor="middle">title</text><rect class="fig-box" x="18" y="170" width="108" height="24" rx="8"/><text class="fig-m-s" x="72.0" y="187.0" text-anchor="middle">description</text><rect class="fig-box" x="18" y="200" width="108" height="24" rx="8"/><text class="fig-m-s" x="72.0" y="217.0" text-anchor="middle">sitemap.xml</text><rect class="fig-box" x="18" y="230" width="108" height="24" rx="8"/><text class="fig-m-s" x="72.0" y="247.0" text-anchor="middle">robots.txt</text><line class="fig-a" x1="220" y1="56" x2="220" y2="89"/><polygon class="fig-ah" points="215.5,88 224.5,88 220,96"/><rect class="fig-box" x="156" y="96" width="128" height="32" rx="8"/><text class="fig-t" x="220.0" y="117.0" text-anchor="middle">SNS</text><rect class="fig-box" x="166" y="140" width="108" height="24" rx="8"/><text class="fig-m-s" x="220.0" y="157.0" text-anchor="middle">og:title</text><rect class="fig-box" x="166" y="170" width="108" height="24" rx="8"/><text class="fig-m-s" x="220.0" y="187.0" text-anchor="middle">og:description</text><rect class="fig-box" x="166" y="200" width="108" height="24" rx="8"/><text class="fig-m-s" x="220.0" y="217.0" text-anchor="middle">og:image</text><line class="fig-a" x1="368" y1="56" x2="368" y2="89"/><polygon class="fig-ah" points="363.5,88 372.5,88 368,96"/><rect class="fig-box" x="304" y="96" width="128" height="32" rx="8"/><text class="fig-t" x="368.0" y="117.0" text-anchor="middle">読み続ける人</text><rect class="fig-box" x="314" y="140" width="108" height="24" rx="8"/><text class="fig-m-s" x="368.0" y="157.0" text-anchor="middle">rss.xml</text><rect class="fig-box" x="8" y="272" width="424" height="36" rx="8"/><text class="fig-t-s" x="220.0" y="295.0" text-anchor="middle">アクセス解析 ― 何が読まれているかで、次に書くものが決まる</text>
+</svg>
+<figcaption>全部やらなくても、上から順に効く。合わせて 1 時間かからない。</figcaption>
+</figure>
+
 **前提**: 第 8 回まで。公開 URL が動いていること。
 
 ## まず title と description

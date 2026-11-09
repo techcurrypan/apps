@@ -151,6 +151,13 @@ const onScroll = () => {
 
 上から順に見て、線より上にあるものを上書きしていくだけ。交差監視の API を使う方法もあるが、こちらの方が挙動が素直だった。
 
+<figure class="fig">
+<svg viewBox="0 0 440 248" role="img" aria-label="画面の上から 140px の線を最後に越えた見出しを、現在位置として目次に印す">
+<rect class="fig-box" x="12" y="14" width="256" height="222" rx="8"/><text class="fig-t-xs" x="22" y="32" text-anchor="start">画面</text><line class="fig-a" x1="28" y1="62" x2="176" y2="62"/><text class="fig-t-s" x="32" y="56" text-anchor="start">見出し A</text><line class="fig-a" x1="28" y1="112" x2="176" y2="112"/><text class="fig-t-s" x="32" y="106" text-anchor="start">見出し B</text><line class="fig-accent-l" x1="12" y1="146" x2="268" y2="146" stroke-dasharray="5 4"/><text class="fig-t-xs" x="262" y="140" text-anchor="end">上から 140px</text><line class="fig-a" x1="28" y1="192" x2="176" y2="192"/><text class="fig-t-s" x="32" y="186" text-anchor="start">見出し C</text><text class="fig-t-xs" x="362" y="36" text-anchor="middle">目次</text><rect class="fig-box" x="292" y="48" width="140" height="30" rx="8"/><text class="fig-t-s" x="362.0" y="68.0" text-anchor="middle">見出し A</text><rect class="fig-box-a" x="292" y="84" width="140" height="30" rx="8"/><text class="fig-t-s" x="362.0" y="104.0" text-anchor="middle">見出し B</text><rect class="fig-box" x="292" y="120" width="140" height="30" rx="8"/><text class="fig-t-s" x="362.0" y="140.0" text-anchor="middle">見出し C</text><text class="fig-t-s" x="362" y="176" text-anchor="middle">線より上にある</text><text class="fig-t-s" x="362" y="194" text-anchor="middle">最後の見出しが</text><text class="fig-t-s" x="362" y="212" text-anchor="middle">現在位置</text>
+</svg>
+<figcaption>上から順に見て、線より上にあるものを上書きしていくだけ。</figcaption>
+</figure>
+
 140 という数字は、上に固定しているものの高さに合わせる。
 
 ## ダークモード

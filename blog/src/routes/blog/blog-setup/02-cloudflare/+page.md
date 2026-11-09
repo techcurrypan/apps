@@ -48,6 +48,13 @@ CDN を挟むと 2 つ得がある。表示が速くなる。そして元のサ�
 
 Pages で始めると、サーバ側の処理が本格的に必要になった時点で別に Worker を立てることになる。配信先が 2 つに分かれ、間の通信の許可（CORS）と 2 つの管理が増える。最初から Workers にしておけば、静的なページも API も同じ 1 つの場所から出せる。
 
+<figure class="fig">
+<svg viewBox="0 0 440 204" role="img" aria-label="Pages は静的配信と Worker が分かれるが、Workers なら 1 つで済む">
+<text class="fig-t" x="110" y="20" text-anchor="middle">Pages で始めると</text><text class="fig-accent-t" x="330" y="20" text-anchor="middle">Workers なら</text><rect class="fig-box" x="20" y="36" width="180" height="40" rx="8"/><text class="fig-t" x="110.0" y="61.0" text-anchor="middle">閲覧者</text><rect class="fig-box" x="240" y="36" width="180" height="40" rx="8"/><text class="fig-t" x="330.0" y="61.0" text-anchor="middle">閲覧者</text><line class="fig-a" x1="110" y1="76" x2="110" y2="101"/><polygon class="fig-ah" points="105.5,100 114.5,100 110,108"/><line class="fig-a" x1="330" y1="76" x2="330" y2="101"/><polygon class="fig-ah" points="325.5,100 334.5,100 330,108"/><rect class="fig-box" x="20" y="108" width="84" height="44" rx="8"/><text class="fig-t" x="62.0" y="126.0" text-anchor="middle">Pages</text><text class="fig-t-s" x="62.0" y="144.0" text-anchor="middle">静的</text><rect class="fig-box" x="116" y="108" width="84" height="44" rx="8"/><text class="fig-t" x="158.0" y="126.0" text-anchor="middle">Worker</text><text class="fig-t-s" x="158.0" y="144.0" text-anchor="middle">API</text><rect class="fig-box-a" x="240" y="108" width="180" height="44" rx="8"/><text class="fig-t" x="330.0" y="126.0" text-anchor="middle">Worker 1 つ</text><text class="fig-t-s" x="330.0" y="144.0" text-anchor="middle">静的 ＋ API</text><text class="fig-t" x="110" y="135" text-anchor="middle">＋</text><text class="fig-t-s" x="110" y="172" text-anchor="middle">配信が 2 つ</text><text class="fig-t-s" x="110" y="190" text-anchor="middle">CORS の設定が必要</text><text class="fig-t-s" x="330" y="172" text-anchor="middle">配信は 1 つ</text><text class="fig-t-s" x="330" y="190" text-anchor="middle">設定はそのまま</text>
+</svg>
+<figcaption>後から API を足したときに差が出る。これが Workers を選んだ理由。</figcaption>
+</figure>
+
 静的なページだけで終わる確信があるなら Pages でもいい。この連載では Workers で進める。
 
 ## データを置く場所

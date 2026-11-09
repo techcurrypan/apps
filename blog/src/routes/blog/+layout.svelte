@@ -296,4 +296,42 @@ margin: 0.7rem 0 0;
 color: var(--ink-dim);
 font-size: 0.95rem;
 }
+
+/* 図（記事の中の figure.fig） */
+:global(figure.fig) {
+margin: 2.2rem 0;
+padding: 1.1rem 1rem 0.8rem;
+background: var(--surface);
+border: 1px solid var(--line);
+border-radius: 12px;
+}
+
+:global(figure.fig svg) {
+display: block;
+width: 100%;
+max-width: 520px;
+height: auto;
+margin: 0 auto;
+}
+
+:global(figure.fig figcaption) {
+margin-top: 0.7rem;
+font-size: 0.78rem;
+line-height: 1.7;
+color: var(--ink-dim);
+text-align: center;
+}
+
+:global(.fig .fig-box) { fill: var(--bg); stroke: var(--line); stroke-width: 1; }
+:global(.fig .fig-box-a) { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1; }
+:global(.fig text) { font-family: var(--sans); }
+:global(.fig .fig-t) { fill: var(--ink); font-size: 14px; font-weight: 600; }
+:global(.fig .fig-t-s) { fill: var(--ink-soft); font-size: 12px; }
+:global(.fig .fig-t-xs) { fill: var(--ink-dim); font-size: 11px; }
+:global(.fig .fig-accent-t) { fill: var(--accent); font-size: 14px; font-weight: 600; }
+:global(.fig .fig-m) { fill: var(--ink); font-family: var(--mono); font-size: 12.5px; }
+:global(.fig .fig-m-s) { fill: var(--ink-soft); font-family: var(--mono); font-size: 11px; }
+:global(.fig .fig-a) { stroke: var(--ink-dim); fill: none; stroke-width: 1.2; }
+:global(.fig .fig-accent-l) { stroke: var(--accent); fill: none; stroke-width: 1.2; }
+:global(.fig .fig-ah) { fill: var(--ink-dim); }
 </style>

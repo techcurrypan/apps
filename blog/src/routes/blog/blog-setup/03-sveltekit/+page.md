@@ -84,6 +84,13 @@ VITE v8.3.6  ready in 823 ms
 
 `src/routes/` だけ覚えておけば当面は困らない。
 
+<figure class="fig">
+<svg viewBox="0 0 440 226" role="img" aria-label="src/routes の下のフォルダ構成が、そのまま URL になる対応">
+<text class="fig-t-s" x="96" y="18" text-anchor="middle">src/routes/ の中</text><text class="fig-t-s" x="344" y="18" text-anchor="middle">URL</text><rect class="fig-box" x="8" y="34" width="184" height="40" rx="8"/><text class="fig-m-s" x="100.0" y="59.0" text-anchor="middle">blog/hello/+page.md</text><rect class="fig-box-a" x="248" y="34" width="184" height="40" rx="8"/><text class="fig-m-s" x="340.0" y="59.0" text-anchor="middle">/blog/hello</text><line class="fig-a" x1="192" y1="54" x2="241" y2="54"/><polygon class="fig-ah" points="240,49.5 240,58.5 248,54"/><rect class="fig-box" x="8" y="88" width="184" height="40" rx="8"/><text class="fig-m-s" x="100.0" y="113.0" text-anchor="middle">blog/k8s/01-intro/+page.md</text><rect class="fig-box-a" x="248" y="88" width="184" height="40" rx="8"/><text class="fig-m-s" x="340.0" y="113.0" text-anchor="middle">/blog/k8s/01-intro</text><line class="fig-a" x1="192" y1="108" x2="241" y2="108"/><polygon class="fig-ah" points="240,103.5 240,112.5 248,108"/><rect class="fig-box" x="8" y="142" width="184" height="40" rx="8"/><text class="fig-m-s" x="100.0" y="167.0" text-anchor="middle">blog/k8s/02-pod/+page.md</text><rect class="fig-box-a" x="248" y="142" width="184" height="40" rx="8"/><text class="fig-m-s" x="340.0" y="167.0" text-anchor="middle">/blog/k8s/02-pod</text><line class="fig-a" x1="192" y1="162" x2="241" y2="162"/><polygon class="fig-ah" points="240,157.5 240,166.5 248,162"/><text class="fig-t-s" x="220" y="214" text-anchor="middle">フォルダ名がそのまま URL になる</text>
+</svg>
+<figcaption>ファイル名は常に +page.md。記事ごとに変えるのはフォルダ名。</figcaption>
+</figure>
+
 ### はまった点: `svelte.config.js` が無い
 
 解説記事を見ると `svelte.config.js` を編集せよと書いてあることが多い。しかし新しい雛形にはこのファイルが無い。

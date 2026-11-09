@@ -106,6 +106,13 @@ src/routes/blog/k8s/
 - **フォルダ** — 1 つだけ。順番がある。前後の回が決まる
 - **タグ** — 複数付く。順番は無い。横断して探すためのもの
 
+<figure class="fig">
+<svg viewBox="0 0 440 312" role="img" aria-label="連載はフォルダで 1 つだけ、順番がある。タグは複数付き、記事を横断する">
+<text class="fig-t" x="220" y="18" text-anchor="middle">連載 ＝ フォルダ（1 つだけ・順番がある）</text><rect class="fig-box" x="8" y="30" width="424" height="86" rx="8"/><text class="fig-m-s" x="18" y="48" text-anchor="start">blog/k8s/</text><rect class="fig-box-a" x="20" y="60" width="112" height="40" rx="8"/><text class="fig-m-s" x="76.0" y="76.0" text-anchor="middle">01-intro</text><text class="fig-t-xs" x="76.0" y="94.0" text-anchor="middle">第 1 回</text><line class="fig-a" x1="132" y1="80" x2="157" y2="80"/><polygon class="fig-ah" points="156,75.5 156,84.5 164,80"/><rect class="fig-box-a" x="164" y="60" width="112" height="40" rx="8"/><text class="fig-m-s" x="220.0" y="76.0" text-anchor="middle">02-pod</text><text class="fig-t-xs" x="220.0" y="94.0" text-anchor="middle">第 2 回</text><line class="fig-a" x1="276" y1="80" x2="301" y2="80"/><polygon class="fig-ah" points="300,75.5 300,84.5 308,80"/><rect class="fig-box-a" x="308" y="60" width="112" height="40" rx="8"/><text class="fig-m-s" x="364.0" y="76.0" text-anchor="middle">03-service</text><text class="fig-t-xs" x="364.0" y="94.0" text-anchor="middle">第 3 回</text><text class="fig-t" x="220" y="150" text-anchor="middle">タグ ＝ 横断（複数付く・順番は無い）</text><rect class="fig-box" x="8" y="182" width="124" height="34" rx="8"/><text class="fig-t" x="70.0" y="204.0" text-anchor="middle">記事 A</text><rect class="fig-box" x="8" y="240" width="124" height="34" rx="8"/><text class="fig-t" x="70.0" y="262.0" text-anchor="middle">記事 B</text><rect class="fig-box-a" x="308" y="168" width="124" height="28" rx="8"/><text class="fig-t-s" x="370.0" y="187.0" text-anchor="middle">k8s</text><rect class="fig-box-a" x="308" y="212" width="124" height="28" rx="8"/><text class="fig-t-s" x="370.0" y="231.0" text-anchor="middle">docker</text><rect class="fig-box-a" x="308" y="256" width="124" height="28" rx="8"/><text class="fig-t-s" x="370.0" y="275.0" text-anchor="middle">linux</text><line class="fig-a" x1="132" y1="199" x2="308" y2="182" stroke-dasharray="3 3"/><line class="fig-a" x1="132" y1="199" x2="308" y2="226" stroke-dasharray="3 3"/><line class="fig-a" x1="132" y1="257" x2="308" y2="182" stroke-dasharray="3 3"/><line class="fig-a" x1="132" y1="257" x2="308" y2="270" stroke-dasharray="3 3"/><text class="fig-t-s" x="220" y="300" text-anchor="middle">同じタグを持つ記事を、連載をまたいで辿れる</text>
+</svg>
+<figcaption>最初はタグで連載を作ろうとして失敗した。役割を分けたら収まった。</figcaption>
+</figure>
+
 ## タグ
 
 タグは frontmatter に書ける。

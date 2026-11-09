@@ -252,6 +252,13 @@ posts.filter((p) => p.series === series).slice().reverse();
 2. **検査の範囲を誤解していた** — `npm run dev` が型を見ていると思っていた
 3. **先にやるべきことを後回しにしていた** — サブドメインの登録、Actions の許可
 
+<figure class="fig">
+<svg viewBox="0 0 440 272" role="img" aria-label="つまずいた原因は、道具の作法・検査の範囲の誤解・順番の 3 つに分かれた">
+<rect class="fig-box-a" x="8" y="14" width="232" height="36" rx="8"/><text class="fig-t-s" x="124.0" y="37.0" text-anchor="middle">道具の作法を知らなかった</text><text class="fig-t-xs" x="14" y="68" text-anchor="start">例： BOM / タブ補完 / 角括弧</text><line class="fig-a" x1="240" y1="32" x2="269" y2="32"/><polygon class="fig-ah" points="268,27.5 268,36.5 276,32"/><rect class="fig-box" x="276" y="14" width="156" height="36" rx="8"/><text class="fig-t-xs" x="354.0" y="37.0" text-anchor="middle">調べれば済む</text><rect class="fig-box-a" x="8" y="100" width="232" height="36" rx="8"/><text class="fig-t-s" x="124.0" y="123.0" text-anchor="middle">検査の範囲を誤解していた</text><text class="fig-t-xs" x="14" y="154" text-anchor="start">例： dev は型を見ない</text><line class="fig-a" x1="240" y1="118" x2="269" y2="118"/><polygon class="fig-ah" points="268,113.5 268,122.5 276,118"/><rect class="fig-box" x="276" y="100" width="156" height="36" rx="8"/><text class="fig-t-xs" x="354.0" y="123.0" text-anchor="middle">1 回整理すれば防げた</text><rect class="fig-box-a" x="8" y="186" width="232" height="36" rx="8"/><text class="fig-t-s" x="124.0" y="209.0" text-anchor="middle">先にやることを後回しにした</text><text class="fig-t-xs" x="14" y="240" text-anchor="start">例： サブドメイン / Actions の許可</text><line class="fig-a" x1="240" y1="204" x2="269" y2="204"/><polygon class="fig-ah" points="268,199.5 268,208.5 276,204"/><rect class="fig-box" x="276" y="186" width="156" height="36" rx="8"/><text class="fig-t-xs" x="354.0" y="209.0" text-anchor="middle">公式の手順を先に読む</text>
+</svg>
+<figcaption>一番効いたのは、手元で CI と同じ検査を回すことだった。</figcaption>
+</figure>
+
 1 は調べれば済む。2 は、**どのコマンドが何を見ているかを 1 回整理する**だけで防げた。3 は、公式の手順を先に通して読んでいれば避けられた。
 
 一番効いた対策は、**手元で CI と同じ検査を回す**ことだった。これだけで push してから落ちる回数が大きく減った。

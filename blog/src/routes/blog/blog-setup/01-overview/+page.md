@@ -44,17 +44,12 @@ tags: ['svelte', 'cloudflare']
 
 ## 全体の流れ
 
-```
-手元で書く
-  ↓  git push
-GitHub
-  ↓  GitHub Actions が動く
-検査（型検査 → 組み立て）
-  ↓  通ったときだけ
-Cloudflare Workers へ配信
-  ↓
-公開 URL で見える
-```
+<figure class="fig">
+<svg viewBox="0 0 440 420" role="img" aria-label="手元で書いて push すると、GitHub Actions が検査し、通ったときだけ Cloudflare へ配信される流れ">
+<rect class="fig-box" x="16" y="16" width="232" height="44" rx="8"/><text class="fig-t" x="132.0" y="43.0" text-anchor="middle">手元で書く</text><rect class="fig-box" x="16" y="100" width="232" height="44" rx="8"/><text class="fig-t" x="132.0" y="127.0" text-anchor="middle">GitHub</text><rect class="fig-box-a" x="16" y="184" width="232" height="56" rx="8"/><text class="fig-t" x="132.0" y="208.0" text-anchor="middle">検査</text><text class="fig-t-s" x="132.0" y="226.0" text-anchor="middle">型 → 書式 → 組み立て</text><rect class="fig-box" x="16" y="280" width="232" height="44" rx="8"/><text class="fig-t" x="132.0" y="307.0" text-anchor="middle">Cloudflare へ配信</text><rect class="fig-box" x="16" y="364" width="232" height="44" rx="8"/><text class="fig-t" x="132.0" y="391.0" text-anchor="middle">公開 URL</text><line class="fig-a" x1="132.0" y1="60" x2="132.0" y2="93"/><polygon class="fig-ah" points="127.5,92 136.5,92 132.0,100"/><text class="fig-t-s" x="140.0" y="84.0" text-anchor="start">git push</text><line class="fig-a" x1="132.0" y1="144" x2="132.0" y2="177"/><polygon class="fig-ah" points="127.5,176 136.5,176 132.0,184"/><text class="fig-t-s" x="140.0" y="168.0" text-anchor="start">Actions が起動</text><line class="fig-a" x1="132.0" y1="240" x2="132.0" y2="273"/><polygon class="fig-ah" points="127.5,272 136.5,272 132.0,280"/><text class="fig-t-s" x="140.0" y="264.0" text-anchor="start">通ったときだけ</text><line class="fig-a" x1="132.0" y1="324" x2="132.0" y2="357"/><polygon class="fig-ah" points="127.5,356 136.5,356 132.0,364"/><rect class="fig-box" x="286" y="182" width="146" height="60" rx="8"/><text class="fig-t-s" x="359.0" y="199.0" text-anchor="middle">落ちたら</text><text class="fig-t-s" x="359.0" y="217.0" text-anchor="middle">公開されない</text><text class="fig-t-s" x="359.0" y="235.0" text-anchor="middle">前の版が残る</text><line class="fig-a" x1="248" y1="212" x2="279" y2="212" stroke-dasharray="4 4"/><polygon class="fig-ah" points="278,207.5 278,216.5 286,212"/>
+</svg>
+<figcaption>検査を挟んでいるので、壊れたものは公開されない。</figcaption>
+</figure>
 
 要点は、**検査を挟んでいる**こと。型の誤りや組み立ての失敗があれば、そこで止まる。壊れたものは公開されない。前の版がそのまま残る。
 

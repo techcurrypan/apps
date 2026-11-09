@@ -37,13 +37,12 @@ const files = import.meta.glob('./**/+page.md', { eager: true });
 
 ならば、組み立ての前に全記事を 1 回走査して、**その情報だけを 1 つのファイルに書き出す**。一覧はそのファイルだけを読む。
 
-```
-記事 2000 本
-  ↓  組み立て前に 1 回だけ走査
-src/lib/index.generated.ts   ← 題名・日付・概要・タグだけ
-  ↓
-一覧・連載・タグ・検索がこれを読む
-```
+<figure class="fig">
+<svg viewBox="0 0 440 306" role="img" aria-label="全記事を読み込む作りと、索引だけを読む作りの比較">
+<text class="fig-t" x="110" y="18" text-anchor="middle">素直に作ると</text><text class="fig-accent-t" x="330" y="18" text-anchor="middle">索引を挟むと</text><rect class="fig-box" x="20" y="32" width="180" height="56" rx="8"/><text class="fig-t" x="110.0" y="56.0" text-anchor="middle">記事 2000 本</text><text class="fig-t-s" x="110.0" y="74.0" text-anchor="middle">題名＋本文</text><rect class="fig-box" x="240" y="32" width="180" height="56" rx="8"/><text class="fig-t" x="330.0" y="56.0" text-anchor="middle">記事 2000 本</text><text class="fig-t-s" x="330.0" y="74.0" text-anchor="middle">題名＋本文</text><line class="fig-a" x1="110" y1="88" x2="110" y2="121"/><polygon class="fig-ah" points="105.5,120 114.5,120 110,128"/><text class="fig-t-s" x="118" y="112.0" text-anchor="start">全部読む</text><line class="fig-a" x1="330" y1="88" x2="330" y2="121"/><polygon class="fig-ah" points="325.5,120 334.5,120 330,128"/><text class="fig-t-s" x="338" y="112.0" text-anchor="start">組み立て前に 1 回</text><rect class="fig-box-a" x="240" y="128" width="180" height="44" rx="8"/><text class="fig-t" x="330.0" y="146.0" text-anchor="middle">索引</text><text class="fig-t-s" x="330.0" y="164.0" text-anchor="middle">題名・日付・タグだけ</text><line class="fig-a" x1="330" y1="172" x2="330" y2="205"/><polygon class="fig-ah" points="325.5,204 334.5,204 330,212"/><rect class="fig-box" x="20" y="128" width="180" height="84" rx="8"/><text class="fig-t" x="110.0" y="157.0" text-anchor="middle">一覧ページ</text><text class="fig-t-s" x="110.0" y="175.0" text-anchor="middle">2000 本分の本文を</text><text class="fig-t-s" x="110.0" y="193.0" text-anchor="middle">抱えてしまう</text><rect class="fig-box" x="240" y="212" width="180" height="44" rx="8"/><text class="fig-t" x="330.0" y="230.0" text-anchor="middle">一覧ページ</text><text class="fig-t-s" x="330.0" y="248.0" text-anchor="middle">索引だけを読む</text><text class="fig-t-s" x="110" y="236" text-anchor="middle">組み立ても表示も遅い</text><text class="fig-t-s" x="330" y="276" text-anchor="middle">本文は、その記事を</text><text class="fig-t-s" x="330" y="294" text-anchor="middle">開いた人にだけ届く</text>
+</svg>
+<figcaption>一覧が使うのは題名と概要だけ。本文を抱える必要がない。</figcaption>
+</figure>
 
 記事本文は、その記事のページを開いた人にだけ届く。これは SvelteKit が route ごとに分けてくれるので、自分で何もしなくてよい。
 

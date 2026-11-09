@@ -13,18 +13,12 @@ tags: ['cloudflare', 'ci', 'security']
 
 ## 作る流れ
 
-```
-git push
-  ↓
-GitHub Actions が起動
-  ↓
-npm ci        依存を入れる
-npm run gen   型定義を作る
-npm run check 型を検査する
-npm run build 組み立てる
-  ↓  4 つ全部通ったときだけ
-wrangler で Cloudflare へ配信
-```
+<figure class="fig">
+<svg viewBox="0 0 440 338" role="img" aria-label="CI は依存の取得、型定義の生成、型検査、組み立ての 4 段を通ったときだけ配信する">
+<rect class="fig-box" x="248" y="16" width="184" height="234" rx="8"/><text class="fig-t-s" x="340.0" y="102.0" text-anchor="middle">× どこかで落ちたら</text><text class="fig-t-s" x="340.0" y="120.0" text-anchor="middle">配信まで行かない</text><text class="fig-t-s" x="340.0" y="138.0" text-anchor="middle"></text><text class="fig-t-s" x="340.0" y="156.0" text-anchor="middle">公開 URL は</text><text class="fig-t-s" x="340.0" y="174.0" text-anchor="middle">前の版のまま</text><rect class="fig-box" x="16" y="16" width="190" height="48" rx="8"/><text class="fig-m" x="111.0" y="36.0" text-anchor="middle">npm ci</text><text class="fig-t-s" x="111.0" y="54.0" text-anchor="middle">依存を入れる</text><line class="fig-a" x1="111" y1="64" x2="111" y2="71"/><polygon class="fig-ah" points="106.5,70 115.5,70 111,78"/><line class="fig-a" x1="206" y1="40" x2="241" y2="40" stroke-dasharray="4 4"/><polygon class="fig-ah" points="240,35.5 240,44.5 248,40"/><rect class="fig-box" x="16" y="78" width="190" height="48" rx="8"/><text class="fig-m" x="111.0" y="98.0" text-anchor="middle">npm run gen</text><text class="fig-t-s" x="111.0" y="116.0" text-anchor="middle">型定義を作る</text><line class="fig-a" x1="111" y1="126" x2="111" y2="133"/><polygon class="fig-ah" points="106.5,132 115.5,132 111,140"/><line class="fig-a" x1="206" y1="102" x2="241" y2="102" stroke-dasharray="4 4"/><polygon class="fig-ah" points="240,97.5 240,106.5 248,102"/><rect class="fig-box-a" x="16" y="140" width="190" height="48" rx="8"/><text class="fig-m" x="111.0" y="160.0" text-anchor="middle">npm run check</text><text class="fig-t-s" x="111.0" y="178.0" text-anchor="middle">型の誤りを探す</text><line class="fig-a" x1="111" y1="188" x2="111" y2="195"/><polygon class="fig-ah" points="106.5,194 115.5,194 111,202"/><line class="fig-a" x1="206" y1="164" x2="241" y2="164" stroke-dasharray="4 4"/><polygon class="fig-ah" points="240,159.5 240,168.5 248,164"/><rect class="fig-box" x="16" y="202" width="190" height="48" rx="8"/><text class="fig-m" x="111.0" y="222.0" text-anchor="middle">npm run build</text><text class="fig-t-s" x="111.0" y="240.0" text-anchor="middle">組み立てる</text><line class="fig-a" x1="206" y1="226" x2="241" y2="226" stroke-dasharray="4 4"/><polygon class="fig-ah" points="240,221.5 240,230.5 248,226"/><line class="fig-a" x1="111" y1="250" x2="111" y2="275"/><polygon class="fig-ah" points="106.5,274 115.5,274 111,282"/><text class="fig-t-s" x="119" y="270.0" text-anchor="start">4 つ全部通った</text><rect class="fig-box-a" x="16" y="282" width="190" height="44" rx="8"/><text class="fig-t" x="111.0" y="309.0" text-anchor="middle">wrangler で配信</text>
+</svg>
+<figcaption>どこかで落ちれば配信まで行かない。公開中のものは壊れない。</figcaption>
+</figure>
 
 ## 手順 1: API トークンを作る
 
@@ -72,6 +66,13 @@ Cloudflare のダッシュボードで、右上のアイコンから **My Profil
 | **駄目** | リポジトリの中のファイル、コミットの説明文、公開されるファイル |
 
 とくに注意するのが環境変数の名前。**`VITE_` で始まる環境変数は、ブラウザに配られるファイルに埋め込まれる。** つまり誰でも見られる。秘密情報を `VITE_` に入れてはいけない。
+
+<figure class="fig">
+<svg viewBox="0 0 440 196" role="img" aria-label="API トークンは Cloudflare で作り GitHub の Secrets に入れ、Actions が読んで配信に使う">
+<rect class="fig-box" x="8" y="16" width="124" height="62" rx="8"/><text class="fig-t" x="70.0" y="34.0" text-anchor="middle">Cloudflare</text><text class="fig-t-s" x="70.0" y="52.0" text-anchor="middle">トークンを作る</text><text class="fig-t-xs" x="70.0" y="70.0" text-anchor="middle">1 回だけ表示</text><rect class="fig-box-a" x="158" y="16" width="124" height="62" rx="8"/><text class="fig-t" x="220.0" y="34.0" text-anchor="middle">GitHub</text><text class="fig-t-s" x="220.0" y="52.0" text-anchor="middle">Secrets に</text><text class="fig-t-s" x="220.0" y="70.0" text-anchor="middle">入れる</text><rect class="fig-box" x="308" y="16" width="124" height="62" rx="8"/><text class="fig-t" x="370.0" y="43.0" text-anchor="middle">Actions</text><text class="fig-t-s" x="370.0" y="61.0" text-anchor="middle">実行時に読む</text><line class="fig-a" x1="132" y1="47" x2="151" y2="47"/><polygon class="fig-ah" points="150,42.5 150,51.5 158,47"/><line class="fig-a" x1="282" y1="47" x2="301" y2="47"/><polygon class="fig-ah" points="300,42.5 300,51.5 308,47"/><rect class="fig-box" x="308" y="118" width="124" height="44" rx="8"/><text class="fig-t" x="370.0" y="136.0" text-anchor="middle">Cloudflare</text><text class="fig-t-s" x="370.0" y="154.0" text-anchor="middle">へ配信</text><line class="fig-a" x1="370" y1="78" x2="370" y2="111"/><polygon class="fig-ah" points="365.5,110 374.5,110 370,118"/><rect class="fig-box" x="8" y="118" width="274" height="44" rx="8"/><text class="fig-t-xs" x="145.0" y="136.0" text-anchor="middle">× リポジトリ・コミット文・VITE_ の環境変数</text><text class="fig-t-xs" x="145.0" y="154.0" text-anchor="middle">× スクリーンショット・チャット</text><text class="fig-t-s" x="145" y="182" text-anchor="middle">ここに書くと公開される</text>
+</svg>
+<figcaption>VITE_ で始まる環境変数はブラウザに埋め込まれる。秘密情報を入れない。</figcaption>
+</figure>
 
 アカウント ID は秘密ではないが、Secrets に入れておくと設定が 1 か所にまとまって楽。
 
