@@ -56,6 +56,7 @@ pre.appendChild(btn);
 <meta property="og:description" content={description} />
 <meta property="og:url" content={url} />
 <meta property="og:site_name" content={SITE.name} />
+<meta property="og:image" content={SITE.url + (post?.cover || '/ogp.png')} />
 <meta name="twitter:card" content="summary_large_image" />
 <link rel="alternate" type="application/rss+xml" title={SITE.name} href="/rss.xml" />
 </svelte:head>

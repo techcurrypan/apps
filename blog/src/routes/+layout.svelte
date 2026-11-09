@@ -1,6 +1,19 @@
 ﻿<script lang="ts">
 import { groups, tagList } from '../lib/posts';
+
 let { children } = $props();
+let theme = $state('auto');
+
+$effect(() => {
+const saved = localStorage.getItem('theme');
+if (saved) theme = saved;
+});
+
+$effect(() => {
+if (theme === 'auto') return;
+document.documentElement.dataset.theme = theme;
+localStorage.setItem('theme', theme);
+});
 </script>
 
 <div class="shell">
@@ -12,7 +25,11 @@ let { children } = $props();
 <a href="/">ホーム</a>
 <a href="/blog">記事一覧</a>
 <a href="/search">検索</a>
-      <a href="/rss.xml">RSS</a>
+<a href="/about">このサイトについて</a>
+<a href="/rss.xml">RSS</a>
+<button class="theme" onclick={() => (theme = theme === 'dark' ? 'light' : 'dark')}>
+{theme === 'dark' ? '明るくする' : '暗くする'}
+</button>
 </nav>
 
 {#if groups.length > 0}
@@ -31,17 +48,18 @@ let { children } = $props();
 </ul>
 </section>
 {/if}
+
 {#if tagList.length > 0}
-  <section class="block">
-    <h2>タグ</h2>
-    <ul class="tags">
-      {#each tagList as t (t.tag)}
-        <li><a href="/tag/{t.tag}">{t.tag}<span>{t.count}</span></a></li>
-      {/each}
-    </ul>
-  </section>
+<section class="block">
+<h2>タグ</h2>
+<ul class="tags">
+{#each tagList as t (t.tag)}
+<li><a href="/tag/{t.tag}">{t.tag}<span>{t.count}</span></a></li>
+{/each}
+</ul>
+</section>
 {/if}
-  </aside>
+</aside>
 
 <main>
 {@render children()}
@@ -63,6 +81,32 @@ let { children } = $props();
 --sans: system-ui, "Hiragino Sans", "Noto Sans JP", sans-serif;
 }
 
+@media (prefers-color-scheme: dark) {
+:global(:root:not([data-theme="light"])) {
+--bg: #0f1419;
+--surface: #161b22;
+--surface-2: #1f262e;
+--line: #2a323c;
+--ink: #e6edf3;
+--ink-soft: #c2ccd6;
+--ink-dim: #8b98a5;
+--accent: #6cb6ff;
+--accent-soft: #1a2838;
+}
+}
+
+:global(:root[data-theme="dark"]) {
+--bg: #0f1419;
+--surface: #161b22;
+--surface-2: #1f262e;
+--line: #2a323c;
+--ink: #e6edf3;
+--ink-soft: #c2ccd6;
+--ink-dim: #8b98a5;
+--accent: #6cb6ff;
+--accent-soft: #1a2838;
+}
+
 :global(body) {
 margin: 0;
 background: var(--bg);
@@ -76,6 +120,52 @@ line-height: 1.95;
 :global(a) {
 color: var(--accent);
 }
+
+:global(.token.comment) { color: #6a737d; font-style: italic; }
+:global(.token.keyword) { color: #cf222e; }
+:global(.token.string) { color: #0a3069; }
+:global(.token.function) { color: #8250df; }
+:global(.token.number) { color: #0550ae; }
+:global(.token.boolean) { color: #0550ae; }
+:global(.token.operator) { color: #cf222e; }
+:global(.token.punctuation) { color: #57606a; }
+:global(.token.property) { color: #0550ae; }
+:global(.token.tag) { color: #116329; }
+:global(.token.attr-name) { color: #8250df; }
+:global(.token.attr-value) { color: #0a3069; }
+:global(.token.selector) { color: #116329; }
+:global(.token.builtin) { color: #0550ae; }
+:global(.token.class-name) { color: #953800; }
+
+@media (prefers-color-scheme: dark) {
+:global(:root:not([data-theme="light"]) .token.comment) { color: #8b949e; }
+:global(:root:not([data-theme="light"]) .token.keyword) { color: #ff7b72; }
+:global(:root:not([data-theme="light"]) .token.string) { color: #a5d6ff; }
+:global(:root:not([data-theme="light"]) .token.function) { color: #d2a8ff; }
+:global(:root:not([data-theme="light"]) .token.number) { color: #79c0ff; }
+:global(:root:not([data-theme="light"]) .token.boolean) { color: #79c0ff; }
+:global(:root:not([data-theme="light"]) .token.operator) { color: #ff7b72; }
+:global(:root:not([data-theme="light"]) .token.punctuation) { color: #8b949e; }
+:global(:root:not([data-theme="light"]) .token.property) { color: #79c0ff; }
+:global(:root:not([data-theme="light"]) .token.tag) { color: #7ee787; }
+:global(:root:not([data-theme="light"]) .token.attr-name) { color: #d2a8ff; }
+:global(:root:not([data-theme="light"]) .token.attr-value) { color: #a5d6ff; }
+:global(:root:not([data-theme="light"]) .token.class-name) { color: #ffa657; }
+}
+
+:global(:root[data-theme="dark"] .token.comment) { color: #8b949e; }
+:global(:root[data-theme="dark"] .token.keyword) { color: #ff7b72; }
+:global(:root[data-theme="dark"] .token.string) { color: #a5d6ff; }
+:global(:root[data-theme="dark"] .token.function) { color: #d2a8ff; }
+:global(:root[data-theme="dark"] .token.number) { color: #79c0ff; }
+:global(:root[data-theme="dark"] .token.boolean) { color: #79c0ff; }
+:global(:root[data-theme="dark"] .token.operator) { color: #ff7b72; }
+:global(:root[data-theme="dark"] .token.punctuation) { color: #8b949e; }
+:global(:root[data-theme="dark"] .token.property) { color: #79c0ff; }
+:global(:root[data-theme="dark"] .token.tag) { color: #7ee787; }
+:global(:root[data-theme="dark"] .token.attr-name) { color: #d2a8ff; }
+:global(:root[data-theme="dark"] .token.attr-value) { color: #a5d6ff; }
+:global(:root[data-theme="dark"] .token.class-name) { color: #ffa657; }
 
 :global(pre.code) {
 counter-reset: line;
@@ -142,10 +232,6 @@ opacity: 0.55;
 user-select: none;
 }
 
-:global(pre.code .line:hover) {
-background: rgba(37, 99, 235, 0.05);
-}
-
 :global(code) {
 font-family: var(--mono);
 font-size: 0.9em;
@@ -153,7 +239,6 @@ font-size: 0.9em;
 
 :global(:not(pre) > code) {
 background: var(--accent-soft);
-color: #1746a8;
 border-radius: 4px;
 padding: 0.12em 0.42em;
 }
@@ -232,6 +317,7 @@ color: var(--ink-dim);
 
 nav {
 display: flex;
+flex-wrap: wrap;
 gap: 1.25rem;
 margin-top: 1.5rem;
 font-size: 0.95rem;
@@ -251,6 +337,21 @@ font-weight: 500;
 }
 
 nav a:hover {
+color: var(--accent);
+}
+
+.theme {
+margin-top: 0.3rem;
+padding: 0;
+background: none;
+border: 0;
+font: inherit;
+color: var(--ink-dim);
+cursor: pointer;
+text-align: left;
+}
+
+.theme:hover {
 color: var(--accent);
 }
 
@@ -321,37 +422,37 @@ color: var(--accent);
 }
 
 .tags {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.35rem;
-  }
+list-style: none;
+margin: 0;
+padding: 0;
+display: flex;
+flex-wrap: wrap;
+gap: 0.35rem;
+}
 
-  .tags a {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    padding: 0.1rem 0.6rem;
-    background: var(--surface-2);
-    border-radius: 999px;
-    font-size: 0.78rem;
-    text-decoration: none;
-    color: var(--ink-soft);
-  }
+.tags a {
+display: inline-flex;
+align-items: center;
+gap: 0.35rem;
+padding: 0.1rem 0.6rem;
+background: var(--surface-2);
+border-radius: 999px;
+font-size: 0.78rem;
+text-decoration: none;
+color: var(--ink-soft);
+}
 
-  .tags a:hover {
-    background: var(--accent-soft);
-    color: var(--accent);
-  }
+.tags a:hover {
+background: var(--accent-soft);
+color: var(--accent);
+}
 
-  .tags span {
-    font-size: 0.68rem;
-    color: var(--ink-dim);
-  }
+.tags span {
+font-size: 0.68rem;
+color: var(--ink-dim);
+}
 
-  main {
+main {
 min-width: 0;
 padding-bottom: 6rem;
 }
