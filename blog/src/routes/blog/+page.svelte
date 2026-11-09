@@ -12,7 +12,7 @@ import { posts } from '../../lib/posts';
 <li>
 <a class="card" href="/blog/{post.slug}">
 <div class="meta">
-<time>{post.date}</time>
+<time>{post.date} ・ 約 {post.minutes} 分</time>
 {#each post.tags as tag (tag)}
 <span class="tag">{tag}</span>
 {/each}

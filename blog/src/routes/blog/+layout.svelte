@@ -22,6 +22,7 @@ let headings = $state<{ id: string; text: string; level: number }[]>([]);
 
 $effect(() => {
 data.pathname;
+
 const nodes = body?.querySelectorAll('h2, h3') ?? [];
 const list: { id: string; text: string; level: number }[] = [];
 nodes.forEach((n, i) => {
@@ -29,6 +30,20 @@ if (!n.id) n.id = `h-${i}`;
 list.push({ id: n.id, text: n.textContent ?? '', level: Number(n.tagName[1]) });
 });
 headings = list;
+
+for (const pre of body?.querySelectorAll('pre.code') ?? []) {
+if (pre.querySelector('.copy')) continue;
+const btn = document.createElement('button');
+btn.className = 'copy';
+btn.textContent = 'コピー';
+btn.addEventListener('click', async () => {
+const text = [...pre.querySelectorAll('.line')].map((l) => l.textContent).join('\n');
+await navigator.clipboard.writeText(text);
+btn.textContent = 'コピーした';
+setTimeout(() => (btn.textContent = 'コピー'), 1500);
+});
+pre.appendChild(btn);
+}
 });
 </script>
 
@@ -51,6 +66,7 @@ headings = list;
 <header class="article-head">
 <p class="meta">
 <time>{post.date}</time>
+<span class="read">約 {post.minutes} 分</span>
 {#each post.tags as tag (tag)}
 <a class="tag" href="/tag/{tag}">{tag}</a>
 {/each}
@@ -212,14 +228,20 @@ gap: 0.5rem;
 margin: 0 0 0.6rem;
 }
 
-time {
+time,
+.read {
 font-family: var(--mono);
 font-size: 0.8rem;
 color: var(--ink-dim);
+}
+
+.read::before {
+content: "・";
 margin-right: 0.3rem;
 }
 
 .tag {
+margin-left: 0.3rem;
 padding: 0.1rem 0.6rem;
 background: var(--accent-soft);
 color: var(--accent);

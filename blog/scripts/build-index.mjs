@@ -60,17 +60,20 @@ const posts = walk(ROOT)
 const text = readFileSync(file, 'utf8');
 const fm = parseFront(text);
 const parts = relative(ROOT, file).split(sep).slice(0, -1);
-const slug = parts.join('/');
-const body = text.replace(/^---[\s\S]*?---/, '').toLowerCase();
+const raw = text.replace(/^---[\s\S]*?---/, '');
+const body = raw.toLowerCase();
+const plain = raw.replace(/```[\s\S]*?```/g, '').replace(/[#>*`\-|]/g, '');
+const minutes = Math.max(1, Math.round(plain.replace(/\s/g, '').length / 500));
 const auto = Object.entries(KEYWORDS)
 .filter(([, words]) => words.reduce((n, w) => n + countOf(body, w), 0) >= 3)
 .map(([tag]) => tag);
 return {
-slug,
+slug: parts.join('/'),
 series: parts.length > 1 ? parts[0] : '',
 title: fm.title ?? '(無題)',
 date: String(fm.date ?? ''),
 summary: fm.summary ?? '',
+minutes,
 tags: [...new Set([...(fm.tags ?? []), ...auto])].sort()
 };
 })
@@ -80,7 +83,7 @@ mkdirSync('src/lib', { recursive: true });
 writeFileSync(
 OUT,
 `// 自動生成。直接編集しない。npm run index で作り直す。\n` +
-`export type Post = {\n\tslug: string;\n\tseries: string;\n\ttitle: string;\n\tdate: string;\n\tsummary: string;\n\ttags: string[];\n};\n\n` +
+`export type Post = {\n\tslug: string;\n\tseries: string;\n\ttitle: string;\n\tdate: string;\n\tsummary: string;\n\tminutes: number;\n\ttags: string[];\n};\n\n` +
 `export const allPosts: Post[] = ${JSON.stringify(posts, null, '\t')};\n`,
 'utf8'
 );

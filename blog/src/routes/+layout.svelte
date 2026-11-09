@@ -106,6 +106,24 @@ text-transform: uppercase;
 color: var(--ink-dim);
 }
 
+:global(pre.code .copy) {
+position: absolute;
+top: 0.25rem;
+right: 0.5rem;
+padding: 0.1rem 0.6rem;
+background: var(--bg);
+border: 1px solid var(--line);
+border-radius: 999px;
+font-size: 0.7rem;
+color: var(--ink-dim);
+cursor: pointer;
+}
+
+:global(pre.code .copy:hover) {
+color: var(--accent);
+border-color: var(--accent);
+}
+
 :global(pre.code .line) {
 counter-increment: line;
 display: block;
