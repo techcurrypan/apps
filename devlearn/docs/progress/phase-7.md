@@ -11,7 +11,7 @@
 | 土台（履歴と巻き戻し `src/lib/tools/session.ts`） | 済 |
 | 本物の出力の記録（`tools-real/`、`.github/workflows/record-devlearn-real.yml`） | 済 |
 | シェルの土台（読み取り・展開・パイプ・リダイレクト・`cd` `pwd` `echo` `printf` `ls` `cat` `mkdir` `rm`） | 済 |
-| `git`（模擬） | git-001 の 2 場面が本物と一致。git-002〜009・sec-013 の 9 場面は記録済み、模擬が追いつくまで保留（`real.test.ts` の `PENDING`） |
+| `git`（模擬） | 済。git-001〜009・sec-013 の 11 場面（約 210 行）が、本物の記録と出力・エラー・終了コードまで一字ずつ一致 |
 | `shell`（模擬） | 未 |
 | `docker`（模擬） | 未 |
 | `js`（本物） | 未 |
@@ -27,6 +27,15 @@
 - 記録の置き場所を `out/` にすると、ルートの `.gitignore` の `out` に当たって残らなかった。`recorded/` にした
 - 見本 git-001 の commit ID `84eecf4` は、UNIX 時刻 `1794268800`（2026-11-10T09:00:00+09:00）で再現する。初めの記録の台本は 1 年ずれた値を持っていたので直した
 - 記録した版：Ubuntu 24.04.5 LTS・GNU bash 5.2.21・git 2.56.0・GNU coreutils 9.4
+
+## git の模擬で、本物に合わせて入れた振る舞い
+
+- `git log --graph` は、git の位相の順（後の親から先に辿る LIFO）と列の寄せ方（`|/`、合流の `|\`）を再現した
+- `git fetch` は `origin/HEAD` を自動で作る（git 2.48 からの既定 `followRemoteHEAD=create`。記録で分かった）
+- `git clone` は遠くの URL を「今いる場所 + 打った道」のまま残す（`/home/learner/demo/../remote.git`）。`git fetch` の出力の `From` は末尾の `.git` を落とす
+- `git rebase` の進みの表示は改行でなく復帰（CR）で上書きする。画面の端末は CR を行の上書きとして描く
+- `git revert` の要約には ` Date:` の行が付く（記録の環境は日時を環境変数で与えるため）
+- 衝突の途中の `git diff`（結合差分）は、到達目標に要らないので場面から外し、模擬でも扱わない
 
 ## 気づいたこと（申し送り）
 

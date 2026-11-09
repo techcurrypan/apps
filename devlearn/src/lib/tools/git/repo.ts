@@ -4,19 +4,32 @@ import { idOf, sortEntries, type GitObject, type Tree, type TreeEntry } from './
 
 export type Mode = '100644' | '100755';
 export type IndexEntry = { id: string; mode: Mode };
+export type Unmerged = { base?: IndexEntry; ours?: IndexEntry; theirs?: IndexEntry };
 export type Repo = {
 	objects: Readonly<Record<string, GitObject>>;
 	index: Readonly<Record<string, IndexEntry>>; // リポジトリの根からの道
+	unmerged: Readonly<Record<string, Unmerged>>; // 衝突して解けていない道
+	merging: { head: string; message: string } | null; // 合わせの途中（MERGE_HEAD）
 	head: string; // HEAD が指す枝（refs/heads/main など）
 	refs: Readonly<Record<string, string>>;
+	symrefs: Readonly<Record<string, string>>; // refs/remotes/origin/HEAD → refs/remotes/origin/main
+	remotes: Readonly<Record<string, string>>; // 名前 → URL（打たれたまま）
+	upstream: Readonly<Record<string, { remote: string; branch: string }>>; // 枝 → 追う枝
+	bare: boolean;
 };
 export type GitExt = { repos: Readonly<Record<string, Repo>> };
 
-export const emptyRepo = (branch: string): Repo => ({
+export const emptyRepo = (branch: string, bare = false): Repo => ({
 	objects: {},
 	index: {},
+	unmerged: {},
+	merging: null,
 	head: `refs/heads/${branch}`,
-	refs: {}
+	refs: {},
+	symrefs: {},
+	remotes: {},
+	upstream: {},
+	bare
 });
 
 export function store(repo: Repo, o: GitObject): [Repo, string] {
