@@ -68,7 +68,7 @@ GitHub Actions も、公開リポジトリなら実行時間が無料。
 
 ## 必要な前提
 
-- パソコン（Windows + PowerShell + VS Code で確認した。Mac でもほぼ同じ）
+- パソコン（Windows・Mac・Linux のどれでもよい。コマンドが分かれる所は両方を示す）
 - GitHub のアカウント
 - Cloudflare のアカウント（この連載で作る）
 

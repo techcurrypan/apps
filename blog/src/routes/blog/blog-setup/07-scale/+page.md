@@ -185,8 +185,17 @@ npm run build
 
 測ったら**ダミーを消す**。消し忘れたまま公開すると、空の記事 2000 本が検索に出る。
 
+Windows。
+
 ```powershell
 Remove-Item -Recurse -Force src\routes\blog\dummy
+npm run index
+```
+
+Mac・Linux。
+
+```bash
+rm -rf src/routes/blog/dummy
 npm run index
 ```
 

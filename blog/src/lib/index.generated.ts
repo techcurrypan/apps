@@ -76,12 +76,12 @@ export const allPosts: Post[] = [
 	{
 		"slug": "blog-setup/06-scripts",
 		"series": "blog-setup",
-		"title": "無料でブログを作る (6) 書く手順をコマンドにする",
+		"title": "無料でブログを作る (6) 記事を書いて公開する手順",
 		"date": "2026-11-05",
-		"summary": "記事を 1 本足すのに 6 手かかっていたのを、4 つのコマンドに畳む。覚えることを減らす回。",
+		"summary": "何をするか選ぶと、打つコマンドがそのまま出る。書くときに開くページ。",
 		"icon": "",
 		"cover": "",
-		"minutes": 5,
+		"minutes": 1,
 		"tags": [
 			"git"
 		]

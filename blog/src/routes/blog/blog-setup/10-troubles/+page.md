@@ -9,7 +9,9 @@ tags: ['svelte', 'cloudflare', 'ci', 'git']
 
 **この回は**、上から読む必要はない。症状で探す。
 
-## 手元の作業
+## 手元の作業（Windows）
+
+この節は Windows と PowerShell の話。Mac・Linux では起きない。
 
 ### package.json が読めないと言われる
 
@@ -205,7 +207,7 @@ remote: Permission to techcurrypan/apps.git denied to swallowsaba.
 
 **直し方** このホストで使う利用者名を指定する。
 
-```powershell
+```bash
 git config credential.https://github.com.username techcurrybread
 git remote set-url origin https://github.com/techcurrypan/apps.git
 ```
@@ -248,7 +250,7 @@ posts.filter((p) => p.series === series).slice().reverse();
 
 詰まった原因を並べると、3 つに分かれていた。
 
-1. **道具の作法を知らなかった** — PowerShell の BOM、タブ補完、角括弧
+1. **道具の作法を知らなかった** — PowerShell の BOM、タブ補完、角括弧（Windows 固有）
 2. **検査の範囲を誤解していた** — `npm run dev` が型を見ていると思っていた
 3. **先にやるべきことを後回しにしていた** — サブドメインの登録、Actions の許可
 

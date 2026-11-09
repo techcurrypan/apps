@@ -32,7 +32,7 @@ Node は 20 以上あれば足りる。無ければ公式サイトから入れ�
 リポジトリのフォルダに移り、`blog` という名前で作る。
 
 ```bash
-cd X:\git\apps
+cd path/to/apps      # リポジトリのフォルダ
 npx sv create blog
 ```
 
