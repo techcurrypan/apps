@@ -10,6 +10,7 @@
 	"scripts": {
 		"dev": "vite dev",
 		"gen": "wrangler types",
+		"precheck": "tsx scripts/clean-build.ts",
 		"check": "wrangler types --check && svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"lint": "prettier --check . && eslint .",
