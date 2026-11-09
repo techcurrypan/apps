@@ -94,12 +94,6 @@
 			"code": 0
 		},
 		{
-			"line": "git diff",
-			"out": "diff --cc site.txt\nindex 85cce3b,84c6c96..0000000\n--- a/site.txt\n+++ b/site.txt\n@@@ -1,2 -1,2 +1,6 @@@\n  title: shop\n++<<<<<<< HEAD\n +color: green\n++=======\n+ color: blue\n++>>>>>>> blue\n",
-			"err": "",
-			"code": 0
-		},
-		{
 			"line": "git commit -m \"try\"",
 			"out": "U\tsite.txt\n",
 			"err": "error: Committing is not possible because you have unmerged files.\nhint: Fix them up in the work tree, and then use 'git add/rm <file>'\nhint: as appropriate to mark resolution and make a commit.\nfatal: Exiting because of an unresolved conflict.\n",
@@ -131,13 +125,13 @@
 		},
 		{
 			"line": "git commit -m \"merge blue\"",
-			"out": "[main 780c334] merge blue\n",
+			"out": "[main 600b4bf] merge blue\n",
 			"err": "",
 			"code": 0
 		},
 		{
 			"line": "git log --oneline --graph",
-			"out": "*   780c334 (HEAD -> main) merge blue\n|\\  \n| * 1ea9144 (blue) blue\n* | ad2d493 green\n|/  \n* 45e956c site\n",
+			"out": "*   600b4bf (HEAD -> main) merge blue\n|\\  \n| * 1ea9144 (blue) blue\n* | ad2d493 green\n|/  \n* 45e956c site\n",
 			"err": "",
 			"code": 0
 		},
