@@ -1,0 +1,139 @@
+{
+	"id": "git-008-rebase",
+	"tool": "git",
+	"lesson": "git-008",
+	"recordedOn": {
+		"os": "Ubuntu 24.04.5 LTS",
+		"bash": "GNU bash, version 5.2.21(1)-release (x86_64-pc-linux-gnu)",
+		"git": "git version 2.56.0",
+		"coreutils": "ls (GNU coreutils) 9.4"
+	},
+	"steps": [
+		{
+			"line": "git init",
+			"out": "Initialized empty Git repository in /home/learner/demo/.git/\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "printf 'base\\n' > a.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git add a.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git commit -m \"base\"",
+			"out": "[main (root-commit) bfa8c08] base\n 1 file changed, 1 insertion(+)\n create mode 100644 a.txt\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git switch -c feature",
+			"out": "",
+			"err": "Switched to a new branch 'feature'\n",
+			"code": 0
+		},
+		{
+			"line": "printf 'f1\\n' > f.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git add f.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git commit -m \"f1\"",
+			"out": "[feature 730b0ee] f1\n 1 file changed, 1 insertion(+)\n create mode 100644 f.txt\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "printf 'f2\\n' >> f.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git commit -am \"f2\"",
+			"out": "[feature 4a12ed7] f2\n 1 file changed, 1 insertion(+)\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git switch main",
+			"out": "",
+			"err": "Switched to branch 'main'\n",
+			"code": 0
+		},
+		{
+			"line": "printf 'm1\\n' > m.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git add m.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git commit -m \"m1\"",
+			"out": "[main a4c0854] m1\n 1 file changed, 1 insertion(+)\n create mode 100644 m.txt\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git log --oneline --graph --all",
+			"out": "* a4c0854 (HEAD -> main) m1\n| * 4a12ed7 (feature) f2\n| * 730b0ee f1\n|/  \n* bfa8c08 base\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git switch feature",
+			"out": "",
+			"err": "Switched to branch 'feature'\n",
+			"code": 0
+		},
+		{
+			"line": "git rebase main",
+			"out": "",
+			"err": "Rebasing (1/2)\rRebasing (2/2)\rSuccessfully rebased and updated refs/heads/feature.\n",
+			"code": 0
+		},
+		{
+			"line": "git log --oneline --graph --all",
+			"out": "* 33ae66c (HEAD -> feature) f2\n* 5db6eeb f1\n* a4c0854 (main) m1\n* bfa8c08 base\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git switch main",
+			"out": "",
+			"err": "Switched to branch 'main'\n",
+			"code": 0
+		},
+		{
+			"line": "git merge feature",
+			"out": "Updating a4c0854..33ae66c\nFast-forward\n f.txt | 2 ++\n 1 file changed, 2 insertions(+)\n create mode 100644 f.txt\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git log --oneline --graph",
+			"out": "* 33ae66c (HEAD -> main, feature) f2\n* 5db6eeb f1\n* a4c0854 m1\n* bfa8c08 base\n",
+			"err": "",
+			"code": 0
+		}
+	]
+}

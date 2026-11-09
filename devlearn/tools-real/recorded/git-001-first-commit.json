@@ -22,7 +22,7 @@
 			"code": 0
 		},
 		{
-			"line": "printf 'hello world\n' > hello.txt",
+			"line": "printf 'hello world\\n' > hello.txt",
 			"out": "",
 			"err": "",
 			"code": 0

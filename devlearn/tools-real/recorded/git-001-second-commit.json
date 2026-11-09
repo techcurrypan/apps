@@ -16,7 +16,7 @@
 			"code": 0
 		},
 		{
-			"line": "printf 'hello world\n' > hello.txt",
+			"line": "printf 'hello world\\n' > hello.txt",
 			"out": "",
 			"err": "",
 			"code": 0
@@ -34,7 +34,7 @@
 			"code": 0
 		},
 		{
-			"line": "printf 'hello world\nhello git\n' > hello.txt",
+			"line": "printf 'hello world\\nhello git\\n' > hello.txt",
 			"out": "",
 			"err": "",
 			"code": 0
@@ -82,7 +82,7 @@
 			"code": 0
 		},
 		{
-			"line": "printf 'note\n' > note.txt",
+			"line": "printf 'note\\n' > note.txt",
 			"out": "",
 			"err": "",
 			"code": 0

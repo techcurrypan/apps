@@ -1,0 +1,157 @@
+{
+	"id": "git-007-remote",
+	"tool": "git",
+	"lesson": "git-007",
+	"recordedOn": {
+		"os": "Ubuntu 24.04.5 LTS",
+		"bash": "GNU bash, version 5.2.21(1)-release (x86_64-pc-linux-gnu)",
+		"git": "git version 2.56.0",
+		"coreutils": "ls (GNU coreutils) 9.4"
+	},
+	"steps": [
+		{
+			"line": "git init --bare ../remote.git",
+			"out": "Initialized empty Git repository in /home/learner/remote.git/\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git init",
+			"out": "Initialized empty Git repository in /home/learner/demo/.git/\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "printf 'hello\\n' > a.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git add a.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git commit -m \"first\"",
+			"out": "[main (root-commit) a8cb769] first\n 1 file changed, 1 insertion(+)\n create mode 100644 a.txt\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git remote add origin ../remote.git",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git remote -v",
+			"out": "origin\t../remote.git (fetch)\norigin\t../remote.git (push)\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git push -u origin main",
+			"out": "branch 'main' set up to track 'origin/main'.\n",
+			"err": "To ../remote.git\n * [new branch]      main -> main\n",
+			"code": 0
+		},
+		{
+			"line": "git status",
+			"out": "On branch main\nYour branch is up to date with 'origin/main'.\n\nnothing to commit, working tree clean\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git clone ../remote.git ../other",
+			"out": "",
+			"err": "Cloning into '../other'...\ndone.\n",
+			"code": 0
+		},
+		{
+			"line": "cd ../other",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git log --oneline",
+			"out": "a8cb769 (HEAD -> main, origin/main, origin/HEAD) first\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "printf 'from other\\n' >> a.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git commit -am \"from other\"",
+			"out": "[main 5b6b875] from other\n 1 file changed, 1 insertion(+)\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git push",
+			"out": "",
+			"err": "To /home/learner/demo/../remote.git\n   a8cb769..5b6b875  main -> main\n",
+			"code": 0
+		},
+		{
+			"line": "cd ../demo",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git status",
+			"out": "On branch main\nYour branch is up to date with 'origin/main'.\n\nnothing to commit, working tree clean\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git fetch",
+			"out": "",
+			"err": "From ../remote\n   a8cb769..5b6b875  main       -> origin/main\n",
+			"code": 0
+		},
+		{
+			"line": "git status",
+			"out": "On branch main\nYour branch is behind 'origin/main' by 1 commit, and can be fast-forwarded.\n  (use \"git pull\" to update your local branch)\n\nnothing to commit, working tree clean\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git log --oneline --all",
+			"out": "5b6b875 (origin/main, origin/HEAD) from other\na8cb769 (HEAD -> main) first\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git pull",
+			"out": "Updating a8cb769..5b6b875\nFast-forward\n a.txt | 1 +\n 1 file changed, 1 insertion(+)\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git log --oneline",
+			"out": "5b6b875 (HEAD -> main, origin/main, origin/HEAD) from other\na8cb769 first\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "cat a.txt",
+			"out": "hello\nfrom other\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git push",
+			"out": "",
+			"err": "Everything up-to-date\n",
+			"code": 0
+		}
+	]
+}

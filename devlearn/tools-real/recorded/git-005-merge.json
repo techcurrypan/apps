@@ -1,0 +1,151 @@
+{
+	"id": "git-005-merge",
+	"tool": "git",
+	"lesson": "git-005",
+	"recordedOn": {
+		"os": "Ubuntu 24.04.5 LTS",
+		"bash": "GNU bash, version 5.2.21(1)-release (x86_64-pc-linux-gnu)",
+		"git": "git version 2.56.0",
+		"coreutils": "ls (GNU coreutils) 9.4"
+	},
+	"steps": [
+		{
+			"line": "git init",
+			"out": "Initialized empty Git repository in /home/learner/demo/.git/\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "printf 'one\\n' > a.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git add a.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git commit -m \"one\"",
+			"out": "[main (root-commit) 5fb7a6a] one\n 1 file changed, 1 insertion(+)\n create mode 100644 a.txt\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git switch -c feature",
+			"out": "",
+			"err": "Switched to a new branch 'feature'\n",
+			"code": 0
+		},
+		{
+			"line": "printf 'two\\n' >> a.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git commit -am \"two\"",
+			"out": "[feature 9db97eb] two\n 1 file changed, 1 insertion(+)\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git switch main",
+			"out": "",
+			"err": "Switched to branch 'main'\n",
+			"code": 0
+		},
+		{
+			"line": "git merge feature",
+			"out": "Updating 5fb7a6a..9db97eb\nFast-forward\n a.txt | 1 +\n 1 file changed, 1 insertion(+)\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git log --oneline --graph",
+			"out": "* 9db97eb (HEAD -> main, feature) two\n* 5fb7a6a one\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git switch -c topic",
+			"out": "",
+			"err": "Switched to a new branch 'topic'\n",
+			"code": 0
+		},
+		{
+			"line": "printf 'topic\\n' > t.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git add t.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git commit -m \"topic\"",
+			"out": "[topic 6af1601] topic\n 1 file changed, 1 insertion(+)\n create mode 100644 t.txt\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git switch main",
+			"out": "",
+			"err": "Switched to branch 'main'\n",
+			"code": 0
+		},
+		{
+			"line": "printf 'main\\n' > m.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git add m.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git commit -m \"main side\"",
+			"out": "[main 8c0898c] main side\n 1 file changed, 1 insertion(+)\n create mode 100644 m.txt\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git merge topic",
+			"out": "Merge made by the 'ort' strategy.\n t.txt | 1 +\n 1 file changed, 1 insertion(+)\n create mode 100644 t.txt\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git log --oneline --graph",
+			"out": "*   af770df (HEAD -> main) Merge branch 'topic'\n|\\  \n| * 6af1601 (topic) topic\n* | 8c0898c main side\n|/  \n* 9db97eb (feature) two\n* 5fb7a6a one\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git cat-file -p HEAD",
+			"out": "tree 2952f5f60d15ea5acb302cafacadbacef442bbbd\nparent 8c0898cb6c39bc29299c100d50cc798e482a6678\nparent 6af160170df584955c8cf433618d68126bbed662\nauthor learner <learner@example.com> 1794269880 +0900\ncommitter learner <learner@example.com> 1794269880 +0900\n\nMerge branch 'topic'\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git merge topic",
+			"out": "Already up to date.\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git merge nope",
+			"out": "",
+			"err": "merge: nope - not something we can merge\n",
+			"code": 1
+		}
+	]
+}

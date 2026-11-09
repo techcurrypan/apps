@@ -1,0 +1,151 @@
+{
+	"id": "git-006-conflict",
+	"tool": "git",
+	"lesson": "git-006",
+	"recordedOn": {
+		"os": "Ubuntu 24.04.5 LTS",
+		"bash": "GNU bash, version 5.2.21(1)-release (x86_64-pc-linux-gnu)",
+		"git": "git version 2.56.0",
+		"coreutils": "ls (GNU coreutils) 9.4"
+	},
+	"steps": [
+		{
+			"line": "git init",
+			"out": "Initialized empty Git repository in /home/learner/demo/.git/\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "printf 'title: shop\\ncolor: red\\n' > site.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git add site.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git commit -m \"site\"",
+			"out": "[main (root-commit) 45e956c] site\n 1 file changed, 2 insertions(+)\n create mode 100644 site.txt\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git switch -c blue",
+			"out": "",
+			"err": "Switched to a new branch 'blue'\n",
+			"code": 0
+		},
+		{
+			"line": "printf 'title: shop\\ncolor: blue\\n' > site.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git commit -am \"blue\"",
+			"out": "[blue 1ea9144] blue\n 1 file changed, 1 insertion(+), 1 deletion(-)\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git switch main",
+			"out": "",
+			"err": "Switched to branch 'main'\n",
+			"code": 0
+		},
+		{
+			"line": "printf 'title: shop\\ncolor: green\\n' > site.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git commit -am \"green\"",
+			"out": "[main ad2d493] green\n 1 file changed, 1 insertion(+), 1 deletion(-)\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git merge blue",
+			"out": "Auto-merging site.txt\nCONFLICT (content): Merge conflict in site.txt\nAutomatic merge failed; fix conflicts and then commit the result.\n",
+			"err": "",
+			"code": 1
+		},
+		{
+			"line": "git status",
+			"out": "On branch main\nYou have unmerged paths.\n  (fix conflicts and run \"git commit\")\n  (use \"git merge --abort\" to abort the merge)\n\nUnmerged paths:\n  (use \"git add <file>...\" to mark resolution)\n\tboth modified:   site.txt\n\nno changes added to commit (use \"git add\" and/or \"git commit -a\")\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git status --short",
+			"out": "UU site.txt\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "cat site.txt",
+			"out": "title: shop\n<<<<<<< HEAD\ncolor: green\n=======\ncolor: blue\n>>>>>>> blue\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git diff",
+			"out": "diff --cc site.txt\nindex 85cce3b,84c6c96..0000000\n--- a/site.txt\n+++ b/site.txt\n@@@ -1,2 -1,2 +1,6 @@@\n  title: shop\n++<<<<<<< HEAD\n +color: green\n++=======\n+ color: blue\n++>>>>>>> blue\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git commit -m \"try\"",
+			"out": "U\tsite.txt\n",
+			"err": "error: Committing is not possible because you have unmerged files.\nhint: Fix them up in the work tree, and then use 'git add/rm <file>'\nhint: as appropriate to mark resolution and make a commit.\nfatal: Exiting because of an unresolved conflict.\n",
+			"code": 128
+		},
+		{
+			"line": "printf 'title: shop\\ncolor: blue\\n' > site.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git add site.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git status",
+			"out": "On branch main\nAll conflicts fixed but you are still merging.\n  (use \"git commit\" to conclude merge)\n\nChanges to be committed:\n\tmodified:   site.txt\n\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git status --short",
+			"out": "M  site.txt\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git commit -m \"merge blue\"",
+			"out": "[main 780c334] merge blue\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git log --oneline --graph",
+			"out": "*   780c334 (HEAD -> main) merge blue\n|\\  \n| * 1ea9144 (blue) blue\n* | ad2d493 green\n|/  \n* 45e956c site\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "cat site.txt",
+			"out": "title: shop\ncolor: blue\n",
+			"err": "",
+			"code": 0
+		}
+	]
+}

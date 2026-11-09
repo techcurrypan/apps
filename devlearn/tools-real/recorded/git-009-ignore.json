@@ -1,0 +1,127 @@
+{
+	"id": "git-009-ignore",
+	"tool": "git",
+	"lesson": "git-009",
+	"recordedOn": {
+		"os": "Ubuntu 24.04.5 LTS",
+		"bash": "GNU bash, version 5.2.21(1)-release (x86_64-pc-linux-gnu)",
+		"git": "git version 2.56.0",
+		"coreutils": "ls (GNU coreutils) 9.4"
+	},
+	"steps": [
+		{
+			"line": "git init",
+			"out": "Initialized empty Git repository in /home/learner/demo/.git/\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "printf 'print(1)\\n' > app.py",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "printf 'SECRET=abc\\n' > .env",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "mkdir logs",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "printf 'log\\n' > logs/app.log",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git status",
+			"out": "On branch main\n\nNo commits yet\n\nUntracked files:\n  (use \"git add <file>...\" to include in what will be committed)\n\t.env\n\tapp.py\n\tlogs/\n\nnothing added to commit but untracked files present (use \"git add\" to track)\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git status --short",
+			"out": "?? .env\n?? app.py\n?? logs/\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "printf '.env\\nlogs/\\n' > .gitignore",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git status",
+			"out": "On branch main\n\nNo commits yet\n\nUntracked files:\n  (use \"git add <file>...\" to include in what will be committed)\n\t.gitignore\n\tapp.py\n\nnothing added to commit but untracked files present (use \"git add\" to track)\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git status --short",
+			"out": "?? .gitignore\n?? app.py\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git check-ignore -v .env",
+			"out": ".gitignore:1:.env\t.env\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git check-ignore -v logs/app.log",
+			"out": ".gitignore:2:logs/\tlogs/app.log\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git check-ignore -v app.py",
+			"out": "",
+			"err": "",
+			"code": 1
+		},
+		{
+			"line": "git add .",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git status --short",
+			"out": "A  .gitignore\nA  app.py\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git add .env",
+			"out": "",
+			"err": "The following paths are ignored by one of your .gitignore files:\n.env\nhint: Use -f if you really want to add them.\nhint: Disable this message with \"git config set advice.addIgnoredFile false\"\n",
+			"code": 1
+		},
+		{
+			"line": "git commit -m \"app\"",
+			"out": "[main (root-commit) 01fadb7] app\n 2 files changed, 3 insertions(+)\n create mode 100644 .gitignore\n create mode 100644 app.py\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git log --oneline",
+			"out": "01fadb7 (HEAD -> main) app\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git cat-file -p 'HEAD^{tree}'",
+			"out": "100644 blob 7a6501a449466ff5535d1aed89fd5f42f61c003d\t.gitignore\n100644 blob b917a726c93f902e43291d9009d6488385133b67\tapp.py\n",
+			"err": "",
+			"code": 0
+		}
+	]
+}

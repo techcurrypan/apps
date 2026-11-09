@@ -1,0 +1,151 @@
+{
+	"id": "git-003-restore-revert",
+	"tool": "git",
+	"lesson": "git-003",
+	"recordedOn": {
+		"os": "Ubuntu 24.04.5 LTS",
+		"bash": "GNU bash, version 5.2.21(1)-release (x86_64-pc-linux-gnu)",
+		"git": "git version 2.56.0",
+		"coreutils": "ls (GNU coreutils) 9.4"
+	},
+	"steps": [
+		{
+			"line": "git init",
+			"out": "Initialized empty Git repository in /home/learner/demo/.git/\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "printf 'v1\\n' > app.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git add app.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git commit -m \"v1\"",
+			"out": "[main (root-commit) 83c4e1e] v1\n 1 file changed, 1 insertion(+)\n create mode 100644 app.txt\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "printf 'broken\\n' > app.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git status --short",
+			"out": " M app.txt\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git restore app.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "cat app.txt",
+			"out": "v1\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git status --short",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "printf 'v2\\n' > app.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git add app.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git status --short",
+			"out": "M  app.txt\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git restore --staged app.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git status --short",
+			"out": " M app.txt\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git restore app.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git restore nope.txt",
+			"out": "",
+			"err": "error: pathspec 'nope.txt' did not match any file(s) known to git\n",
+			"code": 1
+		},
+		{
+			"line": "printf 'v2 with bug\\n' > app.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git commit -am \"v2\"",
+			"out": "[main 5068cc4] v2\n 1 file changed, 1 insertion(+), 1 deletion(-)\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git log --oneline",
+			"out": "5068cc4 (HEAD -> main) v2\n83c4e1e v1\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git revert --no-edit HEAD",
+			"out": "[main 353e9f1] Revert \"v2\"\n Date: Tue Nov 10 09:19:00 2026 +0900\n 1 file changed, 1 insertion(+), 1 deletion(-)\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git log --oneline",
+			"out": "353e9f1 (HEAD -> main) Revert \"v2\"\n5068cc4 v2\n83c4e1e v1\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "cat app.txt",
+			"out": "v1\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git show --stat HEAD",
+			"out": "commit 353e9f1eb7800efcf95bf5a75ee0a2100914f465 (HEAD -> main)\nAuthor: learner <learner@example.com>\nDate:   Tue Nov 10 09:19:00 2026 +0900\n\n    Revert \"v2\"\n    \n    This reverts commit 5068cc4790a38a643ac57cff5535ea03fb2a7414.\n\n app.txt | 2 +-\n 1 file changed, 1 insertion(+), 1 deletion(-)\n",
+			"err": "",
+			"code": 0
+		}
+	]
+}

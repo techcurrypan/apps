@@ -1,0 +1,163 @@
+{
+	"id": "git-004-branch",
+	"tool": "git",
+	"lesson": "git-004",
+	"recordedOn": {
+		"os": "Ubuntu 24.04.5 LTS",
+		"bash": "GNU bash, version 5.2.21(1)-release (x86_64-pc-linux-gnu)",
+		"git": "git version 2.56.0",
+		"coreutils": "ls (GNU coreutils) 9.4"
+	},
+	"steps": [
+		{
+			"line": "git init",
+			"out": "Initialized empty Git repository in /home/learner/demo/.git/\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "printf 'base\\n' > a.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git add a.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git commit -m \"base\"",
+			"out": "[main (root-commit) bfa8c08] base\n 1 file changed, 1 insertion(+)\n create mode 100644 a.txt\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git branch",
+			"out": "* main\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git branch feature",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git branch",
+			"out": "  feature\n* main\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git switch feature",
+			"out": "",
+			"err": "Switched to branch 'feature'\n",
+			"code": 0
+		},
+		{
+			"line": "git branch",
+			"out": "* feature\n  main\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "printf 'feature\\n' > b.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git add b.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git commit -m \"add b\"",
+			"out": "[feature 738f7d2] add b\n 1 file changed, 1 insertion(+)\n create mode 100644 b.txt\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git log --oneline",
+			"out": "738f7d2 (HEAD -> feature) add b\nbfa8c08 (main) base\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git switch main",
+			"out": "",
+			"err": "Switched to branch 'main'\n",
+			"code": 0
+		},
+		{
+			"line": "ls",
+			"out": "a.txt\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git log --oneline",
+			"out": "bfa8c08 (HEAD -> main) base\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git log --oneline --all",
+			"out": "738f7d2 (feature) add b\nbfa8c08 (HEAD -> main) base\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git log --oneline --graph --all",
+			"out": "* 738f7d2 (feature) add b\n* bfa8c08 (HEAD -> main) base\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git switch -c fix",
+			"out": "",
+			"err": "Switched to a new branch 'fix'\n",
+			"code": 0
+		},
+		{
+			"line": "printf 'fix\\n' >> a.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git commit -am \"fix a\"",
+			"out": "[fix dd16cbe] fix a\n 1 file changed, 1 insertion(+)\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git log --oneline --graph --all",
+			"out": "* dd16cbe (HEAD -> fix) fix a\n| * 738f7d2 (feature) add b\n|/  \n* bfa8c08 (main) base\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git switch nope",
+			"out": "",
+			"err": "fatal: invalid reference: nope\n",
+			"code": 128
+		},
+		{
+			"line": "git switch -c feature",
+			"out": "",
+			"err": "fatal: a branch named 'feature' already exists\n",
+			"code": 128
+		},
+		{
+			"line": "git branch -v",
+			"out": "  feature 738f7d2 add b\n* fix     dd16cbe fix a\n  main    bfa8c08 base\n",
+			"err": "",
+			"code": 0
+		}
+	]
+}

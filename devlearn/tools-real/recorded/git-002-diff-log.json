@@ -1,0 +1,169 @@
+{
+	"id": "git-002-diff-log",
+	"tool": "git",
+	"lesson": "git-002",
+	"recordedOn": {
+		"os": "Ubuntu 24.04.5 LTS",
+		"bash": "GNU bash, version 5.2.21(1)-release (x86_64-pc-linux-gnu)",
+		"git": "git version 2.56.0",
+		"coreutils": "ls (GNU coreutils) 9.4"
+	},
+	"steps": [
+		{
+			"line": "git init",
+			"out": "Initialized empty Git repository in /home/learner/demo/.git/\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "printf 'apple\\nbanana\\ncherry\\n' > fruits.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git add fruits.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git commit -m \"add fruits\"",
+			"out": "[main (root-commit) ed3c4fc] add fruits\n 1 file changed, 3 insertions(+)\n create mode 100644 fruits.txt\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "printf 'apple\\nblueberry\\ncherry\\ndate\\n' > fruits.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git status",
+			"out": "On branch main\nChanges not staged for commit:\n  (use \"git add <file>...\" to update what will be committed)\n  (use \"git restore <file>...\" to discard changes in working directory)\n\tmodified:   fruits.txt\n\nno changes added to commit (use \"git add\" and/or \"git commit -a\")\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git status --short",
+			"out": " M fruits.txt\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git diff",
+			"out": "diff --git a/fruits.txt b/fruits.txt\nindex fde8dcd..a210ba3 100644\n--- a/fruits.txt\n+++ b/fruits.txt\n@@ -1,3 +1,4 @@\n apple\n-banana\n+blueberry\n cherry\n+date\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git diff --staged",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git add fruits.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git diff",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git diff --staged",
+			"out": "diff --git a/fruits.txt b/fruits.txt\nindex fde8dcd..a210ba3 100644\n--- a/fruits.txt\n+++ b/fruits.txt\n@@ -1,3 +1,4 @@\n apple\n-banana\n+blueberry\n cherry\n+date\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git status --short",
+			"out": "M  fruits.txt\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git commit -m \"change fruits\"",
+			"out": "[main db32742] change fruits\n 1 file changed, 2 insertions(+), 1 deletion(-)\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git log",
+			"out": "commit db32742ad0c1c856b9da5f7236e9e4f3d714d91a (HEAD -> main)\nAuthor: learner <learner@example.com>\nDate:   Tue Nov 10 09:13:00 2026 +0900\n\n    change fruits\n\ncommit ed3c4fcbd70e34e904f3d9539b08b46dcd1acf1e\nAuthor: learner <learner@example.com>\nDate:   Tue Nov 10 09:03:00 2026 +0900\n\n    add fruits\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git log --oneline",
+			"out": "db32742 (HEAD -> main) change fruits\ned3c4fc add fruits\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "printf 'memo\\n' > memo.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git diff",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git status --short",
+			"out": "?? memo.txt\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "rm fruits.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git status",
+			"out": "On branch main\nChanges not staged for commit:\n  (use \"git add/rm <file>...\" to update what will be committed)\n  (use \"git restore <file>...\" to discard changes in working directory)\n\tdeleted:    fruits.txt\n\nUntracked files:\n  (use \"git add <file>...\" to include in what will be committed)\n\tmemo.txt\n\nno changes added to commit (use \"git add\" and/or \"git commit -a\")\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git status --short",
+			"out": " D fruits.txt\n?? memo.txt\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git diff",
+			"out": "diff --git a/fruits.txt b/fruits.txt\ndeleted file mode 100644\nindex a210ba3..0000000\n--- a/fruits.txt\n+++ /dev/null\n@@ -1,4 +0,0 @@\n-apple\n-blueberry\n-cherry\n-date\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git log -n 1 --oneline",
+			"out": "db32742 (HEAD -> main) change fruits\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git diff HEAD~1 HEAD",
+			"out": "diff --git a/fruits.txt b/fruits.txt\nindex fde8dcd..a210ba3 100644\n--- a/fruits.txt\n+++ b/fruits.txt\n@@ -1,3 +1,4 @@\n apple\n-banana\n+blueberry\n cherry\n+date\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git log --oneline nope",
+			"out": "",
+			"err": "fatal: ambiguous argument 'nope': unknown revision or path not in the working tree.\nUse '--' to separate paths from revisions, like this:\n'git <command> [<revision>...] -- [<file>...]'\n",
+			"code": 128
+		}
+	]
+}
