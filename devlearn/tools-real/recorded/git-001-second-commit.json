@@ -1,0 +1,127 @@
+{
+	"id": "git-001-second-commit",
+	"tool": "git",
+	"lesson": "git-001",
+	"recordedOn": {
+		"os": "Ubuntu 24.04.5 LTS",
+		"bash": "GNU bash, version 5.2.21(1)-release (x86_64-pc-linux-gnu)",
+		"git": "git version 2.56.0",
+		"coreutils": "ls (GNU coreutils) 9.4"
+	},
+	"steps": [
+		{
+			"line": "git init -b main",
+			"out": "Initialized empty Git repository in /home/learner/demo/.git/\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "printf 'hello world\n' > hello.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git add hello.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git commit -m \"first commit\"",
+			"out": "[main (root-commit) 80a7a84] first commit\n 1 file changed, 1 insertion(+)\n create mode 100644 hello.txt\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "printf 'hello world\nhello git\n' > hello.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git status",
+			"out": "On branch main\nChanges not staged for commit:\n  (use \"git add <file>...\" to update what will be committed)\n  (use \"git restore <file>...\" to discard changes in working directory)\n\tmodified:   hello.txt\n\nno changes added to commit (use \"git add\" and/or \"git commit -a\")\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git status --short",
+			"out": " M hello.txt\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git add hello.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git status --short",
+			"out": "M  hello.txt\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git commit -m \"add a line\"",
+			"out": "[main 1603cba] add a line\n 1 file changed, 1 insertion(+)\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git log --oneline",
+			"out": "1603cba (HEAD -> main) add a line\n80a7a84 first commit\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git cat-file -p HEAD",
+			"out": "tree 28c683a27d8818167de894cdd14066a63c041755\nparent 80a7a846d5bce83d4967d5b30bcfd7e8221ba53c\nauthor learner <learner@example.com> 1794269340 +0900\ncommitter learner <learner@example.com> 1794269340 +0900\n\nadd a line\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "printf 'note\n' > note.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "echo hi >> hello.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git add .",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git status",
+			"out": "On branch main\nChanges to be committed:\n  (use \"git restore --staged <file>...\" to unstage)\n\tmodified:   hello.txt\n\tnew file:   note.txt\n\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git commit -m \"two files\"",
+			"out": "[main 1741dde] two files\n 2 files changed, 2 insertions(+)\n create mode 100644 note.txt\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "git log --oneline",
+			"out": "1741dde (HEAD -> main) two files\n1603cba add a line\n80a7a84 first commit\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "cat hello.txt",
+			"out": "hello world\nhello git\nhi\n",
+			"err": "",
+			"code": 0
+		}
+	]
+}
