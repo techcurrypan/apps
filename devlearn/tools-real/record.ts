@@ -60,9 +60,8 @@ function record(s: Scenario) {
 	chmodSync(`${tmp}/run.sh`, 0o755);
 	// 作業場所を空にし、利用者 learner として打つ
 	sh(`sudo rm -rf ${WORK} && sudo -u learner mkdir -p ${WORK}`);
-	sh(
-		`printf '%s' '${GITCONFIG.replace(/'/g, "'\''")}' | sudo -u learner tee ${HOME}/.gitconfig > /dev/null`
-	);
+	writeFileSync(`${tmp}/gitconfig`, GITCONFIG);
+	sh(`sudo -u learner cp ${tmp}/gitconfig ${HOME}/.gitconfig`);
 	const r = spawnSync(
 		'sudo',
 		[
