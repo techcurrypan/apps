@@ -1,0 +1,42 @@
+devlearn を作る。1 回の実行で、進められる所まで進める。
+
+作業フォルダはここ（`devlearn/`）。git のリポジトリの根は 1 つ上（`apps/`）。
+CI の設定はリポジトリの根の `.github/workflows/` に置く（ここから見て `../.github/`）。
+隣の `blog/` と `../.github/workflows/deploy-blog.yml` には触らない。
+
+【読む順】必ず上から
+  1. CLAUDE.md                       規則。全てに優先する
+  2. docs/decisions.md               決まったこと・未決
+  3. docs/requirements.md            何を作るか
+  4. docs/plan.md                    段と完成条件
+  5. docs/progress/ の最新           どこまで終わったか
+
+【段に入る前に必ず読む】
+  段 2 以降        : docs/explanation-standard.md   説明の中身の基準（最重要）
+  段 3 カリキュラム : docs/content-sources.md        問題の出典の決まり
+  段 4 ゲーム設計  : docs/game-design-brief.md      ゲーム設計の依頼書
+  段 5 画面設計    : docs/screen-design-brief.md    画面設計の依頼書
+                     docs/reference-analysis.md     参考サイトの分析（原理だけ。配置は写さない）
+  段 6 以降        : docs/screen-design.md          段 5 で決めた画面
+  段 10 本文       : docs/content-sources.md        問題の出典の決まり
+
+【やること】
+  - docs/plan.md の、終わっていない最初の段を進める
+  - 先に失敗するテストを書いてから実装する
+  - 小さく作る。意味のある単位でコミットする
+  - 検査を通す
+      npm run check / npm run lint / npm run test / npm run content:check
+      npm run secrets
+  - git push して、公開 URL で自分の目で確かめる
+      https://devlearn.techcurrybread.workers.dev
+  - docs/progress/phase-<N>.md に記録してコミットする
+      何を作ったか / どう確かめたか / 満たした完成条件 /
+      満たせなかった物とその理由
+
+【終わり方】
+  - その段の完成条件を全部満たしたら、次の段へ進む
+  - 全部終わったら ALLDONE とだけ出力して終われ
+  - 仕様書だけでは決められない事が出たら、docs/decisions.md の未決に
+    「問題 → 影響 → 変更案」を書いてコミットし、
+    DECISIONNEEDED とだけ出力して終われ
+  - 確認を求めるな。止まるな

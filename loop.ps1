@@ -1,12 +1,12 @@
-﻿# Run Claude Code until all phases are done.
+# Run Claude Code until all phases are done.
 # Stops only when: all phases done (ALLDONE), a spec decision is needed (DECISIONNEEDED), or the model is unavailable.
 # Waits and resumes automatically when the usage limit is reached.
 # Usage:
-#   cd X:\git\swallow
-#   Set-ExecutionPolicy -Scope Process Bypass
+#   cd X:\git\apps
+#   Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force
 #   .\loop.ps1
 
-$Repo       = "X:\git\swallow"
+$Repo       = "X:\git\apps\devlearn"
 $WaitMin    = 20
 $MaxRuns    = 500
 $PromptFile = "PROMPT.txt"
@@ -38,7 +38,7 @@ for ($i = 1; $i -le $MaxRuns; $i++) {
     if ($out -match "DECISIONNEEDED") {
         Write-Host ""
         Write-Host "A spec decision is needed." -ForegroundColor Magenta
-        Write-Host "1. Read the open items in docs\decisions.md." -ForegroundColor Magenta
+        Write-Host "1. Read the open items in X:\git\apps\devlearn\docs\decisions.md." -ForegroundColor Magenta
         Write-Host "2. Write your decision in the same item (which option, and why if needed)." -ForegroundColor Magenta
         Write-Host "3. Run .\loop.ps1 again." -ForegroundColor Magenta
         break
