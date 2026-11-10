@@ -105,3 +105,35 @@ describe('命令の探し方', () => {
 		expect(last(run(['exit 3']))?.code).toBe(3);
 	});
 });
+
+describe('命令の置き換え $( )', () => {
+	it('標準出力の末尾の改行を落として語に入れる', () => {
+		const s = run(['printf "a\\nb\\n" > f.txt', 'echo "n=$(wc -l < f.txt)"']);
+		expect(last(s)?.out).toBe('n=2\n');
+	});
+	it('引用符の外では、答えを空白で語に分ける', () => {
+		const s = run(['printf "x y\\nz\\n" > f.txt', 'printf "[%s]" $(cat f.txt)']);
+		expect(last(s)?.out).toBe('[x][y][z]');
+	});
+	it('引用符の中では分けない', () => {
+		const s = run(['printf "x y\\n" > f.txt', 'printf "[%s]" "$(cat f.txt)"']);
+		expect(last(s)?.out).toBe('[x y]');
+	});
+	it('答えが空なら語は消える', () => {
+		const s = run(['printf "[%s]" a $(printf "") b']);
+		expect(last(s)?.out).toBe('[a][b]');
+	});
+	it('変数への代入の右では分けない', () => {
+		const s = run(['printf "x y\\n" > f.txt', 'v=$(cat f.txt)', 'echo "[$v]"']);
+		expect(last(s)?.out).toBe('[x y]\n');
+	});
+	it('中のエラー出力はそのまま出る', () => {
+		const s = run(['echo "[$(cat nofile)]"']);
+		expect(last(s)?.out).toBe('[]\n');
+		expect(last(s)?.err).toBe('cat: nofile: No such file or directory\n');
+	});
+	it('閉じない $( は読めない', () => {
+		const s = run(['echo $(pwd']);
+		expect(last(s)?.err).toContain("unexpected EOF while looking for matching `)'");
+	});
+});

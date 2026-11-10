@@ -137,16 +137,67 @@ function systemName<X>(path: string, commands: Commands<X>): string | null {
 	return SYSTEM_DIRS.includes(dir) && commands[name] && !BUILTIN_ONLY.has(name) ? name : null;
 }
 
-function expand<X>(w: Word, s: ShellState<X>): string {
-	return w
-		.map((seg) => {
-			if ('lit' in seg) return seg.lit;
-			if (seg.var === '?') return String(s.lastCode);
-			if (seg.var === '#') return s.vars['#'] ?? '0';
-			if (seg.var === '0') return s.vars['0'] ?? 'bash';
-			return s.vars[seg.var] ?? '';
-		})
-		.join('');
+function varValue<X>(name: string, s: ShellState<X>): string {
+	if (name === '?') return String(s.lastCode);
+	if (name === '#') return s.vars['#'] ?? '0';
+	if (name === '0') return s.vars['0'] ?? 'bash';
+	return s.vars[name] ?? '';
+}
+
+// 語を展開する。$( 命令 ) は子のシェルで打ち、標準出力の末尾の改行を落として入れる（ファイルの変化は残り、変数は残らない）。
+// 引用符の外の $( ) の答えは空白で語に分ける。答えが空で語がそれだけなら、語は消える
+type Expanded<X> = { fields: string[]; state: ShellState<X>; err: string };
+function expandWord<X>(run: Run<X>, w: Word, state: ShellState<X>): Expanded<X> {
+	let s = state;
+	let err = '';
+	const fields: string[] = [];
+	let cur = '';
+	let has = false;
+	const assignment = w.length > 0 && 'lit' in w[0] && /^[A-Za-z_][A-Za-z0-9_]*=/.test(w[0].lit);
+	for (const seg of w) {
+		if ('lit' in seg) {
+			cur += seg.lit;
+			has = true;
+		} else if ('var' in seg) {
+			cur += varValue(seg.var, s);
+			has = true;
+		} else {
+			const r = runText({ ...run, where: run.where }, { ...s, lastCode: s.lastCode }, seg.sub);
+			s = { ...s, fs: r.state.fs, ext: r.state.ext, net: r.state.net, lastCode: r.code };
+			err += r.err;
+			const text = r.out.replace(/\n+$/, '');
+			if (seg.quoted || assignment) {
+				cur += text;
+				has = true;
+				continue;
+			}
+			const parts = text.split(/[ \t\n]+/);
+			if (text.trim() === '') continue;
+			if (/^[ \t\n]/.test(text)) parts.shift();
+			parts.forEach((p, i) => {
+				if (i > 0) {
+					if (has) fields.push(cur);
+					cur = '';
+					has = false;
+				}
+				if (p !== '') {
+					cur += p;
+					has = true;
+				}
+			});
+			if (/[ \t\n]$/.test(text)) {
+				if (has) fields.push(cur);
+				cur = '';
+				has = false;
+			}
+		}
+	}
+	if (has) fields.push(cur);
+	return { fields, state: s, err };
+}
+
+function expand<X>(run: Run<X>, w: Word, s: ShellState<X>): string {
+	return expandWord(run, w, s).fields.join(' ');
 }
 
 // 子の bash に渡る変数（export した物）
@@ -236,7 +287,14 @@ function runCommand<X>(
 	const prefix = prefixAt(run.where, line);
 	const now = run.now;
 	let s = state;
-	const words = c.words.map((w) => expand(w, s));
+	const words: string[] = [];
+	let subErr = '';
+	for (const w of c.words) {
+		const e = expandWord(run, w, s);
+		s = e.state;
+		subErr += e.err;
+		words.push(...e.fields);
+	}
 	let input = stdin;
 	let outSink: Sink | null = null;
 	let errSink: Sink | null = null;
@@ -249,7 +307,7 @@ function runCommand<X>(
 			else outToErr = true;
 			continue;
 		}
-		const name = expand(r.target, s);
+		const name = expand(run, r.target, s);
 		const path = pathOf(s, name);
 		if (path === NULL_DEVICE) {
 			if (r.op === '<') input = '';
@@ -357,7 +415,7 @@ function runCommand<X>(
 		put(errSink, err);
 		err = '';
 	}
-	return { ...res, state: { ...res.state, fs }, out, err };
+	return { ...res, state: { ...res.state, fs }, out, err: subErr + err };
 }
 
 // && と || のまとまり 1 つ

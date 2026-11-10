@@ -3,7 +3,8 @@
 // パイプ・つなぎ（; && ||）・リダイレクト（> >> 2> 2>&1 >&2 <）・注釈（#）。
 // 扱わない物（要るレッスンが無い）：ワイルドカード、$( )、ヒアドキュメント、変数の語分割。
 
-export type Seg = { lit: string } | { var: string };
+// sub は $( 命令 )。quoted は "…" の中か（中でなければ、答えを空白で語に分ける）
+export type Seg = { lit: string } | { var: string } | { sub: string; quoted: boolean };
 export type Word = Seg[];
 export type Redirect =
 	{ fd: 0 | 1 | 2; op: '>' | '>>' | '<'; target: Word } | { fd: 1 | 2; op: '>&'; to: 1 | 2 };
@@ -19,6 +20,27 @@ type Tok =
 
 const isName = (c: string) => /[A-Za-z0-9_]/.test(c);
 
+// ( の次から読み、対になる ) の位置。引用符の中の括弧は数えない。無ければ -1
+function closeParen(line: string, from: number): number {
+	let depth = 1;
+	for (let j = from; j < line.length; j++) {
+		const c = line[j];
+		if (c === "'") {
+			const e = line.indexOf("'", j + 1);
+			if (e < 0) return -1;
+			j = e;
+		} else if (c === '"') {
+			let k = j + 1;
+			while (k < line.length && line[k] !== '"') k += line[k] === '\\' ? 2 : 1;
+			if (k >= line.length) return -1;
+			j = k;
+		} else if (c === '\\') j++;
+		else if (c === '(') depth++;
+		else if (c === ')' && --depth === 0) return j;
+	}
+	return -1;
+}
+
 function tokenize(line: string): Tok[] | { error: string } {
 	const toks: Tok[] = [];
 	let i = 0;
@@ -33,9 +55,16 @@ function tokenize(line: string): Tok[] | { error: string } {
 		if (word) toks.push({ t: 'word', w: word });
 		word = null;
 	};
-	// $ の後の変数名を読む。読めたら進んだ数、読めなければ 0
-	const readVar = (at: number): number => {
+	// $ の後の変数名・$( 命令 ) を読む。読めたら進んだ数、読めなければ 0（閉じない $( は -1）
+	const readVar = (at: number, quoted: boolean): number => {
 		const c = line[at + 1];
+		if (c === '(') {
+			const end = closeParen(line, at + 2);
+			if (end < 0) return -1;
+			word ??= [];
+			word.push({ sub: line.slice(at + 2, end), quoted });
+			return end - at + 1;
+		}
 		if (c === '{') {
 			const end = line.indexOf('}', at + 2);
 			if (end < 0) return 0;
@@ -80,7 +109,8 @@ function tokenize(line: string): Tok[] | { error: string } {
 					lit(line[j + 1]);
 					j += 2;
 				} else if (d === '$') {
-					const n = readVar(j);
+					const n = readVar(j, true);
+					if (n < 0) return { error: "unexpected EOF while looking for matching `)'" };
 					if (n === 0) {
 						lit('$');
 						j++;
@@ -95,7 +125,8 @@ function tokenize(line: string): Tok[] | { error: string } {
 			if (i + 1 < line.length) lit(line[i + 1]);
 			i += 2;
 		} else if (c === '$') {
-			const n = readVar(i);
+			const n = readVar(i, false);
+			if (n < 0) return { error: "unexpected EOF while looking for matching `)'" };
 			if (n === 0) {
 				lit('$');
 				i++;
