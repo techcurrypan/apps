@@ -1,0 +1,14 @@
+{
+	"note": "設定を渡す場面（設定のファイル）",
+	"docker": {
+		"images": ["busybox:1.37"]
+	},
+	"files": [
+		{
+			"path": "/home/learner/demo/shop.env",
+			"mode": "664",
+			"owner": "learner",
+			"data": "SHOP_NAME=minato\nSHOP_MODE=test\n"
+		}
+	]
+}

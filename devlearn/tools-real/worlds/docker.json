@@ -1,0 +1,6 @@
+{
+	"note": "コンテナの場面（busybox:1.37 だけを取ってある）",
+	"docker": {
+		"images": ["busybox:1.37"]
+	}
+}

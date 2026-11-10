@@ -1,0 +1,15 @@
+{
+	"id": "ctr-004-build",
+	"tool": "docker",
+	"lesson": "ctr-004",
+	"world": "docker-build",
+	"note": "Dockerfile を書き、docker build で名前を付けたイメージを作って動かす",
+	"steps": [
+		"cat Dockerfile",
+		"docker build -t shop-web:1.0 .",
+		"docker images",
+		"docker run -d --name web -p 8080:80 shop-web:1.0",
+		"curl http://localhost:8080/",
+		"docker build -t shop-web:1.0 nothing"
+	]
+}

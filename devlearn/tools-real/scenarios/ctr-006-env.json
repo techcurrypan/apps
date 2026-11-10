@@ -1,0 +1,16 @@
+{
+	"id": "ctr-006-env",
+	"tool": "docker",
+	"lesson": "ctr-006",
+	"world": "docker-env",
+	"note": "-e と --env-file で、コンテナに設定を渡す",
+	"steps": [
+		"docker run --rm busybox:1.37 sh -c 'echo name=$SHOP_NAME'",
+		"docker run --rm -e SHOP_NAME=minato busybox:1.37 sh -c 'echo name=$SHOP_NAME'",
+		"cat shop.env",
+		"docker run --rm --env-file shop.env busybox:1.37 sh -c 'echo $SHOP_NAME $SHOP_MODE'",
+		"docker run --rm --env-file nothing.env busybox:1.37 true",
+		"docker run -d --name app -e SHOP_MODE=live busybox:1.37 sleep 600",
+		"docker exec app printenv SHOP_MODE"
+	]
+}

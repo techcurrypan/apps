@@ -1,0 +1,15 @@
+{
+	"id": "ctr-008-cache",
+	"tool": "docker",
+	"lesson": "ctr-008",
+	"world": "docker-cache",
+	"note": "命令ごとの層と、使い回し。変えた所から後を作り直す",
+	"steps": [
+		"docker build -t shop-web:1.0 .",
+		"docker build -t shop-web:1.0 .",
+		"echo '<p>shop v2</p>' > index.html",
+		"docker build -t shop-web:1.1 .",
+		"docker history shop-web:1.1",
+		"docker images"
+	]
+}

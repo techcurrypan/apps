@@ -27,6 +27,8 @@ type World = {
 	procs?: { user: string; cmd: string }[];
 	// files で /etc/systemd/system に置いたサービス。置いた後に読み直させ、場面の後に止めて外す
 	units?: string[];
+	// コンテナの場面。初めにコンテナ・ボリューム・網・作る途中の物を全て消し、images のイメージだけを残す（無ければ取る）
+	docker?: { images: string[] };
 };
 
 // 作り物の網（worlds/net.json）。機械ごとに網の名前空間を作り、switch（sw の br0）につなぐ
@@ -109,7 +111,9 @@ function versions(): Record<string, string> {
 		faketime: v("dpkg-query -W -f '${Version}' faketime"),
 		procps: v('ps --version'),
 		systemd: v('systemctl --version | head -1'),
-		ssh: v('ssh -V 2>&1')
+		ssh: v('ssh -V 2>&1'),
+		docker: v("docker version --format '{{.Server.Version}}'"),
+		compose: v('docker compose version')
 	};
 }
 
@@ -162,6 +166,22 @@ function placeWorld(st: string, w: World): string[] {
 		);
 	}
 	return roots;
+}
+
+// コンテナの世界を空にし、残すイメージだけにする。learner を docker の組に入れる（入れるのはコンテナの場面の間だけ）
+function dockerReset(images: string[]) {
+	sh('docker ps -aq | xargs -r docker rm -f > /dev/null');
+	sh('docker volume ls -q | xargs -r docker volume rm > /dev/null');
+	sh('docker network prune -f > /dev/null');
+	sh('docker builder prune -af > /dev/null');
+	const keep = new Set(images.map((i) => (i.includes(':') ? i : `${i}:latest`)));
+	const have = sh("docker images --format '{{.Repository}}:{{.Tag}}'")
+		.split(NL)
+		.filter((x) => x !== '' && !keep.has(x));
+	if (have.length > 0) sh(`docker rmi -f ${have.join(' ')} > /dev/null`);
+	sh('docker image prune -af > /dev/null');
+	for (const i of keep)
+		sh(`docker image inspect ${i} > /dev/null 2>&1 || docker pull -q ${i} > /dev/null`);
 }
 
 // 世界の後片付け：動かしたプロセスを止め、サービスを止めて外す
@@ -292,6 +312,10 @@ function record(s: Scenario) {
 		? (JSON.parse(readFileSync(join(here, 'worlds', `${s.world}.json`), 'utf8')) as World)
 		: {};
 	const extraRoots = placeWorld(st, world);
+	if (world.docker) {
+		dockerReset(world.docker.images);
+		sh('sudo gpasswd -a learner docker > /dev/null');
+	}
 	const worldFile = s.world ? join(here, 'worlds', `${s.world}.json`) : '';
 	const net = world.net ? placeNet(st, world.net, worldFile) : null;
 	sh(`sudo -u learner touch -h -d @${BASE} ${HOME}/.gitconfig ${WORK} ${HOME}`);
@@ -366,6 +390,10 @@ function record(s: Scenario) {
 	});
 	net?.teardown();
 	clearWorld(world);
+	if (world.docker) {
+		sh('sudo gpasswd -d learner docker > /dev/null');
+		dockerReset(world.docker.images);
+	}
 	// 置いた世界を片付ける（家の外の物）
 	if (extraRoots.length > 0) sh(`sudo rm -rf ${extraRoots.filter((r) => r !== '/srv').join(' ')}`);
 	return {

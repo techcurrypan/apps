@@ -1,0 +1,20 @@
+{
+	"note": "層とキャッシュの場面",
+	"docker": {
+		"images": ["busybox:1.37"]
+	},
+	"files": [
+		{
+			"path": "/home/learner/demo/Dockerfile",
+			"mode": "664",
+			"owner": "learner",
+			"data": "FROM busybox:1.37\nRUN mkdir /www && echo built > /www/build.txt\nCOPY index.html /www/index.html\nCMD [\"httpd\", \"-f\", \"-p\", \"80\", \"-h\", \"/www\"]\n"
+		},
+		{
+			"path": "/home/learner/demo/index.html",
+			"mode": "664",
+			"owner": "learner",
+			"data": "<p>shop</p>\n"
+		}
+	]
+}

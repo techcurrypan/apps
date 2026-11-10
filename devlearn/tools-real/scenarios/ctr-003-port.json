@@ -1,0 +1,18 @@
+{
+	"id": "ctr-003-port",
+	"tool": "docker",
+	"lesson": "ctr-003",
+	"world": "docker",
+	"note": "-p で手元の口とコンテナの口をつなぐ。口が重なると動かない",
+	"steps": [
+		"docker run -d --name web busybox:1.37 sh -c 'echo hello > /tmp/index.html && exec httpd -f -p 80 -h /tmp'",
+		"curl http://localhost:8080/",
+		"docker port web",
+		"docker rm -f web",
+		"docker run -d --name web -p 8080:80 busybox:1.37 sh -c 'echo hello > /tmp/index.html && exec httpd -f -p 80 -h /tmp'",
+		"docker port web",
+		"curl http://localhost:8080/",
+		"docker run -d --name web2 -p 8080:80 busybox:1.37 sleep 600",
+		"docker ps -a"
+	]
+}

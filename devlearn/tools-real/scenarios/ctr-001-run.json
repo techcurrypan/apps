@@ -1,0 +1,17 @@
+{
+	"id": "ctr-001-run",
+	"tool": "docker",
+	"lesson": "ctr-001",
+	"world": "docker-empty",
+	"note": "イメージを取ってきて、コンテナで命令を動かす。-d で裏で動かす",
+	"steps": [
+		"docker images",
+		"docker run busybox:1.37 echo hello",
+		"docker images",
+		"docker run busybox:1.37 echo hello",
+		"docker run --rm busybox:1.37 uname -s",
+		"docker run -d --name clock busybox:1.37 sleep 600",
+		"docker ps",
+		"docker run nothing-here"
+	]
+}

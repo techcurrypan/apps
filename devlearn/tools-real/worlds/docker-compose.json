@@ -1,0 +1,14 @@
+{
+	"note": "まとめて動かす場面（compose.yaml）",
+	"docker": {
+		"images": ["busybox:1.37"]
+	},
+	"files": [
+		{
+			"path": "/home/learner/demo/compose.yaml",
+			"mode": "664",
+			"owner": "learner",
+			"data": "services:\n  web:\n    image: busybox:1.37\n    command: [\"sh\", \"-c\", \"echo '<p>shop</p>' > /tmp/index.html && exec httpd -f -p 80 -h /tmp\"]\n    ports:\n      - \"8080:80\"\n    depends_on:\n      - db\n  db:\n    image: busybox:1.37\n    command: [\"sh\", \"-c\", \"exec nc -lk -p 5432 -e cat\"]\n"
+		}
+	]
+}

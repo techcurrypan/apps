@@ -1,0 +1,22 @@
+{
+	"id": "ctr-002-lifecycle",
+	"tool": "docker",
+	"lesson": "ctr-002",
+	"world": "docker",
+	"note": "ps で動く物、ps -a で止まった物を見て、stop と rm で片付ける",
+	"steps": [
+		"docker run -d --name web busybox:1.37 sleep 600",
+		"docker run --name once busybox:1.37 echo done",
+		"docker ps",
+		"docker ps -a",
+		"docker stop web",
+		"docker ps -a",
+		"docker rm web once",
+		"docker ps -a",
+		"docker rm nothing",
+		"docker run -d --name app busybox:1.37 sleep 600",
+		"docker rm app",
+		"docker rm -f app",
+		"docker ps -a"
+	]
+}

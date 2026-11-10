@@ -1,0 +1,16 @@
+{
+	"id": "ctr-009-network",
+	"tool": "docker",
+	"lesson": "ctr-009",
+	"world": "docker",
+	"note": "同じ網のコンテナは名前で届く。違う網には届かない",
+	"steps": [
+		"docker network create shopnet",
+		"docker network ls",
+		"docker run -d --name db --network shopnet busybox:1.37 sleep 600",
+		"docker run --rm --network shopnet busybox:1.37 ping -c 1 -W 1 db",
+		"docker run --rm busybox:1.37 ping -c 1 -W 1 db",
+		"docker network create other",
+		"docker run --rm --network other busybox:1.37 ping -c 1 -W 1 db"
+	]
+}
