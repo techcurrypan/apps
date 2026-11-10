@@ -26,20 +26,20 @@
 	"steps": [
 		{
 			"line": "ps -u shop -o pid,ppid,stat,cmd",
-			"out": "    PID    PPID STAT CMD\n  21398       1 Ss   python3 /opt/shop/web.py\n  21399   21398 S    python3 /opt/shop/worker.py\n  21404       1 Ss   python3 /opt/shop/report.py\n",
+			"out": "    PID    PPID STAT CMD\n  21356       1 Ss   python3 /opt/shop/web.py\n  21357   21356 S    python3 /opt/shop/worker.py\n  21362       1 Ss   python3 /opt/shop/report.py\n",
 			"err": "",
 			"code": 0
 		},
 		{
 			"line": "pgrep -a -u shop python3",
-			"out": "21398 python3 /opt/shop/web.py\n21399 python3 /opt/shop/worker.py\n21404 python3 /opt/shop/report.py\n",
+			"out": "21356 python3 /opt/shop/web.py\n21357 python3 /opt/shop/worker.py\n21362 python3 /opt/shop/report.py\n",
 			"err": "",
 			"code": 0
 		},
 		{
 			"line": "kill $(pgrep -f report.py)",
 			"out": "",
-			"err": "bash: line 8: kill: (21404) - Operation not permitted\n",
+			"err": "bash: line 8: kill: (21362) - Operation not permitted\n",
 			"code": 1
 		},
 		{
@@ -50,7 +50,7 @@
 		},
 		{
 			"line": "ps -u shop -o pid,ppid,stat,cmd",
-			"out": "    PID    PPID STAT CMD\n  21398       1 Ss   python3 /opt/shop/web.py\n  21399   21398 S    python3 /opt/shop/worker.py\n  21404       1 Ss   python3 /opt/shop/report.py\n",
+			"out": "    PID    PPID STAT CMD\n  21356       1 Ss   python3 /opt/shop/web.py\n  21357   21356 S    python3 /opt/shop/worker.py\n  21362       1 Ss   python3 /opt/shop/report.py\n",
 			"err": "",
 			"code": 0
 		},
@@ -62,7 +62,7 @@
 		},
 		{
 			"line": "ps -u shop -o pid,ppid,stat,cmd",
-			"out": "    PID    PPID STAT CMD\n  21398       1 Ss   python3 /opt/shop/web.py\n  21399   21398 S    python3 /opt/shop/worker.py\n",
+			"out": "    PID    PPID STAT CMD\n  21356       1 Ss   python3 /opt/shop/web.py\n  21357   21356 S    python3 /opt/shop/worker.py\n",
 			"err": "",
 			"code": 0
 		},
@@ -74,7 +74,7 @@
 		},
 		{
 			"line": "ps -u shop -o pid,ppid,stat,cmd",
-			"out": "    PID    PPID STAT CMD\n  21399       1 S    python3 /opt/shop/worker.py\n",
+			"out": "    PID    PPID STAT CMD\n  21357       1 S    python3 /opt/shop/worker.py\n",
 			"err": "",
 			"code": 0
 		},

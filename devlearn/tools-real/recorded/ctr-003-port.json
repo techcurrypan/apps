@@ -26,7 +26,7 @@
 	"steps": [
 		{
 			"line": "docker run -d --name web busybox:1.37 sh -c 'echo hello > /tmp/index.html && exec httpd -f -p 80 -h /tmp'",
-			"out": "0b829a8eb597ced4db45e02c19d0f7a65d9171a0bf606f7b834acd118d66794a\n",
+			"out": "d645c84c265923ada87e7545390da3894afe1b3a7f010e189c9e4868f8376521\n",
 			"err": "",
 			"code": 0
 		},
@@ -50,7 +50,7 @@
 		},
 		{
 			"line": "docker run -d --name web -p 8080:80 busybox:1.37 sh -c 'echo hello > /tmp/index.html && exec httpd -f -p 80 -h /tmp'",
-			"out": "2459361ac3fdaa50f79b538017cfd4a7f71a25585e7db909f5febe61335344bc\n",
+			"out": "beada9daf5a8a1a5ad969b55470525a168905899e890b8ec336453ed311706a4\n",
 			"err": "",
 			"code": 0
 		},
@@ -68,13 +68,13 @@
 		},
 		{
 			"line": "docker run -d --name web2 -p 8080:80 busybox:1.37 sleep 600",
-			"out": "eaf4ab179646585e3c7b0eb980bddc9fb23d4d22d778794370bfa745ac3d54f4\n",
-			"err": "docker: Error response from daemon: failed to set up container networking: driver failed programming external connectivity on endpoint web2 (b782ed2f1b0d669d6607c3bee943d3a59ce67bc6c24556d1fe9080e8613f4d4d): Bind for 0.0.0.0:8080 failed: port is already allocated\n\nRun 'docker run --help' for more information\n",
+			"out": "c9e2c8093e33fbeac404f5b71bd464017bee72c6539ff9303d0ee63e9ad955d1\n",
+			"err": "docker: Error response from daemon: failed to set up container networking: driver failed programming external connectivity on endpoint web2 (81e071d591f5185f161f4836aa8c9feefc708e4e35ebea1c8ddc79e852508d37): Bind for 0.0.0.0:8080 failed: port is already allocated\n\nRun 'docker run --help' for more information\n",
 			"code": 125
 		},
 		{
 			"line": "docker ps -a",
-			"out": "CONTAINER ID   IMAGE          COMMAND                  CREATED                  STATUS        PORTS                                     NAMES\neaf4ab179646   busybox:1.37   \"sleep 600\"              Less than a second ago   Created                                                 web2\n2459361ac3fd   busybox:1.37   \"sh -c 'echo hello >…\"   1 second ago             Up 1 second   0.0.0.0:8080->80/tcp, [::]:8080->80/tcp   web\n",
+			"out": "CONTAINER ID   IMAGE          COMMAND                  CREATED                  STATUS                  PORTS                                     NAMES\nc9e2c8093e33   busybox:1.37   \"sleep 600\"              Less than a second ago   Created                                                           web2\nbeada9daf5a8   busybox:1.37   \"sh -c 'echo hello >…\"   Less than a second ago   Up Less than a second   0.0.0.0:8080->80/tcp, [::]:8080->80/tcp   web\n",
 			"err": "",
 			"code": 0
 		}

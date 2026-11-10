@@ -56,7 +56,7 @@
 		},
 		{
 			"line": "docker run -d --name app -e SHOP_MODE=live busybox:1.37 sleep 600",
-			"out": "12780b913df81761c2ea1d96177fc509e34fbcbebab0a7422d1c78b89649d107\n",
+			"out": "388b250f202f4111c1fe768c354d0861b958bbf5698d97d6a7ad540bfc07f838\n",
 			"err": "",
 			"code": 0
 		},

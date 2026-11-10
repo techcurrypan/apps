@@ -38,7 +38,7 @@
 		},
 		{
 			"line": "ssh-keygen -t ed25519 -C learner@devbox -N '' -f ~/.ssh/id_ed25519",
-			"out": "Generating public/private ed25519 key pair.\nYour identification has been saved in /home/learner/.ssh/id_ed25519\nYour public key has been saved in /home/learner/.ssh/id_ed25519.pub\nThe key fingerprint is:\nSHA256:ohoZpYtQyJQABsAKk3ok7eS/ClgXsanQGq5HDj2R4Sk learner@devbox\nThe key's randomart image is:\n+--[ED25519 256]--+\n|@=o .            |\n|O*++ +           |\n|EOB =            |\n|+B+= .           |\n|+oO.. . S        |\n|+* *.. .         |\n|= * ..           |\n| o o.            |\n|  o.             |\n+----[SHA256]-----+\n",
+			"out": "Generating public/private ed25519 key pair.\nYour identification has been saved in /home/learner/.ssh/id_ed25519\nYour public key has been saved in /home/learner/.ssh/id_ed25519.pub\nThe key fingerprint is:\nSHA256:jLDiIzkkqNVLvYhO2zYZUPuxY2OUsXyUlMQdrNh3pKU learner@devbox\nThe key's randomart image is:\n+--[ED25519 256]--+\n|       +o=..     |\n|    . . = o o    |\n|   ..o B . =     |\n|. ...+Bo+ E .    |\n|o.o.+oo+S. .     |\n|++ +.oB.         |\n|= = o=.o         |\n| = ++            |\n|  o...           |\n+----[SHA256]-----+\n",
 			"err": "",
 			"code": 0
 		},
@@ -50,7 +50,7 @@
 		},
 		{
 			"line": "cat ~/.ssh/id_ed25519.pub",
-			"out": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBZXTwDDRlBvM3sL0WnssgGIw4KCOW3tjfRT1zI3MVl/ learner@devbox\n",
+			"out": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINXDGhNvMpII1ZTzLkJAaVRR0ew12kV5TYwVEGmINVbu learner@devbox\n",
 			"err": "",
 			"code": 0
 		},
@@ -86,7 +86,7 @@
 		},
 		{
 			"line": "ssh -v ssh.example.com true 2>&1 | grep -E '^debug1: (Offering|Server accepts|Authenticated)'",
-			"out": "debug1: Offering public key: /home/learner/.ssh/id_ed25519 ED25519 SHA256:ohoZpYtQyJQABsAKk3ok7eS/ClgXsanQGq5HDj2R4Sk\r\ndebug1: Server accepts key: /home/learner/.ssh/id_ed25519 ED25519 SHA256:ohoZpYtQyJQABsAKk3ok7eS/ClgXsanQGq5HDj2R4Sk\r\n",
+			"out": "debug1: Offering public key: /home/learner/.ssh/id_ed25519 ED25519 SHA256:jLDiIzkkqNVLvYhO2zYZUPuxY2OUsXyUlMQdrNh3pKU\r\ndebug1: Server accepts key: /home/learner/.ssh/id_ed25519 ED25519 SHA256:jLDiIzkkqNVLvYhO2zYZUPuxY2OUsXyUlMQdrNh3pKU\r\n",
 			"err": "",
 			"code": 0
 		},
