@@ -23,7 +23,9 @@
 | # | 完成条件 | どう確かめたか | 結果 |
 |---|---|---|---|
 | 1 | 模擬の出力とエラーが本物と一致する（本物の出力を期待値として記録し、単体テストで固定） | CI の Ubuntu 24.04 で本物の命令を打って `tools-real/recorded/` に記録（`.github/workflows/record-devlearn-real.yml`）。`src/lib/tools/real.test.ts` が全 42 場面を模擬で打ち直し、標準出力・標準エラー・終了コードを一字ずつ比べる。本物でも毎回変わる物だけを揃える規則は `docs/tools.md` 2 章。保留（`PENDING`）は空。`npm run test` 1221 件（道具は 1023 件）が通る（2026-11-11） | ○ |
-| 2 | 道具の操作を巻き戻せる | 道具は 状態 → 状態 の関数で、履歴の k 番目に戻す（`src/lib/tools/session.ts`）。テスト：`session.test.ts`（土台）、git・shell・js・sql の各テスト、docker は `docker/docker.test.ts` の「巻き戻すと、その時点のコンテナ・イメージ・ボリュームに戻る」。実戦の画面で巻き戻せることは公開 URL で確かめた（git の実戦、`look.ts`） | ○ |
+| 2 | 道具の操作を巻き戻せる | 道具は 状態 → 状態 の関数で、履歴の k 番目に戻す（`src/lib/tools/session.ts`）。テスト：`session.test.ts`（土台）、git・shell・js・sql の各テスト、docker は `docker/docker.test.ts` の「巻き戻すと、その時点のコンテナ・イメージ・ボリュームに戻る」。実戦の画面で巻き戻せることは公開 URL で確かめた（git の実戦、`look.ts`。2026-11-11、`8e1c017` で 28 / 28） | ○ |
+
+CI の検査（型・lint・テスト・content:check・secrets）を通って `8e1c017` が公開された（2026-11-11）。
 
 記録した版（2026-11-11）：Ubuntu 24.04.5 LTS・bash 5.2.21・git 2.56.0・coreutils 9.4・procps-ng 4.0.4・systemd 255.4・OpenSSH 9.6p1・curl 8.5.0・Docker 28.0.4・Docker Compose v2.38.2・busybox 1.37.0。
 
