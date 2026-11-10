@@ -15,7 +15,10 @@
 		"dnsmasq": "Dnsmasq version 2.91  Copyright (c) 2000-2025 Simon Kelley",
 		"openssl": "OpenSSL 3.0.13 30 Jan 2024 (Library: OpenSSL 3.0.13 30 Jan 2024)",
 		"sudo": "Sudo version 1.9.15p5",
-		"faketime": "0.9.10-2.1"
+		"faketime": "0.9.10-2.1",
+		"procps": "ps from procps-ng 4.0.4",
+		"systemd": "systemd 255 (255.4-1ubuntu8.18)",
+		"ssh": "OpenSSH_9.6p1 Ubuntu-3ubuntu13.20, OpenSSL 3.0.13 30 Jan 2024"
 	},
 	"steps": [
 		{

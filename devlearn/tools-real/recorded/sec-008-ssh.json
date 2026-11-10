@@ -1,0 +1,104 @@
+{
+	"id": "sec-008-ssh",
+	"tool": "shell",
+	"lesson": "sec-008",
+	"world": "ssh",
+	"recordedOn": {
+		"os": "Ubuntu 24.04.5 LTS",
+		"bash": "GNU bash, version 5.2.21(1)-release (x86_64-pc-linux-gnu)",
+		"git": "git version 2.56.0",
+		"coreutils": "ls (GNU coreutils) 9.4",
+		"grep": "grep (GNU grep) 3.11",
+		"iproute2": "ip utility, iproute2-6.1.0, libbpf 1.3.0",
+		"dig": "DiG 9.18.39-0ubuntu0.24.04.9-Ubuntu",
+		"curl": "curl 8.5.0 (x86_64-pc-linux-gnu) libcurl/8.5.0 OpenSSL/3.0.13 zlib/1.3 brotli/1.1.0 zstd/1.5.5 libidn2/2.3.7 libpsl/0.21.2 (+libidn2/2.3.7) libssh/0.10.6/openssl/zlib nghttp2/1.59.0 librtmp/2.3 OpenLDAP/2.6.10",
+		"ping": "ping from iputils 20240117\nlibcap: yes, IDN: yes, NLS: no, error.h: yes, getrandom(): yes, __fpending(): yes",
+		"dnsmasq": "Dnsmasq version 2.91  Copyright (c) 2000-2025 Simon Kelley",
+		"openssl": "OpenSSL 3.0.13 30 Jan 2024 (Library: OpenSSL 3.0.13 30 Jan 2024)",
+		"sudo": "Sudo version 1.9.15p5",
+		"faketime": "0.9.10-2.1",
+		"procps": "ps from procps-ng 4.0.4",
+		"systemd": "systemd 255 (255.4-1ubuntu8.18)",
+		"ssh": "OpenSSH_9.6p1 Ubuntu-3ubuntu13.20, OpenSSL 3.0.13 30 Jan 2024"
+	},
+	"steps": [
+		{
+			"line": "ssh -o StrictHostKeyChecking=accept-new ssh.example.com hostname -I",
+			"out": "",
+			"err": "Warning: Permanently added 'ssh.example.com' (ED25519) to the list of known hosts.\r\nlearner@ssh.example.com: Permission denied (publickey).\r\n",
+			"code": 255
+		},
+		{
+			"line": "ls -a ~/.ssh",
+			"out": ".  ..  known_hosts\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "ssh-keygen -t ed25519 -C learner@devbox -N '' -f ~/.ssh/id_ed25519",
+			"out": "Generating public/private ed25519 key pair.\nYour identification has been saved in /home/learner/.ssh/id_ed25519\nYour public key has been saved in /home/learner/.ssh/id_ed25519.pub\nThe key fingerprint is:\nSHA256:yWQ1tZWHH7D2EYNXVEo9WikOEiDAQRjZejK+dJANoTA learner@devbox\nThe key's randomart image is:\n+--[ED25519 256]--+\n|EoO+o. ...+...=BB|\n|o= o  .  o o *+B=|\n|. =     o . +o*+o|\n| * o   + .  .o. o|\n|. =     S      . |\n| o .             |\n|. o              |\n| .               |\n|                 |\n+----[SHA256]-----+\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "ls -l ~/.ssh",
+			"out": "total 12\n-rw------- 1 learner learner 411 Nov 10 09:02 id_ed25519\n-rw-r--r-- 1 learner learner  96 Nov 10 09:02 id_ed25519.pub\n-rw-r--r-- 1 learner learner 142 Nov 10 09:00 known_hosts\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "cat ~/.ssh/id_ed25519.pub",
+			"out": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPjo/87zQVfnf0Djus+GC6KmvNyzfKrtzueyO11LKZEx learner@devbox\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "cat ~/.ssh/id_ed25519.pub >> ~/.ssh/authorized_keys",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "ssh ssh.example.com hostname -I",
+			"out": "192.0.2.22 \n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "ls -l ~/.ssh/authorized_keys",
+			"out": "-rw-rw-r-- 1 learner learner 96 Nov 10 09:05 /home/learner/.ssh/authorized_keys\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "chmod 600 ~/.ssh/authorized_keys",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "ssh ssh.example.com hostname -I",
+			"out": "192.0.2.22 \n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "ssh -v ssh.example.com true 2>&1 | grep -E '^debug1: (Offering|Server accepts|Authenticated)'",
+			"out": "debug1: Offering public key: /home/learner/.ssh/id_ed25519 ED25519 SHA256:yWQ1tZWHH7D2EYNXVEo9WikOEiDAQRjZejK+dJANoTA\r\ndebug1: Server accepts key: /home/learner/.ssh/id_ed25519 ED25519 SHA256:yWQ1tZWHH7D2EYNXVEo9WikOEiDAQRjZejK+dJANoTA\r\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "ssh-keygen -t ed25519 -C learner@devbox -N '' -f ~/.ssh/id_ed25519 < /dev/null",
+			"out": "Generating public/private ed25519 key pair.\n/home/learner/.ssh/id_ed25519 already exists.\nOverwrite (y/n)? ",
+			"err": "",
+			"code": 1
+		},
+		{
+			"line": "ssh -o StrictHostKeyChecking=accept-new nobody@ssh.example.com true",
+			"out": "",
+			"err": "nobody@ssh.example.com: Permission denied (publickey).\r\n",
+			"code": 255
+		}
+	]
+}

@@ -16,7 +16,10 @@
 		"dnsmasq": "Dnsmasq version 2.91  Copyright (c) 2000-2025 Simon Kelley",
 		"openssl": "OpenSSL 3.0.13 30 Jan 2024 (Library: OpenSSL 3.0.13 30 Jan 2024)",
 		"sudo": "Sudo version 1.9.15p5",
-		"faketime": "0.9.10-2.1"
+		"faketime": "0.9.10-2.1",
+		"procps": "ps from procps-ng 4.0.4",
+		"systemd": "systemd 255 (255.4-1ubuntu8.18)",
+		"ssh": "OpenSSH_9.6p1 Ubuntu-3ubuntu13.20, OpenSSL 3.0.13 30 Jan 2024"
 	},
 	"steps": [
 		{
@@ -57,19 +60,19 @@
 		},
 		{
 			"line": "ping -c 1 203.0.113.5",
-			"out": "PING 203.0.113.5 (203.0.113.5) 56(84) bytes of data.\n64 bytes from 203.0.113.5: icmp_seq=1 ttl=64 time=0.076 ms\n\n--- 203.0.113.5 ping statistics ---\n1 packets transmitted, 1 received, 0% packet loss, time 0ms\nrtt min/avg/max/mdev = 0.076/0.076/0.076/0.000 ms\n",
+			"out": "PING 203.0.113.5 (203.0.113.5) 56(84) bytes of data.\n64 bytes from 203.0.113.5: icmp_seq=1 ttl=64 time=0.078 ms\n\n--- 203.0.113.5 ping statistics ---\n1 packets transmitted, 1 received, 0% packet loss, time 0ms\nrtt min/avg/max/mdev = 0.078/0.078/0.078/0.000 ms\n",
 			"err": "",
 			"code": 0
 		},
 		{
 			"line": "ping -c 1 198.51.100.7",
-			"out": "PING 198.51.100.7 (198.51.100.7) 56(84) bytes of data.\n64 bytes from 198.51.100.7: icmp_seq=1 ttl=64 time=0.096 ms\n\n--- 198.51.100.7 ping statistics ---\n1 packets transmitted, 1 received, 0% packet loss, time 0ms\nrtt min/avg/max/mdev = 0.096/0.096/0.096/0.000 ms\n",
+			"out": "PING 198.51.100.7 (198.51.100.7) 56(84) bytes of data.\n64 bytes from 198.51.100.7: icmp_seq=1 ttl=64 time=0.075 ms\n\n--- 198.51.100.7 ping statistics ---\n1 packets transmitted, 1 received, 0% packet loss, time 0ms\nrtt min/avg/max/mdev = 0.075/0.075/0.075/0.000 ms\n",
 			"err": "",
 			"code": 0
 		},
 		{
 			"line": "ip neigh",
-			"out": "192.0.2.1 dev eth0 lladdr 02:00:00:00:00:01 REACHABLE \n192.0.2.53 dev eth0 lladdr 02:00:00:00:00:35 REACHABLE \n192.0.2.2 dev eth0 lladdr 02:00:00:00:00:02 REACHABLE \n",
+			"out": "192.0.2.53 dev eth0 lladdr 02:00:00:00:00:35 REACHABLE \n192.0.2.2 dev eth0 lladdr 02:00:00:00:00:02 REACHABLE \n192.0.2.1 dev eth0 lladdr 02:00:00:00:00:01 REACHABLE \n",
 			"err": "",
 			"code": 0
 		},
