@@ -1,0 +1,59 @@
+{
+	"id": "net-007-http",
+	"tool": "shell",
+	"lesson": "net-007",
+	"world": "net",
+	"recordedOn": {
+		"os": "Ubuntu 24.04.5 LTS",
+		"bash": "GNU bash, version 5.2.21(1)-release (x86_64-pc-linux-gnu)",
+		"git": "git version 2.56.0",
+		"coreutils": "ls (GNU coreutils) 9.4",
+		"grep": "grep (GNU grep) 3.11",
+		"iproute2": "ip utility, iproute2-6.1.0, libbpf 1.3.0",
+		"dig": "DiG 9.18.39-0ubuntu0.24.04.9-Ubuntu",
+		"curl": "curl 8.5.0 (x86_64-pc-linux-gnu) libcurl/8.5.0 OpenSSL/3.0.13 zlib/1.3 brotli/1.1.0 zstd/1.5.5 libidn2/2.3.7 libpsl/0.21.2 (+libidn2/2.3.7) libssh/0.10.6/openssl/zlib nghttp2/1.59.0 librtmp/2.3 OpenLDAP/2.6.10",
+		"ping": "ping from iputils 20240117\nlibcap: yes, IDN: yes, NLS: no, error.h: yes, getrandom(): yes, __fpending(): yes",
+		"dnsmasq": "Dnsmasq version 2.91  Copyright (c) 2000-2025 Simon Kelley",
+		"openssl": "OpenSSL 3.0.13 30 Jan 2024 (Library: OpenSSL 3.0.13 30 Jan 2024)",
+		"sudo": "Sudo version 1.9.15p5",
+		"faketime": "0.9.10-2.1"
+	},
+	"steps": [
+		{
+			"line": "curl http://shop.example.com/",
+			"out": "<!doctype html>\n<title>shop</title>\n<p>welcome</p>\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "curl -s http://shop.example.com/",
+			"out": "<!doctype html>\n<title>shop</title>\n<p>welcome</p>\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "curl -v http://shop.example.com/",
+			"out": "<!doctype html>\n<title>shop</title>\n<p>welcome</p>\n",
+			"err": "* Host shop.example.com:80 was resolved.\n* IPv6: (none)\n* IPv4: 192.0.2.80\n*   Trying 192.0.2.80:80...\n* Connected to shop.example.com (192.0.2.80) port 80\n> GET / HTTP/1.1\r\n> Host: shop.example.com\r\n> User-Agent: curl/8.5.0\r\n> Accept: */*\r\n> \r\n< HTTP/1.1 200 OK\r\n< Server: yorozu-web/1.0\r\n< Date: Tue, 10 Nov 2026 00:02:00 GMT\r\n< Content-Type: text/html; charset=utf-8\r\n< Cache-Control: no-cache\r\n< Content-Length: 51\r\n< \r\n* Connection #0 to host shop.example.com left intact\n",
+			"code": 0
+		},
+		{
+			"line": "curl http://nosuch.example.com/",
+			"out": "",
+			"err": "curl: (6) Could not resolve host: nosuch.example.com\n",
+			"code": 6
+		},
+		{
+			"line": "curl http://192.0.2.80:8081/",
+			"out": "",
+			"err": "curl: (7) Failed to connect to 192.0.2.80 port 8081 after 0 ms: Couldn't connect to server\n",
+			"code": 7
+		},
+		{
+			"line": "curl -v http://192.0.2.80/",
+			"out": "<!doctype html>\n<title>shop</title>\n<p>welcome</p>\n",
+			"err": "*   Trying 192.0.2.80:80...\n* Connected to 192.0.2.80 (192.0.2.80) port 80\n> GET / HTTP/1.1\r\n> Host: 192.0.2.80\r\n> User-Agent: curl/8.5.0\r\n> Accept: */*\r\n> \r\n< HTTP/1.1 200 OK\r\n< Server: yorozu-web/1.0\r\n< Date: Tue, 10 Nov 2026 00:05:00 GMT\r\n< Content-Type: text/html; charset=utf-8\r\n< Cache-Control: no-cache\r\n< Content-Length: 51\r\n< \r\n* Connection #0 to host 192.0.2.80 left intact\n",
+			"code": 0
+		}
+	]
+}

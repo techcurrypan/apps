@@ -1,0 +1,47 @@
+{
+	"id": "net-006-ports",
+	"tool": "shell",
+	"lesson": "net-006",
+	"world": "net",
+	"recordedOn": {
+		"os": "Ubuntu 24.04.5 LTS",
+		"bash": "GNU bash, version 5.2.21(1)-release (x86_64-pc-linux-gnu)",
+		"git": "git version 2.56.0",
+		"coreutils": "ls (GNU coreutils) 9.4",
+		"grep": "grep (GNU grep) 3.11",
+		"iproute2": "ip utility, iproute2-6.1.0, libbpf 1.3.0",
+		"dig": "DiG 9.18.39-0ubuntu0.24.04.9-Ubuntu",
+		"curl": "curl 8.5.0 (x86_64-pc-linux-gnu) libcurl/8.5.0 OpenSSL/3.0.13 zlib/1.3 brotli/1.1.0 zstd/1.5.5 libidn2/2.3.7 libpsl/0.21.2 (+libidn2/2.3.7) libssh/0.10.6/openssl/zlib nghttp2/1.59.0 librtmp/2.3 OpenLDAP/2.6.10",
+		"ping": "ping from iputils 20240117\nlibcap: yes, IDN: yes, NLS: no, error.h: yes, getrandom(): yes, __fpending(): yes",
+		"dnsmasq": "Dnsmasq version 2.91  Copyright (c) 2000-2025 Simon Kelley",
+		"openssl": "OpenSSL 3.0.13 30 Jan 2024 (Library: OpenSSL 3.0.13 30 Jan 2024)",
+		"sudo": "Sudo version 1.9.15p5",
+		"faketime": "0.9.10-2.1"
+	},
+	"steps": [
+		{
+			"line": "ss -tuln",
+			"out": "Netid  State   Recv-Q  Send-Q   Local Address:Port   Peer Address:Port Process  \nudp    UNCONN  0       0              0.0.0.0:5353        0.0.0.0:*             \ntcp    LISTEN  0       4096         127.0.0.1:5432        0.0.0.0:*             \ntcp    LISTEN  0       4096           0.0.0.0:22          0.0.0.0:*             \ntcp    LISTEN  0       4096           0.0.0.0:8080        0.0.0.0:*             \n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "ss -tln",
+			"out": "State    Recv-Q   Send-Q     Local Address:Port     Peer Address:Port  Process  \nLISTEN   0        4096           127.0.0.1:5432          0.0.0.0:*              \nLISTEN   0        4096             0.0.0.0:22            0.0.0.0:*              \nLISTEN   0        4096             0.0.0.0:8080          0.0.0.0:*              \n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "ss -uln",
+			"out": "State    Recv-Q   Send-Q     Local Address:Port     Peer Address:Port  Process  \nUNCONN   0        0                0.0.0.0:5353          0.0.0.0:*              \n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "ss -tln4",
+			"out": "State    Recv-Q   Send-Q     Local Address:Port     Peer Address:Port  Process  \nLISTEN   0        4096           127.0.0.1:5432          0.0.0.0:*              \nLISTEN   0        4096             0.0.0.0:22            0.0.0.0:*              \nLISTEN   0        4096             0.0.0.0:8080          0.0.0.0:*              \n",
+			"err": "",
+			"code": 0
+		}
+	]
+}

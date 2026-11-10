@@ -1,0 +1,95 @@
+{
+	"id": "net-004-dns",
+	"tool": "shell",
+	"lesson": "net-004",
+	"world": "net",
+	"recordedOn": {
+		"os": "Ubuntu 24.04.5 LTS",
+		"bash": "GNU bash, version 5.2.21(1)-release (x86_64-pc-linux-gnu)",
+		"git": "git version 2.56.0",
+		"coreutils": "ls (GNU coreutils) 9.4",
+		"grep": "grep (GNU grep) 3.11",
+		"iproute2": "ip utility, iproute2-6.1.0, libbpf 1.3.0",
+		"dig": "DiG 9.18.39-0ubuntu0.24.04.9-Ubuntu",
+		"curl": "curl 8.5.0 (x86_64-pc-linux-gnu) libcurl/8.5.0 OpenSSL/3.0.13 zlib/1.3 brotli/1.1.0 zstd/1.5.5 libidn2/2.3.7 libpsl/0.21.2 (+libidn2/2.3.7) libssh/0.10.6/openssl/zlib nghttp2/1.59.0 librtmp/2.3 OpenLDAP/2.6.10",
+		"ping": "ping from iputils 20240117\nlibcap: yes, IDN: yes, NLS: no, error.h: yes, getrandom(): yes, __fpending(): yes",
+		"dnsmasq": "Dnsmasq version 2.91  Copyright (c) 2000-2025 Simon Kelley",
+		"openssl": "OpenSSL 3.0.13 30 Jan 2024 (Library: OpenSSL 3.0.13 30 Jan 2024)",
+		"sudo": "Sudo version 1.9.15p5",
+		"faketime": "0.9.10-2.1"
+	},
+	"steps": [
+		{
+			"line": "cat /etc/resolv.conf",
+			"out": "nameserver 192.0.2.53\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "cat /etc/hosts",
+			"out": "127.0.0.1 localhost\n192.0.2.10 devbox\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "dig shop.example.com",
+			"out": "\n; <<>> DiG 9.18.39-0ubuntu0.24.04.9-Ubuntu <<>> shop.example.com\n;; global options: +cmd\n;; Got answer:\n;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 11126\n;; flags: qr aa rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 1\n\n;; OPT PSEUDOSECTION:\n; EDNS: version: 0, flags:; udp: 1232\n;; QUESTION SECTION:\n;shop.example.com.\t\tIN\tA\n\n;; ANSWER SECTION:\nshop.example.com.\t300\tIN\tA\t192.0.2.80\n\n;; Query time: 0 msec\n;; SERVER: 192.0.2.53#53(192.0.2.53) (UDP)\n;; WHEN: Tue Nov 10 09:02:00 JST 2026\n;; MSG SIZE  rcvd: 61\n\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "dig +short shop.example.com",
+			"out": "192.0.2.80\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "dig +short api.example.com",
+			"out": "192.0.2.80\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "dig +short cdn.example.com",
+			"out": "203.0.113.5\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "dig nosuch.example.com",
+			"out": "\n; <<>> DiG 9.18.39-0ubuntu0.24.04.9-Ubuntu <<>> nosuch.example.com\n;; global options: +cmd\n;; Got answer:\n;; ->>HEADER<<- opcode: QUERY, status: NXDOMAIN, id: 24603\n;; flags: qr rd ra; QUERY: 1, ANSWER: 0, AUTHORITY: 0, ADDITIONAL: 1\n\n;; OPT PSEUDOSECTION:\n; EDNS: version: 0, flags:; udp: 1232\n;; QUESTION SECTION:\n;nosuch.example.com.\t\tIN\tA\n\n;; Query time: 0 msec\n;; SERVER: 192.0.2.53#53(192.0.2.53) (UDP)\n;; WHEN: Tue Nov 10 09:06:00 JST 2026\n;; MSG SIZE  rcvd: 47\n\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "dig +short nosuch.example.com",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "dig +noall +answer shop.example.com",
+			"out": "shop.example.com.\t300\tIN\tA\t192.0.2.80\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "ping -c 1 shop.example.com",
+			"out": "PING shop.example.com (192.0.2.80) 56(84) bytes of data.\n64 bytes from 192.0.2.80: icmp_seq=1 ttl=64 time=0.068 ms\n\n--- shop.example.com ping statistics ---\n1 packets transmitted, 1 received, 0% packet loss, time 0ms\nrtt min/avg/max/mdev = 0.068/0.068/0.068/0.000 ms\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "ping -c 1 devbox",
+			"out": "PING devbox (192.0.2.10) 56(84) bytes of data.\n64 bytes from devbox (192.0.2.10): icmp_seq=1 ttl=64 time=0.018 ms\n\n--- devbox ping statistics ---\n1 packets transmitted, 1 received, 0% packet loss, time 0ms\nrtt min/avg/max/mdev = 0.018/0.018/0.018/0.000 ms\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "ping -c 1 nosuch.example.com",
+			"out": "",
+			"err": "ping: nosuch.example.com: Name or service not known\n",
+			"code": 2
+		}
+	]
+}
