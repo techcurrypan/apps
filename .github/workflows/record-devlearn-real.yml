@@ -32,6 +32,9 @@ jobs:
       - name: 利用者 learner を作る
         run: sudo useradd -m -s /bin/bash learner
 
+      - name: 作り物の時計（faketime）を入れる
+        run: sudo apt-get update && sudo apt-get install -y faketime
+
       - name: 本物の命令を打って記録する
         run: node devlearn/tools-real/record.ts
 

@@ -38,7 +38,18 @@ describe('本物の記録がある', () => {
 
 // 本物の記録はあるが、模擬がまだ追いついていない場面。黙って飛ばさず、保留として一覧に出す。
 // 段 7 を終えるときは空にする（docs/progress/phase-7.md）
-export const PENDING: ReadonlySet<string> = new Set([]);
+export const PENDING: ReadonlySet<string> = new Set([
+	'lnx-001-move',
+	'lnx-002-files',
+	'lnx-003-read',
+	'lnx-004-mode',
+	'lnx-005-pipe',
+	'lnx-006-grep',
+	'lnx-008-env',
+	'lnx-009-script',
+	'sec-002-hash',
+	'sec-012-log'
+]);
 
 for (const rec of recorded) {
 	if (PENDING.has(rec.id)) {

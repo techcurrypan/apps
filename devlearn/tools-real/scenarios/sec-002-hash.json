@@ -1,0 +1,29 @@
+{
+	"id": "sec-002-hash",
+	"tool": "shell",
+	"lesson": "sec-002",
+	"note": "同じ入力は同じハッシュ、1 字違うと別、ソルト、改行も入力のうち",
+	"steps": [
+		"printf 'password123' | sha256sum",
+		"printf 'password123' | sha256sum",
+		"printf 'password124' | sha256sum",
+		"printf 'salt1:password123' | sha256sum",
+		"printf 'salt2:password123' | sha256sum",
+		"echo password123 | sha256sum",
+		"echo -n password123 | sha256sum",
+		"printf 'hello\\n' > a.txt",
+		"sha256sum a.txt",
+		"sha256sum a.txt b.txt",
+		"printf '' | sha256sum",
+		"printf 'hello\\n' > c.txt",
+		"sha256sum a.txt c.txt",
+		"sha256sum a.txt > sums.txt",
+		"cat sums.txt",
+		"sha256sum -c sums.txt",
+		"printf 'changed\\n' > a.txt",
+		"sha256sum -c sums.txt",
+		"printf 'パスワード' | sha256sum",
+		"mkdir d",
+		"sha256sum d"
+	]
+}

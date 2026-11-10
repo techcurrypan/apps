@@ -57,23 +57,39 @@ function versions(): Record<string, string> {
 		os: v('. /etc/os-release && echo "$PRETTY_NAME"'),
 		bash: v('bash --version | head -1'),
 		git: v('git --version'),
-		coreutils: v('ls --version | head -1')
+		coreutils: v('ls --version | head -1'),
+		grep: v('grep --version | head -1'),
+		faketime: v('dpkg-query -W -f "${Version}" faketime')
 	};
 }
 
-// 1 行ずつ、別の bash で打つ。今いる場所と export した変数は、ファイルに書いて次の行へ渡す。
-// 標準出力は擬似端末（ttyrun.py）、標準エラーはファイル。
+// 1 行ずつ、別の bash で打つ。今いる場所・変数・前の行の終了コードは、ファイルに書いて次の行へ渡す
+// （端末で続けて打ったときと同じに見せる）。標準出力は擬似端末（ttyrun.py）、標準エラーはファイル。
+// 時計：その行の時刻から動く作り物の時計（faketime）。その行で変わったファイルの時刻は、行の後でその行の時刻に揃える
+// （ファイルの時刻は OS が付けるので faketime では変わらない）。
+const SKIP_VARS =
+	'GIT_AUTHOR_DATE|GIT_COMMITTER_DATE|OLDPWD|PWD|SHLVL|_|LD_PRELOAD|FAKETIME[A-Z_]*';
+
+function jst(t: number): string {
+	const d = new Date((t + 9 * 3600) * 1000);
+	const p = (n: number) => String(n).padStart(2, '0');
+	return `${d.getUTCFullYear()}-${p(d.getUTCMonth() + 1)}-${p(d.getUTCDate())} ${p(d.getUTCHours())}:${p(d.getUTCMinutes())}:${p(d.getUTCSeconds())}`;
+}
+
 function record(s: Scenario) {
 	const st = `/tmp/rec/${s.id}`;
 	rmSync(st, { recursive: true, force: true });
 	mkdirSync(st, { recursive: true });
 	chmodSync(st, 0o777);
-	sh(`sudo rm -rf ${WORK} && sudo -u learner mkdir -p ${WORK}`);
+	// 家は空から（.bashrc なども置かない。模擬の世界と同じ）
+	sh(`sudo find ${HOME} -mindepth 1 -delete && sudo -u learner mkdir -p ${WORK}`);
 	writeFileSync(`${st}/gitconfig`, GITCONFIG);
 	sh(`sudo -u learner cp ${st}/gitconfig ${HOME}/.gitconfig`);
+	sh(`sudo -u learner touch -h -d @${BASE} ${HOME}/.gitconfig ${WORK} ${HOME}`);
 	for (const [f, v] of [
 		['cwd', WORK],
-		['env', '']
+		['env', ''],
+		['code', '0']
 	]) {
 		writeFileSync(`${st}/${f}`, v);
 		chmodSync(`${st}/${f}`, 0o666);
@@ -83,13 +99,19 @@ function record(s: Scenario) {
 		writeFileSync(`${st}/${j}.cmd`, line);
 		const t = BASE + 60 * j;
 		const script = [
+			`__base=" $(compgen -v | tr '\\n' ' ') "`,
 			`cd "$(cat ${st}/cwd)"`,
 			`. ${st}/env`,
 			`export GIT_AUTHOR_DATE="${t} +0900" GIT_COMMITTER_DATE="${t} +0900"`,
-			`eval "$(cat ${st}/${j}.cmd)" 2> ${st}/${j}.err`,
-			`echo $? > ${st}/${j}.code`,
+			`IFS= read -r -d '' __cmd < ${st}/${j}.cmd`,
+			`touch ${st}/${j}.mark`,
+			`(exit $(cat ${st}/code))`,
+			`eval "$__cmd" 2> ${st}/${j}.err`,
+			`echo $? > ${st}/code`,
+			`cp ${st}/code ${st}/${j}.code`,
 			`pwd > ${st}/cwd`,
-			`export -p | grep -v -E '^declare -x (GIT_AUTHOR_DATE|GIT_COMMITTER_DATE|OLDPWD|PWD|SHLVL|_)=' > ${st}/env`
+			`{ for __v in $(compgen -v); do case "$__base" in *" $__v "*) ;; *) declare -p "$__v" ;; esac; done; export -p; } 2> /dev/null | grep -v -E '^declare -[a-zA-Z]*r' | grep -v -E '^declare -[-a-zA-Z]* (${SKIP_VARS}|__v|__cmd|__base)(=|$)' > ${st}/env`,
+			`find ${HOME} -newer ${st}/${j}.mark -exec touch -h -d @${t} {} + 2> /dev/null`
 		].join(NL);
 		const r = spawnSync(
 			'sudo',
@@ -99,6 +121,9 @@ function record(s: Scenario) {
 				'env',
 				'-i',
 				...ENV,
+				'faketime',
+				'-f',
+				`@${jst(t)}`,
 				'python3',
 				'-I',
 				'/tmp/rec/ttyrun.py',
