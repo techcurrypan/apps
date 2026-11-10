@@ -8,7 +8,7 @@
 		"git": "git version 2.56.0",
 		"coreutils": "ls (GNU coreutils) 9.4",
 		"grep": "grep (GNU grep) 3.11",
-		"faketime": ""
+		"faketime": "0.9.10-2.1"
 	},
 	"steps": [
 		{
@@ -31,7 +31,7 @@
 		},
 		{
 			"line": "ls -l",
-			"out": "total 12\ndrwxrwxr-x+ 2 learner learner 4096 Nov 10 09:02 data\n-rw-rw-r--+ 1 learner learner   20 Nov 10 09:00 hi.sh\n-rw-rw-r--+ 1 learner learner    5 Nov 10 09:01 memo.txt\n",
+			"out": "total 12\ndrwxrwxr-x 2 learner learner 4096 Nov 10 09:02 data\n-rw-rw-r-- 1 learner learner   20 Nov 10 09:00 hi.sh\n-rw-rw-r-- 1 learner learner    5 Nov 10 09:01 memo.txt\n",
 			"err": "",
 			"code": 0
 		},
@@ -49,7 +49,7 @@
 		},
 		{
 			"line": "ls -l hi.sh",
-			"out": "-rwxrw-r--+ 1 learner learner 20 Nov 10 09:00 hi.sh\n",
+			"out": "-rwxrw-r-- 1 learner learner 20 Nov 10 09:00 hi.sh\n",
 			"err": "",
 			"code": 0
 		},
@@ -67,7 +67,7 @@
 		},
 		{
 			"line": "ls -l memo.txt",
-			"out": "-rw-------+ 1 learner learner 5 Nov 10 09:01 memo.txt\n",
+			"out": "-rw------- 1 learner learner 5 Nov 10 09:01 memo.txt\n",
 			"err": "",
 			"code": 0
 		},
@@ -79,7 +79,7 @@
 		},
 		{
 			"line": "ls -l memo.txt",
-			"out": "-rw-r--r--+ 1 learner learner 5 Nov 10 09:01 memo.txt\n",
+			"out": "-rw-r--r-- 1 learner learner 5 Nov 10 09:01 memo.txt\n",
 			"err": "",
 			"code": 0
 		},
@@ -91,7 +91,7 @@
 		},
 		{
 			"line": "ls -l memo.txt",
-			"out": "-rw-------+ 1 learner learner 5 Nov 10 09:01 memo.txt\n",
+			"out": "-rw------- 1 learner learner 5 Nov 10 09:01 memo.txt\n",
 			"err": "",
 			"code": 0
 		},
@@ -103,7 +103,7 @@
 		},
 		{
 			"line": "ls -l memo.txt",
-			"out": "-rw-r--r--+ 1 learner learner 5 Nov 10 09:01 memo.txt\n",
+			"out": "-rw-r--r-- 1 learner learner 5 Nov 10 09:01 memo.txt\n",
 			"err": "",
 			"code": 0
 		},
@@ -115,7 +115,7 @@
 		},
 		{
 			"line": "ls -l",
-			"out": "total 12\ndrwxrwxr-x+ 2 learner learner 4096 Nov 10 09:02 data\n-rwxr-xr-x+ 1 learner learner   20 Nov 10 09:00 hi.sh\n-rw-r--r--+ 1 learner learner    5 Nov 10 09:01 memo.txt\n",
+			"out": "total 12\ndrwxrwxr-x 2 learner learner 4096 Nov 10 09:02 data\n-rwxr-xr-x 1 learner learner   20 Nov 10 09:00 hi.sh\n-rw-r--r-- 1 learner learner    5 Nov 10 09:01 memo.txt\n",
 			"err": "",
 			"code": 0
 		},
@@ -127,7 +127,7 @@
 		},
 		{
 			"line": "ls -l memo.txt",
-			"out": "----------+ 1 learner learner 5 Nov 10 09:01 memo.txt\n",
+			"out": "---------- 1 learner learner 5 Nov 10 09:01 memo.txt\n",
 			"err": "",
 			"code": 0
 		},
@@ -169,7 +169,7 @@
 		},
 		{
 			"line": "ls -ld data",
-			"out": "drwxrwxr-x+ 2 learner learner 4096 Nov 10 09:02 data\n",
+			"out": "drwxrwxr-x 2 learner learner 4096 Nov 10 09:02 data\n",
 			"err": "",
 			"code": 0
 		},
@@ -181,7 +181,7 @@
 		},
 		{
 			"line": "ls -l memo.txt",
-			"out": "-r------w-+ 1 learner learner 5 Nov 10 09:01 memo.txt\n",
+			"out": "-r------w- 1 learner learner 5 Nov 10 09:01 memo.txt\n",
 			"err": "",
 			"code": 0
 		},
@@ -193,7 +193,7 @@
 		},
 		{
 			"line": "ls -l memo.txt",
-			"out": "-rw-r-----+ 1 learner learner 5 Nov 10 09:01 memo.txt\n",
+			"out": "-rw-r----- 1 learner learner 5 Nov 10 09:01 memo.txt\n",
 			"err": "",
 			"code": 0
 		},
@@ -205,13 +205,13 @@
 		},
 		{
 			"line": "ls -l",
-			"out": "total 12\ndrwx------+ 2 learner learner 4096 Nov 10 09:02 data\n-rwxr-xr-x+ 1 learner learner   20 Nov 10 09:00 hi.sh\n-rw-r-----+ 1 learner learner    5 Nov 10 09:01 memo.txt\n",
+			"out": "total 12\ndrwx------ 2 learner learner 4096 Nov 10 09:02 data\n-rwxr-xr-x 1 learner learner   20 Nov 10 09:00 hi.sh\n-rw-r----- 1 learner learner    5 Nov 10 09:01 memo.txt\n",
 			"err": "",
 			"code": 0
 		},
 		{
 			"line": "ls -la",
-			"out": "total 20\ndrwxrwxr-x+ 3 learner learner 4096 Nov 10 09:02 .\ndrwxr-x---+ 3 learner learner 4096 Nov 10 09:00 ..\ndrwx------+ 2 learner learner 4096 Nov 10 09:02 data\n-rwxr-xr-x+ 1 learner learner   20 Nov 10 09:00 hi.sh\n-rw-r-----+ 1 learner learner    5 Nov 10 09:01 memo.txt\n",
+			"out": "total 20\ndrwxrwxr-x 3 learner learner 4096 Nov 10 09:02 .\ndrwxr-x--- 3 learner learner 4096 Nov 10 09:00 ..\ndrwx------ 2 learner learner 4096 Nov 10 09:02 data\n-rwxr-xr-x 1 learner learner   20 Nov 10 09:00 hi.sh\n-rw-r----- 1 learner learner    5 Nov 10 09:01 memo.txt\n",
 			"err": "",
 			"code": 0
 		},
@@ -235,7 +235,7 @@
 		},
 		{
 			"line": "ls -l hi.sh",
-			"out": "-rw-r--r--+ 1 learner learner 20 Nov 10 09:00 hi.sh\n",
+			"out": "-rw-r--r-- 1 learner learner 20 Nov 10 09:00 hi.sh\n",
 			"err": "",
 			"code": 0
 		},
@@ -259,7 +259,7 @@
 		},
 		{
 			"line": "ls -l memo.txt",
-			"out": "-rw-r-----+ 1 learner learner 10 Nov 10 09:40 memo.txt\n",
+			"out": "-rw-r----- 1 learner learner 10 Nov 10  2026 memo.txt\n",
 			"err": "",
 			"code": 0
 		},
@@ -283,7 +283,7 @@
 		},
 		{
 			"line": "ls -l memo.txt",
-			"out": "-r--r--r--+ 1 learner learner 10 Nov 10 09:40 memo.txt\n",
+			"out": "-r--r--r-- 1 learner learner 10 Nov 10  2026 memo.txt\n",
 			"err": "",
 			"code": 0
 		}

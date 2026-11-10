@@ -8,7 +8,7 @@
 		"git": "git version 2.56.0",
 		"coreutils": "ls (GNU coreutils) 9.4",
 		"grep": "grep (GNU grep) 3.11",
-		"faketime": ""
+		"faketime": "0.9.10-2.1"
 	},
 	"steps": [
 		{
