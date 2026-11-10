@@ -1,0 +1,27 @@
+{
+	"id": "lnx-010-service",
+	"tool": "shell",
+	"lesson": "lnx-010",
+	"world": "service",
+	"note": "systemctl でサービスを動かし、status と journalctl で見る。失敗したサービスの行を見つける。enable で起動時に",
+	"steps": [
+		"systemctl status shop",
+		"cat /etc/systemd/system/shop.service",
+		"sudo systemctl start shop",
+		"systemctl status shop",
+		"systemctl is-active shop",
+		"sudo journalctl -u shop -n 5",
+		"sudo systemctl start report",
+		"systemctl status report",
+		"systemctl is-active report",
+		"sudo journalctl -u report -n 5",
+		"sudo systemctl enable shop",
+		"systemctl is-enabled shop",
+		"systemctl is-enabled report",
+		"sudo systemctl stop shop",
+		"systemctl is-active shop",
+		"sudo journalctl -u shop -n 3",
+		"systemctl status nothing",
+		"systemctl start shop"
+	]
+}

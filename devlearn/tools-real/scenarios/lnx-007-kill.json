@@ -1,0 +1,26 @@
+{
+	"id": "lnx-007-kill",
+	"tool": "shell",
+	"lesson": "lnx-007",
+	"world": "procs",
+	"note": "ps で番号を見つけ、kill でシグナルを送る。TERM を無視する物は KILL。親を止めても子は残る",
+	"steps": [
+		"ps -u shop -o pid,ppid,stat,cmd",
+		"pgrep -a -u shop python3",
+		"kill $(pgrep -f report.py)",
+		"sudo kill $(pgrep -f report.py)",
+		"ps -u shop -o pid,ppid,stat,cmd",
+		"sudo kill -KILL $(pgrep -f report.py)",
+		"ps -u shop -o pid,ppid,stat,cmd",
+		"sudo kill $(pgrep -f web.py)",
+		"ps -u shop -o pid,ppid,stat,cmd",
+		"sudo kill -TERM $(pgrep -f worker.py)",
+		"ps -u shop -o pid,ppid,stat,cmd",
+		"echo $?",
+		"kill -l 9",
+		"kill -l TERM",
+		"kill 99999",
+		"pgrep -f nothing.py",
+		"echo $?"
+	]
+}

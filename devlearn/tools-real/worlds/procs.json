@@ -1,0 +1,51 @@
+{
+	"note": "動いているプロセス（lnx-007）。店の利用者 shop が動かす 3 つ。web は子の worker を持つ。report は TERM を無視する",
+	"users": [
+		{
+			"name": "shop",
+			"uid": 990
+		}
+	],
+	"dirs": [
+		{
+			"path": "/opt",
+			"mode": "755",
+			"owner": "root"
+		},
+		{
+			"path": "/opt/shop",
+			"mode": "755",
+			"owner": "root"
+		}
+	],
+	"files": [
+		{
+			"path": "/opt/shop/web.py",
+			"mode": "644",
+			"owner": "root",
+			"data": "import subprocess, time\n\nsubprocess.Popen([\"python3\", \"/opt/shop/worker.py\"])\nwhile True:\n    time.sleep(3600)\n"
+		},
+		{
+			"path": "/opt/shop/worker.py",
+			"mode": "644",
+			"owner": "root",
+			"data": "import time\n\nwhile True:\n    time.sleep(3600)\n"
+		},
+		{
+			"path": "/opt/shop/report.py",
+			"mode": "644",
+			"owner": "root",
+			"data": "import signal, time\n\nsignal.signal(signal.SIGTERM, signal.SIG_IGN)\nwhile True:\n    time.sleep(3600)\n"
+		}
+	],
+	"procs": [
+		{
+			"user": "shop",
+			"cmd": "python3 /opt/shop/web.py"
+		},
+		{
+			"user": "shop",
+			"cmd": "python3 /opt/shop/report.py"
+		}
+	]
+}

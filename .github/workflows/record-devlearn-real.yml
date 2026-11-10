@@ -49,12 +49,14 @@ jobs:
           sudo usermod -aG sudo learner
           echo 'learner ALL=(ALL) NOPASSWD: ALL' | sudo tee /etc/sudoers.d/learner > /dev/null
           sudo chmod 440 /etc/sudoers.d/learner
+          # 合言葉は持たないが、締め出してもいない形（SSH の相手が鍵で入れるように。sec-008）
+          sudo usermod -p '*' learner
           id learner
 
-      - name: 記録に使う道具を入れる（作り物の時計 faketime、作り物の網の DNS dnsmasq、dig・ping・curl）
+      - name: 記録に使う道具を入れる（作り物の時計 faketime、作り物の網の DNS dnsmasq、dig・ping・curl、SSH の相手）
         run: |
           sudo apt-get update
-          sudo apt-get install -y faketime dnsmasq-base bind9-dnsutils iputils-ping curl
+          sudo apt-get install -y faketime dnsmasq-base bind9-dnsutils iputils-ping curl openssh-server
 
       - name: 本物の命令を打って記録する
         run: node devlearn/tools-real/record.ts

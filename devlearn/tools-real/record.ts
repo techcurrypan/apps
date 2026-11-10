@@ -21,10 +21,24 @@ type World = {
 	dirs?: { path: string; mode: string; owner: string }[];
 	files?: { path: string; mode: string; owner: string; data: string }[];
 	net?: Net;
+	// 世界の利用者（店の利用者 shop など。家を持たない）
+	users?: { name: string; uid: number }[];
+	// 場面の前から動いているプロセス。その利用者で、端末から離して（setsid）順に動かす
+	procs?: { user: string; cmd: string }[];
+	// files で /etc/systemd/system に置いたサービス。置いた後に読み直させ、場面の後に止めて外す
+	units?: string[];
 };
 
 // 作り物の網（worlds/net.json）。機械ごとに網の名前空間を作り、switch（sw の br0）につなぐ
-type Node = { ns: string; mac: string; addr: string; far?: string[]; dns?: boolean; web?: boolean };
+type Node = {
+	ns: string;
+	mac: string;
+	addr: string;
+	far?: string[];
+	dns?: boolean;
+	web?: boolean;
+	ssh?: boolean;
+};
 type Net = {
 	self: Node & { if: string; prefix: number };
 	gateway: string;
@@ -92,7 +106,10 @@ function versions(): Record<string, string> {
 		dnsmasq: v('dnsmasq --version | head -1'),
 		openssl: v('openssl version'),
 		sudo: v('sudo -V | head -1'),
-		faketime: v("dpkg-query -W -f '${Version}' faketime")
+		faketime: v("dpkg-query -W -f '${Version}' faketime"),
+		procps: v('ps --version'),
+		systemd: v('systemctl --version | head -1'),
+		ssh: v('ssh -V 2>&1')
 	};
 }
 
@@ -112,11 +129,22 @@ function jst(t: number): string {
 // 世界を root で置く。置いた物の時刻は場面の始まりに揃える
 function placeWorld(st: string, w: World): string[] {
 	const roots: string[] = [];
+	for (const u of w.users ?? []) {
+		// 家を持たない利用者（サービスの利用者の形）。同じ番号で作れなければ止める
+		sh(
+			`getent passwd ${u.name} > /dev/null || sudo useradd -r -u ${u.uid} -U -M -d /nonexistent -s /usr/sbin/nologin ${u.name}`
+		);
+		const got = sh(`id -u ${u.name}`);
+		if (got !== String(u.uid))
+			throw new Error(`利用者 ${u.name} の番号が ${got}（${u.uid} のはず）`);
+	}
 	for (const d of w.dirs ?? []) {
+		// 元からある場所（/etc・/opt など）は、場面の後に消さない
+		const existed = spawnSync('test', ['-e', d.path]).status === 0;
 		sh(
 			`sudo mkdir -p ${d.path} && sudo chown ${d.owner}:${d.owner} ${d.path} && sudo chmod ${d.mode} ${d.path}`
 		);
-		if (!d.path.startsWith(HOME)) roots.push(d.path);
+		if (!existed && !d.path.startsWith(HOME)) roots.push(d.path);
 	}
 	(w.files ?? []).forEach((f, i) => {
 		writeFileSync(`${st}/world-${i}`, f.data);
@@ -126,7 +154,26 @@ function placeWorld(st: string, w: World): string[] {
 	});
 	const all = [...(w.dirs ?? []), ...(w.files ?? [])].map((x) => x.path);
 	if (all.length > 0) sh(`sudo touch -h -d @${BASE} ${all.join(' ')}`);
+	if ((w.units ?? []).length > 0) sh('sudo systemctl daemon-reload');
+	for (const p of w.procs ?? []) {
+		// 端末から離し、入出力を閉じて動かす。子を作る物もあるので、1 つごとに待つ
+		sh(
+			`sudo -u ${p.user} bash -c 'cd / && setsid -f ${p.cmd} < /dev/null > /dev/null 2>&1' && sleep 1`
+		);
+	}
 	return roots;
+}
+
+// 世界の後片付け：動かしたプロセスを止め、サービスを止めて外す
+function clearWorld(w: World) {
+	for (const u of new Set((w.procs ?? []).map((p) => p.user)))
+		sh(`sudo pkill -KILL -u ${u} || true; sleep 0.5`);
+	for (const unit of w.units ?? []) {
+		sh(
+			`sudo systemctl stop ${unit} || true; sudo systemctl disable ${unit} 2> /dev/null || true; sudo systemctl reset-failed ${unit} 2> /dev/null || true; sudo rm -f /etc/systemd/system/${unit}`
+		);
+	}
+	if ((w.units ?? []).length > 0) sh('sudo systemctl daemon-reload');
 }
 
 const NOW_FILE = '/tmp/rec/now';
@@ -200,6 +247,29 @@ function placeNet(
 		});
 	if (web) bg(web.ns, `python3 -I ${servers}/web.py ${worldFile} ${web.addr} ${NOW_FILE}`);
 	bg(me, `python3 -I ${servers}/listen.py ${worldFile}`);
+	const ssh = net.hosts.find((h) => h.ssh);
+	if (ssh) {
+		// SSH の相手。鍵だけで入れる（合言葉では入れない）。家は手元の機械と同じ物を見る（家を共有している教室の形）。
+		// 相手の鍵は記録のたびに作る（リポジトリに鍵を置かない。指紋は記録ごとに変わる）
+		const d = '/tmp/rec/sshd';
+		sh(`sudo rm -rf ${d} && sudo mkdir -p ${d} /run/sshd`);
+		sh(`sudo ssh-keygen -q -t ed25519 -N '' -f ${d}/host_ed25519`);
+		const conf = [
+			'Port 22',
+			`ListenAddress ${ssh.addr}`,
+			`HostKey ${d}/host_ed25519`,
+			'PasswordAuthentication no',
+			'KbdInteractiveAuthentication no',
+			'UsePAM no',
+			'PrintMotd no',
+			'PrintLastLog no',
+			`PidFile ${d}/sshd.pid`,
+			''
+		].join(NL);
+		writeFileSync(`${st}/sshd_config`, conf);
+		sh(`sudo cp ${st}/sshd_config ${d}/sshd_config`);
+		bg(ssh.ns, `/usr/sbin/sshd -D -f ${d}/sshd_config -E ${d}/sshd.log`);
+	}
 	sh('sleep 1');
 	return {
 		prefix: ['ip', 'netns', 'exec', me, 'sudo'],
@@ -295,6 +365,7 @@ function record(s: Scenario) {
 		};
 	});
 	net?.teardown();
+	clearWorld(world);
 	// 置いた世界を片付ける（家の外の物）
 	if (extraRoots.length > 0) sh(`sudo rm -rf ${extraRoots.filter((r) => r !== '/srv').join(' ')}`);
 	return {

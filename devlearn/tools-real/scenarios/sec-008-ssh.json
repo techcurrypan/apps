@@ -1,0 +1,22 @@
+{
+	"id": "sec-008-ssh",
+	"tool": "shell",
+	"lesson": "sec-008",
+	"world": "ssh",
+	"note": "鍵の組を作り、公開鍵を置き、SSH で入る。置いた公開鍵の権限が緩いと入れない",
+	"steps": [
+		"ssh -o StrictHostKeyChecking=accept-new ssh.example.com hostname -I",
+		"ls -a ~/.ssh",
+		"ssh-keygen -t ed25519 -C learner@devbox -N '' -f ~/.ssh/id_ed25519",
+		"ls -l ~/.ssh",
+		"cat ~/.ssh/id_ed25519.pub",
+		"cat ~/.ssh/id_ed25519.pub >> ~/.ssh/authorized_keys",
+		"ssh ssh.example.com hostname -I",
+		"ls -l ~/.ssh/authorized_keys",
+		"chmod 600 ~/.ssh/authorized_keys",
+		"ssh ssh.example.com hostname -I",
+		"ssh -v ssh.example.com true 2>&1 | grep -E '^debug1: (Offering|Server accepts|Authenticated)'",
+		"ssh-keygen -t ed25519 -C learner@devbox -N '' -f ~/.ssh/id_ed25519 < /dev/null",
+		"ssh -o StrictHostKeyChecking=accept-new nobody@ssh.example.com true"
+	]
+}

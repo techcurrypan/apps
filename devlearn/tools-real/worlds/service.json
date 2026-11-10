@@ -1,0 +1,63 @@
+{
+	"note": "サービスとログ（lnx-010）。shop は動き続け、report は設定のファイルが無くて止まる",
+	"users": [
+		{
+			"name": "shop",
+			"uid": 990
+		}
+	],
+	"dirs": [
+		{
+			"path": "/etc",
+			"mode": "755",
+			"owner": "root"
+		},
+		{
+			"path": "/etc/systemd",
+			"mode": "755",
+			"owner": "root"
+		},
+		{
+			"path": "/etc/systemd/system",
+			"mode": "755",
+			"owner": "root"
+		},
+		{
+			"path": "/opt",
+			"mode": "755",
+			"owner": "root"
+		},
+		{
+			"path": "/opt/shop",
+			"mode": "755",
+			"owner": "root"
+		}
+	],
+	"files": [
+		{
+			"path": "/opt/shop/web.py",
+			"mode": "644",
+			"owner": "root",
+			"data": "import time\n\nprint(\"listening on 8080\", flush=True)\nwhile True:\n    time.sleep(3600)\n"
+		},
+		{
+			"path": "/opt/shop/report.py",
+			"mode": "644",
+			"owner": "root",
+			"data": "import sys\n\nconf = \"/etc/shop/report.conf\"\ntry:\n    open(conf).close()\nexcept OSError as e:\n    print(f\"error: {conf}: {e.strerror}\", file=sys.stderr, flush=True)\n    sys.exit(1)\n"
+		},
+		{
+			"path": "/etc/systemd/system/shop.service",
+			"mode": "644",
+			"owner": "root",
+			"data": "[Unit]\nDescription=shop web\n\n[Service]\nUser=shop\nExecStart=/usr/bin/python3 /opt/shop/web.py\n\n[Install]\nWantedBy=multi-user.target\n"
+		},
+		{
+			"path": "/etc/systemd/system/report.service",
+			"mode": "644",
+			"owner": "root",
+			"data": "[Unit]\nDescription=shop report\n\n[Service]\nUser=shop\nExecStart=/usr/bin/python3 /opt/shop/report.py\n"
+		}
+	],
+	"units": ["shop.service", "report.service"]
+}
