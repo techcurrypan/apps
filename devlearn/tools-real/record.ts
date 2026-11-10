@@ -106,7 +106,9 @@ function record(s: Scenario) {
 			`. ${st}/env`,
 			`export GIT_AUTHOR_DATE="${t} +0900" GIT_COMMITTER_DATE="${t} +0900"`,
 			`IFS= read -r -d '' __cmd < ${st}/${j}.cmd`,
-			`touch ${st}/${j}.mark`,
+			// 印の時刻はこの行の作り物の時刻。前の行までに揃えた物はこれより古く、この行で変わった物は本物の今の時刻なので新しい
+			// （印を本物の今の時刻にすると、OS の時刻の粗さで、同じ時刻の物を取りこぼす）
+			`touch -d @${t} ${st}/${j}.mark`,
 			`(exit $(cat ${st}/code))`,
 			`eval "$__cmd" 2> ${st}/${j}.err`,
 			`echo $? > ${st}/code`,
