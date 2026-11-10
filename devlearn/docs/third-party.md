@@ -42,3 +42,23 @@ devlearn が使う、他者が作った公開物の記録。ライセンスが�
 - `@scope` を使うので、`@scope` を解するブラウザが要る。互換表（MDN の browser-compat-data `css/at-rules/scope.json`、2026-11-10 に確かめた）では、Chrome / Edge 118 以降、Firefox 146 以降、Safari 17.4 以降（26.0〜26.3 は `<input>` と `<textarea>` に効かない部分の対応、26.4 から全て）
 - `theme.css` は見出し（`h1`〜`h6`）と段落（`p`）の書体・大きさを `@layer reset` で当てる。devlearn の
   `--dl-*`（`screen-design.md` 4 章）で上書きする
+
+---
+
+## sql.js（SQL の実戦の道具）
+
+| 項目 | 内容 |
+|---|---|
+| 物 | npm の `sql.js`（SQLite を WebAssembly にした物）。`dist/sql-wasm-browser.js` と `dist/sql-wasm-browser.wasm` |
+| 版 | **1.15.2 に固定**（`package.json` に版をそのまま書く。中の SQLite は 3.54.0。`SELECT sqlite_version()` で確かめた） |
+| 出典 | `https://github.com/sql-js/sql.js`、`https://registry.npmjs.org/sql.js/-/sql.js-1.15.2.tgz` |
+| ライセンス | MIT（`Copyright (c) 2017 sql.js authors`。配布物の `LICENSE` を読んだ）。中の SQLite はパブリックドメイン |
+| 表示義務 | 写しに著作権表示と許諾の文を含める。配信物の `third-party-licenses.txt` に全文を置く |
+| 確かめた日 | 2026-11-10 |
+| `sql-wasm-browser.wasm` の SHA-256 | `0dfeecda2070b36da0cd4f6afa250af9453de528a983770f85b13d5d6b667572`（685,235 バイト） |
+| 無料か | 無料。外の配信を使わず、wasm は devlearn の静的な物として配る |
+
+### 使い方の決まり
+
+- 道具は「初めの SQL と、打った行の並び」を状態にし、打つたびに新しいデータベースで初めから打ち直す（`docs/tools.md` 3.4）
+- `random()` は決まった種からの並びに替える（CLAUDE.md 8 章）
