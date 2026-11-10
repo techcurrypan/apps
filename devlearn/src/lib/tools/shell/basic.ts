@@ -4,6 +4,7 @@ import {
 	isDir,
 	listDir,
 	mkdir as mkdirFs,
+	ownerOf,
 	parentOf,
 	readFile,
 	remove,
@@ -11,12 +12,11 @@ import {
 	type Fs
 } from '../fs.ts';
 import { utf8 } from '../sha1.ts';
-import { canRead, fail, ok, pathOf, TZ_OFFSET, type Cmd, type Commands } from './run.ts';
+import { canRead, canWrite, fail, ok, pathOf, TZ_OFFSET, type Cmd, type Commands } from './run.ts';
 
 const L = '‘';
 const R = '’';
 const tryHelp = (cmd: string) => `Try '${cmd} --help' for more information.\n`;
-const HOME = '/home/learner';
 
 // 端末で見たときの字の幅（日本語などは 2）
 export function displayWidth(s: string): number {
@@ -158,11 +158,10 @@ type LongRow = {
 
 const child = (dir: string, name: string) => `${dir === '/' ? '' : dir}/${name}`;
 
-// 持ち主は、家の下なら learner、外は root
 function longRow(fs: Fs, path: string, name: string, now: number): LongRow {
 	const n = stat(fs, path);
 	if (!n) throw new Error(`no such path: ${path}`);
-	const owner = path === HOME || path.startsWith(`${HOME}/`) ? 'learner' : 'root';
+	const owner = ownerOf(fs, path);
 	const links =
 		n.kind === 'dir' ? 2 + listDir(fs, path).filter((c) => isDir(fs, child(path, c))).length : 1;
 	const size = n.kind === 'dir' ? 4096 : utf8(n.data).length;
@@ -221,7 +220,7 @@ const ls: Cmd<unknown> = (s, args, io) => {
 	dirs.forEach((t, i) => {
 		const path = pathOf(s, t);
 		if (list.length > 1) out += `${files.length > 0 || i > 0 ? '\n' : ''}${t}:\n`;
-		if (!canRead(s.fs, path)) {
+		if (!canRead(s.fs, path, s.user)) {
 			err += `ls: cannot open directory '${t}': Permission denied\n`;
 			code = 2;
 			return;
@@ -254,7 +253,7 @@ const cat: Cmd<unknown> = (s, args, io) => {
 		const path = pathOf(s, a);
 		const node = stat(s.fs, path);
 		const data = readFile(s.fs, path);
-		if (node && !canRead(s.fs, path)) {
+		if (node && !canRead(s.fs, path, s.user)) {
 			err += `cat: ${a}: Permission denied\n`;
 			code = 1;
 		} else if (data !== null) out += data;
@@ -291,6 +290,10 @@ const mkdir: Cmd<unknown> = (s, args, io) => {
 			}
 			continue;
 		}
+		if (!canWrite(fs, parentOf(path), s.user)) {
+			err += `mkdir: cannot create directory ${L}${a}${R}: Permission denied\n`;
+			continue;
+		}
 		fs = mkdirFs(fs, path, io.now);
 	}
 	return { state: { ...s, fs }, out: '', err, code: err ? 1 : 0 };
@@ -311,6 +314,8 @@ const rm: Cmd<unknown> = (s, args, io) => {
 			if (!force) err += `rm: cannot remove '${a}': No such file or directory\n`;
 		} else if (node.kind === 'dir' && !recursive) {
 			err += `rm: cannot remove '${a}': Is a directory\n`;
+		} else if (!canWrite(fs, parentOf(path), s.user)) {
+			err += `rm: cannot remove '${a}': Permission denied\n`;
 		} else fs = remove(fs, path, io.now);
 	}
 	return { state: { ...s, fs }, out: '', err, code: err ? 1 : 0 };

@@ -30,7 +30,18 @@ jobs:
           node-version: 24
 
       - name: 利用者 learner を作る
-        run: sudo useradd -m -s /bin/bash learner
+        # Ubuntu で初めに作る利用者と同じ形：uid 1000、自分の名の組、sudo の組。
+        # sudo は合言葉を入れた直後の形にする（模擬の端末は合言葉を打つ口を持たない。docs/tools.md 3.2）
+        run: |
+          if getent passwd 1000 > /dev/null; then
+            echo "::error title=learner::uid 1000 は使われている: $(getent passwd 1000)"
+            exit 1
+          fi
+          sudo useradd -m -s /bin/bash -u 1000 -U learner
+          sudo usermod -aG sudo learner
+          echo 'learner ALL=(ALL) NOPASSWD: ALL' | sudo tee /etc/sudoers.d/learner > /dev/null
+          sudo chmod 440 /etc/sudoers.d/learner
+          id learner
 
       - name: 作り物の時計（faketime）を入れる
         run: sudo apt-get update && sudo apt-get install -y faketime

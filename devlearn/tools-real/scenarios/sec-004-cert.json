@@ -1,0 +1,32 @@
+{
+	"id": "sec-004-cert",
+	"tool": "shell",
+	"lesson": "sec-004",
+	"world": "certs",
+	"note": "証明書の持ち主と発行者を読み、根の証明書まで辿って確かめる。中間が無い・別の根・期限切れ",
+	"steps": [
+		"ls",
+		"openssl x509 -in server.pem -noout -subject",
+		"openssl x509 -in server.pem -noout -issuer",
+		"openssl x509 -in server.pem -noout -subject -issuer",
+		"openssl x509 -in inter-ca.pem -noout -subject -issuer",
+		"openssl x509 -in root-ca.pem -noout -subject -issuer",
+		"openssl x509 -in server.pem -noout -dates",
+		"openssl x509 -in old.pem -noout -dates",
+		"openssl x509 -in server.pem -noout -fingerprint -sha256",
+		"openssl verify -CAfile root-ca.pem server.pem",
+		"openssl verify -CAfile root-ca.pem -untrusted inter-ca.pem server.pem",
+		"openssl verify -CAfile root-ca.pem inter-ca.pem",
+		"cat root-ca.pem inter-ca.pem > bundle.pem",
+		"openssl verify -CAfile bundle.pem server.pem",
+		"openssl verify -CAfile other-ca.pem -untrusted inter-ca.pem server.pem",
+		"openssl verify -CAfile root-ca.pem -untrusted inter-ca.pem old.pem",
+		"openssl verify -CAfile root-ca.pem root-ca.pem",
+		"openssl verify -CAfile inter-ca.pem server.pem",
+		"openssl verify server.pem",
+		"openssl x509 -noout -subject < server.pem",
+		"openssl x509 -in server.pem -noout -serial",
+		"openssl x509 -in server.pem -noout -ext subjectAltName",
+		"openssl verify -CAfile root-ca.pem -untrusted inter-ca.pem server.pem old.pem"
+	]
+}

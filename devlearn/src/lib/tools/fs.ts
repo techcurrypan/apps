@@ -5,8 +5,9 @@ export const UMASK = 0o002;
 export const FILE_MODE = 0o666 & ~UMASK;
 export const DIR_MODE = 0o777 & ~UMASK;
 
-export type FileNode = { kind: 'file'; data: string; mode: number; mtime: number };
-export type DirNode = { kind: 'dir'; mode: number; mtime: number };
+// owner が無い物は、家（/home/learner）の下なら learner、外なら root の物（組は持ち主と同じ名前）
+export type FileNode = { kind: 'file'; data: string; mode: number; mtime: number; owner?: string };
+export type DirNode = { kind: 'dir'; mode: number; mtime: number; owner?: string };
 export type FsNode = FileNode | DirNode;
 export type Fs = Readonly<Record<string, FsNode>>;
 
@@ -34,6 +35,12 @@ export function parentOf(path: string): string {
 
 export function baseName(path: string): string {
 	return path.slice(path.lastIndexOf('/') + 1);
+}
+
+export function ownerOf(fs: Fs, path: string): string {
+	const n = fs[path];
+	if (n?.owner) return n.owner;
+	return path === '/home/learner' || path.startsWith('/home/learner/') ? 'learner' : 'root';
 }
 
 export function stat(fs: Fs, path: string): FsNode | null {

@@ -81,7 +81,7 @@ const which: Cmd<unknown> = (s, args, io) => {
 	for (const n of names) {
 		if (n.includes('/')) {
 			const p = pathOf(s, n);
-			if (stat(s.fs, p)?.kind === 'file' && canExec(s.fs, p)) out += n + '\n';
+			if (stat(s.fs, p)?.kind === 'file' && canExec(s.fs, p, s.user)) out += n + '\n';
 			else missing = true;
 			continue;
 		}
@@ -161,9 +161,9 @@ function fileTest<X>(s: ShellState<X>, op: string, name: string): boolean | null
 		case '-s':
 			return n?.kind === 'file' && n.data.length > 0;
 		case '-r':
-			return canRead(s.fs, p);
+			return canRead(s.fs, p, s.user);
 		case '-x':
-			return canExec(s.fs, p);
+			return canExec(s.fs, p, s.user);
 		default:
 			return null;
 	}
@@ -214,7 +214,7 @@ const bash: Cmd<unknown> = (s, args, io) => {
 	const node = stat(s.fs, path);
 	if (!node) return fail(s, `bash: ${file}: No such file or directory\n`, 127);
 	if (node.kind === 'dir') return fail(s, `bash: ${file}: Is a directory\n`, 126);
-	if (!canRead(s.fs, path)) return fail(s, `bash: ${file}: Permission denied\n`, 126);
+	if (!canRead(s.fs, path, s.user)) return fail(s, `bash: ${file}: Permission denied\n`, 126);
 	return runChild(
 		io.commands,
 		s,

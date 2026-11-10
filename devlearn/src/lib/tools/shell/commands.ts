@@ -4,13 +4,15 @@ import { envCommands } from './env.ts';
 import { fileCommands } from './files.ts';
 import type { Commands } from './run.ts';
 import { textCommands } from './text.ts';
+import { userCommands } from './users.ts';
 
 export function shellCommands<X>(): Commands<X> {
 	const all = {
 		...basicCommands<unknown>(),
 		...fileCommands,
 		...textCommands,
-		...envCommands
+		...envCommands,
+		...userCommands
 	};
 	return all as Commands<unknown> as unknown as Commands<X>;
 }

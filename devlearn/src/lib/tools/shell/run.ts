@@ -1,7 +1,16 @@
 // 模擬のシェル。1 行（または台本）を読み、展開し、パイプ・リダイレクト・つなぎ・if の通りに命令を打つ。
 // 命令は道具ごとに表で渡す（shell・git・docker で、要る物だけを入れる）。
 // 命令の探し方は本物の bash と同じ：組み込み → PATH の前から（実行できるファイル、または /usr/bin の命令）。
-import { isDir, parentOf, readFile, resolvePath, stat, writeFile, type Fs } from '../fs.ts';
+import {
+	isDir,
+	ownerOf,
+	parentOf,
+	readFile,
+	resolvePath,
+	stat,
+	writeFile,
+	type Fs
+} from '../fs.ts';
 import type { Result, Tool } from '../session.ts';
 import type { Command, ListItem, Word } from './parse.ts';
 import { parseScript, type Node } from './script.ts';
@@ -77,18 +86,24 @@ export const BUILTIN_ONLY: ReadonlySet<string> = new Set(['cd', 'export', 'unset
 export const SYSTEM_DIRS = ['/usr/bin', '/bin'];
 export const NULL_DEVICE = '/dev/null';
 
-export function canRead(fs: Fs, path: string): boolean {
+// 利用者が入っている組（模擬の世界の利用者は learner と root だけ。learner は sudo の組にいる）
+export const GROUPS: Readonly<Record<string, readonly string[]>> = {
+	learner: ['learner', 'sudo'],
+	root: ['root']
+};
+
+// 持ち主・組・他の人のどれとして見るかで、権限の 3 桁のどれを使うかが決まる。root は読み書きを全てできる
+function allowed(fs: Fs, path: string, user: string, bit: 4 | 2 | 1): boolean {
 	const n = stat(fs, path);
-	return !!n && (n.mode & 0o400) !== 0;
+	if (!n) return false;
+	if (user === 'root') return bit !== 1 || (n.mode & 0o111) !== 0 || n.kind === 'dir';
+	const owner = ownerOf(fs, path);
+	const shift = owner === user ? 6 : (GROUPS[user] ?? []).includes(owner) ? 3 : 0;
+	return ((n.mode >> shift) & bit) !== 0;
 }
-export function canWrite(fs: Fs, path: string): boolean {
-	const n = stat(fs, path);
-	return !!n && (n.mode & 0o200) !== 0;
-}
-export function canExec(fs: Fs, path: string): boolean {
-	const n = stat(fs, path);
-	return !!n && (n.mode & 0o100) !== 0;
-}
+export const canRead = (fs: Fs, path: string, user = 'learner') => allowed(fs, path, user, 4);
+export const canWrite = (fs: Fs, path: string, user = 'learner') => allowed(fs, path, user, 2);
+export const canExec = (fs: Fs, path: string, user = 'learner') => allowed(fs, path, user, 1);
 
 export function pathDirs<X>(s: ShellState<X>): string[] {
 	return (s.vars.PATH ?? '').split(':').map((d) => (d === '' ? s.cwd : d));
@@ -106,7 +121,7 @@ export function lookPath<X>(
 	for (const dir of pathDirs(s)) {
 		const p = `${dir === '/' ? '' : dir}/${name}`;
 		const n = stat(s.fs, p);
-		if (n?.kind === 'file' && canExec(s.fs, p)) out.push({ kind: 'file', path: p });
+		if (n?.kind === 'file' && canExec(s.fs, p, s.user)) out.push({ kind: 'file', path: p });
 		else if (!n && SYSTEM_DIRS.includes(dir) && commands[name] && !BUILTIN_ONLY.has(name))
 			out.push({ kind: 'system', path: p, name });
 		if (out.length > 0 && !all) break;
@@ -246,14 +261,16 @@ function runCommand<X>(
 				const why = isDir(s.fs, path) ? 'Is a directory' : 'No such file or directory';
 				return fail(s, `${prefix}${name}: ${why}\n`);
 			}
-			if (!canRead(s.fs, path)) return fail(s, `${prefix}${name}: Permission denied\n`);
+			if (!canRead(s.fs, path, s.user)) return fail(s, `${prefix}${name}: Permission denied\n`);
 			input = data;
 			continue;
 		}
 		if (isDir(s.fs, path)) return fail(s, `${prefix}${name}: Is a directory\n`);
 		if (!isDir(s.fs, parentOf(path)))
 			return fail(s, `${prefix}${name}: No such file or directory\n`);
-		if (stat(s.fs, path) && !canWrite(s.fs, path))
+		if (stat(s.fs, path) && !canWrite(s.fs, path, s.user))
+			return fail(s, `${prefix}${name}: Permission denied\n`);
+		if (!stat(s.fs, path) && !canWrite(s.fs, parentOf(path), s.user))
 			return fail(s, `${prefix}${name}: Permission denied\n`);
 		if (r.op === '>' || !stat(s.fs, path)) s = { ...s, fs: writeFile(s.fs, path, '', now) };
 		const sink = { path, append: r.op === '>>' };
@@ -301,7 +318,8 @@ function runCommand<X>(
 			if (sys) res = withTemp((st) => (run.commands[sys] as Cmd<X>)(st, args, io));
 			else if (!node) res = fail(s, `${prefix}${name}: No such file or directory\n`, 127);
 			else if (node.kind === 'dir') res = fail(s, `${prefix}${name}: Is a directory\n`, 126);
-			else if (!canExec(s.fs, path)) res = fail(s, `${prefix}${name}: Permission denied\n`, 126);
+			else if (!canExec(s.fs, path, s.user))
+				res = fail(s, `${prefix}${name}: Permission denied\n`, 126);
 			else res = withTemp((st) => runFile(run, st, path, name, args, temp));
 		} else if (cmd && BUILTINS.has(name)) {
 			res = withTemp((st) => cmd(st, args, io));

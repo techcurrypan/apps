@@ -19,7 +19,7 @@ export function open<X>(s: ShellState<X>, name: string, io: Io<X>): Opened {
 	if (path === NULL_DEVICE) return { data: '' };
 	const node = stat(s.fs, path);
 	if (!node) return { error: 'missing' };
-	if (!canRead(s.fs, path)) return { error: 'denied' };
+	if (!canRead(s.fs, path, s.user)) return { error: 'denied' };
 	if (node.kind === 'dir') return { error: 'dir' };
 	return { data: readFile(s.fs, path) ?? '' };
 }

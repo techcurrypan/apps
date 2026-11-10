@@ -7,7 +7,20 @@ import { chmodSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync 
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-type Scenario = { id: string; tool: string; lesson: string; note?: string; steps: string[] };
+type Scenario = {
+	id: string;
+	tool: string;
+	lesson: string;
+	world?: string;
+	note?: string;
+	steps: string[];
+};
+
+// 場面の前に置く物（worlds/<名前>.json）。模擬も同じ物を読んで同じ世界を作る（src/lib/tools/shell/worlds.ts）
+type World = {
+	dirs?: { path: string; mode: string; owner: string }[];
+	files?: { path: string; mode: string; owner: string; data: string }[];
+};
 
 const here = dirname(fileURLToPath(import.meta.url));
 // 作り物の時計：場面の始まり 2026-11-10T09:00:00+09:00（UNIX 時刻 1794268800）。
@@ -76,6 +89,26 @@ function jst(t: number): string {
 	return `${d.getUTCFullYear()}-${p(d.getUTCMonth() + 1)}-${p(d.getUTCDate())} ${p(d.getUTCHours())}:${p(d.getUTCMinutes())}:${p(d.getUTCSeconds())}`;
 }
 
+// 世界を root で置く。置いた物の時刻は場面の始まりに揃える
+function placeWorld(st: string, w: World): string[] {
+	const roots: string[] = [];
+	for (const d of w.dirs ?? []) {
+		sh(
+			`sudo mkdir -p ${d.path} && sudo chown ${d.owner}:${d.owner} ${d.path} && sudo chmod ${d.mode} ${d.path}`
+		);
+		if (!d.path.startsWith(HOME)) roots.push(d.path);
+	}
+	(w.files ?? []).forEach((f, i) => {
+		writeFileSync(`${st}/world-${i}`, f.data);
+		sh(
+			`sudo cp ${st}/world-${i} ${f.path} && sudo chown ${f.owner}:${f.owner} ${f.path} && sudo chmod ${f.mode} ${f.path}`
+		);
+	});
+	const all = [...(w.dirs ?? []), ...(w.files ?? [])].map((x) => x.path);
+	if (all.length > 0) sh(`sudo touch -h -d @${BASE} ${all.join(' ')}`);
+	return roots;
+}
+
 function record(s: Scenario) {
 	const st = `/tmp/rec/${s.id}`;
 	rmSync(st, { recursive: true, force: true });
@@ -87,6 +120,10 @@ function record(s: Scenario) {
 	);
 	writeFileSync(`${st}/gitconfig`, GITCONFIG);
 	sh(`sudo -u learner cp ${st}/gitconfig ${HOME}/.gitconfig`);
+	const world: World = s.world
+		? (JSON.parse(readFileSync(join(here, 'worlds', `${s.world}.json`), 'utf8')) as World)
+		: {};
+	const extraRoots = placeWorld(st, world);
 	sh(`sudo -u learner touch -h -d @${BASE} ${HOME}/.gitconfig ${WORK} ${HOME}`);
 	for (const [f, v] of [
 		['cwd', WORK],
@@ -114,8 +151,7 @@ function record(s: Scenario) {
 			`echo $? > ${st}/code`,
 			`cp ${st}/code ${st}/${j}.code`,
 			`pwd > ${st}/cwd`,
-			`{ for __v in $(compgen -v); do case "$__base" in *" $__v "*) ;; *) declare -p "$__v" ;; esac; done; export -p; } 2> /dev/null | grep -v -E '^declare -[a-zA-Z]*r' | grep -v -E '^declare -[-a-zA-Z]* (${SKIP_VARS}|__v|__cmd|__base)(=|$)' > ${st}/env`,
-			`find ${HOME} -newer ${st}/${j}.mark -exec touch -h -d @${t} {} + 2> /dev/null`
+			`{ for __v in $(compgen -v); do case "$__base" in *" $__v "*) ;; *) declare -p "$__v" ;; esac; done; export -p; } 2> /dev/null | grep -v -E '^declare -[a-zA-Z]*r' | grep -v -E '^declare -[-a-zA-Z]* (${SKIP_VARS}|__v|__cmd|__base)(=|$)' > ${st}/env`
 		].join(NL);
 		const r = spawnSync(
 			'sudo',
@@ -141,6 +177,10 @@ function record(s: Scenario) {
 				`${j} 行目（${line}）で止まった: status=${r.status} ${r.stderr} ${r.error ?? ''}`
 			);
 		}
+		// その行で変わった物の時刻を、その行の時刻に揃える（root の物もあるので root で）
+		sh(
+			`sudo find ${[HOME, ...extraRoots].join(' ')} -newer ${st}/${j}.mark -exec touch -h -d @${t} {} + 2> /dev/null || true`
+		);
 		const read = (f: string) => readFileSync(`${st}/${f}`, 'utf8');
 		return {
 			line,
@@ -152,7 +192,16 @@ function record(s: Scenario) {
 			code: Number(read(`${j}.code`).trim())
 		};
 	});
-	return { id: s.id, tool: s.tool, lesson: s.lesson, recordedOn: versions(), steps };
+	// 置いた世界を片付ける（家の外の物）
+	if (extraRoots.length > 0) sh(`sudo rm -rf ${extraRoots.filter((r) => r !== '/srv').join(' ')}`);
+	return {
+		id: s.id,
+		tool: s.tool,
+		lesson: s.lesson,
+		...(s.world ? { world: s.world } : {}),
+		recordedOn: versions(),
+		steps
+	};
 }
 
 // 利用者 learner から読めるように、擬似端末の台本を /tmp に写す

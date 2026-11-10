@@ -8,9 +8,10 @@ import type { GitExt } from './git/repo.ts';
 import { start, typeLine, type Tool } from './session.ts';
 import { shellTool, type ShellState } from './shell/run.ts';
 import { learnerWorld } from './shell/world.ts';
+import { worldFs, type WorldSpec } from './shell/worlds.ts';
 
 type Step = { line: string; out: string; err: string; code: number };
-type Recorded = { id: string; tool: string; lesson: string; steps: Step[] };
+type Recorded = { id: string; tool: string; lesson: string; world?: string; steps: Step[] };
 
 const DIR = 'tools-real/recorded';
 const recorded: Recorded[] = readdirSync(DIR)
@@ -24,12 +25,14 @@ const normalize = (s: string) =>
 	s.replace(/^bash: (eval: )?line \d+: /gm, 'bash: ').replace(/^bash: `.*'\n/gm, '');
 
 type AnyTool = { tool: Tool<ShellState<unknown>>; initial: ShellState<unknown> };
-// シェルの道具も git の入った同じ世界（本物の機械にも git がある）
-const withGit = (): AnyTool => ({
+// シェルの道具も git の入った同じ世界（本物の機械にも git がある）。場面の前に置く物があれば置く
+const withGit = (world: WorldSpec | null): AnyTool => ({
 	tool: shellTool<GitExt>(gitCommands()) as unknown as Tool<ShellState<unknown>>,
-	initial: learnerWorld<GitExt>({ repos: {} }) as ShellState<unknown>
+	initial: learnerWorld<GitExt>({ repos: {} }, worldFs(world)) as ShellState<unknown>
 });
-const tools: Record<string, () => AnyTool> = { git: withGit, shell: withGit };
+const worldOf = (name?: string): WorldSpec | null =>
+	name ? (JSON.parse(readFileSync(`tools-real/worlds/${name}.json`, 'utf8')) as WorldSpec) : null;
+const tools: Record<string, (w: WorldSpec | null) => AnyTool> = { git: withGit, shell: withGit };
 
 describe('本物の記録がある', () => {
 	it('記録が 1 件以上ある', () => {
@@ -39,7 +42,7 @@ describe('本物の記録がある', () => {
 
 // 本物の記録はあるが、模擬がまだ追いついていない場面。黙って飛ばさず、保留として一覧に出す。
 // 段 7 を終えるときは空にする（docs/progress/phase-7.md）
-export const PENDING: ReadonlySet<string> = new Set([]);
+export const PENDING: ReadonlySet<string> = new Set(['lnx-011-sudo', 'sec-004-cert']);
 
 for (const rec of recorded) {
 	if (PENDING.has(rec.id)) {
@@ -52,7 +55,7 @@ for (const rec of recorded) {
 			expect(make).toBeDefined();
 		});
 		if (!make) return;
-		const { tool, initial } = make();
+		const { tool, initial } = make(worldOf(rec.world));
 		let session = start(tool, initial);
 		rec.steps.forEach((step, j) => {
 			session = typeLine(session, step.line);

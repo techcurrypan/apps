@@ -11,7 +11,7 @@ import {
 	writeFile,
 	type Fs
 } from '../fs.ts';
-import { canRead, pathOf, type Cmd } from './run.ts';
+import { canRead, canWrite, pathOf, type Cmd } from './run.ts';
 
 const L = '‘';
 const R = '’';
@@ -32,6 +32,8 @@ const touch: Cmd<unknown> = (s, args, io) => {
 		if (node) fs = { ...fs, [path]: { ...node, mtime: io.now } };
 		else if (!isDir(fs, parentOf(path)))
 			err += `touch: cannot touch '${a}': No such file or directory\n`;
+		else if (!canWrite(fs, parentOf(path), s.user))
+			err += `touch: cannot touch '${a}': Permission denied\n`;
 		else fs = writeFile(fs, path, '', io.now);
 	}
 	return res({ ...s, fs }, err);
@@ -91,7 +93,7 @@ const cp: Cmd<unknown> = (s, args, io) => {
 			fs = copyTree(fs, src, to, io.now);
 			continue;
 		}
-		if (!canRead(fs, src)) {
+		if (!canRead(fs, src, s.user)) {
 			err += `cp: cannot open '${a}' for reading: Permission denied\n`;
 			continue;
 		}
@@ -100,6 +102,10 @@ const cp: Cmd<unknown> = (s, args, io) => {
 			continue;
 		}
 		const old = stat(fs, to);
+		if (old ? !canWrite(fs, to, s.user) : !canWrite(fs, parentOf(to), s.user)) {
+			err += `cp: cannot create regular file '${dstName}': Permission denied\n`;
+			continue;
+		}
 		fs = writeFile(fs, to, node.data, io.now, old ? old.mode : node.mode & ~UMASK);
 	}
 	return res({ ...s, fs }, err);

@@ -1,0 +1,10 @@
+{
+	"note": "利用者と sudo（lnx-011）。root の物の置き場",
+	"dirs": [
+		{ "path": "/srv", "mode": "755", "owner": "root" },
+		{ "path": "/srv/shop", "mode": "755", "owner": "root" }
+	],
+	"files": [
+		{ "path": "/srv/shop/report.txt", "mode": "640", "owner": "root", "data": "sales: 120\n" }
+	]
+}
