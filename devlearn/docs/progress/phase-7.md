@@ -1,6 +1,6 @@
 # 段 7　道具
 
-状態: **進行中**（2026-11-10 に始めた）
+状態: **済**（2026-11-10 に始め、2026-11-11 に終えた）
 
 設計は `docs/tools.md`（形・本物の出力の取り方・レッスンごとに要る物）。
 
@@ -12,11 +12,29 @@
 | 本物の出力の記録（`tools-real/`、`.github/workflows/record-devlearn-real.yml`） | 済 |
 | シェルの土台（読み取り・展開・パイプ・リダイレクト・`cd` `pwd` `echo` `printf` `ls` `cat` `mkdir` `rm`） | 済 |
 | `git`（模擬） | 済。git-001〜009・sec-013 の 11 場面（約 210 行）が、本物の記録と出力・エラー・終了コードまで一字ずつ一致 |
-| `shell`（模擬） | 一部済。lnx-001〜006・008・009、sec-002・012 の 10 場面（約 390 行）が、本物の記録と出力・エラー・終了コードまで一字ずつ一致。残り：lnx-007・010・011、net-002〜004・006〜008・013、sec-004・008（プロセス・サービス・利用者・網・証明書・鍵。記録の場を作る必要がある） |
-| `docker`（模擬） | 未 |
+| `shell`（模擬） | 済。lnx-001〜011、net-002〜004・006〜008・013、sec-002・004・008・012 の 22 場面が、本物の記録と出力・エラー・終了コードまで一字ずつ一致（2026-11-11 に lnx-007 プロセス・lnx-010 サービスとログ・sec-008 SSH の鍵・net-008 を足した） |
+| `docker`（模擬） | 済。ctr-001〜009 の 9 場面（約 70 行）が本物の記録と一致。Docker 28.0.4・Compose v2.38.2・busybox:1.37。run（--rm・-d・--name・-p・-e・--env-file・-v・--network）・ps・stop・start・rm・logs・port・exec・images・rmi・history・build（BuildKit の行の形と層の使い回し）・volume・network・compose（up -d・ps・down・exec）。コンテナの中は busybox の applet（sh・echo・cat・uname・sleep・printenv・httpd・nc・ping・wget ほか） |
 | `js`（本物） | 済。書いた物の全体をその都度初めから走らせる。決まった乱数と時計、作り物の時計で回す setTimeout、回数で止める繰り返しの見張り。履歴と巻き戻し（`src/lib/tools/js/`） |
 | `sql`（本物、sql.js） | 済。sql.js 1.15.2（SQLite 3.54.0）。初めの SQL と打った行の並びを状態にし、打つたびに打ち直す。.mode table の形・計画の木・changes。決まった random()（`src/lib/tools/sql/`、`docs/third-party.md`） |
 | 実戦の画面（道具を使う実戦） | git で済。舞台に作業ツリー・ステージ・リポジトリを前 → 後、端末、1 行の入力、合格の項目、巻き戻せる履歴。合格で修了をブラウザに残す（L-6）。公開 URL（`04e862b`）で `look.ts` 28 / 28 |
+
+## 段 7 の完成条件
+
+| # | 完成条件 | どう確かめたか | 結果 |
+|---|---|---|---|
+| 1 | 模擬の出力とエラーが本物と一致する（本物の出力を期待値として記録し、単体テストで固定） | CI の Ubuntu 24.04 で本物の命令を打って `tools-real/recorded/` に記録（`.github/workflows/record-devlearn-real.yml`）。`src/lib/tools/real.test.ts` が全 42 場面を模擬で打ち直し、標準出力・標準エラー・終了コードを一字ずつ比べる。本物でも毎回変わる物だけを揃える規則は `docs/tools.md` 2 章。保留（`PENDING`）は空。`npm run test` 1221 件（道具は 1023 件）が通る（2026-11-11） | ○ |
+| 2 | 道具の操作を巻き戻せる | 道具は 状態 → 状態 の関数で、履歴の k 番目に戻す（`src/lib/tools/session.ts`）。テスト：`session.test.ts`（土台）、git・shell・js・sql の各テスト、docker は `docker/docker.test.ts` の「巻き戻すと、その時点のコンテナ・イメージ・ボリュームに戻る」。実戦の画面で巻き戻せることは公開 URL で確かめた（git の実戦、`look.ts`） | ○ |
+
+記録した版（2026-11-11）：Ubuntu 24.04.5 LTS・bash 5.2.21・git 2.56.0・coreutils 9.4・procps-ng 4.0.4・systemd 255.4・OpenSSH 9.6p1・curl 8.5.0・Docker 28.0.4・Docker Compose v2.38.2・busybox 1.37.0。
+
+## 申し送り（段 10 で本文を書くとき）
+
+- 実戦の画面（`ToolPractice.svelte`）につながっている道具は git だけ。shell は初めの状態と合格の判定（`src/lib/practice/shell-practice.ts`）まで、
+  js・sql・docker は道具だけがある。段 10 で各分野のレッスンを書くときに、その道具の実戦の画面（舞台の図・合格の項目）をつなぐ。
+  docker の実戦の初めの状態は、世界の `docker.images` と `files`（`tools-real/worlds/docker*.json`）の形を使う
+- SSH の場面で、`authorized_keys` を 664（組が書ける）にしても入れた。Ubuntu の OpenSSH は、組が本人だけの組なら許す。
+  sec-008 の本文で「権限が緩いと入れない」を言うなら、例は 666（ほかの人が書ける）にする（模擬は本物と同じく 666 で断る）
+- 名前の無いコンテナの名前：本物は「形容詞_人の名前」。実在の人の名前を使わない（CLAUDE.md 第 7 章）ので、模擬は「形容詞_港町の物」にした（比べるときは揃えず、記録の場面では名前を付けている）
 
 ## 本物の出力の取り方で分かったこと
 
@@ -55,6 +73,16 @@
 - `git rebase` の進みの表示は改行でなく復帰（CR）で上書きする。画面の端末は CR を行の上書きとして描く
 - `git revert` の要約には ` Date:` の行が付く（記録の環境は日時を環境変数で与えるため）
 - 衝突の途中の `git diff`（結合差分）は、到達目標に要らないので場面から外し、模擬でも扱わない
+
+## プロセス・サービス・SSH・コンテナの記録で分かったこと（2026-11-11）
+
+- systemd・docker は記録の機械の本物の時計で動く（faketime は、systemd の側と、Go の docker には効かない）。時刻の出る所は揃えて比べる
+- BuildKit の行で出す形は、かかった時間によって「途中」の行が出たり出なかったりする（同じ場面を 2 回記録して分かった）。比べるときに落とす
+- コンテナの名前は 2 字以上（`--name a` は断られる。初めの場面で分かったので場面を直した）
+- `docker compose exec` は、記録の標準入力（端末でない）では `-T` が要る
+- SSH の `-v` で出る `Authenticated to …` には `debug1:` が付かない。`-v` の無いときは出ない
+- OpenSSH の指紋の絵（randomart）の計算を模擬に書き、記録の公開鍵から指紋と絵を作り直して一致を確かめた（`shell/ssh.test.ts`）
+- BuildKit の「送った大きさ」は、ファイルの情報（20 + 道の長さ + 大きさの数の長さ）と中身の包み（5 + 大きさ + 大きさの数の長さ）の和。変わっていないファイルは情報だけを送る（記録の 133B・181B・49B・31B・52B から割り出した）
 
 ## 気づいたこと（申し送り）
 

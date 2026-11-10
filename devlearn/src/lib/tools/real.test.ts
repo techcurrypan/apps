@@ -3,6 +3,8 @@
 // 場面ごとに同じ行を模擬で打ち、標準出力・標準エラー・終了コードを一字ずつ比べる。
 import { readdirSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { dockerCommands } from './docker/docker.ts';
+import { emptyDocker, type DockerExt } from './docker/state.ts';
 import { gitCommands } from './git/git.ts';
 import type { GitExt } from './git/repo.ts';
 import { start, typeLine, type Tool } from './session.ts';
@@ -80,6 +82,47 @@ function serviceFixed(text: string): string {
 }
 const PID_LESSONS = new Set(['lnx-007', 'lnx-010']);
 
+// コンテナの ID・作る時間・表の時刻は本物では毎回変わる。表は見出しの位置で升に分け、ID と時刻の升を揃える
+const TABLE_HEAD = /^(CONTAINER ID|REPOSITORY|IMAGE {3,}CREATED|NETWORK ID|NAME {3,}IMAGE|DRIVER)/;
+function dockerFixed(text: string): string {
+	const t = text
+		.replace(/\b[0-9a-f]{64}\b/g, 'H64')
+		.replace(/DONE \d+\.\d+s/g, 'DONE Xs')
+		.replace(/^(#\d+) \d+\.\d+ /gm, '$1 X ')
+		.replace(/round-trip min\/avg\/max = [\d./]+ ms/g, 'round-trip min/avg/max = X ms');
+	const lines = t.split('\n');
+	if (lines[0].startsWith('#0 building')) {
+		// BuildKit の行は、時間のかかった物だけ「途中」の行と「時間 done」の行の 2 つになる（同じ build でも記録ごとに違う）。
+		// 時間を落とし、すぐ後に「同じ字 … done」が続く途中の行を落とす
+		const done = lines.map((l) => l.replace(/ \d+\.\d+s done$/, ' done'));
+		return done
+			.filter(
+				(l, i) =>
+					!(done[i + 1]?.startsWith(l) && done[i + 1].endsWith(' done') && done[i + 1] !== l)
+			)
+			.join('\n');
+	}
+	if (!TABLE_HEAD.test(lines[0])) return t;
+	const heads = [...lines[0].matchAll(/\S+(?: \S+)*/g)].map((m) => ({ at: m.index, name: m[0] }));
+	return lines
+		.map((row, r) => {
+			if (r === 0) return heads.map((h) => h.name).join(' | ');
+			if (row === '') return row;
+			return heads
+				.map((h, k) => {
+					const cell = row.slice(h.at, heads[k + 1]?.at ?? row.length).trim();
+					if (/ID$/.test(h.name) || (h.name === 'IMAGE' && /^[0-9a-f]{12}$/.test(cell)))
+						return 'ID';
+					if (h.name === 'CREATED') return cell.replace(/^.* ago$/, 'X ago');
+					if (h.name === 'STATUS')
+						return cell.replace(/^Up .*$/, 'Up X').replace(/^(Exited \(\d+\)) .* ago$/, '$1 X ago');
+					return cell;
+				})
+				.join(' | ');
+		})
+		.join('\n');
+}
+
 type AnyTool = { tool: Tool<ShellState<unknown>>; initial: ShellState<unknown> };
 // シェルの道具も git の入った同じ世界（本物の機械にも git がある）。場面の前に置く物があれば置く
 const withGit = (world: WorldSpec | null): AnyTool => ({
@@ -92,7 +135,19 @@ const withGit = (world: WorldSpec | null): AnyTool => ({
 });
 const worldOf = (name?: string): WorldSpec | null =>
 	name ? (JSON.parse(readFileSync(`tools-real/worlds/${name}.json`, 'utf8')) as WorldSpec) : null;
-const tools: Record<string, (w: WorldSpec | null) => AnyTool> = { git: withGit, shell: withGit };
+// コンテナの道具：シェルに docker を足した物。初めのイメージは世界が決める
+const withDocker = (world: WorldSpec | null): AnyTool => ({
+	tool: shellTool<DockerExt>(dockerCommands()) as unknown as Tool<ShellState<unknown>>,
+	initial: learnerWorld<DockerExt>(
+		emptyDocker(world?.docker?.images ?? []),
+		worldFs(world)
+	) as ShellState<unknown>
+});
+const tools: Record<string, (w: WorldSpec | null) => AnyTool> = {
+	git: withGit,
+	shell: withGit,
+	docker: withDocker
+};
 
 describe('本物の記録がある', () => {
 	it('記録が 1 件以上ある', () => {
@@ -102,17 +157,7 @@ describe('本物の記録がある', () => {
 
 // 本物の記録はあるが、模擬がまだ追いついていない場面。黙って飛ばさず、保留として一覧に出す。
 // 段 7 を終えるときは空にする（docs/progress/phase-7.md）
-export const PENDING: ReadonlySet<string> = new Set([
-	'ctr-001-run',
-	'ctr-002-lifecycle',
-	'ctr-003-port',
-	'ctr-004-build',
-	'ctr-005-volume',
-	'ctr-006-env',
-	'ctr-007-compose',
-	'ctr-008-cache',
-	'ctr-009-network'
-]);
+export const PENDING: ReadonlySet<string> = new Set([]);
 
 for (const rec of recorded) {
 	if (PENDING.has(rec.id)) {
@@ -129,8 +174,13 @@ for (const rec of recorded) {
 		let session = start(tool, initial);
 		const byPid = PID_LESSONS.has(rec.lesson);
 		const [mockMarks, realMarks] = [pidMarks(), pidMarks()];
+		const byDocker = rec.tool === 'docker';
 		const fix = (marks: (t: string) => string, line: string, t: string) =>
-			byPid ? serviceFixed(marks(unfixed(line, t))) : unfixed(line, t);
+			byPid
+				? serviceFixed(marks(unfixed(line, t)))
+				: byDocker
+					? dockerFixed(unfixed(line, t))
+					: unfixed(line, t);
 		rec.steps.forEach((step, j) => {
 			session = typeLine(session, step.line);
 			const got = session.entries[j];
