@@ -42,7 +42,7 @@ describe('本物の記録がある', () => {
 
 // 本物の記録はあるが、模擬がまだ追いついていない場面。黙って飛ばさず、保留として一覧に出す。
 // 段 7 を終えるときは空にする（docs/progress/phase-7.md）
-export const PENDING: ReadonlySet<string> = new Set(['lnx-011-sudo', 'sec-004-cert']);
+export const PENDING: ReadonlySet<string> = new Set([]);
 
 for (const rec of recorded) {
 	if (PENDING.has(rec.id)) {

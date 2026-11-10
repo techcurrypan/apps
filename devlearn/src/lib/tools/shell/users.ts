@@ -2,7 +2,17 @@
 // 模擬の世界の利用者は learner（sudo の組にいる）と root と nobody。
 // sudo は、合言葉を入れた直後（覚えている間）の形で扱う（模擬の端末は合言葉を打つ口を持たないため。docs/tools.md 3.2）。
 import { isDir, parentOf, readFile, stat, writeFile, type Fs } from '../fs.ts';
-import { canWrite, fail, GROUPS, lookPath, ok, pathOf, type Cmd, type ShellState } from './run.ts';
+import {
+	BUILTINS,
+	canWrite,
+	fail,
+	GROUPS,
+	lookPath,
+	ok,
+	pathOf,
+	type Cmd,
+	type ShellState
+} from './run.ts';
 
 const L = '‘';
 const R = '’';
@@ -94,6 +104,11 @@ const sudo: Cmd<unknown> = (s, args, io) => {
 	};
 	const [found] = name.includes('/') ? [] : lookPath(asTarget, name, io.commands);
 	const cmd = found?.kind === 'system' ? io.commands[found.name] : null;
+	if (!cmd && BUILTINS.has(name))
+		return fail(
+			s,
+			`sudo: ${name}: command not found\nsudo: "${name}" is a shell built-in command, it cannot be run directly.\nsudo: the -s option may be used to run a privileged shell.\nsudo: the -D option may be used to run a command in a specific directory.\n`
+		);
 	if (!cmd) return fail(s, `sudo: ${name}: command not found\n`);
 	const r = cmd(asTarget, rest, io);
 	const fs = target === s.user ? r.state.fs : ownNew(s.fs, r.state.fs, target);

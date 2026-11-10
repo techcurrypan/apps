@@ -103,7 +103,8 @@ const cp: Cmd<unknown> = (s, args, io) => {
 		}
 		const old = stat(fs, to);
 		if (old ? !canWrite(fs, to, s.user) : !canWrite(fs, parentOf(to), s.user)) {
-			err += `cp: cannot create regular file '${dstName}': Permission denied\n`;
+			const shown = isDir(fs, dst) ? `${dstName.replace(/\/+$/, '')}/${baseName(src)}` : dstName;
+			err += `cp: cannot create regular file '${shown}': Permission denied\n`;
 			continue;
 		}
 		fs = writeFile(fs, to, node.data, io.now, old ? old.mode : node.mode & ~UMASK);
