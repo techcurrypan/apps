@@ -1,0 +1,267 @@
+{
+	"id": "lnx-002-files",
+	"tool": "shell",
+	"lesson": "lnx-002",
+	"recordedOn": {
+		"os": "Ubuntu 24.04.5 LTS",
+		"bash": "GNU bash, version 5.2.21(1)-release (x86_64-pc-linux-gnu)",
+		"git": "git version 2.56.0",
+		"coreutils": "ls (GNU coreutils) 9.4",
+		"grep": "grep (GNU grep) 3.11",
+		"faketime": ""
+	},
+	"steps": [
+		{
+			"line": "touch a.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "ls",
+			"out": "a.txt\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "printf 'hello\\n' > b.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "cp b.txt c.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "cat c.txt",
+			"out": "hello\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "ls",
+			"out": "a.txt  b.txt  c.txt\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "mv c.txt d.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "ls",
+			"out": "a.txt  b.txt  d.txt\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "mkdir box",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "mv d.txt box/",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "ls box",
+			"out": "d.txt\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "cp b.txt box",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "ls box",
+			"out": "b.txt  d.txt\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "cp box copy",
+			"out": "",
+			"err": "cp: -r not specified; omitting directory 'box'\n",
+			"code": 1
+		},
+		{
+			"line": "cp -r box copy",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "ls copy",
+			"out": "b.txt  d.txt\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "rm box",
+			"out": "",
+			"err": "rm: cannot remove 'box': Is a directory\n",
+			"code": 1
+		},
+		{
+			"line": "rm -r box",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "ls",
+			"out": "a.txt  b.txt  copy\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "rm nothere",
+			"out": "",
+			"err": "rm: cannot remove 'nothere': No such file or directory\n",
+			"code": 1
+		},
+		{
+			"line": "mv nothere x",
+			"out": "",
+			"err": "mv: cannot stat 'nothere': No such file or directory\n",
+			"code": 1
+		},
+		{
+			"line": "cp nothere x",
+			"out": "",
+			"err": "cp: cannot stat 'nothere': No such file or directory\n",
+			"code": 1
+		},
+		{
+			"line": "touch box2/x",
+			"out": "",
+			"err": "touch: cannot touch 'box2/x': No such file or directory\n",
+			"code": 1
+		},
+		{
+			"line": "mkdir copy",
+			"out": "",
+			"err": "mkdir: cannot create directory ‘copy’: File exists\n",
+			"code": 1
+		},
+		{
+			"line": "touch a.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "mv b.txt copy/b.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "ls copy",
+			"out": "b.txt  d.txt\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "cp",
+			"out": "",
+			"err": "cp: missing file operand\nTry 'cp --help' for more information.\n",
+			"code": 1
+		},
+		{
+			"line": "mv a.txt",
+			"out": "",
+			"err": "mv: missing destination file operand after 'a.txt'\nTry 'mv --help' for more information.\n",
+			"code": 1
+		},
+		{
+			"line": "rm",
+			"out": "",
+			"err": "rm: missing operand\nTry 'rm --help' for more information.\n",
+			"code": 1
+		},
+		{
+			"line": "mkdir",
+			"out": "",
+			"err": "mkdir: missing operand\nTry 'mkdir --help' for more information.\n",
+			"code": 1
+		},
+		{
+			"line": "touch",
+			"out": "",
+			"err": "touch: missing file operand\nTry 'touch --help' for more information.\n",
+			"code": 1
+		},
+		{
+			"line": "rm -r copy",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "ls",
+			"out": "a.txt\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "mv a.txt e.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "ls",
+			"out": "e.txt\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "cp e.txt e.txt",
+			"out": "",
+			"err": "cp: 'e.txt' and 'e.txt' are the same file\n",
+			"code": 1
+		},
+		{
+			"line": "mkdir -p p/q/r",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "ls p/q",
+			"out": "r\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "rm -rf p",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "rm -f nothere",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "ls",
+			"out": "e.txt\n",
+			"err": "",
+			"code": 0
+		}
+	]
+}

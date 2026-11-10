@@ -1,0 +1,189 @@
+{
+	"id": "sec-012-log",
+	"tool": "shell",
+	"lesson": "sec-012",
+	"recordedOn": {
+		"os": "Ubuntu 24.04.5 LTS",
+		"bash": "GNU bash, version 5.2.21(1)-release (x86_64-pc-linux-gnu)",
+		"git": "git version 2.56.0",
+		"coreutils": "ls (GNU coreutils) 9.4",
+		"grep": "grep (GNU grep) 3.11",
+		"faketime": ""
+	},
+	"steps": [
+		{
+			"line": "printf '%s\\n' '192.0.2.10 - - [10/Nov/2026:09:00:01 +0900] \"GET /index.html HTTP/1.1\" 200 512' '198.51.100.7 - - [10/Nov/2026:09:00:03 +0900] \"POST /login HTTP/1.1\" 401 128' '198.51.100.7 - - [10/Nov/2026:09:00:04 +0900] \"POST /login HTTP/1.1\" 401 128' '192.0.2.10 - - [10/Nov/2026:09:00:09 +0900] \"GET /style.css HTTP/1.1\" 200 2048' '198.51.100.7 - - [10/Nov/2026:09:00:05 +0900] \"POST /login HTTP/1.1\" 401 128' '203.0.113.5 - - [10/Nov/2026:09:00:20 +0900] \"POST /login HTTP/1.1\" 401 128' '198.51.100.7 - - [10/Nov/2026:09:00:06 +0900] \"POST /login HTTP/1.1\" 200 256' '203.0.113.5 - - [10/Nov/2026:09:01:02 +0900] \"GET /admin HTTP/1.1\" 403 64' '192.0.2.11 - - [10/Nov/2026:09:01:30 +0900] \"GET /index.html HTTP/1.1\" 200 512' '203.0.113.5 - - [10/Nov/2026:09:02:00 +0900] \"GET /../../etc/passwd HTTP/1.1\" 400 0' > access.log",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "cat access.log",
+			"out": "192.0.2.10 - - [10/Nov/2026:09:00:01 +0900] \"GET /index.html HTTP/1.1\" 200 512\n198.51.100.7 - - [10/Nov/2026:09:00:03 +0900] \"POST /login HTTP/1.1\" 401 128\n198.51.100.7 - - [10/Nov/2026:09:00:04 +0900] \"POST /login HTTP/1.1\" 401 128\n192.0.2.10 - - [10/Nov/2026:09:00:09 +0900] \"GET /style.css HTTP/1.1\" 200 2048\n198.51.100.7 - - [10/Nov/2026:09:00:05 +0900] \"POST /login HTTP/1.1\" 401 128\n203.0.113.5 - - [10/Nov/2026:09:00:20 +0900] \"POST /login HTTP/1.1\" 401 128\n198.51.100.7 - - [10/Nov/2026:09:00:06 +0900] \"POST /login HTTP/1.1\" 200 256\n203.0.113.5 - - [10/Nov/2026:09:01:02 +0900] \"GET /admin HTTP/1.1\" 403 64\n192.0.2.11 - - [10/Nov/2026:09:01:30 +0900] \"GET /index.html HTTP/1.1\" 200 512\n203.0.113.5 - - [10/Nov/2026:09:02:00 +0900] \"GET /../../etc/passwd HTTP/1.1\" 400 0\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "wc -l access.log",
+			"out": "10 access.log\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "grep ' 401 ' access.log",
+			"out": "198.51.100.7 - - [10/Nov/2026:09:00:03 +0900] \"POST /login HTTP/1.1\" 401 128\n198.51.100.7 - - [10/Nov/2026:09:00:04 +0900] \"POST /login HTTP/1.1\" 401 128\n198.51.100.7 - - [10/Nov/2026:09:00:05 +0900] \"POST /login HTTP/1.1\" 401 128\n203.0.113.5 - - [10/Nov/2026:09:00:20 +0900] \"POST /login HTTP/1.1\" 401 128\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "grep -c ' 401 ' access.log",
+			"out": "4\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "grep ' 401 ' access.log | cut -d ' ' -f 1",
+			"out": "198.51.100.7\n198.51.100.7\n198.51.100.7\n203.0.113.5\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "grep ' 401 ' access.log | cut -d ' ' -f 1 | sort",
+			"out": "198.51.100.7\n198.51.100.7\n198.51.100.7\n203.0.113.5\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "grep ' 401 ' access.log | cut -d ' ' -f 1 | sort | uniq -c",
+			"out": "      3 198.51.100.7\n      1 203.0.113.5\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "grep ' 401 ' access.log | cut -d ' ' -f 1 | sort | uniq -c | sort -rn",
+			"out": "      3 198.51.100.7\n      1 203.0.113.5\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "grep ' 401 ' access.log | cut -d ' ' -f 1 | sort | uniq -c | sort -rn | head -n 1",
+			"out": "      3 198.51.100.7\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "grep ' 401 ' access.log | cut -d ' ' -f 1 | uniq -c",
+			"out": "      3 198.51.100.7\n      1 203.0.113.5\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "cut -d ' ' -f 9 access.log | sort | uniq -c",
+			"out": "      4 200\n      1 400\n      4 401\n      1 403\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "cut -d ' ' -f 7 access.log | sort | uniq -c | sort -rn",
+			"out": "      5 /login\n      2 /index.html\n      1 /style.css\n      1 /admin\n      1 /../../etc/passwd\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "cut -d ' ' -f 1,9 access.log",
+			"out": "192.0.2.10 200\n198.51.100.7 401\n198.51.100.7 401\n192.0.2.10 200\n198.51.100.7 401\n203.0.113.5 401\n198.51.100.7 200\n203.0.113.5 403\n192.0.2.11 200\n203.0.113.5 400\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "cut -d ' ' -f 6-7 access.log | head -n 3",
+			"out": "\"GET /index.html\n\"POST /login\n\"POST /login\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "cut -f 1 access.log | head -n 2",
+			"out": "192.0.2.10 - - [10/Nov/2026:09:00:01 +0900] \"GET /index.html HTTP/1.1\" 200 512\n198.51.100.7 - - [10/Nov/2026:09:00:03 +0900] \"POST /login HTTP/1.1\" 401 128\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "cut -d ' ' access.log",
+			"out": "",
+			"err": "cut: you must specify a list of bytes, characters, or fields\nTry 'cut --help' for more information.\n",
+			"code": 1
+		},
+		{
+			"line": "cut -d ' ' -f 0 access.log",
+			"out": "",
+			"err": "cut: fields are numbered from 1\nTry 'cut --help' for more information.\n",
+			"code": 1
+		},
+		{
+			"line": "cut -d '\"' -f 2 access.log | sort | uniq -c | sort -rn",
+			"out": "      5 POST /login HTTP/1.1\n      2 GET /index.html HTTP/1.1\n      1 GET /style.css HTTP/1.1\n      1 GET /admin HTTP/1.1\n      1 GET /../../etc/passwd HTTP/1.1\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "grep -c 'POST /login' access.log",
+			"out": "5\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "grep '\\.\\./' access.log",
+			"out": "203.0.113.5 - - [10/Nov/2026:09:02:00 +0900] \"GET /../../etc/passwd HTTP/1.1\" 400 0\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "grep -E ' (403|400) ' access.log | cut -d ' ' -f 1,7,9",
+			"out": "203.0.113.5 /admin 403\n203.0.113.5 /../../etc/passwd 400\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "grep 'POST /login' access.log | grep -v ' 401 '",
+			"out": "198.51.100.7 - - [10/Nov/2026:09:00:06 +0900] \"POST /login HTTP/1.1\" 200 256\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "cut -d ' ' -f 1 access.log | sort | uniq -c | sort -rn | head -n 2",
+			"out": "      4 198.51.100.7\n      3 203.0.113.5\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "grep ' 401 ' nothere.log | cut -d ' ' -f 1",
+			"out": "",
+			"err": "grep: nothere.log: No such file or directory\n",
+			"code": 0
+		},
+		{
+			"line": "cut -d ' ' -f 1 nothere.log",
+			"out": "",
+			"err": "cut: nothere.log: No such file or directory\n",
+			"code": 1
+		},
+		{
+			"line": "sort access.log | head -n 1",
+			"out": "192.0.2.10 - - [10/Nov/2026:09:00:01 +0900] \"GET /index.html HTTP/1.1\" 200 512\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "cut -c 1-12 access.log | head -n 2",
+			"out": "192.0.2.10 -\n198.51.100.7\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "cut -d ' ' -f 9 access.log | sort -n | uniq -c",
+			"out": "      4 200\n      1 400\n      4 401\n      1 403\n",
+			"err": "",
+			"code": 0
+		}
+	]
+}

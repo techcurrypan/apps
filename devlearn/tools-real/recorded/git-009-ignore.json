@@ -6,7 +6,9 @@
 		"os": "Ubuntu 24.04.5 LTS",
 		"bash": "GNU bash, version 5.2.21(1)-release (x86_64-pc-linux-gnu)",
 		"git": "git version 2.56.0",
-		"coreutils": "ls (GNU coreutils) 9.4"
+		"coreutils": "ls (GNU coreutils) 9.4",
+		"grep": "grep (GNU grep) 3.11",
+		"faketime": ""
 	},
 	"steps": [
 		{

@@ -1,0 +1,231 @@
+{
+	"id": "lnx-003-read",
+	"tool": "shell",
+	"lesson": "lnx-003",
+	"recordedOn": {
+		"os": "Ubuntu 24.04.5 LTS",
+		"bash": "GNU bash, version 5.2.21(1)-release (x86_64-pc-linux-gnu)",
+		"git": "git version 2.56.0",
+		"coreutils": "ls (GNU coreutils) 9.4",
+		"grep": "grep (GNU grep) 3.11",
+		"faketime": ""
+	},
+	"steps": [
+		{
+			"line": "printf 'line %d\\n' 1 2 3 4 5 6 7 8 9 10 11 12 > log.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "cat log.txt",
+			"out": "line 1\nline 2\nline 3\nline 4\nline 5\nline 6\nline 7\nline 8\nline 9\nline 10\nline 11\nline 12\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "wc -l log.txt",
+			"out": "12 log.txt\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "wc log.txt",
+			"out": "12 24 87 log.txt\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "head log.txt",
+			"out": "line 1\nline 2\nline 3\nline 4\nline 5\nline 6\nline 7\nline 8\nline 9\nline 10\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "head -n 3 log.txt",
+			"out": "line 1\nline 2\nline 3\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "head -3 log.txt",
+			"out": "line 1\nline 2\nline 3\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "tail log.txt",
+			"out": "line 3\nline 4\nline 5\nline 6\nline 7\nline 8\nline 9\nline 10\nline 11\nline 12\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "tail -n 2 log.txt",
+			"out": "line 11\nline 12\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "tail -2 log.txt",
+			"out": "line 11\nline 12\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "wc -l < log.txt",
+			"out": "12\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "cat log.txt | wc -l",
+			"out": "12\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "head -n 3 nothere",
+			"out": "",
+			"err": "head: cannot open 'nothere' for reading: No such file or directory\n",
+			"code": 1
+		},
+		{
+			"line": "tail nothere",
+			"out": "",
+			"err": "tail: cannot open 'nothere' for reading: No such file or directory\n",
+			"code": 1
+		},
+		{
+			"line": "wc nothere",
+			"out": "",
+			"err": "wc: nothere: No such file or directory\n",
+			"code": 1
+		},
+		{
+			"line": "cat nothere",
+			"out": "",
+			"err": "cat: nothere: No such file or directory\n",
+			"code": 1
+		},
+		{
+			"line": "printf 'a\\nb' > nonl.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "wc -l nonl.txt",
+			"out": "1 nonl.txt\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "cat nonl.txt",
+			"out": "a\nb",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "head -n 2 log.txt nonl.txt",
+			"out": "==> log.txt <==\nline 1\nline 2\n\n==> nonl.txt <==\na\nb",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "tail -n 1 log.txt nonl.txt",
+			"out": "==> log.txt <==\nline 12\n\n==> nonl.txt <==\nb",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "wc -l log.txt nonl.txt",
+			"out": "12 log.txt\n 1 nonl.txt\n13 total\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "wc -c log.txt",
+			"out": "87 log.txt\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "wc -w log.txt",
+			"out": "24 log.txt\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "head -n abc log.txt",
+			"out": "",
+			"err": "head: invalid number of lines: ‘abc’\n",
+			"code": 1
+		},
+		{
+			"line": "tail -n abc log.txt",
+			"out": "",
+			"err": "tail: invalid number of lines: ‘abc’\n",
+			"code": 1
+		},
+		{
+			"line": "mkdir d",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "cat d",
+			"out": "",
+			"err": "cat: d: Is a directory\n",
+			"code": 1
+		},
+		{
+			"line": "head d",
+			"out": "",
+			"err": "head: error reading 'd': Is a directory\n",
+			"code": 1
+		},
+		{
+			"line": "wc -l d",
+			"out": "0 d\n",
+			"err": "wc: d: Is a directory\n",
+			"code": 1
+		},
+		{
+			"line": "cat log.txt | head -n 5 | tail -n 2",
+			"out": "line 4\nline 5\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "head -n 0 log.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "tail -n 0 log.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "head -n 20 log.txt | wc -l",
+			"out": "12\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "tail -n +11 log.txt",
+			"out": "line 11\nline 12\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "wc -l log.txt nonl.txt nothere",
+			"out": "12 log.txt\n 1 nonl.txt\n13 total\n",
+			"err": "wc: nothere: No such file or directory\n",
+			"code": 1
+		}
+	]
+}

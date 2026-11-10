@@ -1,0 +1,255 @@
+{
+	"id": "lnx-006-grep",
+	"tool": "shell",
+	"lesson": "lnx-006",
+	"recordedOn": {
+		"os": "Ubuntu 24.04.5 LTS",
+		"bash": "GNU bash, version 5.2.21(1)-release (x86_64-pc-linux-gnu)",
+		"git": "git version 2.56.0",
+		"coreutils": "ls (GNU coreutils) 9.4",
+		"grep": "grep (GNU grep) 3.11",
+		"faketime": ""
+	},
+	"steps": [
+		{
+			"line": "printf '%s\\n' '2026-11-10 09:00:01 INFO start' '2026-11-10 09:00:05 WARN slow response' '2026-11-10 09:01:00 ERROR db timeout' '2026-11-10 09:01:30 info retry' '2026-11-10 09:02:00 ERROR disk full' '2026-11-10 09:03:00 INFO done' > app.log",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "cat app.log",
+			"out": "2026-11-10 09:00:01 INFO start\n2026-11-10 09:00:05 WARN slow response\n2026-11-10 09:01:00 ERROR db timeout\n2026-11-10 09:01:30 info retry\n2026-11-10 09:02:00 ERROR disk full\n2026-11-10 09:03:00 INFO done\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "grep ERROR app.log",
+			"out": "2026-11-10 09:01:00 ERROR db timeout\n2026-11-10 09:02:00 ERROR disk full\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "grep -n ERROR app.log",
+			"out": "3:2026-11-10 09:01:00 ERROR db timeout\n5:2026-11-10 09:02:00 ERROR disk full\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "grep info app.log",
+			"out": "2026-11-10 09:01:30 info retry\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "grep -i info app.log",
+			"out": "2026-11-10 09:00:01 INFO start\n2026-11-10 09:01:30 info retry\n2026-11-10 09:03:00 INFO done\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "grep -v INFO app.log",
+			"out": "2026-11-10 09:00:05 WARN slow response\n2026-11-10 09:01:00 ERROR db timeout\n2026-11-10 09:01:30 info retry\n2026-11-10 09:02:00 ERROR disk full\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "grep -c ERROR app.log",
+			"out": "2\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "grep -E 'ERROR|WARN' app.log",
+			"out": "2026-11-10 09:00:05 WARN slow response\n2026-11-10 09:01:00 ERROR db timeout\n2026-11-10 09:02:00 ERROR disk full\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "grep 'ERROR|WARN' app.log",
+			"out": "",
+			"err": "",
+			"code": 1
+		},
+		{
+			"line": "grep 'ERROR\\|WARN' app.log",
+			"out": "2026-11-10 09:00:05 WARN slow response\n2026-11-10 09:01:00 ERROR db timeout\n2026-11-10 09:02:00 ERROR disk full\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "grep '^2026' app.log",
+			"out": "2026-11-10 09:00:01 INFO start\n2026-11-10 09:00:05 WARN slow response\n2026-11-10 09:01:00 ERROR db timeout\n2026-11-10 09:01:30 info retry\n2026-11-10 09:02:00 ERROR disk full\n2026-11-10 09:03:00 INFO done\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "grep 'done$' app.log",
+			"out": "2026-11-10 09:03:00 INFO done\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "grep -E '(timeout|full)$' app.log",
+			"out": "2026-11-10 09:01:00 ERROR db timeout\n2026-11-10 09:02:00 ERROR disk full\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "grep nothing app.log",
+			"out": "",
+			"err": "",
+			"code": 1
+		},
+		{
+			"line": "grep nothing app.log; echo $?",
+			"out": "1\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "grep ERROR nothere",
+			"out": "",
+			"err": "grep: nothere: No such file or directory\n",
+			"code": 2
+		},
+		{
+			"line": "grep ERROR nothere; echo $?",
+			"out": "2\n",
+			"err": "grep: nothere: No such file or directory\n",
+			"code": 0
+		},
+		{
+			"line": "printf 'ERROR x\\n' > other.log",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "grep -c ERROR app.log other.log",
+			"out": "app.log:2\nother.log:1\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "grep ERROR app.log other.log",
+			"out": "app.log:2026-11-10 09:01:00 ERROR db timeout\napp.log:2026-11-10 09:02:00 ERROR disk full\nother.log:ERROR x\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "cat app.log | grep -i error",
+			"out": "2026-11-10 09:01:00 ERROR db timeout\n2026-11-10 09:02:00 ERROR disk full\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "grep -in error app.log",
+			"out": "3:2026-11-10 09:01:00 ERROR db timeout\n5:2026-11-10 09:02:00 ERROR disk full\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "grep -vc INFO app.log",
+			"out": "4\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "grep",
+			"out": "",
+			"err": "Usage: grep [OPTION]... PATTERNS [FILE]...\nTry 'grep --help' for more information.\n",
+			"code": 2
+		},
+		{
+			"line": "grep -E '[' app.log",
+			"out": "",
+			"err": "grep: Invalid regular expression\n",
+			"code": 2
+		},
+		{
+			"line": "grep '[' app.log",
+			"out": "",
+			"err": "grep: Invalid regular expression\n",
+			"code": 2
+		},
+		{
+			"line": "grep -E 'ERROR (db|disk)' app.log",
+			"out": "2026-11-10 09:01:00 ERROR db timeout\n2026-11-10 09:02:00 ERROR disk full\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "grep -n -i -v info app.log",
+			"out": "2:2026-11-10 09:00:05 WARN slow response\n3:2026-11-10 09:01:00 ERROR db timeout\n5:2026-11-10 09:02:00 ERROR disk full\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "grep -E '^.{20}INFO' app.log",
+			"out": "2026-11-10 09:00:01 INFO start\n2026-11-10 09:03:00 INFO done\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "grep 'INFO.*done' app.log",
+			"out": "2026-11-10 09:03:00 INFO done\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "grep -c '' app.log",
+			"out": "6\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "grep -E 'a+' other.log",
+			"out": "",
+			"err": "",
+			"code": 1
+		},
+		{
+			"line": "grep -E '[0-9]{2}:0[12]' app.log",
+			"out": "2026-11-10 09:00:01 INFO start\n2026-11-10 09:01:00 ERROR db timeout\n2026-11-10 09:01:30 info retry\n2026-11-10 09:02:00 ERROR disk full\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "grep warn app.log",
+			"out": "",
+			"err": "",
+			"code": 1
+		},
+		{
+			"line": "grep -i WARN app.log | wc -l",
+			"out": "1\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "grep ' INFO ' app.log",
+			"out": "2026-11-10 09:00:01 INFO start\n2026-11-10 09:03:00 INFO done\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "grep -e ERROR -e WARN app.log",
+			"out": "2026-11-10 09:00:05 WARN slow response\n2026-11-10 09:01:00 ERROR db timeout\n2026-11-10 09:02:00 ERROR disk full\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "mkdir dir",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "grep x dir",
+			"out": "",
+			"err": "grep: dir: Is a directory\n",
+			"code": 2
+		}
+	]
+}

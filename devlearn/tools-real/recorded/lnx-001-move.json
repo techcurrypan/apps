@@ -1,0 +1,213 @@
+{
+	"id": "lnx-001-move",
+	"tool": "shell",
+	"lesson": "lnx-001",
+	"recordedOn": {
+		"os": "Ubuntu 24.04.5 LTS",
+		"bash": "GNU bash, version 5.2.21(1)-release (x86_64-pc-linux-gnu)",
+		"git": "git version 2.56.0",
+		"coreutils": "ls (GNU coreutils) 9.4",
+		"grep": "grep (GNU grep) 3.11",
+		"faketime": ""
+	},
+	"steps": [
+		{
+			"line": "pwd",
+			"out": "/home/learner/demo\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "mkdir -p docs/notes src",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "printf 'memo\\n' > docs/notes/todo.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "printf 'a\\n' > readme.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "ls",
+			"out": "docs  readme.txt  src\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "ls -a",
+			"out": ".  ..  docs  readme.txt  src\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "cd docs",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "pwd",
+			"out": "/home/learner/demo/docs\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "ls",
+			"out": "notes\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "cd notes",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "pwd",
+			"out": "/home/learner/demo/docs/notes\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "ls",
+			"out": "todo.txt\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "cd ..",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "pwd",
+			"out": "/home/learner/demo/docs\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "cd ../src",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "pwd",
+			"out": "/home/learner/demo/src\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "cd /home/learner/demo/docs/notes",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "pwd",
+			"out": "/home/learner/demo/docs/notes\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "cd",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "pwd",
+			"out": "/home/learner\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "ls",
+			"out": "demo\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "cd ~/demo",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "ls docs",
+			"out": "notes\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "ls docs/notes readme.txt",
+			"out": "readme.txt\n\ndocs/notes:\ntodo.txt\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "cd nothere",
+			"out": "",
+			"err": "bash: line 8: cd: nothere: No such file or directory\n",
+			"code": 1
+		},
+		{
+			"line": "cd readme.txt",
+			"out": "",
+			"err": "bash: line 8: cd: readme.txt: Not a directory\n",
+			"code": 1
+		},
+		{
+			"line": "ls nothere",
+			"out": "",
+			"err": "ls: cannot access 'nothere': No such file or directory\n",
+			"code": 2
+		},
+		{
+			"line": "ls -a docs",
+			"out": ".  ..  notes\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "cd ./docs/../src",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "pwd",
+			"out": "/home/learner/demo/src\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "cd ..",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "cd .",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "pwd",
+			"out": "/home/learner/demo\n",
+			"err": "",
+			"code": 0
+		}
+	]
+}

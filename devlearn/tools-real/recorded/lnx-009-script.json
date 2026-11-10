@@ -1,0 +1,303 @@
+{
+	"id": "lnx-009-script",
+	"tool": "shell",
+	"lesson": "lnx-009",
+	"recordedOn": {
+		"os": "Ubuntu 24.04.5 LTS",
+		"bash": "GNU bash, version 5.2.21(1)-release (x86_64-pc-linux-gnu)",
+		"git": "git version 2.56.0",
+		"coreutils": "ls (GNU coreutils) 9.4",
+		"grep": "grep (GNU grep) 3.11",
+		"faketime": ""
+	},
+	"steps": [
+		{
+			"line": "printf '%s\\n' '#!/bin/bash' 'echo \"args: $#\"' 'echo \"first: $1\"' 'echo \"second: $2\"' > args.sh",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "cat args.sh",
+			"out": "#!/bin/bash\necho \"args: $#\"\necho \"first: $1\"\necho \"second: $2\"\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "bash args.sh",
+			"out": "args: 0\nfirst: \nsecond: \n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "bash args.sh one two",
+			"out": "args: 2\nfirst: one\nsecond: two\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "bash args.sh 'one two'",
+			"out": "args: 1\nfirst: one two\nsecond: \n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "printf '%s\\n' '#!/bin/bash' 'if [ $# -eq 0 ]; then' '  echo \"usage: greet.sh NAME\" >&2' '  exit 2' 'fi' 'echo \"hello, $1\"' > greet.sh",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "bash greet.sh",
+			"out": "",
+			"err": "usage: greet.sh NAME\n",
+			"code": 2
+		},
+		{
+			"line": "echo $?",
+			"out": "2\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "bash greet.sh taro",
+			"out": "hello, taro\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "echo $?",
+			"out": "0\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "./greet.sh taro",
+			"out": "",
+			"err": "bash: line 8: ./greet.sh: Permission denied\n",
+			"code": 126
+		},
+		{
+			"line": "echo $?",
+			"out": "126\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "chmod +x greet.sh",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "./greet.sh hanako",
+			"out": "hello, hanako\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "./greet.sh 2> /dev/null; echo $?",
+			"out": "2\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "printf '%s\\n' '#!/bin/bash' 'if [ -f \"$1\" ]; then' '  echo \"$1 exists\"' 'else' '  echo \"$1 not found\"' '  exit 1' 'fi' > check.sh",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "bash check.sh greet.sh",
+			"out": "greet.sh exists\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "bash check.sh nope",
+			"out": "nope not found\n",
+			"err": "",
+			"code": 1
+		},
+		{
+			"line": "echo $?",
+			"out": "1\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "bash check.sh greet.sh && echo ok",
+			"out": "greet.sh exists\nok\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "bash check.sh nope || echo failed",
+			"out": "nope not found\nfailed\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "bash nothere.sh",
+			"out": "",
+			"err": "bash: nothere.sh: No such file or directory\n",
+			"code": 127
+		},
+		{
+			"line": "echo $?",
+			"out": "127\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "printf '%s\\n' 'if [ 1 -eq 1 ]' 'echo x' 'fi' > bad.sh",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "bash bad.sh",
+			"out": "",
+			"err": "bad.sh: line 3: syntax error near unexpected token `fi'\nbad.sh: line 3: `fi'\n",
+			"code": 2
+		},
+		{
+			"line": "echo $?",
+			"out": "2\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "[ abc -eq 1 ]; echo $?",
+			"out": "2\n",
+			"err": "bash: line 8: [: abc: integer expression expected\n",
+			"code": 0
+		},
+		{
+			"line": "[1 -eq 1]",
+			"out": "",
+			"err": "bash: line 8: [1: command not found\n",
+			"code": 127
+		},
+		{
+			"line": "[ 1 -eq 1]",
+			"out": "",
+			"err": "bash: line 8: [: missing `]'\n",
+			"code": 2
+		},
+		{
+			"line": "[ 2 -gt 1 ] && echo yes",
+			"out": "yes\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "[ -d /tmp ] && echo dir",
+			"out": "dir\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "[ -z \"\" ] && echo empty",
+			"out": "empty\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "[ \"a\" = \"a\" ] && echo same",
+			"out": "same\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "[ \"a\" != \"b\" ] && echo diff",
+			"out": "diff\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "[ 3 -le 2 ]; echo $?",
+			"out": "1\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "true; echo $?",
+			"out": "0\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "false; echo $?",
+			"out": "1\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "printf '%s\\n' '#!/bin/bash' 'echo start' 'exit 3' 'echo never' > ex.sh",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "bash ex.sh",
+			"out": "start\n",
+			"err": "",
+			"code": 3
+		},
+		{
+			"line": "echo $?",
+			"out": "3\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "printf '%s\\n' '#!/bin/bash' 'if [ \"$1\" = \"\" ]; then' '  echo \"no name\"' 'elif [ \"$1\" = \"admin\" ]; then' '  echo \"hello, boss\"' 'else' '  echo \"hello, $1\"' 'fi' > el.sh",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "bash el.sh",
+			"out": "no name\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "bash el.sh admin",
+			"out": "hello, boss\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "bash el.sh sato",
+			"out": "hello, sato\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "printf '%s\\n' 'echo \"$0\"' > zero.sh",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "bash zero.sh",
+			"out": "zero.sh\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "printf '%s\\n' 'if [ -f x ]; then' 'echo x' > nofi.sh",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "bash nofi.sh",
+			"out": "",
+			"err": "nofi.sh: line 3: syntax error: unexpected end of file\n",
+			"code": 2
+		}
+	]
+}

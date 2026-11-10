@@ -1,0 +1,141 @@
+{
+	"id": "sec-002-hash",
+	"tool": "shell",
+	"lesson": "sec-002",
+	"recordedOn": {
+		"os": "Ubuntu 24.04.5 LTS",
+		"bash": "GNU bash, version 5.2.21(1)-release (x86_64-pc-linux-gnu)",
+		"git": "git version 2.56.0",
+		"coreutils": "ls (GNU coreutils) 9.4",
+		"grep": "grep (GNU grep) 3.11",
+		"faketime": ""
+	},
+	"steps": [
+		{
+			"line": "printf 'password123' | sha256sum",
+			"out": "ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f  -\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "printf 'password123' | sha256sum",
+			"out": "ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f  -\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "printf 'password124' | sha256sum",
+			"out": "33631376724e5d5480fa397dfcf03b66ad47b934ab495174d7058c38f2bb0087  -\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "printf 'salt1:password123' | sha256sum",
+			"out": "08104983926495c68a57058bf5b2195f03d68d3417e8cae6b528c2ec70e66fff  -\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "printf 'salt2:password123' | sha256sum",
+			"out": "a9e3d96de8873e668257214947a9fbb498ab9e33fe2df722d2c8042013c242b3  -\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "echo password123 | sha256sum",
+			"out": "57db1253b68b6802b59a969f750fa32b60cb5cc8a3cb19b87dac28f541dc4e2a  -\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "echo -n password123 | sha256sum",
+			"out": "ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f  -\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "printf 'hello\\n' > a.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "sha256sum a.txt",
+			"out": "5891b5b522d5df086d0ff0b110fbd9d21bb4fc7163af34d08286a2e846f6be03  a.txt\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "sha256sum a.txt b.txt",
+			"out": "5891b5b522d5df086d0ff0b110fbd9d21bb4fc7163af34d08286a2e846f6be03  a.txt\n",
+			"err": "sha256sum: b.txt: No such file or directory\n",
+			"code": 1
+		},
+		{
+			"line": "printf '' | sha256sum",
+			"out": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  -\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "printf 'hello\\n' > c.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "sha256sum a.txt c.txt",
+			"out": "5891b5b522d5df086d0ff0b110fbd9d21bb4fc7163af34d08286a2e846f6be03  a.txt\n5891b5b522d5df086d0ff0b110fbd9d21bb4fc7163af34d08286a2e846f6be03  c.txt\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "sha256sum a.txt > sums.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "cat sums.txt",
+			"out": "5891b5b522d5df086d0ff0b110fbd9d21bb4fc7163af34d08286a2e846f6be03  a.txt\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "sha256sum -c sums.txt",
+			"out": "a.txt: OK\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "printf 'changed\\n' > a.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "sha256sum -c sums.txt",
+			"out": "a.txt: FAILED\n",
+			"err": "sha256sum: WARNING: 1 computed checksum did NOT match\n",
+			"code": 1
+		},
+		{
+			"line": "printf 'パスワード' | sha256sum",
+			"out": "d8b076148c939d9d2d6eb60458969c486794a4c0fcf0632be58fa5bf6d15aafa  -\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "mkdir d",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "sha256sum d",
+			"out": "",
+			"err": "sha256sum: d: Is a directory\n",
+			"code": 1
+		}
+	]
+}

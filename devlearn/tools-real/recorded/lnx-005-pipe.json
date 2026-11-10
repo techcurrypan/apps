@@ -1,0 +1,273 @@
+{
+	"id": "lnx-005-pipe",
+	"tool": "shell",
+	"lesson": "lnx-005",
+	"recordedOn": {
+		"os": "Ubuntu 24.04.5 LTS",
+		"bash": "GNU bash, version 5.2.21(1)-release (x86_64-pc-linux-gnu)",
+		"git": "git version 2.56.0",
+		"coreutils": "ls (GNU coreutils) 9.4",
+		"grep": "grep (GNU grep) 3.11",
+		"faketime": ""
+	},
+	"steps": [
+		{
+			"line": "printf 'b\\na\\nc\\na\\nb\\na\\n' > words.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "echo hello > out.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "cat out.txt",
+			"out": "hello\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "echo world >> out.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "cat out.txt",
+			"out": "hello\nworld\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "echo again > out.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "cat out.txt",
+			"out": "again\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "sort words.txt",
+			"out": "a\na\na\nb\nb\nc\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "sort words.txt | uniq",
+			"out": "a\nb\nc\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "sort words.txt | uniq -c",
+			"out": "      3 a\n      2 b\n      1 c\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "sort words.txt | uniq -c | sort -rn",
+			"out": "      3 a\n      2 b\n      1 c\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "uniq words.txt",
+			"out": "b\na\nc\na\nb\na\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "uniq -c words.txt",
+			"out": "      1 b\n      1 a\n      1 c\n      1 a\n      1 b\n      1 a\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "cat words.txt | wc -l",
+			"out": "6\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "sort words.txt > sorted.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "cat sorted.txt",
+			"out": "a\na\na\nb\nb\nc\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "ls nothere > list.txt",
+			"out": "",
+			"err": "ls: cannot access 'nothere': No such file or directory\n",
+			"code": 2
+		},
+		{
+			"line": "cat list.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "ls nothere 2> err.txt",
+			"out": "",
+			"err": "",
+			"code": 2
+		},
+		{
+			"line": "cat err.txt",
+			"out": "ls: cannot access 'nothere': No such file or directory\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "ls nothere > all.txt 2>&1",
+			"out": "",
+			"err": "",
+			"code": 2
+		},
+		{
+			"line": "cat all.txt",
+			"out": "ls: cannot access 'nothere': No such file or directory\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "sort -r words.txt",
+			"out": "c\nb\nb\na\na\na\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "sort nothere",
+			"out": "",
+			"err": "sort: cannot read: nothere: No such file or directory\n",
+			"code": 2
+		},
+		{
+			"line": "echo hi |",
+			"out": "",
+			"err": "bash: eval: line 9: syntax error: unexpected end of file\n",
+			"code": 2
+		},
+		{
+			"line": "| sort",
+			"out": "",
+			"err": "bash: eval: line 8: syntax error near unexpected token `|'\nbash: eval: line 8: `| sort'\n",
+			"code": 2
+		},
+		{
+			"line": "echo a | sort | uniq -c",
+			"out": "      1 a\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "sort words.txt | head -n 2",
+			"out": "a\na\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "wc -l words.txt sorted.txt",
+			"out": " 6 words.txt\n 6 sorted.txt\n12 total\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "sort words.txt > words.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "cat words.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "printf '10\\n9\\n100\\n' > nums.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "sort nums.txt",
+			"out": "10\n100\n9\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "sort -n nums.txt",
+			"out": "9\n10\n100\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "sort -rn nums.txt",
+			"out": "100\n10\n9\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "sort -u sorted.txt",
+			"out": "a\nb\nc\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "echo x 2> e.txt",
+			"out": "x\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "cat e.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "ls words.txt nothere 2>&1 | wc -l",
+			"out": "2\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "echo one > a.txt > b.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "cat a.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "cat b.txt",
+			"out": "one\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "cat < sorted.txt | uniq -c",
+			"out": "      3 a\n      2 b\n      1 c\n",
+			"err": "",
+			"code": 0
+		}
+	]
+}

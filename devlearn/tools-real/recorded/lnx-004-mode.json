@@ -1,0 +1,291 @@
+{
+	"id": "lnx-004-mode",
+	"tool": "shell",
+	"lesson": "lnx-004",
+	"recordedOn": {
+		"os": "Ubuntu 24.04.5 LTS",
+		"bash": "GNU bash, version 5.2.21(1)-release (x86_64-pc-linux-gnu)",
+		"git": "git version 2.56.0",
+		"coreutils": "ls (GNU coreutils) 9.4",
+		"grep": "grep (GNU grep) 3.11",
+		"faketime": ""
+	},
+	"steps": [
+		{
+			"line": "printf '#!/bin/bash\\necho hi\\n' > hi.sh",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "printf 'memo\\n' > memo.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "mkdir data",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "ls -l",
+			"out": "total 12\ndrwxrwxr-x+ 2 learner learner 4096 Nov 10 09:02 data\n-rw-rw-r--+ 1 learner learner   20 Nov 10 09:00 hi.sh\n-rw-rw-r--+ 1 learner learner    5 Nov 10 09:01 memo.txt\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "./hi.sh",
+			"out": "",
+			"err": "bash: line 8: ./hi.sh: Permission denied\n",
+			"code": 126
+		},
+		{
+			"line": "chmod u+x hi.sh",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "ls -l hi.sh",
+			"out": "-rwxrw-r--+ 1 learner learner 20 Nov 10 09:00 hi.sh\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "./hi.sh",
+			"out": "hi\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "chmod 600 memo.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "ls -l memo.txt",
+			"out": "-rw-------+ 1 learner learner 5 Nov 10 09:01 memo.txt\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "chmod 644 memo.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "ls -l memo.txt",
+			"out": "-rw-r--r--+ 1 learner learner 5 Nov 10 09:01 memo.txt\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "chmod go-r memo.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "ls -l memo.txt",
+			"out": "-rw-------+ 1 learner learner 5 Nov 10 09:01 memo.txt\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "chmod a+r memo.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "ls -l memo.txt",
+			"out": "-rw-r--r--+ 1 learner learner 5 Nov 10 09:01 memo.txt\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "chmod 755 hi.sh",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "ls -l",
+			"out": "total 12\ndrwxrwxr-x+ 2 learner learner 4096 Nov 10 09:02 data\n-rwxr-xr-x+ 1 learner learner   20 Nov 10 09:00 hi.sh\n-rw-r--r--+ 1 learner learner    5 Nov 10 09:01 memo.txt\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "chmod 000 memo.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "ls -l memo.txt",
+			"out": "----------+ 1 learner learner 5 Nov 10 09:01 memo.txt\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "cat memo.txt",
+			"out": "",
+			"err": "cat: memo.txt: Permission denied\n",
+			"code": 1
+		},
+		{
+			"line": "chmod u+r memo.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "cat memo.txt",
+			"out": "memo\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "chmod 999 memo.txt",
+			"out": "",
+			"err": "chmod: invalid mode: ‘999’\nTry 'chmod --help' for more information.\n",
+			"code": 1
+		},
+		{
+			"line": "chmod +x nothere",
+			"out": "",
+			"err": "chmod: cannot access 'nothere': No such file or directory\n",
+			"code": 1
+		},
+		{
+			"line": "ls -l nothere",
+			"out": "",
+			"err": "ls: cannot access 'nothere': No such file or directory\n",
+			"code": 2
+		},
+		{
+			"line": "ls -ld data",
+			"out": "drwxrwxr-x+ 2 learner learner 4096 Nov 10 09:02 data\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "chmod o+w memo.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "ls -l memo.txt",
+			"out": "-r------w-+ 1 learner learner 5 Nov 10 09:01 memo.txt\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "chmod u=rw,g=r,o= memo.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "ls -l memo.txt",
+			"out": "-rw-r-----+ 1 learner learner 5 Nov 10 09:01 memo.txt\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "chmod 700 data",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "ls -l",
+			"out": "total 12\ndrwx------+ 2 learner learner 4096 Nov 10 09:02 data\n-rwxr-xr-x+ 1 learner learner   20 Nov 10 09:00 hi.sh\n-rw-r-----+ 1 learner learner    5 Nov 10 09:01 memo.txt\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "ls -la",
+			"out": "total 20\ndrwxrwxr-x+ 3 learner learner 4096 Nov 10 09:02 .\ndrwxr-x---+ 3 learner learner 4096 Nov 10 09:00 ..\ndrwx------+ 2 learner learner 4096 Nov 10 09:02 data\n-rwxr-xr-x+ 1 learner learner   20 Nov 10 09:00 hi.sh\n-rw-r-----+ 1 learner learner    5 Nov 10 09:01 memo.txt\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "chmod",
+			"out": "",
+			"err": "chmod: missing operand\nTry 'chmod --help' for more information.\n",
+			"code": 1
+		},
+		{
+			"line": "chmod 644",
+			"out": "",
+			"err": "chmod: missing operand after ‘644’\nTry 'chmod --help' for more information.\n",
+			"code": 1
+		},
+		{
+			"line": "chmod -x hi.sh",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "ls -l hi.sh",
+			"out": "-rw-r--r--+ 1 learner learner 20 Nov 10 09:00 hi.sh\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "./hi.sh",
+			"out": "",
+			"err": "bash: line 8: ./hi.sh: Permission denied\n",
+			"code": 126
+		},
+		{
+			"line": "bash hi.sh",
+			"out": "hi\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "printf 'more\\n' >> memo.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "ls -l memo.txt",
+			"out": "-rw-r-----+ 1 learner learner 10 Nov 10 09:40 memo.txt\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "chmod 444 memo.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "echo x > memo.txt",
+			"out": "",
+			"err": "bash: line 8: memo.txt: Permission denied\n",
+			"code": 1
+		},
+		{
+			"line": "echo x >> memo.txt",
+			"out": "",
+			"err": "bash: line 8: memo.txt: Permission denied\n",
+			"code": 1
+		},
+		{
+			"line": "ls -l memo.txt",
+			"out": "-r--r--r--+ 1 learner learner 10 Nov 10 09:40 memo.txt\n",
+			"err": "",
+			"code": 0
+		}
+	]
+}

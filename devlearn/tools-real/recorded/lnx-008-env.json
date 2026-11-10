@@ -1,0 +1,285 @@
+{
+	"id": "lnx-008-env",
+	"tool": "shell",
+	"lesson": "lnx-008",
+	"recordedOn": {
+		"os": "Ubuntu 24.04.5 LTS",
+		"bash": "GNU bash, version 5.2.21(1)-release (x86_64-pc-linux-gnu)",
+		"git": "git version 2.56.0",
+		"coreutils": "ls (GNU coreutils) 9.4",
+		"grep": "grep (GNU grep) 3.11",
+		"faketime": ""
+	},
+	"steps": [
+		{
+			"line": "echo $HOME",
+			"out": "/home/learner\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "echo $USER",
+			"out": "learner\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "echo $PATH",
+			"out": "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "NAME=devlearn",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "echo $NAME",
+			"out": "devlearn\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "bash -c 'echo \"[$NAME]\"'",
+			"out": "[]\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "export NAME",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "bash -c 'echo \"[$NAME]\"'",
+			"out": "[devlearn]\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "export GREETING=hello",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "env | grep GREETING",
+			"out": "GREETING=hello\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "env | grep NAME",
+			"out": "NAME=devlearn\nLOGNAME=learner\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "which ls",
+			"out": "/usr/bin/ls\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "which git",
+			"out": "/usr/bin/git\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "which nosuch",
+			"out": "",
+			"err": "",
+			"code": 1
+		},
+		{
+			"line": "which nosuch; echo $?",
+			"out": "1\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "mkdir -p ~/bin",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "printf '#!/bin/bash\\necho \"my tool\"\\n' > ~/bin/mytool",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "chmod +x ~/bin/mytool",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "mytool",
+			"out": "",
+			"err": "bash: line 8: mytool: command not found\n",
+			"code": 127
+		},
+		{
+			"line": "~/bin/mytool",
+			"out": "my tool\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "export PATH=\"$HOME/bin:$PATH\"",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "echo $PATH",
+			"out": "/home/learner/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "which mytool",
+			"out": "/home/learner/bin/mytool\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "mytool",
+			"out": "my tool\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "printf '#!/bin/bash\\necho \"my ls\"\\n' > ~/bin/ls",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "chmod +x ~/bin/ls",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "ls",
+			"out": "my ls\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "which ls",
+			"out": "/home/learner/bin/ls\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "which -a ls",
+			"out": "/home/learner/bin/ls\n/usr/bin/ls\n/bin/ls\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "/usr/bin/ls",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "rm ~/bin/ls",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "ls",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "echo \"[$NOPE]\"",
+			"out": "[]\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "unset NAME",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "echo \"[$NAME]\"",
+			"out": "[]\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "NAME = x",
+			"out": "",
+			"err": "bash: line 8: NAME: command not found\n",
+			"code": 127
+		},
+		{
+			"line": "export X=1 Y=2",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "echo $X $Y",
+			"out": "1 2\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "env | grep -c '^X='",
+			"out": "1\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "echo '$HOME'",
+			"out": "$HOME\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "echo \"$HOME\"",
+			"out": "/home/learner\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "echo ${HOME}/demo",
+			"out": "/home/learner/demo\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "A=1; bash -c 'echo \"[$A]\"'",
+			"out": "[]\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "A=2 bash -c 'echo \"[$A]\"'",
+			"out": "[2]\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "echo \"[$A]\"",
+			"out": "[1]\n",
+			"err": "",
+			"code": 0
+		}
+	]
+}
