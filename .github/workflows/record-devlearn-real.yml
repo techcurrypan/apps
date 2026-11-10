@@ -33,8 +33,14 @@ jobs:
         # Ubuntu で初めに作る利用者と同じ形：uid 1000、自分の名の組、sudo の組。
         # sudo は合言葉を入れた直後の形にする（模擬の端末は合言葉を打つ口を持たない。docs/tools.md 3.2）
         run: |
+          # CI の機械では uid 1000 を機械を作るときの利用者（packer）が持っている。使い捨ての機械なので外す
           if getent passwd 1000 > /dev/null; then
-            echo "::error title=learner::uid 1000 は使われている: $(getent passwd 1000)"
+            old=$(getent passwd 1000 | cut -d: -f1)
+            sudo userdel -r "$old" 2> /dev/null || sudo userdel "$old"
+            getent group 1000 > /dev/null && sudo groupdel "$(getent group 1000 | cut -d: -f1)"
+          fi
+          if getent passwd 1000 > /dev/null || getent group 1000 > /dev/null; then
+            echo "::error title=learner::uid か gid 1000 が空かない: $(getent passwd 1000) $(getent group 1000)"
             exit 1
           fi
           sudo useradd -m -s /bin/bash -u 1000 -U learner
