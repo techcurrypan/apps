@@ -1,0 +1,20 @@
+{
+	"id": "net-003-route",
+	"tool": "shell",
+	"lesson": "net-003",
+	"world": "net",
+	"note": "経路表を読み、宛先ごとに次の行き先を決める",
+	"steps": [
+		"ip route",
+		"ip route show",
+		"ip route get 192.0.2.80",
+		"ip route get 198.51.100.7",
+		"ip route get 203.0.113.5",
+		"ip neigh",
+		"ping -c 1 203.0.113.5",
+		"ping -c 1 198.51.100.7",
+		"ip neigh",
+		"ip route get 127.0.0.1",
+		"ip route get 192.0.2.10"
+	]
+}

@@ -1,0 +1,8 @@
+{
+	"id": "net-006-ports",
+	"tool": "shell",
+	"lesson": "net-006",
+	"world": "net",
+	"note": "待ち受けている口を ss で確かめる。TCP と UDP、全ての口と手元だけの口",
+	"steps": ["ss -tuln", "ss -tln", "ss -uln", "ss -tln4"]
+}

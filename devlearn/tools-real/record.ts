@@ -20,6 +20,19 @@ type Scenario = {
 type World = {
 	dirs?: { path: string; mode: string; owner: string }[];
 	files?: { path: string; mode: string; owner: string; data: string }[];
+	net?: Net;
+};
+
+// 作り物の網（worlds/net.json）。機械ごとに網の名前空間を作り、switch（sw の br0）につなぐ
+type Node = { ns: string; mac: string; addr: string; far?: string[]; dns?: boolean; web?: boolean };
+type Net = {
+	self: Node & { if: string; prefix: number };
+	gateway: string;
+	routes: { to: string; via: string }[];
+	hosts: Node[];
+	dns: { server: string; ttl: number; zone: string; records: Record<string, string> };
+	listen: { proto: string; addr: string; port: number }[];
+	etc: Record<string, string>;
 };
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -72,6 +85,13 @@ function versions(): Record<string, string> {
 		git: v('git --version'),
 		coreutils: v('ls --version | head -1'),
 		grep: v('grep --version | head -1'),
+		iproute2: v('ip -V'),
+		dig: v('dig -v 2>&1'),
+		curl: v('curl --version | head -1'),
+		ping: v('ping -V'),
+		dnsmasq: v('dnsmasq --version | head -1'),
+		openssl: v('openssl version'),
+		sudo: v('sudo -V | head -1'),
 		faketime: v("dpkg-query -W -f '${Version}' faketime")
 	};
 }
@@ -109,6 +129,84 @@ function placeWorld(st: string, w: World): string[] {
 	return roots;
 }
 
+const NOW_FILE = '/tmp/rec/now';
+
+// 網を作る。返すのは、learner の命令を網の中で打つための頭（ip netns exec 名前）と、片付け
+function placeNet(
+	st: string,
+	net: Net,
+	worldFile: string
+): { prefix: string[]; teardown: () => void } {
+	const nodes = [net.self, ...net.hosts];
+	const all = ['sw', ...nodes.map((n) => n.ns)];
+	const x = (ns: string, cmd: string) => sh(`sudo ip netns exec ${ns} ${cmd}`);
+	const teardown = () => {
+		for (const ns of all)
+			sh(`sudo ip netns pids ${ns} 2> /dev/null | xargs -r sudo kill 2> /dev/null || true`);
+		sh('sleep 0.5');
+		for (const ns of all) sh(`sudo ip netns del ${ns} 2> /dev/null || true`);
+		sh(`sudo rm -rf /etc/netns/${net.self.ns}`);
+	};
+	// 前の場面が途中で止まって残った物があれば、先に片付ける
+	teardown();
+	const noV6 = (ns: string) =>
+		x(ns, 'sysctl -qw net.ipv6.conf.all.disable_ipv6=1 net.ipv6.conf.default.disable_ipv6=1');
+	sh('sudo ip netns add sw');
+	noV6('sw');
+	sh(
+		'sudo ip -n sw link add br0 type bridge && sudo ip -n sw link set br0 up && sudo ip -n sw link set lo up'
+	);
+	for (const n of nodes) {
+		sh(`sudo ip netns add ${n.ns}`);
+		noV6(n.ns);
+		sh(`sudo ip link add eth0 netns ${n.ns} type veth peer name v-${n.ns} netns sw`);
+		sh(`sudo ip -n sw link set v-${n.ns} master br0 && sudo ip -n sw link set v-${n.ns} up`);
+		sh(`sudo ip -n ${n.ns} link set eth0 address ${n.mac}`);
+		sh(`sudo ip -n ${n.ns} addr add ${n.addr}/${net.self.prefix} dev eth0`);
+		sh(`sudo ip -n ${n.ns} link set lo up && sudo ip -n ${n.ns} link set eth0 up`);
+		if (n.far && n.far.length > 0) {
+			sh(`sudo ip -n ${n.ns} link add dummy0 type dummy && sudo ip -n ${n.ns} link set dummy0 up`);
+			for (const f of n.far) sh(`sudo ip -n ${n.ns} addr add ${f}/32 dev dummy0`);
+		}
+	}
+	const me = net.self.ns;
+	sh(`sudo ip -n ${me} route add default via ${net.gateway}`);
+	for (const r of net.routes) sh(`sudo ip -n ${me} route add ${r.to} via ${r.via}`);
+	// ping を利用者のまま打てるように。近くの機械の表は、記録の間は「確かめ済み」のまま残す（時間で変わらないように）
+	x(me, `sysctl -qw net.ipv4.ping_group_range="0 2147483647"`);
+	x(me, 'sysctl -qw net.ipv4.neigh.eth0.base_reachable_time_ms=3600000');
+	sh(`sudo mkdir -p /etc/netns/${me}`);
+	for (const [name, data] of Object.entries(net.etc)) {
+		writeFileSync(`${st}/etc-${name}`, data);
+		sh(`sudo cp ${st}/etc-${name} /etc/netns/${me}/${name}`);
+	}
+	const servers = join(here, 'servers');
+	const dns = net.hosts.find((h) => h.dns);
+	if (dns) {
+		const recs = Object.entries(net.dns.records)
+			.map(([k, v]) => `--address=/${k}/${v}`)
+			.join(' ');
+		x(
+			dns.ns,
+			`dnsmasq --conf-file=/dev/null --no-resolv --no-hosts --bind-interfaces --listen-address=${dns.addr} --local=/${net.dns.zone}/ --local-ttl=${net.dns.ttl} --pid-file=/tmp/rec/dnsmasq.pid ${recs}`
+		);
+	}
+	const web = net.hosts.find((h) => h.web);
+	writeFileSync(NOW_FILE, String(BASE));
+	chmodSync(NOW_FILE, 0o666);
+	const bg = (ns: string, cmd: string) =>
+		spawnSync('bash', ['-c', `sudo ip netns exec ${ns} ${cmd} > /dev/null 2>&1 &`], {
+			stdio: 'ignore'
+		});
+	if (web) bg(web.ns, `python3 -I ${servers}/web.py ${worldFile} ${web.addr} ${NOW_FILE}`);
+	bg(me, `python3 -I ${servers}/listen.py ${worldFile}`);
+	sh('sleep 1');
+	return {
+		prefix: ['ip', 'netns', 'exec', me, 'sudo'],
+		teardown
+	};
+}
+
 function record(s: Scenario) {
 	const st = `/tmp/rec/${s.id}`;
 	rmSync(st, { recursive: true, force: true });
@@ -124,6 +222,8 @@ function record(s: Scenario) {
 		? (JSON.parse(readFileSync(join(here, 'worlds', `${s.world}.json`), 'utf8')) as World)
 		: {};
 	const extraRoots = placeWorld(st, world);
+	const worldFile = s.world ? join(here, 'worlds', `${s.world}.json`) : '';
+	const net = world.net ? placeNet(st, world.net, worldFile) : null;
 	sh(`sudo -u learner touch -h -d @${BASE} ${HOME}/.gitconfig ${WORK} ${HOME}`);
 	for (const [f, v] of [
 		['cwd', WORK],
@@ -153,9 +253,11 @@ function record(s: Scenario) {
 			`pwd > ${st}/cwd`,
 			`{ for __v in $(compgen -v); do case "$__base" in *" $__v "*) ;; *) declare -p "$__v" ;; esac; done; export -p; } 2> /dev/null | grep -v -E '^declare -[a-zA-Z]*r' | grep -v -E '^declare -[-a-zA-Z]* (${SKIP_VARS}|__v|__cmd|__base)(=|$)' > ${st}/env`
 		].join(NL);
+		writeFileSync(NOW_FILE, String(t));
 		const r = spawnSync(
 			'sudo',
 			[
+				...(net ? net.prefix : []),
 				'-u',
 				'learner',
 				'env',
@@ -192,6 +294,7 @@ function record(s: Scenario) {
 			code: Number(read(`${j}.code`).trim())
 		};
 	});
+	net?.teardown();
 	// 置いた世界を片付ける（家の外の物）
 	if (extraRoots.length > 0) sh(`sudo rm -rf ${extraRoots.filter((r) => r !== '/srv').join(' ')}`);
 	return {

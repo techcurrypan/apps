@@ -1,0 +1,15 @@
+{
+	"id": "net-007-http",
+	"tool": "shell",
+	"lesson": "net-007",
+	"world": "net",
+	"note": "curl で HTTP の要求と応答を読む",
+	"steps": [
+		"curl http://shop.example.com/",
+		"curl -s http://shop.example.com/",
+		"curl -v http://shop.example.com/",
+		"curl http://nosuch.example.com/",
+		"curl http://192.0.2.80:8081/",
+		"curl -v http://192.0.2.80/"
+	]
+}

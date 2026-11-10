@@ -1,0 +1,16 @@
+{
+	"id": "net-008-status",
+	"tool": "shell",
+	"lesson": "net-008",
+	"world": "net",
+	"note": "状態コードとヘッダから、応答に何が起きたかを読む",
+	"steps": [
+		"curl -i http://shop.example.com/",
+		"curl -I http://shop.example.com/",
+		"curl -i http://shop.example.com/old",
+		"curl -iL http://shop.example.com/old",
+		"curl -i http://shop.example.com/missing",
+		"curl -i http://shop.example.com/error",
+		"curl -s -o /dev/null -w '%{http_code}\n' http://shop.example.com/missing"
+	]
+}

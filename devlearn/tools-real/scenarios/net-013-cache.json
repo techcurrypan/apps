@@ -1,0 +1,14 @@
+{
+	"id": "net-013-cache",
+	"tool": "shell",
+	"lesson": "net-013",
+	"world": "net",
+	"note": "キャッシュのヘッダと ETag、304 の応答",
+	"steps": [
+		"curl -I http://shop.example.com/style.css",
+		"curl -I -H 'If-None-Match: \"v1\"' http://shop.example.com/style.css",
+		"curl -I -H 'If-None-Match: \"v0\"' http://shop.example.com/style.css",
+		"curl -I http://shop.example.com/",
+		"curl -i -H 'If-None-Match: \"v1\"' http://shop.example.com/style.css"
+	]
+}

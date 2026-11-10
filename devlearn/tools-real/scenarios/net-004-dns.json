@@ -1,0 +1,21 @@
+{
+	"id": "net-004-dns",
+	"tool": "shell",
+	"lesson": "net-004",
+	"world": "net",
+	"note": "名前から住所を引く。手元の表・問い合わせ先・答え・覚えておく時間",
+	"steps": [
+		"cat /etc/resolv.conf",
+		"cat /etc/hosts",
+		"dig shop.example.com",
+		"dig +short shop.example.com",
+		"dig +short api.example.com",
+		"dig +short cdn.example.com",
+		"dig nosuch.example.com",
+		"dig +short nosuch.example.com",
+		"dig +noall +answer shop.example.com",
+		"ping -c 1 shop.example.com",
+		"ping -c 1 devbox",
+		"ping -c 1 nosuch.example.com"
+	]
+}

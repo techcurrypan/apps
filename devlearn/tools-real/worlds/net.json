@@ -1,0 +1,137 @@
+{
+	"note": "作り物の網（net-002〜008・013）。説明用のアドレスだけを使う。記録は CI の機械に網の名前空間で同じ形を作る（tools-real/record.ts）",
+	"net": {
+		"self": {
+			"ns": "lab",
+			"if": "eth0",
+			"mac": "02:00:00:00:00:0a",
+			"addr": "192.0.2.10",
+			"prefix": 24
+		},
+		"gateway": "192.0.2.1",
+		"routes": [
+			{
+				"to": "198.51.100.0/24",
+				"via": "192.0.2.2"
+			}
+		],
+		"hosts": [
+			{
+				"ns": "router",
+				"mac": "02:00:00:00:00:01",
+				"addr": "192.0.2.1",
+				"far": ["203.0.113.5"]
+			},
+			{
+				"ns": "router2",
+				"mac": "02:00:00:00:00:02",
+				"addr": "192.0.2.2",
+				"far": ["198.51.100.7"]
+			},
+			{
+				"ns": "dns",
+				"mac": "02:00:00:00:00:35",
+				"addr": "192.0.2.53",
+				"dns": true
+			},
+			{
+				"ns": "web",
+				"mac": "02:00:00:00:00:50",
+				"addr": "192.0.2.80",
+				"web": true
+			}
+		],
+		"dns": {
+			"server": "192.0.2.53",
+			"ttl": 300,
+			"zone": "example.com",
+			"records": {
+				"shop.example.com": "192.0.2.80",
+				"api.example.com": "192.0.2.80",
+				"cdn.example.com": "203.0.113.5"
+			}
+		},
+		"listen": [
+			{
+				"proto": "tcp",
+				"addr": "0.0.0.0",
+				"port": 22
+			},
+			{
+				"proto": "tcp",
+				"addr": "127.0.0.1",
+				"port": 5432
+			},
+			{
+				"proto": "tcp",
+				"addr": "0.0.0.0",
+				"port": 8080
+			},
+			{
+				"proto": "udp",
+				"addr": "0.0.0.0",
+				"port": 5353
+			}
+		],
+		"etc": {
+			"resolv.conf": "nameserver 192.0.2.53\n",
+			"hosts": "127.0.0.1 localhost\n192.0.2.10 devbox\n"
+		},
+		"site": {
+			"host": "shop.example.com",
+			"server": "yorozu-web/1.0",
+			"pages": {
+				"/": {
+					"status": 200,
+					"reason": "OK",
+					"headers": [
+						["Content-Type", "text/html; charset=utf-8"],
+						["Cache-Control", "no-cache"]
+					],
+					"body": "<!doctype html>\n<title>shop</title>\n<p>welcome</p>\n"
+				},
+				"/new": {
+					"status": 200,
+					"reason": "OK",
+					"headers": [
+						["Content-Type", "text/html; charset=utf-8"],
+						["Cache-Control", "no-cache"]
+					],
+					"body": "<!doctype html>\n<title>new</title>\n<p>moved here</p>\n"
+				},
+				"/old": {
+					"status": 301,
+					"reason": "Moved Permanently",
+					"headers": [
+						["Content-Type", "text/html; charset=utf-8"],
+						["Location", "http://shop.example.com/new"]
+					],
+					"body": "<!doctype html>\n<title>moved</title>\n<p>see /new</p>\n"
+				},
+				"/error": {
+					"status": 500,
+					"reason": "Internal Server Error",
+					"headers": [["Content-Type", "text/html; charset=utf-8"]],
+					"body": "<!doctype html>\n<title>error</title>\n<p>something went wrong</p>\n"
+				},
+				"/style.css": {
+					"status": 200,
+					"reason": "OK",
+					"headers": [
+						["Content-Type", "text/css"],
+						["Cache-Control", "max-age=3600"],
+						["ETag", "\"v1\""]
+					],
+					"body": "body { color: #333; }\n",
+					"etag": "\"v1\""
+				},
+				"*": {
+					"status": 404,
+					"reason": "Not Found",
+					"headers": [["Content-Type", "text/html; charset=utf-8"]],
+					"body": "<!doctype html>\n<title>not found</title>\n<p>no such page</p>\n"
+				}
+			}
+		}
+	}
+}

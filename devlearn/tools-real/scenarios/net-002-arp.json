@@ -1,0 +1,21 @@
+{
+	"id": "net-002-arp",
+	"tool": "shell",
+	"lesson": "net-002",
+	"world": "net",
+	"note": "同じ網の相手に届ける。MAC アドレスと ARP の表",
+	"steps": [
+		"ip addr",
+		"ip addr show eth0",
+		"ip link show eth0",
+		"ip neigh",
+		"ping -c 3 192.0.2.1",
+		"ip neigh",
+		"ping -c 1 192.0.2.80",
+		"ip neigh",
+		"ping -c 1 192.0.2.99",
+		"ip neigh",
+		"ip neigh show 192.0.2.80",
+		"ip -4 addr"
+	]
+}

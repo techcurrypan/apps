@@ -9,6 +9,8 @@ on:
       - "devlearn/tools-real/scenarios/**"
       - "devlearn/tools-real/record.ts"
       - "devlearn/tools-real/ttyrun.py"
+      - "devlearn/tools-real/worlds/**"
+      - "devlearn/tools-real/servers/**"
       - ".github/workflows/record-devlearn-real.yml"
   workflow_dispatch:
 
@@ -49,8 +51,10 @@ jobs:
           sudo chmod 440 /etc/sudoers.d/learner
           id learner
 
-      - name: 作り物の時計（faketime）を入れる
-        run: sudo apt-get update && sudo apt-get install -y faketime
+      - name: 記録に使う道具を入れる（作り物の時計 faketime、作り物の網の DNS dnsmasq、dig・ping・curl）
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y faketime dnsmasq-base bind9-dnsutils iputils-ping curl
 
       - name: 本物の命令を打って記録する
         run: node devlearn/tools-real/record.ts
