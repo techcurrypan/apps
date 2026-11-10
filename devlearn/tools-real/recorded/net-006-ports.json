@@ -21,13 +21,13 @@
 	"steps": [
 		{
 			"line": "ss -tuln",
-			"out": "Netid  State   Recv-Q  Send-Q   Local Address:Port   Peer Address:Port Process  \nudp    UNCONN  0       0              0.0.0.0:5353        0.0.0.0:*             \ntcp    LISTEN  0       4096         127.0.0.1:5432        0.0.0.0:*             \ntcp    LISTEN  0       4096           0.0.0.0:22          0.0.0.0:*             \ntcp    LISTEN  0       4096           0.0.0.0:8080        0.0.0.0:*             \n",
+			"out": "Netid  State   Recv-Q  Send-Q   Local Address:Port   Peer Address:Port Process  \nudp    UNCONN  0       0              0.0.0.0:5353        0.0.0.0:*             \ntcp    LISTEN  0       4096           0.0.0.0:22          0.0.0.0:*             \ntcp    LISTEN  0       4096         127.0.0.1:5432        0.0.0.0:*             \ntcp    LISTEN  0       4096           0.0.0.0:8080        0.0.0.0:*             \n",
 			"err": "",
 			"code": 0
 		},
 		{
 			"line": "ss -tln",
-			"out": "State    Recv-Q   Send-Q     Local Address:Port     Peer Address:Port  Process  \nLISTEN   0        4096           127.0.0.1:5432          0.0.0.0:*              \nLISTEN   0        4096             0.0.0.0:22            0.0.0.0:*              \nLISTEN   0        4096             0.0.0.0:8080          0.0.0.0:*              \n",
+			"out": "State    Recv-Q   Send-Q     Local Address:Port     Peer Address:Port  Process  \nLISTEN   0        4096             0.0.0.0:22            0.0.0.0:*              \nLISTEN   0        4096           127.0.0.1:5432          0.0.0.0:*              \nLISTEN   0        4096             0.0.0.0:8080          0.0.0.0:*              \n",
 			"err": "",
 			"code": 0
 		},
@@ -39,7 +39,7 @@
 		},
 		{
 			"line": "ss -tln4",
-			"out": "State    Recv-Q   Send-Q     Local Address:Port     Peer Address:Port  Process  \nLISTEN   0        4096           127.0.0.1:5432          0.0.0.0:*              \nLISTEN   0        4096             0.0.0.0:22            0.0.0.0:*              \nLISTEN   0        4096             0.0.0.0:8080          0.0.0.0:*              \n",
+			"out": "State    Recv-Q   Send-Q     Local Address:Port     Peer Address:Port  Process  \nLISTEN   0        4096             0.0.0.0:22            0.0.0.0:*              \nLISTEN   0        4096           127.0.0.1:5432          0.0.0.0:*              \nLISTEN   0        4096             0.0.0.0:8080          0.0.0.0:*              \n",
 			"err": "",
 			"code": 0
 		}

@@ -33,7 +33,7 @@
 		},
 		{
 			"line": "dig shop.example.com",
-			"out": "\n; <<>> DiG 9.18.39-0ubuntu0.24.04.9-Ubuntu <<>> shop.example.com\n;; global options: +cmd\n;; Got answer:\n;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 11126\n;; flags: qr aa rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 1\n\n;; OPT PSEUDOSECTION:\n; EDNS: version: 0, flags:; udp: 1232\n;; QUESTION SECTION:\n;shop.example.com.\t\tIN\tA\n\n;; ANSWER SECTION:\nshop.example.com.\t300\tIN\tA\t192.0.2.80\n\n;; Query time: 0 msec\n;; SERVER: 192.0.2.53#53(192.0.2.53) (UDP)\n;; WHEN: Tue Nov 10 09:02:00 JST 2026\n;; MSG SIZE  rcvd: 61\n\n",
+			"out": "\n; <<>> DiG 9.18.39-0ubuntu0.24.04.9-Ubuntu <<>> shop.example.com\n;; global options: +cmd\n;; Got answer:\n;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 37958\n;; flags: qr aa rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 1\n\n;; OPT PSEUDOSECTION:\n; EDNS: version: 0, flags:; udp: 1232\n;; QUESTION SECTION:\n;shop.example.com.\t\tIN\tA\n\n;; ANSWER SECTION:\nshop.example.com.\t300\tIN\tA\t192.0.2.80\n\n;; Query time: 1 msec\n;; SERVER: 192.0.2.53#53(192.0.2.53) (UDP)\n;; WHEN: Tue Nov 10 09:02:00 JST 2026\n;; MSG SIZE  rcvd: 61\n\n",
 			"err": "",
 			"code": 0
 		},
@@ -57,7 +57,7 @@
 		},
 		{
 			"line": "dig nosuch.example.com",
-			"out": "\n; <<>> DiG 9.18.39-0ubuntu0.24.04.9-Ubuntu <<>> nosuch.example.com\n;; global options: +cmd\n;; Got answer:\n;; ->>HEADER<<- opcode: QUERY, status: NXDOMAIN, id: 24603\n;; flags: qr rd ra; QUERY: 1, ANSWER: 0, AUTHORITY: 0, ADDITIONAL: 1\n\n;; OPT PSEUDOSECTION:\n; EDNS: version: 0, flags:; udp: 1232\n;; QUESTION SECTION:\n;nosuch.example.com.\t\tIN\tA\n\n;; Query time: 0 msec\n;; SERVER: 192.0.2.53#53(192.0.2.53) (UDP)\n;; WHEN: Tue Nov 10 09:06:00 JST 2026\n;; MSG SIZE  rcvd: 47\n\n",
+			"out": "\n; <<>> DiG 9.18.39-0ubuntu0.24.04.9-Ubuntu <<>> nosuch.example.com\n;; global options: +cmd\n;; Got answer:\n;; ->>HEADER<<- opcode: QUERY, status: NXDOMAIN, id: 27367\n;; flags: qr rd ra; QUERY: 1, ANSWER: 0, AUTHORITY: 0, ADDITIONAL: 1\n\n;; OPT PSEUDOSECTION:\n; EDNS: version: 0, flags:; udp: 1232\n;; QUESTION SECTION:\n;nosuch.example.com.\t\tIN\tA\n\n;; Query time: 0 msec\n;; SERVER: 192.0.2.53#53(192.0.2.53) (UDP)\n;; WHEN: Tue Nov 10 09:06:00 JST 2026\n;; MSG SIZE  rcvd: 47\n\n",
 			"err": "",
 			"code": 0
 		},
@@ -75,13 +75,13 @@
 		},
 		{
 			"line": "ping -c 1 shop.example.com",
-			"out": "PING shop.example.com (192.0.2.80) 56(84) bytes of data.\n64 bytes from 192.0.2.80: icmp_seq=1 ttl=64 time=0.068 ms\n\n--- shop.example.com ping statistics ---\n1 packets transmitted, 1 received, 0% packet loss, time 0ms\nrtt min/avg/max/mdev = 0.068/0.068/0.068/0.000 ms\n",
+			"out": "PING shop.example.com (192.0.2.80) 56(84) bytes of data.\n64 bytes from 192.0.2.80: icmp_seq=1 ttl=64 time=0.062 ms\n\n--- shop.example.com ping statistics ---\n1 packets transmitted, 1 received, 0% packet loss, time 0ms\nrtt min/avg/max/mdev = 0.062/0.062/0.062/0.000 ms\n",
 			"err": "",
 			"code": 0
 		},
 		{
 			"line": "ping -c 1 devbox",
-			"out": "PING devbox (192.0.2.10) 56(84) bytes of data.\n64 bytes from devbox (192.0.2.10): icmp_seq=1 ttl=64 time=0.018 ms\n\n--- devbox ping statistics ---\n1 packets transmitted, 1 received, 0% packet loss, time 0ms\nrtt min/avg/max/mdev = 0.018/0.018/0.018/0.000 ms\n",
+			"out": "PING devbox (192.0.2.10) 56(84) bytes of data.\n64 bytes from devbox (192.0.2.10): icmp_seq=1 ttl=64 time=0.030 ms\n\n--- devbox ping statistics ---\n1 packets transmitted, 1 received, 0% packet loss, time 0ms\nrtt min/avg/max/mdev = 0.030/0.030/0.030/0.000 ms\n",
 			"err": "",
 			"code": 0
 		},

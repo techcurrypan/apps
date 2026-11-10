@@ -56,7 +56,7 @@
 			"code": 0
 		},
 		{
-			"line": "curl -s -o /dev/null -w '%{http_code}\n' http://shop.example.com/missing",
+			"line": "curl -s -o /dev/null -w '%{http_code}\\n' http://shop.example.com/missing",
 			"out": "404\n",
 			"err": "",
 			"code": 0
