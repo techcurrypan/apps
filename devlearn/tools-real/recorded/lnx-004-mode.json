@@ -259,7 +259,7 @@
 		},
 		{
 			"line": "ls -l memo.txt",
-			"out": "-rw-r----- 1 learner learner 10 Nov 10  2026 memo.txt\n",
+			"out": "-rw-r----- 1 learner learner 10 Nov 10 09:40 memo.txt\n",
 			"err": "",
 			"code": 0
 		},
@@ -283,7 +283,7 @@
 		},
 		{
 			"line": "ls -l memo.txt",
-			"out": "-r--r--r-- 1 learner learner 10 Nov 10  2026 memo.txt\n",
+			"out": "-r--r--r-- 1 learner learner 10 Nov 10 09:40 memo.txt\n",
 			"err": "",
 			"code": 0
 		}
