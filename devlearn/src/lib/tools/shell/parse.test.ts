@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { parseLine, type Word } from './parse.ts';
 
 // 変数を展開せずに、語を文字にして見る
-const show = (w: Word) => w.map((s) => ('lit' in s ? s.lit : `<${s.var}>`)).join('');
+const show = (w: Word) =>
+	w.map((s) => ('lit' in s ? s.lit : 'var' in s ? `<${s.var}>` : `$(${s.sub})`)).join('');
 
 function words(line: string): string[][] {
 	const r = parseLine(line);
