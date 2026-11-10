@@ -38,7 +38,7 @@
 		},
 		{
 			"line": "docker compose ps",
-			"out": "NAME         IMAGE          COMMAND                  SERVICE   CREATED                  STATUS                  PORTS\ndemo-db-1    busybox:1.37   \"sh -c 'exec nc -lk …\"   db        1 second ago             Up Less than a second   \ndemo-web-1   busybox:1.37   \"sh -c 'echo '<p>sho…\"   web       Less than a second ago   Up Less than a second   0.0.0.0:8080->80/tcp, [::]:8080->80/tcp\n",
+			"out": "NAME         IMAGE          COMMAND                  SERVICE   CREATED        STATUS                  PORTS\ndemo-db-1    busybox:1.37   \"sh -c 'exec nc -lk …\"   db        1 second ago   Up Less than a second   \ndemo-web-1   busybox:1.37   \"sh -c 'echo '<p>sho…\"   web       1 second ago   Up Less than a second   0.0.0.0:8080->80/tcp, [::]:8080->80/tcp\n",
 			"err": "",
 			"code": 0
 		},
@@ -49,14 +49,14 @@
 			"code": 0
 		},
 		{
-			"line": "docker compose exec web nc -z db 5432",
+			"line": "docker compose exec -T web nc -z db 5432",
 			"out": "",
-			"err": "the input device is not a TTY\n",
-			"code": 1
+			"err": "",
+			"code": 0
 		},
 		{
 			"line": "echo $?",
-			"out": "1\n",
+			"out": "0\n",
 			"err": "",
 			"code": 0
 		},

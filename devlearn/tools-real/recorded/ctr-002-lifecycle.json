@@ -26,7 +26,7 @@
 	"steps": [
 		{
 			"line": "docker run -d --name web busybox:1.37 sleep 600",
-			"out": "4b09c8ade0fceebe6276c332251b263b2c405eb378533c840aaa2cefbfaaa509\n",
+			"out": "d11956aa584e6c8fafefd5a056d852e5b7e3f88ae2ce7ec91c943cc71cc72e82\n",
 			"err": "",
 			"code": 0
 		},
@@ -38,13 +38,13 @@
 		},
 		{
 			"line": "docker ps",
-			"out": "CONTAINER ID   IMAGE          COMMAND       CREATED        STATUS                  PORTS     NAMES\n4b09c8ade0fc   busybox:1.37   \"sleep 600\"   1 second ago   Up Less than a second             web\n",
+			"out": "CONTAINER ID   IMAGE          COMMAND       CREATED                  STATUS                  PORTS     NAMES\nd11956aa584e   busybox:1.37   \"sleep 600\"   Less than a second ago   Up Less than a second             web\n",
 			"err": "",
 			"code": 0
 		},
 		{
 			"line": "docker ps -a",
-			"out": "CONTAINER ID   IMAGE          COMMAND       CREATED                  STATUS                              PORTS     NAMES\n629e174750fd   busybox:1.37   \"echo done\"   Less than a second ago   Exited (0) Less than a second ago             once\n4b09c8ade0fc   busybox:1.37   \"sleep 600\"   1 second ago             Up Less than a second                         web\n",
+			"out": "CONTAINER ID   IMAGE          COMMAND       CREATED                  STATUS                              PORTS     NAMES\n887b933d6b76   busybox:1.37   \"echo done\"   Less than a second ago   Exited (0) Less than a second ago             once\nd11956aa584e   busybox:1.37   \"sleep 600\"   Less than a second ago   Up Less than a second                         web\n",
 			"err": "",
 			"code": 0
 		},
@@ -56,7 +56,7 @@
 		},
 		{
 			"line": "docker ps -a",
-			"out": "CONTAINER ID   IMAGE          COMMAND       CREATED          STATUS                                PORTS     NAMES\n629e174750fd   busybox:1.37   \"echo done\"   10 seconds ago   Exited (0) 10 seconds ago                       once\n4b09c8ade0fc   busybox:1.37   \"sleep 600\"   11 seconds ago   Exited (137) Less than a second ago             web\n",
+			"out": "CONTAINER ID   IMAGE          COMMAND       CREATED          STATUS                                PORTS     NAMES\n887b933d6b76   busybox:1.37   \"echo done\"   10 seconds ago   Exited (0) 10 seconds ago                       once\nd11956aa584e   busybox:1.37   \"sleep 600\"   10 seconds ago   Exited (137) Less than a second ago             web\n",
 			"err": "",
 			"code": 0
 		},
@@ -80,7 +80,7 @@
 		},
 		{
 			"line": "docker run -d --name app busybox:1.37 sleep 600",
-			"out": "d7d76b6e812dc10d52ad2fea30e1c70439f20ff3ea8139b06d42f1c6366c9933\n",
+			"out": "df2faf48c2a48e94edcb1f078302b342f1ad554b91f3621fbad7484f2eed984e\n",
 			"err": "",
 			"code": 0
 		},

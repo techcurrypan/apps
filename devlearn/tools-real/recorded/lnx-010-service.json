@@ -44,7 +44,7 @@
 		},
 		{
 			"line": "systemctl status shop",
-			"out": "● shop.service - shop web\n     Loaded: loaded (/etc/systemd/system/shop.service; disabled; preset: enabled)\n     Active: active (running) since Wed 2026-11-11 07:16:36 JST; 22h left\n   Main PID: 24125 (python3)\n      Tasks: 1 (limit: 17436)\n     Memory: 4.0M (peak: 4.0M)\n        CPU: 16ms\n     CGroup: /system.slice/shop.service\n             └─24125 /usr/bin/python3 /opt/shop/web.py\n",
+			"out": "● shop.service - shop web\n     Loaded: loaded (/etc/systemd/system/shop.service; disabled; preset: enabled)\n     Active: active (running) since Wed 2026-11-11 07:23:46 JST; 22h left\n   Main PID: 24015 (python3)\n      Tasks: 1 (limit: 17436)\n     Memory: 4.0M (peak: 4.0M)\n        CPU: 13ms\n     CGroup: /system.slice/shop.service\n             └─24015 /usr/bin/python3 /opt/shop/web.py\n",
 			"err": "",
 			"code": 0
 		},
@@ -56,7 +56,7 @@
 		},
 		{
 			"line": "sudo journalctl -u shop -n 5",
-			"out": "Nov 11 07:16:36 runnervm7aw5e systemd[1]: Started shop.service - shop web.\nNov 11 07:16:36 runnervm7aw5e python3[24125]: listening on 8080\n",
+			"out": "Nov 11 07:23:46 runnervm7aw5e systemd[1]: Started shop.service - shop web.\nNov 11 07:23:46 runnervm7aw5e python3[24015]: listening on 8080\n",
 			"err": "",
 			"code": 0
 		},
@@ -68,7 +68,7 @@
 		},
 		{
 			"line": "systemctl status report",
-			"out": "× report.service - shop report\n     Loaded: loaded (/etc/systemd/system/report.service; static)\n     Active: failed (Result: exit-code) since Wed 2026-11-11 07:16:37 JST; 22h left\n   Duration: 20ms\n    Process: 24209 ExecStart=/usr/bin/python3 /opt/shop/report.py (code=exited, status=1/FAILURE)\n   Main PID: 24209 (code=exited, status=1/FAILURE)\n        CPU: 19ms\n",
+			"out": "× report.service - shop report\n     Loaded: loaded (/etc/systemd/system/report.service; static)\n     Active: failed (Result: exit-code) since Wed 2026-11-11 07:23:47 JST; 22h left\n   Duration: 18ms\n    Process: 24099 ExecStart=/usr/bin/python3 /opt/shop/report.py (code=exited, status=1/FAILURE)\n   Main PID: 24099 (code=exited, status=1/FAILURE)\n        CPU: 17ms\n",
 			"err": "",
 			"code": 3
 		},
@@ -80,7 +80,7 @@
 		},
 		{
 			"line": "sudo journalctl -u report -n 5",
-			"out": "Nov 11 07:16:37 runnervm7aw5e systemd[1]: Started report.service - shop report.\nNov 11 07:16:37 runnervm7aw5e python3[24209]: error: /etc/shop/report.conf: No such file or directory\nNov 11 07:16:37 runnervm7aw5e systemd[1]: report.service: Main process exited, code=exited, status=1/FAILURE\nNov 11 07:16:37 runnervm7aw5e systemd[1]: report.service: Failed with result 'exit-code'.\n",
+			"out": "Nov 11 07:23:47 runnervm7aw5e systemd[1]: Started report.service - shop report.\nNov 11 07:23:47 runnervm7aw5e python3[24099]: error: /etc/shop/report.conf: No such file or directory\nNov 11 07:23:47 runnervm7aw5e systemd[1]: report.service: Main process exited, code=exited, status=1/FAILURE\nNov 11 07:23:47 runnervm7aw5e systemd[1]: report.service: Failed with result 'exit-code'.\n",
 			"err": "",
 			"code": 0
 		},
@@ -116,7 +116,7 @@
 		},
 		{
 			"line": "sudo journalctl -u shop -n 3",
-			"out": "Nov 11 07:16:37 runnervm7aw5e systemd[1]: Stopping shop.service - shop web...\nNov 11 07:16:37 runnervm7aw5e systemd[1]: shop.service: Deactivated successfully.\nNov 11 07:16:37 runnervm7aw5e systemd[1]: Stopped shop.service - shop web.\n",
+			"out": "Nov 11 07:23:47 runnervm7aw5e systemd[1]: Stopping shop.service - shop web...\nNov 11 07:23:47 runnervm7aw5e systemd[1]: shop.service: Deactivated successfully.\nNov 11 07:23:47 runnervm7aw5e systemd[1]: Stopped shop.service - shop web.\n",
 			"err": "",
 			"code": 0
 		},

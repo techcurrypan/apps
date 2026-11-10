@@ -33,18 +33,18 @@
 		{
 			"line": "docker build -t shop-web:1.0 .",
 			"out": "",
-			"err": "#0 building with \"default\" instance using docker driver\n\n#1 [internal] load build definition from Dockerfile\n#1 transferring dockerfile: 133B done\n#1 DONE 0.0s\n\n#2 [internal] load metadata for docker.io/library/busybox:1.37\n#2 DONE 0.0s\n\n#3 [internal] load .dockerignore\n#3 transferring context: 2B done\n#3 DONE 0.0s\n\n#4 [1/2] FROM docker.io/library/busybox:1.37\n#4 DONE 0.0s\n\n#5 [internal] load build context\n#5 transferring context: 49B done\n#5 DONE 0.0s\n\n#6 [2/2] COPY index.html /www/index.html\n#6 DONE 0.0s\n\n#7 exporting to image\n#7 exporting layers\n#7 exporting layers 0.4s done\n#7 writing image sha256:289cc06b58def85974bb24ba2e2b0ec28d68ece8edd1ab8876b07bb4ae8313ad\n#7 writing image sha256:289cc06b58def85974bb24ba2e2b0ec28d68ece8edd1ab8876b07bb4ae8313ad done\n#7 naming to docker.io/library/shop-web:1.0 done\n#7 DONE 0.4s\n",
+			"err": "#0 building with \"default\" instance using docker driver\n\n#1 [internal] load build definition from Dockerfile\n#1 transferring dockerfile: 133B 0.0s done\n#1 DONE 0.0s\n\n#2 [internal] load metadata for docker.io/library/busybox:1.37\n#2 DONE 0.0s\n\n#3 [internal] load .dockerignore\n#3 transferring context:\n#3 transferring context: 2B done\n#3 DONE 0.2s\n\n#4 [1/2] FROM docker.io/library/busybox:1.37\n#4 DONE 0.0s\n\n#5 [internal] load build context\n#5 transferring context: 49B done\n#5 DONE 0.0s\n\n#6 [2/2] COPY index.html /www/index.html\n#6 DONE 0.1s\n\n#7 exporting to image\n#7 exporting layers\n#7 exporting layers 0.5s done\n#7 writing image sha256:c0567880431e88243b5f9fb6f1ac7ded81dba0c22d5dc4d13377f4b46651fa46\n#7 writing image sha256:c0567880431e88243b5f9fb6f1ac7ded81dba0c22d5dc4d13377f4b46651fa46 done\n#7 naming to docker.io/library/shop-web:1.0 done\n#7 DONE 0.6s\n",
 			"code": 0
 		},
 		{
 			"line": "docker images",
-			"out": "REPOSITORY   TAG       IMAGE ID       CREATED        SIZE\nshop-web     1.0       289cc06b58de   1 second ago   4.42MB\nbusybox      1.37      30ecbe150909   2 years ago    4.42MB\n",
+			"out": "REPOSITORY   TAG       IMAGE ID       CREATED        SIZE\nshop-web     1.0       c0567880431e   1 second ago   4.42MB\nbusybox      1.37      30ecbe150909   2 years ago    4.42MB\n",
 			"err": "",
 			"code": 0
 		},
 		{
 			"line": "docker run -d --name web -p 8080:80 shop-web:1.0",
-			"out": "db3e672c18786281495e85a22fd7b6ac78132eeee332582cd8dd13631976393e\n",
+			"out": "a95a758061411ab95883e15c9876dfc381a1a50bcf1661a1971edfe58841f3cf\n",
 			"err": "",
 			"code": 0
 		},

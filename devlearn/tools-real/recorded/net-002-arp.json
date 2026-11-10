@@ -50,25 +50,25 @@
 		},
 		{
 			"line": "ping -c 3 192.0.2.1",
-			"out": "PING 192.0.2.1 (192.0.2.1) 56(84) bytes of data.\n64 bytes from 192.0.2.1: icmp_seq=1 ttl=64 time=0.098 ms\n64 bytes from 192.0.2.1: icmp_seq=2 ttl=64 time=0.045 ms\n64 bytes from 192.0.2.1: icmp_seq=3 ttl=64 time=0.053 ms\n\n--- 192.0.2.1 ping statistics ---\n3 packets transmitted, 3 received, 0% packet loss, time 2041ms\nrtt min/avg/max/mdev = 0.045/0.065/0.098/0.023 ms\n",
+			"out": "PING 192.0.2.1 (192.0.2.1) 56(84) bytes of data.\n64 bytes from 192.0.2.1: icmp_seq=1 ttl=64 time=0.085 ms\n64 bytes from 192.0.2.1: icmp_seq=2 ttl=64 time=0.052 ms\n64 bytes from 192.0.2.1: icmp_seq=3 ttl=64 time=0.051 ms\n\n--- 192.0.2.1 ping statistics ---\n3 packets transmitted, 3 received, 0% packet loss, time 2069ms\nrtt min/avg/max/mdev = 0.051/0.062/0.085/0.015 ms\n",
 			"err": "",
 			"code": 0
 		},
 		{
 			"line": "ip neigh",
-			"out": "192.0.2.53 dev eth0 lladdr 02:00:00:00:00:35 REACHABLE \n192.0.2.1 dev eth0 lladdr 02:00:00:00:00:01 REACHABLE \n",
+			"out": "192.0.2.1 dev eth0 lladdr 02:00:00:00:00:01 REACHABLE \n192.0.2.53 dev eth0 lladdr 02:00:00:00:00:35 REACHABLE \n",
 			"err": "",
 			"code": 0
 		},
 		{
 			"line": "ping -c 1 192.0.2.80",
-			"out": "PING 192.0.2.80 (192.0.2.80) 56(84) bytes of data.\n64 bytes from 192.0.2.80: icmp_seq=1 ttl=64 time=0.070 ms\n\n--- 192.0.2.80 ping statistics ---\n1 packets transmitted, 1 received, 0% packet loss, time 0ms\nrtt min/avg/max/mdev = 0.070/0.070/0.070/0.000 ms\n",
+			"out": "PING 192.0.2.80 (192.0.2.80) 56(84) bytes of data.\n64 bytes from 192.0.2.80: icmp_seq=1 ttl=64 time=0.081 ms\n\n--- 192.0.2.80 ping statistics ---\n1 packets transmitted, 1 received, 0% packet loss, time 0ms\nrtt min/avg/max/mdev = 0.081/0.081/0.081/0.000 ms\n",
 			"err": "",
 			"code": 0
 		},
 		{
 			"line": "ip neigh",
-			"out": "192.0.2.80 dev eth0 lladdr 02:00:00:00:00:50 REACHABLE \n192.0.2.53 dev eth0 lladdr 02:00:00:00:00:35 REACHABLE \n192.0.2.1 dev eth0 lladdr 02:00:00:00:00:01 REACHABLE \n",
+			"out": "192.0.2.1 dev eth0 lladdr 02:00:00:00:00:01 REACHABLE \n192.0.2.80 dev eth0 lladdr 02:00:00:00:00:50 REACHABLE \n192.0.2.53 dev eth0 lladdr 02:00:00:00:00:35 REACHABLE \n",
 			"err": "",
 			"code": 0
 		},
@@ -80,7 +80,7 @@
 		},
 		{
 			"line": "ip neigh",
-			"out": "192.0.2.80 dev eth0 lladdr 02:00:00:00:00:50 REACHABLE \n192.0.2.99 dev eth0 FAILED \n192.0.2.53 dev eth0 lladdr 02:00:00:00:00:35 REACHABLE \n192.0.2.1 dev eth0 lladdr 02:00:00:00:00:01 REACHABLE \n",
+			"out": "192.0.2.1 dev eth0 lladdr 02:00:00:00:00:01 REACHABLE \n192.0.2.53 dev eth0 lladdr 02:00:00:00:00:35 REACHABLE \n192.0.2.80 dev eth0 lladdr 02:00:00:00:00:50 REACHABLE \n192.0.2.99 dev eth0 FAILED \n",
 			"err": "",
 			"code": 0
 		},

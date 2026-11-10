@@ -56,13 +56,13 @@
 		},
 		{
 			"line": "docker run -d --name clock busybox:1.37 sleep 600",
-			"out": "7773a6e782ab47958716acb8de634748f4513f4b4aa0528d572b7e7b43370c43\n",
+			"out": "99b740fdd73754a68b90cc3704b0db2276a674459db8c588dbaa34486dd85739\n",
 			"err": "",
 			"code": 0
 		},
 		{
 			"line": "docker ps",
-			"out": "CONTAINER ID   IMAGE          COMMAND       CREATED                  STATUS                  PORTS     NAMES\n7773a6e782ab   busybox:1.37   \"sleep 600\"   Less than a second ago   Up Less than a second             clock\n",
+			"out": "CONTAINER ID   IMAGE          COMMAND       CREATED                  STATUS                  PORTS     NAMES\n99b740fdd737   busybox:1.37   \"sleep 600\"   Less than a second ago   Up Less than a second             clock\n",
 			"err": "",
 			"code": 0
 		},

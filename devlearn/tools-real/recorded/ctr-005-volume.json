@@ -25,16 +25,16 @@
 	},
 	"steps": [
 		{
-			"line": "docker run --name a busybox:1.37 sh -c 'echo 120 > /data.txt'",
+			"line": "docker run --name memo busybox:1.37 sh -c 'echo 120 > /data.txt'",
 			"out": "",
-			"err": "docker: Error response from daemon: Invalid container name (a), only [a-zA-Z0-9][a-zA-Z0-9_.-] are allowed\n\nRun 'docker run --help' for more information\n",
-			"code": 125
+			"err": "",
+			"code": 0
 		},
 		{
-			"line": "docker rm a",
-			"out": "",
-			"err": "Error response from daemon: No such container: a\n",
-			"code": 1
+			"line": "docker rm memo",
+			"out": "memo\n",
+			"err": "",
+			"code": 0
 		},
 		{
 			"line": "docker run --rm busybox:1.37 cat /data.txt",
