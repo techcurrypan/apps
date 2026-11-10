@@ -59,7 +59,7 @@ function versions(): Record<string, string> {
 		git: v('git --version'),
 		coreutils: v('ls --version | head -1'),
 		grep: v('grep --version | head -1'),
-		faketime: v('dpkg-query -W -f "${Version}" faketime')
+		faketime: v("dpkg-query -W -f '${Version}' faketime")
 	};
 }
 
@@ -81,8 +81,10 @@ function record(s: Scenario) {
 	rmSync(st, { recursive: true, force: true });
 	mkdirSync(st, { recursive: true });
 	chmodSync(st, 0o777);
-	// 家は空から（.bashrc なども置かない。模擬の世界と同じ）
-	sh(`sudo find ${HOME} -mindepth 1 -delete && sudo -u learner mkdir -p ${WORK}`);
+	// 家は空から（.bashrc なども置かない。模擬の世界と同じ）。CI の機械が家に付けている ACL（ls -l の「+」）も外す
+	sh(
+		`sudo find ${HOME} -mindepth 1 -delete && sudo setfacl -b ${HOME} && sudo -u learner mkdir -p ${WORK}`
+	);
 	writeFileSync(`${st}/gitconfig`, GITCONFIG);
 	sh(`sudo -u learner cp ${st}/gitconfig ${HOME}/.gitconfig`);
 	sh(`sudo -u learner touch -h -d @${BASE} ${HOME}/.gitconfig ${WORK} ${HOME}`);
