@@ -2,6 +2,7 @@
 import { basicCommands } from './basic.ts';
 import { envCommands } from './env.ts';
 import { fileCommands } from './files.ts';
+import { netCommands } from './net.ts';
 import { opensslCommands } from './openssl.ts';
 import type { Commands } from './run.ts';
 import { textCommands } from './text.ts';
@@ -14,7 +15,8 @@ export function shellCommands<X>(): Commands<X> {
 		...textCommands,
 		...envCommands,
 		...userCommands,
-		...opensslCommands
+		...opensslCommands,
+		...netCommands
 	};
 	return all as Commands<unknown> as unknown as Commands<X>;
 }

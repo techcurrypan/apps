@@ -13,6 +13,7 @@ import {
 } from '../fs.ts';
 import type { Result, Tool } from '../session.ts';
 import type { Command, ListItem, Word } from './parse.ts';
+import type { NetState } from './networld.ts';
 import { parseScript, type Node } from './script.ts';
 
 // 作り物の時計：場面の始まり 2026-11-10T09:00:00+09:00。打った行ごとに 1 分進む（docs/tools.md 1 章）
@@ -29,6 +30,7 @@ export type ShellState<X> = {
 	lastCode: number;
 	tick: number; // 打った行の数。時計はここから決まる
 	ext: X; // 道具ごとの状態（git のリポジトリなど）
+	net?: NetState; // 作り物の網（網の実戦だけ。tools-real/worlds/net.json）
 };
 
 export type Io<X = unknown> = {

@@ -2,11 +2,13 @@
 // 本物の記録（tools-real/record.ts）も同じ物を読んで、CI の機械に root で置く。
 import { parentOf, type Fs, type FsNode } from '../fs.ts';
 import { CLOCK_BASE } from './run.ts';
+import type { NetState, NetWorld } from './networld.ts';
 import { baseFs } from './world.ts';
 
 export type WorldSpec = {
 	dirs?: { path: string; mode: string; owner: string }[];
 	files?: { path: string; mode: string; owner: string; data: string }[];
+	net?: NetWorld;
 };
 
 const LEARNER_HOME = '/home/learner';
@@ -42,5 +44,25 @@ export function applyWorld(fs: Fs, w: WorldSpec): Fs {
 }
 
 export function worldFs(w: WorldSpec | null): Fs {
-	return w ? applyWorld(baseFs(), w) : baseFs();
+	if (!w) return baseFs();
+	let fs = applyWorld(baseFs(), w);
+	// 網の世界は /etc に名前の引き方（resolv.conf・hosts）を置く
+	if (w.net) {
+		fs = applyWorld(fs, {
+			dirs: [{ path: '/etc', mode: '755', owner: 'root' }],
+			files: Object.entries(w.net.etc).map(([name, data]) => ({
+				path: `/etc/${name}`,
+				mode: '644',
+				owner: 'root',
+				data
+			}))
+		});
+	}
+	return fs;
+}
+
+// 世界の網の初めの状態。記録の機械は、初めに DNS の機械と話している（sudo が自分の名前を引くため）。模擬も同じに始める
+export function worldNet(w: WorldSpec | null): NetState | undefined {
+	if (!w?.net) return undefined;
+	return { world: w.net, neigh: { [w.net.dns.server]: 'REACHABLE' } };
 }

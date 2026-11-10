@@ -8,7 +8,7 @@ import type { GitExt } from './git/repo.ts';
 import { start, typeLine, type Tool } from './session.ts';
 import { shellTool, type ShellState } from './shell/run.ts';
 import { learnerWorld } from './shell/world.ts';
-import { worldFs, type WorldSpec } from './shell/worlds.ts';
+import { worldFs, worldNet, type WorldSpec } from './shell/worlds.ts';
 
 type Step = { line: string; out: string; err: string; code: number };
 type Recorded = { id: string; tool: string; lesson: string; world?: string; steps: Step[] };
@@ -24,11 +24,38 @@ const recorded: Recorded[] = readdirSync(DIR)
 const normalize = (s: string) =>
 	s.replace(/^bash: (eval: )?line \d+: /gm, 'bash: ').replace(/^bash: `.*'\n/gm, '');
 
+// 本物でも決まらない物を揃える（docs/tools.md 2 章）。打った行ごとに当てる
+const sortRows = (text: string, keepHead: boolean) => {
+	const lines = text.split('\n');
+	const last = lines.pop() ?? '';
+	const head = keepHead ? lines.splice(0, 1) : [];
+	return [...head, ...lines.sort()].join('\n') + '\n' + last;
+};
+function unfixed(line: string, text: string): string {
+	let t = text;
+	// ping の往復の時間
+	t = t.replace(/time=\d+(\.\d+)? ms/g, 'time=X ms').replace(/, time \d+ms/g, ', time Xms');
+	t = t.replace(/rtt min\/avg\/max\/mdev = [\d./]+ ms/g, 'rtt min/avg/max/mdev = X ms');
+	// dig の問い合わせの番号と、かかった時間
+	t = t
+		.replace(/, id: \d+$/gm, ', id: X')
+		.replace(/^;; Query time: \d+ msec$/gm, ';; Query time: X msec');
+	// curl のつながらなかったときの時間
+	t = t.replace(/ after \d+ ms:/g, ' after X ms:');
+	// 近くの機械の表と、待ち受けの口の並びは、OS の中の表の並び（機械ごとに違う）
+	if (/^ip (-4 )?neigh/.test(line) && t !== '') t = sortRows(t, false);
+	if (/^ss /.test(line) && t !== '') t = sortRows(t, true);
+	return t;
+}
+
 type AnyTool = { tool: Tool<ShellState<unknown>>; initial: ShellState<unknown> };
 // シェルの道具も git の入った同じ世界（本物の機械にも git がある）。場面の前に置く物があれば置く
 const withGit = (world: WorldSpec | null): AnyTool => ({
 	tool: shellTool<GitExt>(gitCommands()) as unknown as Tool<ShellState<unknown>>,
-	initial: learnerWorld<GitExt>({ repos: {} }, worldFs(world)) as ShellState<unknown>
+	initial: {
+		...learnerWorld<GitExt>({ repos: {} }, worldFs(world)),
+		net: worldNet(world)
+	} as ShellState<unknown>
 });
 const worldOf = (name?: string): WorldSpec | null =>
 	name ? (JSON.parse(readFileSync(`tools-real/worlds/${name}.json`, 'utf8')) as WorldSpec) : null;
@@ -42,15 +69,7 @@ describe('本物の記録がある', () => {
 
 // 本物の記録はあるが、模擬がまだ追いついていない場面。黙って飛ばさず、保留として一覧に出す。
 // 段 7 を終えるときは空にする（docs/progress/phase-7.md）
-export const PENDING: ReadonlySet<string> = new Set([
-	'net-002-arp',
-	'net-003-route',
-	'net-004-dns',
-	'net-006-ports',
-	'net-007-http',
-	'net-008-status',
-	'net-013-cache'
-]);
+export const PENDING: ReadonlySet<string> = new Set(['net-008-status']);
 
 for (const rec of recorded) {
 	if (PENDING.has(rec.id)) {
@@ -69,9 +88,13 @@ for (const rec of recorded) {
 			session = typeLine(session, step.line);
 			const got = session.entries[j];
 			it(`${j + 1} 行目 $ ${step.line}`, () => {
-				expect({ out: got.out, err: normalize(got.err), code: got.code }).toEqual({
-					out: step.out,
-					err: normalize(step.err),
+				expect({
+					out: unfixed(step.line, got.out),
+					err: normalize(unfixed(step.line, got.err)),
+					code: got.code
+				}).toEqual({
+					out: unfixed(step.line, step.out),
+					err: normalize(unfixed(step.line, step.err)),
 					code: step.code
 				});
 			});

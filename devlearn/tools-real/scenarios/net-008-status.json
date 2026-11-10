@@ -11,6 +11,6 @@
 		"curl -iL http://shop.example.com/old",
 		"curl -i http://shop.example.com/missing",
 		"curl -i http://shop.example.com/error",
-		"curl -s -o /dev/null -w '%{http_code}\n' http://shop.example.com/missing"
+		"curl -s -o /dev/null -w '%{http_code}\\n' http://shop.example.com/missing"
 	]
 }

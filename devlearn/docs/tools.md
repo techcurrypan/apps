@@ -36,6 +36,13 @@
 - 比べる前に、記録と模擬の両方に当てる置き換え（`src/lib/tools/real.test.ts`）
   - `bash: line N: ` と `bash: eval: line N: ` を `bash: ` に（記録は台本の中の `eval` で打つため。端末では行の番号が付かない）
   - 読めない行の 2 行目（`` bash: `| sort' ``）を消す（`eval` では読めない行を写すが、端末で打ったときは写さない）
+  - 本物でも毎回変わる物（2026-11-10 に足した。網の場面で分かった）：ping の往復の時間（`time=…ms`・`time …ms`・`rtt …`）、
+    dig の問い合わせの番号（`id:`）とかかった時間（`Query time:`）、curl のつながらなかったときの時間（`after … ms`）を同じ字に替える。
+    `ip neigh` の行と `ss` の行（見出しの下）は並べ替えてから比べる（OS の中の表の並びは、機械が起きるたびに決まる乱数で変わる）
+- 世界（`tools-real/worlds/<名前>.json`）：場面の前に置く物を、記録と模擬が同じファイルから作る。
+  `dirs`・`files` は root で置き、`net` は網の名前空間で作り物の網を作る（機械ごとに名前空間、sw の橋につなぐ。DNS は dnsmasq、web は `servers/web.py`）
+  - 網の世界では、記録の機械は初めから DNS の機械（192.0.2.53）と話している（行ごとの `sudo` が自分の名前を引くため）。模擬も近くの表にこれを入れて始める
+  - curl は端末に出すとき、見出しを太字にし、Location を押せる印（OSC 8）で包む（curl 8.5）。模擬も同じ字を出し、画面の端末が字の飾りとして読む
 - 模擬のシェルの環境（`env`）の並びは、本物の bash と同じ「FNV-1 の 1024 の箱の順、同じ箱では新しい物が先」にする。
   記録だけにある変数（`LD_PRELOAD`・`FAKETIME`・`GIT_*_DATE`・`GIT_PAGER`・`PAGER`）は、場面では `grep` で外れる名前しか出さない
 
@@ -122,6 +129,46 @@ type GitSuccess = {
   commits: number;                   // HEAD から辿れる commit の数
   tracked: string[];                 // 索引にあるファイル（順は問わない）
   statusShort: string;               // git status --short の出力
+};
+```
+
+### 4.1b `shell`
+
+```ts
+type ShellSetup = {
+  world?: string;                    // 場面の前に置く世界（tools-real/worlds/<名前>.json。root の物・証明書・網）
+  files?: Record<string, string>;    // 作業場所（/home/learner/demo）からの道 → 中身
+  dirs?: string[];                   // 作業場所に作るディレクトリ
+  modes?: Record<string, string>;    // 道 → 権限（"755" など）
+  cwd?: string;                      // 始める場所（作業場所からの道。既定は作業場所）
+};
+type ShellSuccess = {
+  cwd?: string;                      // 今いる場所（絶対の道）
+  exists?: string[];                 // ある物（作業場所からの道）
+  absent?: string[];                 // 無い物
+  files?: Record<string, string>;    // 中身が合う物
+  modes?: Record<string, string>;    // 権限が合う物
+  output?: string;                   // 最後に打った行の標準出力
+};
+```
+
+### 4.1c `js`
+
+```ts
+type JsSetup = { prelude?: string; code?: string };   // 前に置く物（見えない）と、初めの書き物
+type JsSuccess = {
+  output?: string;                                    // 走らせた出力（console.log）
+  checks?: { expr: string; want: string }[];          // 書き物の後に式を走らせ、console.log と同じ形で比べる
+};
+```
+
+### 4.1d `sql`
+
+```ts
+type SqlSetup = { sql: string };                      // 場面の表を作る SQL
+type SqlSuccess = {
+  output?: string;                                    // 最後に打った行の出力（.mode table の形）
+  query?: { sql: string; want: string };              // 打ち終えた表に、この SQL を打った出力
 };
 ```
 
