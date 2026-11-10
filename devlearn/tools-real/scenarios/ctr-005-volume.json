@@ -5,8 +5,8 @@
 	"world": "docker",
 	"note": "コンテナの中に書いた物は消すと失う。ボリュームにつなぐと残る",
 	"steps": [
-		"docker run --name a busybox:1.37 sh -c 'echo 120 > /data.txt'",
-		"docker rm a",
+		"docker run --name memo busybox:1.37 sh -c 'echo 120 > /data.txt'",
+		"docker rm memo",
 		"docker run --rm busybox:1.37 cat /data.txt",
 		"docker volume create shopdata",
 		"docker volume ls",

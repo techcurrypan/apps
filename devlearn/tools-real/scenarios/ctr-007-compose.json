@@ -9,7 +9,7 @@
 		"docker compose up -d",
 		"docker compose ps",
 		"curl http://localhost:8080/",
-		"docker compose exec web nc -z db 5432",
+		"docker compose exec -T web nc -z db 5432",
 		"echo $?",
 		"docker compose down",
 		"docker compose ps"
