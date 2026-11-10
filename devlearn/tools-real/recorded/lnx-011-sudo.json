@@ -1,0 +1,256 @@
+{
+	"id": "lnx-011-sudo",
+	"tool": "shell",
+	"lesson": "lnx-011",
+	"world": "shop",
+	"recordedOn": {
+		"os": "Ubuntu 24.04.5 LTS",
+		"bash": "GNU bash, version 5.2.21(1)-release (x86_64-pc-linux-gnu)",
+		"git": "git version 2.56.0",
+		"coreutils": "ls (GNU coreutils) 9.4",
+		"grep": "grep (GNU grep) 3.11",
+		"faketime": "0.9.10-2.1"
+	},
+	"steps": [
+		{
+			"line": "whoami",
+			"out": "learner\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "id",
+			"out": "uid=1000(learner) gid=1000(learner) groups=1000(learner),27(sudo)\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "groups",
+			"out": "learner sudo\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "id root",
+			"out": "uid=0(root) gid=0(root) groups=0(root)\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "groups root",
+			"out": "root : root\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "id nosuch",
+			"out": "",
+			"err": "id: ‘nosuch’: no such user\n",
+			"code": 1
+		},
+		{
+			"line": "ls -l /srv/shop",
+			"out": "total 4\n-rw-r----- 1 root root 11 Nov 10 09:00 report.txt\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "ls -ld /srv/shop",
+			"out": "drwxr-xr-x 2 root root 4096 Nov 10 09:00 /srv/shop\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "cat /srv/shop/report.txt",
+			"out": "",
+			"err": "cat: /srv/shop/report.txt: Permission denied\n",
+			"code": 1
+		},
+		{
+			"line": "sudo cat /srv/shop/report.txt",
+			"out": "sales: 120\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "sudo whoami",
+			"out": "root\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "sudo id",
+			"out": "uid=0(root) gid=0(root) groups=0(root)\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "whoami",
+			"out": "learner\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "echo 'sales: 130' > /srv/shop/report.txt",
+			"out": "",
+			"err": "bash: line 8: /srv/shop/report.txt: Permission denied\n",
+			"code": 1
+		},
+		{
+			"line": "sudo echo 'sales: 130' > /srv/shop/report.txt",
+			"out": "",
+			"err": "bash: line 8: /srv/shop/report.txt: Permission denied\n",
+			"code": 1
+		},
+		{
+			"line": "echo 'sales: 130' | sudo tee /srv/shop/report.txt",
+			"out": "sales: 130\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "sudo cat /srv/shop/report.txt",
+			"out": "sales: 130\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "ls -l /srv/shop/report.txt",
+			"out": "-rw-r----- 1 root root 11 Nov 10 09:15 /srv/shop/report.txt\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "touch /srv/shop/new.txt",
+			"out": "",
+			"err": "touch: cannot touch '/srv/shop/new.txt': Permission denied\n",
+			"code": 1
+		},
+		{
+			"line": "sudo touch /srv/shop/new.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "ls -l /srv/shop",
+			"out": "total 4\n-rw-r--r-- 1 root root  0 Nov 10 09:19 new.txt\n-rw-r----- 1 root root 11 Nov 10 09:15 report.txt\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "rm -f /srv/shop/new.txt",
+			"out": "",
+			"err": "rm: cannot remove '/srv/shop/new.txt': Permission denied\n",
+			"code": 1
+		},
+		{
+			"line": "sudo rm /srv/shop/new.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "ls /srv/shop",
+			"out": "report.txt\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "mkdir /srv/shop/logs",
+			"out": "",
+			"err": "mkdir: cannot create directory ‘/srv/shop/logs’: Permission denied\n",
+			"code": 1
+		},
+		{
+			"line": "sudo mkdir /srv/shop/logs",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "ls -ld /srv/shop/logs",
+			"out": "drwxr-xr-x 2 root root 4096 Nov 10 09:25 /srv/shop/logs\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "sudo nosuchcmd",
+			"out": "",
+			"err": "sudo: nosuchcmd: command not found\n",
+			"code": 1
+		},
+		{
+			"line": "sudo cd /srv",
+			"out": "",
+			"err": "sudo: cd: command not found\nsudo: \"cd\" is a shell built-in command, it cannot be run directly.\nsudo: the -s option may be used to run a privileged shell.\nsudo: the -D option may be used to run a command in a specific directory.\n",
+			"code": 1
+		},
+		{
+			"line": "sudo -u learner whoami",
+			"out": "learner\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "sudo -u nobody id",
+			"out": "uid=65534(nobody) gid=65534(nogroup) groups=65534(nogroup)\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "echo hello > ~/note.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "ls -l ~/note.txt",
+			"out": "-rw-rw-r-- 1 learner learner 6 Nov 10 09:31 /home/learner/note.txt\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "sudo cp /srv/shop/report.txt ~/copy.txt",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "ls -l ~/copy.txt",
+			"out": "-rw-r----- 1 root root 11 Nov 10 09:33 /home/learner/copy.txt\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "cat ~/copy.txt",
+			"out": "",
+			"err": "cat: /home/learner/copy.txt: Permission denied\n",
+			"code": 1
+		},
+		{
+			"line": "cp ~/note.txt /srv/shop/",
+			"out": "",
+			"err": "cp: cannot create regular file '/srv/shop/note.txt': Permission denied\n",
+			"code": 1
+		},
+		{
+			"line": "sudo cp ~/note.txt /srv/shop/",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "ls -l /srv/shop",
+			"out": "total 12\ndrwxr-xr-x 2 root root 4096 Nov 10 09:25 logs\n-rw-r--r-- 1 root root    6 Nov 10 09:37 note.txt\n-rw-r----- 1 root root   11 Nov 10 09:15 report.txt\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "whoami",
+			"out": "learner\n",
+			"err": "",
+			"code": 0
+		}
+	]
+}

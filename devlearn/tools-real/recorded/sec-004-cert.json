@@ -1,0 +1,154 @@
+{
+	"id": "sec-004-cert",
+	"tool": "shell",
+	"lesson": "sec-004",
+	"world": "certs",
+	"recordedOn": {
+		"os": "Ubuntu 24.04.5 LTS",
+		"bash": "GNU bash, version 5.2.21(1)-release (x86_64-pc-linux-gnu)",
+		"git": "git version 2.56.0",
+		"coreutils": "ls (GNU coreutils) 9.4",
+		"grep": "grep (GNU grep) 3.11",
+		"faketime": "0.9.10-2.1"
+	},
+	"steps": [
+		{
+			"line": "ls",
+			"out": "inter-ca.pem  old.pem  other-ca.pem  root-ca.pem  server.pem\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "openssl x509 -in server.pem -noout -subject",
+			"out": "subject=C = JP, O = Example Shop, CN = shop.example.com\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "openssl x509 -in server.pem -noout -issuer",
+			"out": "issuer=C = JP, O = Yorozu Lab, CN = Yorozu Issuing CA 1\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "openssl x509 -in server.pem -noout -subject -issuer",
+			"out": "subject=C = JP, O = Example Shop, CN = shop.example.com\nissuer=C = JP, O = Yorozu Lab, CN = Yorozu Issuing CA 1\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "openssl x509 -in inter-ca.pem -noout -subject -issuer",
+			"out": "subject=C = JP, O = Yorozu Lab, CN = Yorozu Issuing CA 1\nissuer=C = JP, O = Yorozu Lab, CN = Yorozu Root CA\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "openssl x509 -in root-ca.pem -noout -subject -issuer",
+			"out": "subject=C = JP, O = Yorozu Lab, CN = Yorozu Root CA\nissuer=C = JP, O = Yorozu Lab, CN = Yorozu Root CA\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "openssl x509 -in server.pem -noout -dates",
+			"out": "notBefore=Jun  1 00:00:00 2026 GMT\nnotAfter=Jun  1 00:00:00 2027 GMT\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "openssl x509 -in old.pem -noout -dates",
+			"out": "notBefore=Jan  1 00:00:00 2025 GMT\nnotAfter=Jan  1 00:00:00 2026 GMT\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "openssl x509 -in server.pem -noout -fingerprint -sha256",
+			"out": "sha256 Fingerprint=02:00:FD:D9:74:BD:18:A8:F3:C3:85:C7:D0:02:26:B7:38:5E:15:BC:74:C8:96:D6:4C:0C:38:A7:7E:68:04:FE\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "openssl verify -CAfile root-ca.pem server.pem",
+			"out": "",
+			"err": "C = JP, O = Example Shop, CN = shop.example.com\nerror 20 at 0 depth lookup: unable to get local issuer certificate\nerror server.pem: verification failed\n",
+			"code": 2
+		},
+		{
+			"line": "openssl verify -CAfile root-ca.pem -untrusted inter-ca.pem server.pem",
+			"out": "server.pem: OK\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "openssl verify -CAfile root-ca.pem inter-ca.pem",
+			"out": "inter-ca.pem: OK\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "cat root-ca.pem inter-ca.pem > bundle.pem",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "openssl verify -CAfile bundle.pem server.pem",
+			"out": "server.pem: OK\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "openssl verify -CAfile other-ca.pem -untrusted inter-ca.pem server.pem",
+			"out": "",
+			"err": "C = JP, O = Yorozu Lab, CN = Yorozu Issuing CA 1\nerror 20 at 1 depth lookup: unable to get local issuer certificate\nerror server.pem: verification failed\n",
+			"code": 2
+		},
+		{
+			"line": "openssl verify -CAfile root-ca.pem -untrusted inter-ca.pem old.pem",
+			"out": "",
+			"err": "C = JP, O = Example Shop, CN = old.example.com\nerror 10 at 0 depth lookup: certificate has expired\nerror old.pem: verification failed\n",
+			"code": 2
+		},
+		{
+			"line": "openssl verify -CAfile root-ca.pem root-ca.pem",
+			"out": "root-ca.pem: OK\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "openssl verify -CAfile inter-ca.pem server.pem",
+			"out": "",
+			"err": "C = JP, O = Yorozu Lab, CN = Yorozu Issuing CA 1\nerror 2 at 1 depth lookup: unable to get issuer certificate\nerror server.pem: verification failed\n",
+			"code": 2
+		},
+		{
+			"line": "openssl verify server.pem",
+			"out": "",
+			"err": "C = JP, O = Example Shop, CN = shop.example.com\nerror 20 at 0 depth lookup: unable to get local issuer certificate\nerror server.pem: verification failed\n",
+			"code": 2
+		},
+		{
+			"line": "openssl x509 -noout -subject < server.pem",
+			"out": "subject=C = JP, O = Example Shop, CN = shop.example.com\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "openssl x509 -in server.pem -noout -serial",
+			"out": "serial=1003\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "openssl x509 -in server.pem -noout -ext subjectAltName",
+			"out": "X509v3 Subject Alternative Name: \n    DNS:shop.example.com\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "openssl verify -CAfile root-ca.pem -untrusted inter-ca.pem server.pem old.pem",
+			"out": "server.pem: OK\n",
+			"err": "C = JP, O = Example Shop, CN = old.example.com\nerror 10 at 0 depth lookup: certificate has expired\nerror old.pem: verification failed\n",
+			"code": 2
+		}
+	]
+}
