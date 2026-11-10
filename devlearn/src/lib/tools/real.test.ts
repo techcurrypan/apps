@@ -18,17 +18,18 @@ const recorded: Recorded[] = readdirSync(DIR)
 	.sort()
 	.map((f) => JSON.parse(readFileSync(`${DIR}/${f}`, 'utf8')) as Recorded);
 
-// 本物の記録は台本の中の bash で打っているので、bash の言い方に「line 1:」が付く。
-// 端末で打ったときの言い方に揃える（置き換えた物は docs/tools.md 2 章に記録）
-const normalize = (s: string) => s.replace(/^bash: line \d+: /gm, 'bash: ');
+// 本物の記録は台本の中の bash（eval）で打っているので、bash の言い方に「line 1:」「eval: line 8:」が付き、
+// 読めない行を 2 行目に写す。端末で打ったときの言い方に揃える（置き換えた物は docs/tools.md 2 章に記録）
+const normalize = (s: string) =>
+	s.replace(/^bash: (eval: )?line \d+: /gm, 'bash: ').replace(/^bash: `.*'\n/gm, '');
 
 type AnyTool = { tool: Tool<ShellState<unknown>>; initial: ShellState<unknown> };
-const tools: Record<string, () => AnyTool> = {
-	git: () => ({
-		tool: shellTool<GitExt>(gitCommands()) as unknown as Tool<ShellState<unknown>>,
-		initial: learnerWorld<GitExt>({ repos: {} }) as ShellState<unknown>
-	})
-};
+// シェルの道具も git の入った同じ世界（本物の機械にも git がある）
+const withGit = (): AnyTool => ({
+	tool: shellTool<GitExt>(gitCommands()) as unknown as Tool<ShellState<unknown>>,
+	initial: learnerWorld<GitExt>({ repos: {} }) as ShellState<unknown>
+});
+const tools: Record<string, () => AnyTool> = { git: withGit, shell: withGit };
 
 describe('本物の記録がある', () => {
 	it('記録が 1 件以上ある', () => {
@@ -38,18 +39,7 @@ describe('本物の記録がある', () => {
 
 // 本物の記録はあるが、模擬がまだ追いついていない場面。黙って飛ばさず、保留として一覧に出す。
 // 段 7 を終えるときは空にする（docs/progress/phase-7.md）
-export const PENDING: ReadonlySet<string> = new Set([
-	'lnx-001-move',
-	'lnx-002-files',
-	'lnx-003-read',
-	'lnx-004-mode',
-	'lnx-005-pipe',
-	'lnx-006-grep',
-	'lnx-008-env',
-	'lnx-009-script',
-	'sec-002-hash',
-	'sec-012-log'
-]);
+export const PENDING: ReadonlySet<string> = new Set([]);
 
 for (const rec of recorded) {
 	if (PENDING.has(rec.id)) {

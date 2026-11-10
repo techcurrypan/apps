@@ -1,5 +1,10 @@
 // 模擬のファイルの木。道（絶対パス）→ 物 の表で、値として扱う（書き換えずに新しい木を返す）。
 
+// 作る物の権限は、利用者ごとの組がある Ubuntu の既定の umask 002 から決まる（本物の記録と同じ）
+export const UMASK = 0o002;
+export const FILE_MODE = 0o666 & ~UMASK;
+export const DIR_MODE = 0o777 & ~UMASK;
+
 export type FileNode = { kind: 'file'; data: string; mode: number; mtime: number };
 export type DirNode = { kind: 'dir'; mode: number; mtime: number };
 export type FsNode = FileNode | DirNode;
@@ -48,13 +53,22 @@ export function writeFile(fs: Fs, path: string, data: string, mtime: number, mod
 	if (!isDir(fs, parentOf(path))) throw new Error(`no parent: ${path}`);
 	const old = fs[path];
 	if (old?.kind === 'dir') throw new Error(`is a directory: ${path}`);
-	return { ...fs, [path]: { kind: 'file', data, mode: mode ?? old?.mode ?? 0o644, mtime } };
+	const node: FileNode = { kind: 'file', data, mode: mode ?? old?.mode ?? FILE_MODE, mtime };
+	const next: Fs = { ...fs, [path]: node };
+	return old ? next : touchParent(next, path, mtime);
 }
 
-export function mkdir(fs: Fs, path: string, mtime: number, mode = 0o755): Fs {
+// 中の物が増えた・減ったとき、入れ物の時刻を変える（本物の OS と同じ）
+function touchParent(fs: Fs, path: string, mtime: number): Fs {
+	const p = parentOf(path);
+	const dir = fs[p];
+	return dir ? { ...fs, [p]: { ...dir, mtime } } : fs;
+}
+
+export function mkdir(fs: Fs, path: string, mtime: number, mode = DIR_MODE): Fs {
 	if (!isDir(fs, parentOf(path))) throw new Error(`no parent: ${path}`);
 	if (fs[path]) throw new Error(`exists: ${path}`);
-	return { ...fs, [path]: { kind: 'dir', mode, mtime } };
+	return touchParent({ ...fs, [path]: { kind: 'dir', mode, mtime } }, path, mtime);
 }
 
 // 名前の並びは、C.UTF-8 と同じバイトの順
@@ -68,14 +82,14 @@ export function listDir(fs: Fs, dir: string): string[] {
 		.sort(byteOrder);
 }
 
-// 下の物も全て消す
-export function remove(fs: Fs, path: string): Fs {
+// 下の物も全て消す。時刻を渡すと、親の時刻をその時刻にする
+export function remove(fs: Fs, path: string, mtime?: number): Fs {
 	const out: Record<string, FsNode> = {};
 	for (const [p, n] of Object.entries(fs)) {
 		if (p === path || p.startsWith(`${path}/`)) continue;
 		out[p] = n;
 	}
-	return out;
+	return mtime === undefined ? out : touchParent(out, path, mtime);
 }
 
 // path の下の全てのファイル（道の順）

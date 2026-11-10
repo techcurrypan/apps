@@ -314,7 +314,7 @@ export function checkout(
 			if (!isDir(fs, dir)) fs = mkdir(fs, dir, now);
 		}
 		if (!isDir(fs, parentOf(abs))) continue;
-		fs = writeFile(fs, abs, blobData(repo, e), now, e.mode === '100755' ? 0o755 : 0o644);
+		fs = writeFile(fs, abs, blobData(repo, e), now, e.mode === '100755' ? 0o775 : 0o664);
 	}
 	return { fs, index: Object.fromEntries(to) };
 }

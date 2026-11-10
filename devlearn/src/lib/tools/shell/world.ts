@@ -16,7 +16,11 @@ export const GITCONFIG = [
 
 export function baseFs(): Fs {
 	let fs = emptyFs();
-	for (const d of ['/home', HOME, WORK, '/tmp']) fs = mkdir(fs, d, CLOCK_BASE);
+	// 家は 750（Ubuntu の既定）。/tmp は誰でも書ける
+	fs = mkdir(fs, '/home', CLOCK_BASE, 0o755);
+	fs = mkdir(fs, HOME, CLOCK_BASE, 0o750);
+	fs = mkdir(fs, WORK, CLOCK_BASE);
+	fs = mkdir(fs, '/tmp', CLOCK_BASE, 0o1777);
 	return writeFile(fs, `${HOME}/.gitconfig`, GITCONFIG, CLOCK_BASE);
 }
 

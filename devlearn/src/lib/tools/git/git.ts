@@ -1,7 +1,7 @@
 // 模擬の git の命令。出力とエラーは本物の記録（tools-real/recorded/git-*.json）と一字ずつ合わせる。
 // 扱う範囲は docs/tools.md 3.1。範囲の外は「模擬では扱わない」とはっきり返す。
 import { isDir, mkdir, remove, resolvePath, stat, writeFile } from '../fs.ts';
-import { basicCommands } from '../shell/basic.ts';
+import { shellCommands } from '../shell/commands.ts';
 import { fail, ok, type Cmd, type Commands } from '../shell/run.ts';
 import { branchCmd, mergeCmd, rebaseCmd, revertCmd, switchCmd } from './branch.ts';
 import {
@@ -542,7 +542,7 @@ const restore = (ctx: Ctx, args: string[]): R => {
 					`${root}/${p}`,
 					blobData(repo, e),
 					ctx.now,
-					e.mode === '100755' ? 0o755 : 0o644
+					e.mode === '100755' ? 0o775 : 0o664
 				);
 			}
 		}
@@ -626,5 +626,5 @@ const git: Cmd<GitExt> = (s, args, io) => {
 };
 
 export function gitCommands(): Commands<GitExt> {
-	return { ...basicCommands<GitExt>(), git };
+	return { ...shellCommands<GitExt>(), git };
 }

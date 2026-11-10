@@ -1,12 +1,12 @@
 // シェルの 1 行を読む。模擬の道具（shell・git・docker）が共に使う。
-// 扱う物：語・単引用符・二重引用符・バックスラッシュ・変数（$X ${X} $? $1）・
-// パイプ・つなぎ（; && ||）・リダイレクト（> >> 2> 2>&1 <）・注釈（#）。
+// 扱う物：語・単引用符・二重引用符・バックスラッシュ・変数（$X ${X} $? $# $0〜$9）・語の頭の ~・
+// パイプ・つなぎ（; && ||）・リダイレクト（> >> 2> 2>&1 >&2 <）・注釈（#）。
 // 扱わない物（要るレッスンが無い）：ワイルドカード、$( )、ヒアドキュメント、変数の語分割。
 
 export type Seg = { lit: string } | { var: string };
 export type Word = Seg[];
 export type Redirect =
-	{ fd: 0 | 1 | 2; op: '>' | '>>' | '<'; target: Word } | { fd: 2; op: '>&'; to: 1 };
+	{ fd: 0 | 1 | 2; op: '>' | '>>' | '<'; target: Word } | { fd: 1 | 2; op: '>&'; to: 1 | 2 };
 export type Command = { words: Word[]; redirects: Redirect[] };
 export type Pipeline = { commands: Command[] };
 export type ListItem = { op: null | ';' | '&&' | '||'; pipeline: Pipeline };
@@ -15,7 +15,7 @@ export type Parsed = { items: ListItem[] };
 type Tok =
 	| { t: 'word'; w: Word }
 	| { t: 'op'; v: '|' | ';' | '&&' | '||' }
-	| { t: 'redir'; fd: 0 | 1 | 2; v: '>' | '>>' | '<' | '>&1' };
+	| { t: 'redir'; fd: 0 | 1 | 2; v: '>' | '>>' | '<' | '>&1' | '>&2' };
 
 const isName = (c: string) => /[A-Za-z0-9_]/.test(c);
 
@@ -124,8 +124,8 @@ function tokenize(line: string): Tok[] | { error: string } {
 				i++;
 			}
 			const rest = line.slice(i);
-			if (rest.startsWith('>&1')) {
-				toks.push({ t: 'redir', fd, v: '>&1' });
+			if (rest.startsWith('>&1') || rest.startsWith('>&2')) {
+				toks.push({ t: 'redir', fd, v: rest.startsWith('>&1') ? '>&1' : '>&2' });
 				i += 3;
 			} else if (rest.startsWith('>>')) {
 				toks.push({ t: 'redir', fd, v: '>>' });
@@ -134,6 +134,10 @@ function tokenize(line: string): Tok[] | { error: string } {
 				toks.push({ t: 'redir', fd, v: rest[0] === '<' ? '<' : '>' });
 				i += 1;
 			}
+		} else if (c === '~' && word === null && /^$|^[/ \t;|&<>]/.test(line.slice(i + 1, i + 2))) {
+			// 語の頭の ~ は家（$HOME）
+			word = [{ var: 'HOME' }];
+			i++;
 		} else {
 			lit(c);
 			i++;
@@ -158,8 +162,10 @@ export function parseLine(line: string): Parsed | { error: string } {
 		const t = toks[i];
 		if (t.t === 'word') cmd.words.push(t.w);
 		else if (t.t === 'redir') {
-			if (t.v === '>&1') {
-				if (t.fd === 2) cmd.redirects.push({ fd: 2, op: '>&', to: 1 });
+			if (t.v === '>&1' || t.v === '>&2') {
+				const to = t.v === '>&1' ? 1 : 2;
+				const fd = t.fd === 2 ? 2 : 1;
+				if (fd !== to) cmd.redirects.push({ fd, op: '>&', to });
 				continue;
 			}
 			const next = toks[i + 1];

@@ -1,8 +1,10 @@
-// 模擬のシェル。1 行を読み、展開し、パイプ・リダイレクト・つなぎの通りに命令を打つ。
+// 模擬のシェル。1 行（または台本）を読み、展開し、パイプ・リダイレクト・つなぎ・if の通りに命令を打つ。
 // 命令は道具ごとに表で渡す（shell・git・docker で、要る物だけを入れる）。
+// 命令の探し方は本物の bash と同じ：組み込み → PATH の前から（実行できるファイル、または /usr/bin の命令）。
 import { isDir, parentOf, readFile, resolvePath, stat, writeFile, type Fs } from '../fs.ts';
 import type { Result, Tool } from '../session.ts';
-import { parseLine, type Command, type Word } from './parse.ts';
+import type { Command, ListItem, Word } from './parse.ts';
+import { parseScript, type Node } from './script.ts';
 
 // 作り物の時計：場面の始まり 2026-11-10T09:00:00+09:00。打った行ごとに 1 分進む（docs/tools.md 1 章）
 export const CLOCK_BASE = 1794268800;
@@ -20,14 +22,23 @@ export type ShellState<X> = {
 	ext: X; // 道具ごとの状態（git のリポジトリなど）
 };
 
-export type Io = {
+export type Io<X = unknown> = {
 	stdin: string;
 	tty: boolean; // 標準出力が端末か（ls の並べ方などが変わる）
 	now: number; // UNIX 時刻（作り物の時計）
+	prefix: string; // シェルが出す言い方の頭（端末では「bash: 」、台本では「名前: line N: 」）
+	interactive: boolean; // 端末で打った行か（台本・bash -c ではない）
+	commands: Commands<X>;
 };
 
-export type CmdResult<X> = { state: ShellState<X>; out: string; err: string; code: number };
-export type Cmd<X> = (state: ShellState<X>, args: string[], io: Io) => CmdResult<X>;
+export type CmdResult<X> = {
+	state: ShellState<X>;
+	out: string;
+	err: string;
+	code: number;
+	exit?: boolean; // exit を打った（台本を終える）
+};
+export type Cmd<X> = (state: ShellState<X>, args: string[], io: Io<X>) => CmdResult<X>;
 export type Commands<X> = Readonly<Record<string, Cmd<X>>>;
 
 export const ok = <X>(state: ShellState<X>, out = ''): CmdResult<X> => ({
@@ -46,69 +57,260 @@ export const fail = <X>(state: ShellState<X>, err: string, code = 1, out = ''): 
 export const nowOf = (tick: number) => CLOCK_BASE + 60 * tick;
 export const pathOf = <X>(s: ShellState<X>, p: string) => resolvePath(s.cwd, p, s.home);
 
+// シェルが自分で持つ命令（PATH を探さない）。type で見える組み込みのうち、模擬に要る物
+export const BUILTINS: ReadonlySet<string> = new Set([
+	'cd',
+	'pwd',
+	'echo',
+	'printf',
+	'export',
+	'unset',
+	'exit',
+	'true',
+	'false',
+	'[',
+	'test'
+]);
+// 組み込みにしか無い物（/usr/bin に同じ名前の物が無い）
+export const BUILTIN_ONLY: ReadonlySet<string> = new Set(['cd', 'export', 'unset', 'exit']);
+// 模擬の命令が置いてある場所（/bin は /usr/bin を指す）
+export const SYSTEM_DIRS = ['/usr/bin', '/bin'];
+export const NULL_DEVICE = '/dev/null';
+
+export function canRead(fs: Fs, path: string): boolean {
+	const n = stat(fs, path);
+	return !!n && (n.mode & 0o400) !== 0;
+}
+export function canWrite(fs: Fs, path: string): boolean {
+	const n = stat(fs, path);
+	return !!n && (n.mode & 0o200) !== 0;
+}
+export function canExec(fs: Fs, path: string): boolean {
+	const n = stat(fs, path);
+	return !!n && (n.mode & 0o100) !== 0;
+}
+
+export function pathDirs<X>(s: ShellState<X>): string[] {
+	return (s.vars.PATH ?? '').split(':').map((d) => (d === '' ? s.cwd : d));
+}
+
+// 名前が PATH のどこで見つかるか。all なら全て
+export type Found = { kind: 'file'; path: string } | { kind: 'system'; path: string; name: string };
+export function lookPath<X>(
+	s: ShellState<X>,
+	name: string,
+	commands: Commands<X>,
+	all = false
+): Found[] {
+	const out: Found[] = [];
+	for (const dir of pathDirs(s)) {
+		const p = `${dir === '/' ? '' : dir}/${name}`;
+		const n = stat(s.fs, p);
+		if (n?.kind === 'file' && canExec(s.fs, p)) out.push({ kind: 'file', path: p });
+		else if (!n && SYSTEM_DIRS.includes(dir) && commands[name] && !BUILTIN_ONLY.has(name))
+			out.push({ kind: 'system', path: p, name });
+		if (out.length > 0 && !all) break;
+	}
+	return out;
+}
+
+function systemName<X>(path: string, commands: Commands<X>): string | null {
+	const dir = parentOf(path);
+	const name = path.slice(dir.length + 1);
+	return SYSTEM_DIRS.includes(dir) && commands[name] && !BUILTIN_ONLY.has(name) ? name : null;
+}
+
 function expand<X>(w: Word, s: ShellState<X>): string {
 	return w
 		.map((seg) => {
 			if ('lit' in seg) return seg.lit;
 			if (seg.var === '?') return String(s.lastCode);
+			if (seg.var === '#') return s.vars['#'] ?? '0';
+			if (seg.var === '0') return s.vars['0'] ?? 'bash';
 			return s.vars[seg.var] ?? '';
 		})
 		.join('');
 }
 
+// 子の bash に渡る変数（export した物）
+export function exportedVars<X>(s: ShellState<X>): Record<string, string> {
+	const out: Record<string, string> = {};
+	for (const k of Object.keys(s.vars)) if (s.exported.includes(k)) out[k] = s.vars[k];
+	return out;
+}
+
+// どこで動いているか。端末・bash -c・台本ファイル
+export type Where = { kind: 'tty' } | { kind: 'c' } | { kind: 'file'; name: string };
+const prefixAt = (w: Where, line: number) =>
+	w.kind === 'tty'
+		? 'bash: '
+		: w.kind === 'c'
+			? `bash: line ${line}: `
+			: `${w.name}: line ${line}: `;
+
+type Run<X> = { commands: Commands<X>; now: number; where: Where };
+
+// 台本ファイル・bash -c の中身を、子の bash として動かす。変数と今いる場所は親に戻らない
+export function runChild<X>(
+	commands: Commands<X>,
+	state: ShellState<X>,
+	text: string,
+	where: Where,
+	args: string[],
+	now: number,
+	extraEnv: Record<string, string> = {}
+): CmdResult<X> {
+	const env = { ...exportedVars(state), ...extraEnv };
+	const positional: Record<string, string> = { '#': String(args.length - 1) };
+	args.forEach((a, i) => (positional[String(i)] = a));
+	const child: ShellState<X> = {
+		...state,
+		vars: { ...env, ...positional },
+		exported: Object.keys(env),
+		lastCode: 0
+	};
+	const r = runText({ commands, now, where }, child, text);
+	return {
+		state: { ...state, fs: r.state.fs, ext: r.state.ext },
+		out: r.out,
+		err: r.err,
+		code: r.code
+	};
+}
+
+// 実行できるファイルを動かす（#! の bash として）
+function runFile<X>(
+	run: Run<X>,
+	s: ShellState<X>,
+	path: string,
+	shown: string,
+	args: string[],
+	extraEnv: Record<string, string>
+): CmdResult<X> {
+	const text = readFile(s.fs, path) ?? '';
+	const first = text.split('\n')[0];
+	if (
+		first.startsWith('#!') &&
+		!/^#!\s*(\/usr)?\/bin\/(ba)?sh\b|^#!\s*\/usr\/bin\/env\s+bash\b/.test(first)
+	)
+		return fail(s, `（模擬では、${first.slice(2).trim()} で動く台本は扱わない）\n`, 126);
+	return runChild(
+		run.commands,
+		s,
+		text,
+		{ kind: 'file', name: shown },
+		[shown, ...args],
+		run.now,
+		extraEnv
+	);
+}
+
+type Sink = { path: string; append: boolean } | { null: true };
+
 // 1 つの命令を打つ（リダイレクト込み）
 function runCommand<X>(
-	commands: Commands<X>,
+	run: Run<X>,
 	state: ShellState<X>,
 	c: Command,
 	stdin: string,
 	piped: boolean,
-	now: number
+	line: number
 ): CmdResult<X> {
+	const prefix = prefixAt(run.where, line);
+	const now = run.now;
 	let s = state;
 	const words = c.words.map((w) => expand(w, s));
 	let input = stdin;
-	type Sink = { path: string; append: boolean };
 	let outSink: Sink | null = null;
 	let errSink: Sink | null = null;
 	let errToOut = false;
+	let outToErr = false;
 	// リダイレクトは命令より先に開く（> は中身を空にして作る）
 	for (const r of c.redirects) {
 		if (r.op === '>&') {
-			errToOut = true;
+			if (r.fd === 2) errToOut = true;
+			else outToErr = true;
 			continue;
 		}
 		const name = expand(r.target, s);
 		const path = pathOf(s, name);
+		if (path === NULL_DEVICE) {
+			if (r.op === '<') input = '';
+			else if (r.fd === 2) errSink = { null: true };
+			else outSink = { null: true };
+			continue;
+		}
 		if (r.op === '<') {
 			const data = readFile(s.fs, path);
 			if (data === null) {
 				const why = isDir(s.fs, path) ? 'Is a directory' : 'No such file or directory';
-				return fail(s, `bash: ${name}: ${why}\n`);
+				return fail(s, `${prefix}${name}: ${why}\n`);
 			}
+			if (!canRead(s.fs, path)) return fail(s, `${prefix}${name}: Permission denied\n`);
 			input = data;
 			continue;
 		}
-		if (isDir(s.fs, path)) return fail(s, `bash: ${name}: Is a directory\n`);
-		if (!isDir(s.fs, parentOf(path))) return fail(s, `bash: ${name}: No such file or directory\n`);
+		if (isDir(s.fs, path)) return fail(s, `${prefix}${name}: Is a directory\n`);
+		if (!isDir(s.fs, parentOf(path)))
+			return fail(s, `${prefix}${name}: No such file or directory\n`);
+		if (stat(s.fs, path) && !canWrite(s.fs, path))
+			return fail(s, `${prefix}${name}: Permission denied\n`);
 		if (r.op === '>' || !stat(s.fs, path)) s = { ...s, fs: writeFile(s.fs, path, '', now) };
 		const sink = { path, append: r.op === '>>' };
 		if (r.fd === 2) errSink = sink;
 		else outSink = sink;
 	}
 
+	// 頭の NAME=値 は、その命令の間だけの環境（命令が無ければ、シェルの変数に置く）
+	let k = 0;
+	const temp: Record<string, string> = {};
+	for (; k < words.length; k++) {
+		const m = /^([A-Za-z_][A-Za-z0-9_]*)=(.*)$/s.exec(words[k]);
+		if (!m) break;
+		temp[m[1]] = m[2];
+	}
+	const argv = words.slice(k);
+	const io: Io<X> = {
+		stdin: input,
+		tty: !piped && outSink === null,
+		now,
+		prefix,
+		interactive: run.where.kind === 'tty',
+		commands: run.commands
+	};
+
 	let res: CmdResult<X>;
-	if (words.length === 0) {
-		res = ok(s);
+	if (argv.length === 0) {
+		res = ok({ ...s, vars: { ...s.vars, ...temp } });
 	} else {
-		const assign = /^([A-Za-z_][A-Za-z0-9_]*)=(.*)$/s.exec(words[0]);
-		if (assign && words.length === 1) {
-			res = ok({ ...s, vars: { ...s.vars, [assign[1]]: assign[2] } });
+		const [name, ...args] = argv;
+		const withTemp = (fn: (st: ShellState<X>) => CmdResult<X>): CmdResult<X> => {
+			if (k === 0) return fn(s);
+			const r = fn({
+				...s,
+				vars: { ...s.vars, ...temp },
+				exported: [...new Set([...s.exported, ...Object.keys(temp)])]
+			});
+			return { ...r, state: { ...r.state, vars: s.vars, exported: s.exported } };
+		};
+		const cmd = run.commands[name];
+		if (name.includes('/')) {
+			const path = pathOf(s, name);
+			const node = stat(s.fs, path);
+			const sys = node ? null : systemName(path, run.commands);
+			if (sys) res = withTemp((st) => (run.commands[sys] as Cmd<X>)(st, args, io));
+			else if (!node) res = fail(s, `${prefix}${name}: No such file or directory\n`, 127);
+			else if (node.kind === 'dir') res = fail(s, `${prefix}${name}: Is a directory\n`, 126);
+			else if (!canExec(s.fs, path)) res = fail(s, `${prefix}${name}: Permission denied\n`, 126);
+			else res = withTemp((st) => runFile(run, st, path, name, args, temp));
+		} else if (cmd && BUILTINS.has(name)) {
+			res = withTemp((st) => cmd(st, args, io));
 		} else {
-			const cmd = commands[words[0]];
-			res = cmd
-				? cmd(s, words.slice(1), { stdin: input, tty: !piped && outSink === null, now })
-				: fail(s, `bash: ${words[0]}: command not found\n`, 127);
+			const [found] = lookPath(s, name, run.commands);
+			if (!found) res = fail(s, `${prefix}${name}: command not found\n`, 127);
+			else if (found.kind === 'system')
+				res = withTemp((st) => (run.commands[found.name] as Cmd<X>)(st, args, io));
+			else res = withTemp((st) => runFile(run, st, found.path, found.path, args, temp));
 		}
 	}
 
@@ -118,7 +320,12 @@ function runCommand<X>(
 		out += err;
 		err = '';
 	}
+	if (outToErr) {
+		err = out + err;
+		out = '';
+	}
 	const put = (sink: Sink, data: string) => {
+		if ('null' in sink) return;
 		const before = sink.append ? (readFile(fs, sink.path) ?? '') : '';
 		fs = writeFile(fs, sink.path, before + data, now);
 	};
@@ -133,42 +340,107 @@ function runCommand<X>(
 	return { ...res, state: { ...res.state, fs }, out, err };
 }
 
+// && と || のまとまり 1 つ
+function runAndOr<X>(
+	run: Run<X>,
+	state: ShellState<X>,
+	items: ListItem[],
+	line: number
+): CmdResult<X> {
+	let s = state;
+	let out = '';
+	let err = '';
+	let code = s.lastCode;
+	for (const item of items) {
+		if (item.op === '&&' && code !== 0) continue;
+		if (item.op === '||' && code === 0) continue;
+		let stdin = '';
+		const cmds = item.pipeline.commands;
+		for (let i = 0; i < cmds.length; i++) {
+			const last = i === cmds.length - 1;
+			// パイプの中の命令は子で動く（exit しても外に及ばない。変数も戻らない）
+			const r = runCommand(run, s, cmds[i], stdin, !last, line);
+			if (cmds.length > 1) s = { ...s, fs: r.state.fs, ext: r.state.ext };
+			else s = r.state;
+			err += r.err;
+			if (last) out += r.out;
+			else stdin = r.out;
+			code = r.code;
+			if (r.exit && cmds.length === 1)
+				return { state: { ...s, lastCode: code }, out, err, code, exit: true };
+		}
+		s = { ...s, lastCode: code };
+	}
+	return { state: s, out, err, code };
+}
+
+function runNodes<X>(run: Run<X>, state: ShellState<X>, nodes: Node[]): CmdResult<X> {
+	let s = state;
+	let out = '';
+	let err = '';
+	let code = s.lastCode;
+	for (const n of nodes) {
+		let r: CmdResult<X>;
+		if (n.t === 'cmd') r = runAndOr(run, s, n.list.items, n.list.line);
+		else {
+			r = { state: { ...s, lastCode: 0 }, out: '', err: '', code: 0 };
+			let taken = false;
+			for (const arm of n.arms) {
+				const c = runNodes(run, s, arm.cond);
+				out += c.out;
+				err += c.err;
+				s = c.state;
+				if (c.exit) return { ...c, out, err };
+				if (c.code === 0) {
+					r = runNodes(run, s, arm.body);
+					taken = true;
+					break;
+				}
+			}
+			if (!taken && n.orElse) r = runNodes(run, s, n.orElse);
+			else if (!taken) r = { state: { ...s, lastCode: 0 }, out: '', err: '', code: 0 };
+		}
+		out += r.out;
+		err += r.err;
+		s = r.state;
+		code = r.code;
+		if (r.exit) return { state: s, out, err, code, exit: true };
+	}
+	return { state: { ...s, lastCode: code }, out, err, code };
+}
+
+// 台本（1 行でも複数行でも）を読んで動かす。読めない所があれば、そこまでを動かしてから誤りを出す
+function runText<X>(run: Run<X>, state: ShellState<X>, text: string): CmdResult<X> {
+	const script = parseScript(text);
+	const r = runNodes(run, state, script.nodes);
+	if (r.exit || !script.error) return { ...r, exit: undefined };
+	const e = script.error;
+	const p = prefixAt(run.where, e.line);
+	// 端末で打ったときは、読めなかった行を写さない（bash の対話の形）
+	const echo = run.where.kind !== 'tty' && e.offending !== null ? `${p}\`${e.offending}'\n` : '';
+	return {
+		state: { ...r.state, lastCode: 2 },
+		out: r.out,
+		err: r.err + `${p}${e.message}\n` + echo,
+		code: 2
+	};
+}
+
 export function runLine<X>(
 	commands: Commands<X>,
 	state: ShellState<X>,
 	line: string
 ): CmdResult<X> {
 	const now = nowOf(state.tick);
-	const tick = { ...state, tick: state.tick + 1 };
-	const parsed = parseLine(line);
-	if ('error' in parsed) return fail({ ...tick, lastCode: 2 }, `bash: ${parsed.error}\n`, 2);
-	let s: ShellState<X> = tick;
-	let out = '';
-	let err = '';
-	let code = s.lastCode;
-	for (const item of parsed.items) {
-		if (item.op === '&&' && code !== 0) continue;
-		if (item.op === '||' && code === 0) continue;
-		let stdin = '';
-		const cmds = item.pipeline.commands;
-		cmds.forEach((c, i) => {
-			const last = i === cmds.length - 1;
-			const r = runCommand(commands, s, c, stdin, !last, now);
-			s = r.state;
-			err += r.err;
-			if (last) out += r.out;
-			else stdin = r.out;
-			code = r.code;
-		});
-		s = { ...s, lastCode: code };
-	}
-	return { state: s, out, err, code };
+	const s = { ...state, tick: state.tick + 1 };
+	return runText({ commands, now, where: { kind: 'tty' } }, s, line);
 }
 
 export function shellTool<X>(commands: Commands<X>): Tool<ShellState<X>> {
 	return {
 		run(state, line): Result & { state: ShellState<X> } {
-			return runLine(commands, state, line);
+			const r = runLine(commands, state, line);
+			return { state: r.state, out: r.out, err: r.err, code: r.code };
 		}
 	};
 }

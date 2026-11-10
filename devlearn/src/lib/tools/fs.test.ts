@@ -43,4 +43,16 @@ describe('ファイルの木', () => {
 		expect(listDir(fs, '/home/learner')).toEqual([]);
 		expect(readFile(fs, '/home/learner/d/x')).toBeNull();
 	});
+
+	it('物を作る・消すと親の時刻が変わる。中身を書き直しても親の時刻は変わらない', () => {
+		let fs = writeFile(base, '/home/learner/a', 'x', 7);
+		expect(fs['/home/learner'].mtime).toBe(7);
+		fs = writeFile(fs, '/home/learner/a', 'y', 9);
+		expect(fs['/home/learner'].mtime).toBe(7);
+		expect(fs['/home/learner/a'].mtime).toBe(9);
+		fs = mkdir(fs, '/home/learner/d', 11);
+		expect(fs['/home/learner'].mtime).toBe(11);
+		fs = remove(fs, '/home/learner/a', 13);
+		expect(fs['/home/learner'].mtime).toBe(13);
+	});
 });
