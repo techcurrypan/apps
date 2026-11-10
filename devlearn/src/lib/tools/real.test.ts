@@ -40,6 +40,11 @@ function unfixed(line: string, text: string): string {
 	t = t
 		.replace(/, id: \d+$/gm, ', id: X')
 		.replace(/^;; Query time: \d+ msec$/gm, ';; Query time: X msec');
+	// SSH の鍵は本物では毎回の乱数。指紋・指紋の絵・公開鍵の字を揃える（sec-008）
+	t = t
+		.replace(/SHA256:[A-Za-z0-9+/]{43}/g, 'SHA256:X')
+		.replace(/^\|[ .o+=*BOX@%&#/^SE]{17}\|$/gm, '|X|')
+		.replace(/ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI[A-Za-z0-9+/]{43}/g, 'ssh-ed25519 KEY');
 	// curl のつながらなかったときの時間
 	t = t.replace(/ after \d+ ms:/g, ' after X ms:');
 	// 近くの機械の表と、待ち受けの口の並びは、OS の中の表の並び（機械ごとに違う）

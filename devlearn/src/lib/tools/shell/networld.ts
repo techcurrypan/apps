@@ -8,6 +8,7 @@ export type NetNode = {
 	far?: string[];
 	dns?: boolean;
 	web?: boolean;
+	ssh?: boolean; // SSH で入れる相手（sec-008）
 };
 
 export type Page = {
