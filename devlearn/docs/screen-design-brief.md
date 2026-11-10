@@ -2,6 +2,10 @@
 
 devlearn の画面は**この文書に沿って、画面設計の段で一から設計する。** ここでは決めない。
 
+> **2026-11-10 改訂（`decisions.md` の D-15）**：ゲームの画面「仕事場」は「街 `/town`」に置き換える。画面いっぱいの 3D の街に板を重ねる形で、
+> 手本は試作 `docs/prototype/minato.html`、基準は `docs/city-standard.md`。`screen-design.md` の書き直しは段 8-1 で行う。
+> 3D の街そのものは、この文書の D-15（明暗の両方の配色）の対象外。街に重ねる板と文字は D-1〜D-18 の全てに従う。
+
 参考サイト（Protocol Explorer）の配置・配色・絵・文言を写さない。
 取り入れるのは `reference-analysis.md` の**原理 1〜8** だけ。
 

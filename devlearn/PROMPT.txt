@@ -18,6 +18,9 @@ CI の設定はリポジトリの根の `.github/workflows/` に置く（ここ�
   段 5 画面設計    : docs/screen-design-brief.md    画面設計の依頼書
                      docs/reference-analysis.md     参考サイトの分析（原理だけ。配置は写さない）
   段 6 以降        : docs/screen-design.md          段 5 で決めた画面
+  段 8 ゲーム      : docs/city-standard.md          街の見た目とゲーム性の水準（最重要）
+                     docs/prototype/README.md       試作の手本と、その使い方（土台にする。D-16）
+                     docs/game-design.md            段 4 の設計（8-1 で街に合わせて直す）
   段 10 本文       : docs/content-sources.md        問題の出典の決まり
 
 【やること】
@@ -40,3 +43,5 @@ CI の設定はリポジトリの根の `.github/workflows/` に置く（ここ�
     「問題 → 影響 → 変更案」を書いてコミットし、
     DECISIONNEEDED とだけ出力して終われ
   - 確認を求めるな。止まるな
+    （例外は 1 つだけ：docs/plan.md 段 8-2f の、利用者に街を見てもらう所。
+      そこでは決められた通りに未決を書き、DECISIONNEEDED で止まる）
