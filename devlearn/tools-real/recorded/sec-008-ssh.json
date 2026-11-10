@@ -19,7 +19,9 @@
 		"faketime": "0.9.10-2.1",
 		"procps": "ps from procps-ng 4.0.4",
 		"systemd": "systemd 255 (255.4-1ubuntu8.18)",
-		"ssh": "OpenSSH_9.6p1 Ubuntu-3ubuntu13.20, OpenSSL 3.0.13 30 Jan 2024"
+		"ssh": "OpenSSH_9.6p1 Ubuntu-3ubuntu13.20, OpenSSL 3.0.13 30 Jan 2024",
+		"docker": "28.0.4",
+		"compose": "Docker Compose version v2.38.2"
 	},
 	"steps": [
 		{
@@ -36,7 +38,7 @@
 		},
 		{
 			"line": "ssh-keygen -t ed25519 -C learner@devbox -N '' -f ~/.ssh/id_ed25519",
-			"out": "Generating public/private ed25519 key pair.\nYour identification has been saved in /home/learner/.ssh/id_ed25519\nYour public key has been saved in /home/learner/.ssh/id_ed25519.pub\nThe key fingerprint is:\nSHA256:yWQ1tZWHH7D2EYNXVEo9WikOEiDAQRjZejK+dJANoTA learner@devbox\nThe key's randomart image is:\n+--[ED25519 256]--+\n|EoO+o. ...+...=BB|\n|o= o  .  o o *+B=|\n|. =     o . +o*+o|\n| * o   + .  .o. o|\n|. =     S      . |\n| o .             |\n|. o              |\n| .               |\n|                 |\n+----[SHA256]-----+\n",
+			"out": "Generating public/private ed25519 key pair.\nYour identification has been saved in /home/learner/.ssh/id_ed25519\nYour public key has been saved in /home/learner/.ssh/id_ed25519.pub\nThe key fingerprint is:\nSHA256:Q0ruvQPxAGEHf7bZsArArHtYLJaT6LD0gEpNY+4/l5w learner@devbox\nThe key's randomart image is:\n+--[ED25519 256]--+\n|    +o.          |\n| o ..o           |\n|  ++ .o =        |\n|ooB..oo= *       |\n|*Ooo. o+S .      |\n|B*=  o.o..       |\n|=..o  +.+        |\n| .  .. E..       |\n|     .o ..       |\n+----[SHA256]-----+\n",
 			"err": "",
 			"code": 0
 		},
@@ -48,7 +50,7 @@
 		},
 		{
 			"line": "cat ~/.ssh/id_ed25519.pub",
-			"out": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPjo/87zQVfnf0Djus+GC6KmvNyzfKrtzueyO11LKZEx learner@devbox\n",
+			"out": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIVRthrNQi2vxD3nwmlDASxq6+/y2K50b9b6J/sLvBKf learner@devbox\n",
 			"err": "",
 			"code": 0
 		},
@@ -84,7 +86,7 @@
 		},
 		{
 			"line": "ssh -v ssh.example.com true 2>&1 | grep -E '^debug1: (Offering|Server accepts|Authenticated)'",
-			"out": "debug1: Offering public key: /home/learner/.ssh/id_ed25519 ED25519 SHA256:yWQ1tZWHH7D2EYNXVEo9WikOEiDAQRjZejK+dJANoTA\r\ndebug1: Server accepts key: /home/learner/.ssh/id_ed25519 ED25519 SHA256:yWQ1tZWHH7D2EYNXVEo9WikOEiDAQRjZejK+dJANoTA\r\n",
+			"out": "debug1: Offering public key: /home/learner/.ssh/id_ed25519 ED25519 SHA256:Q0ruvQPxAGEHf7bZsArArHtYLJaT6LD0gEpNY+4/l5w\r\ndebug1: Server accepts key: /home/learner/.ssh/id_ed25519 ED25519 SHA256:Q0ruvQPxAGEHf7bZsArArHtYLJaT6LD0gEpNY+4/l5w\r\n",
 			"err": "",
 			"code": 0
 		},

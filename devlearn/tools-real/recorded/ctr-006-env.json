@@ -1,0 +1,70 @@
+{
+	"id": "ctr-006-env",
+	"tool": "docker",
+	"lesson": "ctr-006",
+	"world": "docker-env",
+	"recordedOn": {
+		"os": "Ubuntu 24.04.5 LTS",
+		"bash": "GNU bash, version 5.2.21(1)-release (x86_64-pc-linux-gnu)",
+		"git": "git version 2.56.0",
+		"coreutils": "ls (GNU coreutils) 9.4",
+		"grep": "grep (GNU grep) 3.11",
+		"iproute2": "ip utility, iproute2-6.1.0, libbpf 1.3.0",
+		"dig": "DiG 9.18.39-0ubuntu0.24.04.9-Ubuntu",
+		"curl": "curl 8.5.0 (x86_64-pc-linux-gnu) libcurl/8.5.0 OpenSSL/3.0.13 zlib/1.3 brotli/1.1.0 zstd/1.5.5 libidn2/2.3.7 libpsl/0.21.2 (+libidn2/2.3.7) libssh/0.10.6/openssl/zlib nghttp2/1.59.0 librtmp/2.3 OpenLDAP/2.6.10",
+		"ping": "ping from iputils 20240117\nlibcap: yes, IDN: yes, NLS: no, error.h: yes, getrandom(): yes, __fpending(): yes",
+		"dnsmasq": "Dnsmasq version 2.91  Copyright (c) 2000-2025 Simon Kelley",
+		"openssl": "OpenSSL 3.0.13 30 Jan 2024 (Library: OpenSSL 3.0.13 30 Jan 2024)",
+		"sudo": "Sudo version 1.9.15p5",
+		"faketime": "0.9.10-2.1",
+		"procps": "ps from procps-ng 4.0.4",
+		"systemd": "systemd 255 (255.4-1ubuntu8.18)",
+		"ssh": "OpenSSH_9.6p1 Ubuntu-3ubuntu13.20, OpenSSL 3.0.13 30 Jan 2024",
+		"docker": "28.0.4",
+		"compose": "Docker Compose version v2.38.2"
+	},
+	"steps": [
+		{
+			"line": "docker run --rm busybox:1.37 sh -c 'echo name=$SHOP_NAME'",
+			"out": "name=\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "docker run --rm -e SHOP_NAME=minato busybox:1.37 sh -c 'echo name=$SHOP_NAME'",
+			"out": "name=minato\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "cat shop.env",
+			"out": "SHOP_NAME=minato\nSHOP_MODE=test\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "docker run --rm --env-file shop.env busybox:1.37 sh -c 'echo $SHOP_NAME $SHOP_MODE'",
+			"out": "minato test\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "docker run --rm --env-file nothing.env busybox:1.37 true",
+			"out": "",
+			"err": "docker: open nothing.env: no such file or directory\n\nRun 'docker run --help' for more information\n",
+			"code": 125
+		},
+		{
+			"line": "docker run -d --name app -e SHOP_MODE=live busybox:1.37 sleep 600",
+			"out": "2bdd275cd5877cf24bcc6a324c3b5af3e91374c1440e81b50828c0ec9c4247f6\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "docker exec app printenv SHOP_MODE",
+			"out": "live\n",
+			"err": "",
+			"code": 0
+		}
+	]
+}

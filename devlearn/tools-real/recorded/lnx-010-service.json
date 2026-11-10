@@ -1,0 +1,136 @@
+{
+	"id": "lnx-010-service",
+	"tool": "shell",
+	"lesson": "lnx-010",
+	"world": "service",
+	"recordedOn": {
+		"os": "Ubuntu 24.04.5 LTS",
+		"bash": "GNU bash, version 5.2.21(1)-release (x86_64-pc-linux-gnu)",
+		"git": "git version 2.56.0",
+		"coreutils": "ls (GNU coreutils) 9.4",
+		"grep": "grep (GNU grep) 3.11",
+		"iproute2": "ip utility, iproute2-6.1.0, libbpf 1.3.0",
+		"dig": "DiG 9.18.39-0ubuntu0.24.04.9-Ubuntu",
+		"curl": "curl 8.5.0 (x86_64-pc-linux-gnu) libcurl/8.5.0 OpenSSL/3.0.13 zlib/1.3 brotli/1.1.0 zstd/1.5.5 libidn2/2.3.7 libpsl/0.21.2 (+libidn2/2.3.7) libssh/0.10.6/openssl/zlib nghttp2/1.59.0 librtmp/2.3 OpenLDAP/2.6.10",
+		"ping": "ping from iputils 20240117\nlibcap: yes, IDN: yes, NLS: no, error.h: yes, getrandom(): yes, __fpending(): yes",
+		"dnsmasq": "Dnsmasq version 2.91  Copyright (c) 2000-2025 Simon Kelley",
+		"openssl": "OpenSSL 3.0.13 30 Jan 2024 (Library: OpenSSL 3.0.13 30 Jan 2024)",
+		"sudo": "Sudo version 1.9.15p5",
+		"faketime": "0.9.10-2.1",
+		"procps": "ps from procps-ng 4.0.4",
+		"systemd": "systemd 255 (255.4-1ubuntu8.18)",
+		"ssh": "OpenSSH_9.6p1 Ubuntu-3ubuntu13.20, OpenSSL 3.0.13 30 Jan 2024",
+		"docker": "28.0.4",
+		"compose": "Docker Compose version v2.38.2"
+	},
+	"steps": [
+		{
+			"line": "systemctl status shop",
+			"out": "○ shop.service - shop web\n     Loaded: loaded (/etc/systemd/system/shop.service; disabled; preset: enabled)\n     Active: inactive (dead)\n",
+			"err": "",
+			"code": 3
+		},
+		{
+			"line": "cat /etc/systemd/system/shop.service",
+			"out": "[Unit]\nDescription=shop web\n\n[Service]\nUser=shop\nExecStart=/usr/bin/python3 /opt/shop/web.py\n\n[Install]\nWantedBy=multi-user.target\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "sudo systemctl start shop",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "systemctl status shop",
+			"out": "● shop.service - shop web\n     Loaded: loaded (/etc/systemd/system/shop.service; disabled; preset: enabled)\n     Active: active (running) since Wed 2026-11-11 07:16:36 JST; 22h left\n   Main PID: 24125 (python3)\n      Tasks: 1 (limit: 17436)\n     Memory: 4.0M (peak: 4.0M)\n        CPU: 16ms\n     CGroup: /system.slice/shop.service\n             └─24125 /usr/bin/python3 /opt/shop/web.py\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "systemctl is-active shop",
+			"out": "active\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "sudo journalctl -u shop -n 5",
+			"out": "Nov 11 07:16:36 runnervm7aw5e systemd[1]: Started shop.service - shop web.\nNov 11 07:16:36 runnervm7aw5e python3[24125]: listening on 8080\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "sudo systemctl start report",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "systemctl status report",
+			"out": "× report.service - shop report\n     Loaded: loaded (/etc/systemd/system/report.service; static)\n     Active: failed (Result: exit-code) since Wed 2026-11-11 07:16:37 JST; 22h left\n   Duration: 20ms\n    Process: 24209 ExecStart=/usr/bin/python3 /opt/shop/report.py (code=exited, status=1/FAILURE)\n   Main PID: 24209 (code=exited, status=1/FAILURE)\n        CPU: 19ms\n",
+			"err": "",
+			"code": 3
+		},
+		{
+			"line": "systemctl is-active report",
+			"out": "failed\n",
+			"err": "",
+			"code": 3
+		},
+		{
+			"line": "sudo journalctl -u report -n 5",
+			"out": "Nov 11 07:16:37 runnervm7aw5e systemd[1]: Started report.service - shop report.\nNov 11 07:16:37 runnervm7aw5e python3[24209]: error: /etc/shop/report.conf: No such file or directory\nNov 11 07:16:37 runnervm7aw5e systemd[1]: report.service: Main process exited, code=exited, status=1/FAILURE\nNov 11 07:16:37 runnervm7aw5e systemd[1]: report.service: Failed with result 'exit-code'.\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "sudo systemctl enable shop",
+			"out": "",
+			"err": "Created symlink /etc/systemd/system/multi-user.target.wants/shop.service → /etc/systemd/system/shop.service.\n",
+			"code": 0
+		},
+		{
+			"line": "systemctl is-enabled shop",
+			"out": "enabled\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "systemctl is-enabled report",
+			"out": "static\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "sudo systemctl stop shop",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "systemctl is-active shop",
+			"out": "inactive\n",
+			"err": "",
+			"code": 3
+		},
+		{
+			"line": "sudo journalctl -u shop -n 3",
+			"out": "Nov 11 07:16:37 runnervm7aw5e systemd[1]: Stopping shop.service - shop web...\nNov 11 07:16:37 runnervm7aw5e systemd[1]: shop.service: Deactivated successfully.\nNov 11 07:16:37 runnervm7aw5e systemd[1]: Stopped shop.service - shop web.\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "systemctl status nothing",
+			"out": "",
+			"err": "Unit nothing.service could not be found.\n",
+			"code": 4
+		},
+		{
+			"line": "systemctl start shop",
+			"out": "",
+			"err": "Failed to start shop.service: Interactive authentication required.\nSee system logs and 'systemctl status shop.service' for details.\n",
+			"code": 1
+		}
+	]
+}

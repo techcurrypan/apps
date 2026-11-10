@@ -1,0 +1,106 @@
+{
+	"id": "ctr-002-lifecycle",
+	"tool": "docker",
+	"lesson": "ctr-002",
+	"world": "docker",
+	"recordedOn": {
+		"os": "Ubuntu 24.04.5 LTS",
+		"bash": "GNU bash, version 5.2.21(1)-release (x86_64-pc-linux-gnu)",
+		"git": "git version 2.56.0",
+		"coreutils": "ls (GNU coreutils) 9.4",
+		"grep": "grep (GNU grep) 3.11",
+		"iproute2": "ip utility, iproute2-6.1.0, libbpf 1.3.0",
+		"dig": "DiG 9.18.39-0ubuntu0.24.04.9-Ubuntu",
+		"curl": "curl 8.5.0 (x86_64-pc-linux-gnu) libcurl/8.5.0 OpenSSL/3.0.13 zlib/1.3 brotli/1.1.0 zstd/1.5.5 libidn2/2.3.7 libpsl/0.21.2 (+libidn2/2.3.7) libssh/0.10.6/openssl/zlib nghttp2/1.59.0 librtmp/2.3 OpenLDAP/2.6.10",
+		"ping": "ping from iputils 20240117\nlibcap: yes, IDN: yes, NLS: no, error.h: yes, getrandom(): yes, __fpending(): yes",
+		"dnsmasq": "Dnsmasq version 2.91  Copyright (c) 2000-2025 Simon Kelley",
+		"openssl": "OpenSSL 3.0.13 30 Jan 2024 (Library: OpenSSL 3.0.13 30 Jan 2024)",
+		"sudo": "Sudo version 1.9.15p5",
+		"faketime": "0.9.10-2.1",
+		"procps": "ps from procps-ng 4.0.4",
+		"systemd": "systemd 255 (255.4-1ubuntu8.18)",
+		"ssh": "OpenSSH_9.6p1 Ubuntu-3ubuntu13.20, OpenSSL 3.0.13 30 Jan 2024",
+		"docker": "28.0.4",
+		"compose": "Docker Compose version v2.38.2"
+	},
+	"steps": [
+		{
+			"line": "docker run -d --name web busybox:1.37 sleep 600",
+			"out": "4b09c8ade0fceebe6276c332251b263b2c405eb378533c840aaa2cefbfaaa509\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "docker run --name once busybox:1.37 echo done",
+			"out": "done\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "docker ps",
+			"out": "CONTAINER ID   IMAGE          COMMAND       CREATED        STATUS                  PORTS     NAMES\n4b09c8ade0fc   busybox:1.37   \"sleep 600\"   1 second ago   Up Less than a second             web\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "docker ps -a",
+			"out": "CONTAINER ID   IMAGE          COMMAND       CREATED                  STATUS                              PORTS     NAMES\n629e174750fd   busybox:1.37   \"echo done\"   Less than a second ago   Exited (0) Less than a second ago             once\n4b09c8ade0fc   busybox:1.37   \"sleep 600\"   1 second ago             Up Less than a second                         web\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "docker stop web",
+			"out": "web\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "docker ps -a",
+			"out": "CONTAINER ID   IMAGE          COMMAND       CREATED          STATUS                                PORTS     NAMES\n629e174750fd   busybox:1.37   \"echo done\"   10 seconds ago   Exited (0) 10 seconds ago                       once\n4b09c8ade0fc   busybox:1.37   \"sleep 600\"   11 seconds ago   Exited (137) Less than a second ago             web\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "docker rm web once",
+			"out": "web\nonce\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "docker ps -a",
+			"out": "CONTAINER ID   IMAGE     COMMAND   CREATED   STATUS    PORTS     NAMES\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "docker rm nothing",
+			"out": "",
+			"err": "Error response from daemon: No such container: nothing\n",
+			"code": 1
+		},
+		{
+			"line": "docker run -d --name app busybox:1.37 sleep 600",
+			"out": "d7d76b6e812dc10d52ad2fea30e1c70439f20ff3ea8139b06d42f1c6366c9933\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "docker rm app",
+			"out": "",
+			"err": "Error response from daemon: cannot remove container \"/app\": container is running: stop the container before removing or force remove\n",
+			"code": 1
+		},
+		{
+			"line": "docker rm -f app",
+			"out": "app\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "docker ps -a",
+			"out": "CONTAINER ID   IMAGE     COMMAND   CREATED   STATUS    PORTS     NAMES\n",
+			"err": "",
+			"code": 0
+		}
+	]
+}

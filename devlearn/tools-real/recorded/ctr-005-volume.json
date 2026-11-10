@@ -1,0 +1,82 @@
+{
+	"id": "ctr-005-volume",
+	"tool": "docker",
+	"lesson": "ctr-005",
+	"world": "docker",
+	"recordedOn": {
+		"os": "Ubuntu 24.04.5 LTS",
+		"bash": "GNU bash, version 5.2.21(1)-release (x86_64-pc-linux-gnu)",
+		"git": "git version 2.56.0",
+		"coreutils": "ls (GNU coreutils) 9.4",
+		"grep": "grep (GNU grep) 3.11",
+		"iproute2": "ip utility, iproute2-6.1.0, libbpf 1.3.0",
+		"dig": "DiG 9.18.39-0ubuntu0.24.04.9-Ubuntu",
+		"curl": "curl 8.5.0 (x86_64-pc-linux-gnu) libcurl/8.5.0 OpenSSL/3.0.13 zlib/1.3 brotli/1.1.0 zstd/1.5.5 libidn2/2.3.7 libpsl/0.21.2 (+libidn2/2.3.7) libssh/0.10.6/openssl/zlib nghttp2/1.59.0 librtmp/2.3 OpenLDAP/2.6.10",
+		"ping": "ping from iputils 20240117\nlibcap: yes, IDN: yes, NLS: no, error.h: yes, getrandom(): yes, __fpending(): yes",
+		"dnsmasq": "Dnsmasq version 2.91  Copyright (c) 2000-2025 Simon Kelley",
+		"openssl": "OpenSSL 3.0.13 30 Jan 2024 (Library: OpenSSL 3.0.13 30 Jan 2024)",
+		"sudo": "Sudo version 1.9.15p5",
+		"faketime": "0.9.10-2.1",
+		"procps": "ps from procps-ng 4.0.4",
+		"systemd": "systemd 255 (255.4-1ubuntu8.18)",
+		"ssh": "OpenSSH_9.6p1 Ubuntu-3ubuntu13.20, OpenSSL 3.0.13 30 Jan 2024",
+		"docker": "28.0.4",
+		"compose": "Docker Compose version v2.38.2"
+	},
+	"steps": [
+		{
+			"line": "docker run --name a busybox:1.37 sh -c 'echo 120 > /data.txt'",
+			"out": "",
+			"err": "docker: Error response from daemon: Invalid container name (a), only [a-zA-Z0-9][a-zA-Z0-9_.-] are allowed\n\nRun 'docker run --help' for more information\n",
+			"code": 125
+		},
+		{
+			"line": "docker rm a",
+			"out": "",
+			"err": "Error response from daemon: No such container: a\n",
+			"code": 1
+		},
+		{
+			"line": "docker run --rm busybox:1.37 cat /data.txt",
+			"out": "",
+			"err": "cat: can't open '/data.txt': No such file or directory\n",
+			"code": 1
+		},
+		{
+			"line": "docker volume create shopdata",
+			"out": "shopdata\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "docker volume ls",
+			"out": "DRIVER    VOLUME NAME\nlocal     shopdata\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "docker run --rm -v shopdata:/data busybox:1.37 sh -c 'echo 120 > /data/sales.txt'",
+			"out": "",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "docker run --rm -v shopdata:/data busybox:1.37 cat /data/sales.txt",
+			"out": "120\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "docker volume rm shopdata",
+			"out": "shopdata\n",
+			"err": "",
+			"code": 0
+		},
+		{
+			"line": "docker volume ls",
+			"out": "DRIVER    VOLUME NAME\n",
+			"err": "",
+			"code": 0
+		}
+	]
+}

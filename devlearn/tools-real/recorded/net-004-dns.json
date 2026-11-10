@@ -19,7 +19,9 @@
 		"faketime": "0.9.10-2.1",
 		"procps": "ps from procps-ng 4.0.4",
 		"systemd": "systemd 255 (255.4-1ubuntu8.18)",
-		"ssh": "OpenSSH_9.6p1 Ubuntu-3ubuntu13.20, OpenSSL 3.0.13 30 Jan 2024"
+		"ssh": "OpenSSH_9.6p1 Ubuntu-3ubuntu13.20, OpenSSL 3.0.13 30 Jan 2024",
+		"docker": "28.0.4",
+		"compose": "Docker Compose version v2.38.2"
 	},
 	"steps": [
 		{
@@ -36,7 +38,7 @@
 		},
 		{
 			"line": "dig shop.example.com",
-			"out": "\n; <<>> DiG 9.18.39-0ubuntu0.24.04.9-Ubuntu <<>> shop.example.com\n;; global options: +cmd\n;; Got answer:\n;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 20281\n;; flags: qr aa rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 1\n\n;; OPT PSEUDOSECTION:\n; EDNS: version: 0, flags:; udp: 1232\n;; QUESTION SECTION:\n;shop.example.com.\t\tIN\tA\n\n;; ANSWER SECTION:\nshop.example.com.\t300\tIN\tA\t192.0.2.80\n\n;; Query time: 0 msec\n;; SERVER: 192.0.2.53#53(192.0.2.53) (UDP)\n;; WHEN: Tue Nov 10 09:02:00 JST 2026\n;; MSG SIZE  rcvd: 61\n\n",
+			"out": "\n; <<>> DiG 9.18.39-0ubuntu0.24.04.9-Ubuntu <<>> shop.example.com\n;; global options: +cmd\n;; Got answer:\n;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 53689\n;; flags: qr aa rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 1\n\n;; OPT PSEUDOSECTION:\n; EDNS: version: 0, flags:; udp: 1232\n;; QUESTION SECTION:\n;shop.example.com.\t\tIN\tA\n\n;; ANSWER SECTION:\nshop.example.com.\t300\tIN\tA\t192.0.2.80\n\n;; Query time: 1 msec\n;; SERVER: 192.0.2.53#53(192.0.2.53) (UDP)\n;; WHEN: Tue Nov 10 09:02:00 JST 2026\n;; MSG SIZE  rcvd: 61\n\n",
 			"err": "",
 			"code": 0
 		},
@@ -60,7 +62,7 @@
 		},
 		{
 			"line": "dig nosuch.example.com",
-			"out": "\n; <<>> DiG 9.18.39-0ubuntu0.24.04.9-Ubuntu <<>> nosuch.example.com\n;; global options: +cmd\n;; Got answer:\n;; ->>HEADER<<- opcode: QUERY, status: NXDOMAIN, id: 2272\n;; flags: qr rd ra; QUERY: 1, ANSWER: 0, AUTHORITY: 0, ADDITIONAL: 1\n\n;; OPT PSEUDOSECTION:\n; EDNS: version: 0, flags:; udp: 1232\n;; QUESTION SECTION:\n;nosuch.example.com.\t\tIN\tA\n\n;; Query time: 0 msec\n;; SERVER: 192.0.2.53#53(192.0.2.53) (UDP)\n;; WHEN: Tue Nov 10 09:06:00 JST 2026\n;; MSG SIZE  rcvd: 47\n\n",
+			"out": "\n; <<>> DiG 9.18.39-0ubuntu0.24.04.9-Ubuntu <<>> nosuch.example.com\n;; global options: +cmd\n;; Got answer:\n;; ->>HEADER<<- opcode: QUERY, status: NXDOMAIN, id: 14403\n;; flags: qr rd ra; QUERY: 1, ANSWER: 0, AUTHORITY: 0, ADDITIONAL: 1\n\n;; OPT PSEUDOSECTION:\n; EDNS: version: 0, flags:; udp: 1232\n;; QUESTION SECTION:\n;nosuch.example.com.\t\tIN\tA\n\n;; Query time: 0 msec\n;; SERVER: 192.0.2.53#53(192.0.2.53) (UDP)\n;; WHEN: Tue Nov 10 09:06:00 JST 2026\n;; MSG SIZE  rcvd: 47\n\n",
 			"err": "",
 			"code": 0
 		},
@@ -78,13 +80,13 @@
 		},
 		{
 			"line": "ping -c 1 shop.example.com",
-			"out": "PING shop.example.com (192.0.2.80) 56(84) bytes of data.\n64 bytes from 192.0.2.80: icmp_seq=1 ttl=64 time=0.072 ms\n\n--- shop.example.com ping statistics ---\n1 packets transmitted, 1 received, 0% packet loss, time 0ms\nrtt min/avg/max/mdev = 0.072/0.072/0.072/0.000 ms\n",
+			"out": "PING shop.example.com (192.0.2.80) 56(84) bytes of data.\n64 bytes from 192.0.2.80: icmp_seq=1 ttl=64 time=0.068 ms\n\n--- shop.example.com ping statistics ---\n1 packets transmitted, 1 received, 0% packet loss, time 0ms\nrtt min/avg/max/mdev = 0.068/0.068/0.068/0.000 ms\n",
 			"err": "",
 			"code": 0
 		},
 		{
 			"line": "ping -c 1 devbox",
-			"out": "PING devbox (192.0.2.10) 56(84) bytes of data.\n64 bytes from devbox (192.0.2.10): icmp_seq=1 ttl=64 time=0.025 ms\n\n--- devbox ping statistics ---\n1 packets transmitted, 1 received, 0% packet loss, time 0ms\nrtt min/avg/max/mdev = 0.025/0.025/0.025/0.000 ms\n",
+			"out": "PING devbox (192.0.2.10) 56(84) bytes of data.\n64 bytes from devbox (192.0.2.10): icmp_seq=1 ttl=64 time=0.020 ms\n\n--- devbox ping statistics ---\n1 packets transmitted, 1 received, 0% packet loss, time 0ms\nrtt min/avg/max/mdev = 0.020/0.020/0.020/0.000 ms\n",
 			"err": "",
 			"code": 0
 		},
