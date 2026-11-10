@@ -84,6 +84,45 @@ const PID_LESSONS = new Set(['lnx-007', 'lnx-010']);
 
 // コンテナの ID・作る時間・表の時刻は本物では毎回変わる。表は見出しの位置で升に分け、ID と時刻の升を揃える
 const TABLE_HEAD = /^(CONTAINER ID|REPOSITORY|IMAGE {3,}CREATED|NETWORK ID|NAME {3,}IMAGE|DRIVER)/;
+// BuildKit の行で出す形は、時間の具合で次が変わる（同じ build でも記録ごとに違う）：
+// 時間のかかった物だけ「途中」の行と「時間 done」の行の 2 つになる、終わった段の見出しをもう一度出す、並んで動く段の行が混ざる。
+// 段（#N）ごとに 見出し・進みの行・終わりの行 にまとめ直し、時間と途中の行を落とす
+function buildkitFixed(lines: string[]): string {
+	const order: string[] = [];
+	const steps = new Map<string, { head: string; body: string[]; end: string }>();
+	const tail: string[] = [];
+	for (const raw of lines.slice(1)) {
+		const m = raw.match(/^(#\d+) (.*)$/);
+		if (!m) {
+			if (raw !== '') tail.push(raw);
+			continue;
+		}
+		const [, n, rest0] = m;
+		const rest = rest0.replace(/ \d+\.\d+s done$/, ' done');
+		let st = steps.get(n);
+		if (!st) {
+			st = { head: rest, body: [], end: '' };
+			steps.set(n, st);
+			order.push(n);
+			continue;
+		}
+		if (rest === st.head) continue;
+		if (/^(DONE|CACHED|ERROR)/.test(rest)) {
+			st.end = rest;
+			continue;
+		}
+		const last = st.body.at(-1);
+		if (last !== undefined && rest.startsWith(last) && rest.endsWith(' done')) st.body.pop();
+		if (!st.body.includes(rest)) st.body.push(rest);
+	}
+	const out = [lines[0]];
+	for (const n of order) {
+		const st = steps.get(n);
+		if (st) out.push(`${n} ${st.head}`, ...st.body.map((b) => `${n} ${b}`), `${n} ${st.end}`);
+	}
+	return [...out, ...tail].join('\n');
+}
+
 function dockerFixed(text: string): string {
 	const t = text
 		.replace(/\b[0-9a-f]{64}\b/g, 'H64')
@@ -91,17 +130,7 @@ function dockerFixed(text: string): string {
 		.replace(/^(#\d+) \d+\.\d+ /gm, '$1 X ')
 		.replace(/round-trip min\/avg\/max = [\d./]+ ms/g, 'round-trip min/avg/max = X ms');
 	const lines = t.split('\n');
-	if (lines[0].startsWith('#0 building')) {
-		// BuildKit の行は、時間のかかった物だけ「途中」の行と「時間 done」の行の 2 つになる（同じ build でも記録ごとに違う）。
-		// 時間を落とし、すぐ後に「同じ字 … done」が続く途中の行を落とす
-		const done = lines.map((l) => l.replace(/ \d+\.\d+s done$/, ' done'));
-		return done
-			.filter(
-				(l, i) =>
-					!(done[i + 1]?.startsWith(l) && done[i + 1].endsWith(' done') && done[i + 1] !== l)
-			)
-			.join('\n');
-	}
+	if (lines[0].startsWith('#0 building')) return buildkitFixed(lines);
 	if (!TABLE_HEAD.test(lines[0])) return t;
 	const heads = [...lines[0].matchAll(/\S+(?: \S+)*/g)].map((m) => ({ at: m.index, name: m[0] }));
 	return lines
