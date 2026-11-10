@@ -59,5 +59,15 @@
 			"data": "[Unit]\nDescription=shop report\n\n[Service]\nUser=shop\nExecStart=/usr/bin/python3 /opt/shop/report.py\n"
 		}
 	],
-	"units": ["shop.service", "report.service"]
+	"units": ["shop.service", "report.service"],
+	"unitMock": {
+		"shop.service": {
+			"stdout": ["listening on 8080"],
+			"exit": null
+		},
+		"report.service": {
+			"stderr": ["error: /etc/shop/report.conf: No such file or directory"],
+			"exit": 1
+		}
+	}
 }

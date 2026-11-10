@@ -8,7 +8,7 @@ import type { GitExt } from './git/repo.ts';
 import { start, typeLine, type Tool } from './session.ts';
 import { shellTool, type ShellState } from './shell/run.ts';
 import { learnerWorld } from './shell/world.ts';
-import { worldFs, worldNet, type WorldSpec } from './shell/worlds.ts';
+import { worldFs, worldNet, worldSys, type WorldSpec } from './shell/worlds.ts';
 
 type Step = { line: string; out: string; err: string; code: number };
 type Recorded = { id: string; tool: string; lesson: string; world?: string; steps: Step[] };
@@ -53,13 +53,41 @@ function unfixed(line: string, text: string): string {
 	return t;
 }
 
+// プロセスの番号は機械ごとに違う。出てきた順の印（P1・P2…）に揃える。記録と模擬で別々に数える（lnx-007・lnx-010）
+function pidMarks(): (text: string) => string {
+	const seen = new Map<string, string>();
+	const mark = (n: string) => {
+		if (!seen.has(n)) seen.set(n, `P${seen.size + 1}`);
+		return seen.get(n) ?? n;
+	};
+	return (text) =>
+		text
+			.replace(/^( *)(\d+)( +)(\d+)( )/gm, (_, a, p, b, q, c) => a + mark(p) + b + mark(q) + c)
+			.replace(/^(\d+)( |$)/gm, (_, p, c) => mark(p) + c)
+			.replace(/\((\d+)\)/g, (_, p) => `(${mark(p)})`)
+			.replace(/\[(\d+)\]:/g, (_, p) => `[${mark(p)}]:`)
+			.replace(/(Main PID: |Process: |└─)(\d+)/g, (_, h, p) => h + mark(p));
+}
+// サービスの状態の、本物でも毎回変わる値（時刻・使った量・機械の名前）
+function serviceFixed(text: string): string {
+	return text
+		.replace(/ since .*$/gm, ' since X')
+		.replace(/\(limit: \d+\)/g, '(limit: X)')
+		.replace(/Memory: .*$/gm, 'Memory: X')
+		.replace(/CPU: \d+ms/g, 'CPU: X')
+		.replace(/Duration: .*$/gm, 'Duration: X')
+		.replace(/^[A-Z][a-z]{2} \d\d \d\d:\d\d:\d\d \S+ /gm, 'TIME HOST ');
+}
+const PID_LESSONS = new Set(['lnx-007', 'lnx-010']);
+
 type AnyTool = { tool: Tool<ShellState<unknown>>; initial: ShellState<unknown> };
 // シェルの道具も git の入った同じ世界（本物の機械にも git がある）。場面の前に置く物があれば置く
 const withGit = (world: WorldSpec | null): AnyTool => ({
 	tool: shellTool<GitExt>(gitCommands()) as unknown as Tool<ShellState<unknown>>,
 	initial: {
 		...learnerWorld<GitExt>({ repos: {} }, worldFs(world)),
-		net: worldNet(world)
+		net: worldNet(world),
+		sys: worldSys(world)
 	} as ShellState<unknown>
 });
 const worldOf = (name?: string): WorldSpec | null =>
@@ -75,8 +103,6 @@ describe('本物の記録がある', () => {
 // 本物の記録はあるが、模擬がまだ追いついていない場面。黙って飛ばさず、保留として一覧に出す。
 // 段 7 を終えるときは空にする（docs/progress/phase-7.md）
 export const PENDING: ReadonlySet<string> = new Set([
-	'lnx-007-kill',
-	'lnx-010-service',
 	'ctr-001-run',
 	'ctr-002-lifecycle',
 	'ctr-003-port',
@@ -101,17 +127,26 @@ for (const rec of recorded) {
 		if (!make) return;
 		const { tool, initial } = make(worldOf(rec.world));
 		let session = start(tool, initial);
+		const byPid = PID_LESSONS.has(rec.lesson);
+		const [mockMarks, realMarks] = [pidMarks(), pidMarks()];
+		const fix = (marks: (t: string) => string, line: string, t: string) =>
+			byPid ? serviceFixed(marks(unfixed(line, t))) : unfixed(line, t);
 		rec.steps.forEach((step, j) => {
 			session = typeLine(session, step.line);
 			const got = session.entries[j];
+			// 番号の印は出てきた順なので、行ごとに標準出力 → 標準エラーの順で数える
+			const mock = {
+				out: fix(mockMarks, step.line, got.out),
+				err: fix(mockMarks, step.line, got.err)
+			};
+			const real = {
+				out: fix(realMarks, step.line, step.out),
+				err: fix(realMarks, step.line, step.err)
+			};
 			it(`${j + 1} 行目 $ ${step.line}`, () => {
-				expect({
-					out: unfixed(step.line, got.out),
-					err: normalize(unfixed(step.line, got.err)),
-					code: got.code
-				}).toEqual({
-					out: unfixed(step.line, step.out),
-					err: normalize(unfixed(step.line, step.err)),
+				expect({ out: mock.out, err: normalize(mock.err), code: got.code }).toEqual({
+					out: real.out,
+					err: normalize(real.err),
 					code: step.code
 				});
 			});

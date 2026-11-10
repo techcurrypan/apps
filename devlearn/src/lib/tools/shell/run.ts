@@ -13,6 +13,7 @@ import {
 } from '../fs.ts';
 import type { Result, Tool } from '../session.ts';
 import type { Command, ListItem, Word } from './parse.ts';
+import type { SysState } from './procs.ts';
 import type { NetState } from './networld.ts';
 import { parseScript, type Node } from './script.ts';
 
@@ -31,6 +32,7 @@ export type ShellState<X> = {
 	tick: number; // 打った行の数。時計はここから決まる
 	ext: X; // 道具ごとの状態（git のリポジトリなど）
 	net?: NetState; // 作り物の網（網の実戦だけ。tools-real/worlds/net.json）
+	sys?: SysState; // 動いているプロセス・世界の利用者・サービス（tools-real/worlds/procs.json・service.json）
 };
 
 export type Io<X = unknown> = {
@@ -40,6 +42,7 @@ export type Io<X = unknown> = {
 	prefix: string; // シェルが出す言い方の頭（端末では「bash: 」、台本では「名前: line N: 」）
 	interactive: boolean; // 端末で打った行か（台本・bash -c ではない）
 	commands: Commands<X>;
+	builtin?: boolean; // シェルの組み込みとして呼ばれたか（kill は組み込みと /usr/bin/kill で言い方が違う）
 };
 
 export type CmdResult<X> = {
@@ -80,7 +83,8 @@ export const BUILTINS: ReadonlySet<string> = new Set([
 	'true',
 	'false',
 	'[',
-	'test'
+	'test',
+	'kill'
 ]);
 // 組み込みにしか無い物（/usr/bin に同じ名前の物が無い）
 export const BUILTIN_ONLY: ReadonlySet<string> = new Set(['cd', 'export', 'unset', 'exit']);
@@ -163,7 +167,14 @@ function expandWord<X>(run: Run<X>, w: Word, state: ShellState<X>): Expanded<X> 
 			has = true;
 		} else {
 			const r = runText({ ...run, where: run.where }, { ...s, lastCode: s.lastCode }, seg.sub);
-			s = { ...s, fs: r.state.fs, ext: r.state.ext, net: r.state.net, lastCode: r.code };
+			s = {
+				...s,
+				fs: r.state.fs,
+				ext: r.state.ext,
+				net: r.state.net,
+				sys: r.state.sys,
+				lastCode: r.code
+			};
 			err += r.err;
 			const text = r.out.replace(/\n+$/, '');
 			if (seg.quoted || assignment) {
@@ -239,7 +250,7 @@ export function runChild<X>(
 	};
 	const r = runText({ commands, now, where }, child, text);
 	return {
-		state: { ...state, fs: r.state.fs, ext: r.state.ext },
+		state: { ...state, fs: r.state.fs, ext: r.state.ext, net: r.state.net, sys: r.state.sys },
 		out: r.out,
 		err: r.err,
 		code: r.code
@@ -382,7 +393,7 @@ function runCommand<X>(
 				res = fail(s, `${prefix}${name}: Permission denied\n`, 126);
 			else res = withTemp((st) => runFile(run, st, path, name, args, temp));
 		} else if (cmd && BUILTINS.has(name)) {
-			res = withTemp((st) => cmd(st, args, io));
+			res = withTemp((st) => cmd(st, args, { ...io, builtin: true }));
 		} else {
 			const [found] = lookPath(s, name, run.commands);
 			if (!found) res = fail(s, `${prefix}${name}: command not found\n`, 127);

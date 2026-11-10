@@ -4,8 +4,10 @@ import { envCommands } from './env.ts';
 import { fileCommands } from './files.ts';
 import { netCommands } from './net.ts';
 import { opensslCommands } from './openssl.ts';
+import { procCommands } from './procs.ts';
 import type { Commands } from './run.ts';
 import { sshCommands } from './ssh.ts';
+import { systemdCommands } from './systemd.ts';
 import { textCommands } from './text.ts';
 import { userCommands } from './users.ts';
 
@@ -18,7 +20,9 @@ export function shellCommands<X>(): Commands<X> {
 		...userCommands,
 		...opensslCommands,
 		...netCommands,
-		...sshCommands
+		...sshCommands,
+		...procCommands,
+		...systemdCommands
 	};
 	return all as Commands<unknown> as unknown as Commands<X>;
 }

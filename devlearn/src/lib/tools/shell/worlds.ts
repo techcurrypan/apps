@@ -3,12 +3,19 @@
 import { parentOf, type Fs, type FsNode } from '../fs.ts';
 import { CLOCK_BASE } from './run.ts';
 import type { NetState, NetWorld } from './networld.ts';
+import { initialSys, type ProcSpec, type SysState, type SysUser } from './procs.ts';
+import type { UnitMock } from './systemd.ts';
 import { baseFs } from './world.ts';
 
 export type WorldSpec = {
 	dirs?: { path: string; mode: string; owner: string }[];
 	files?: { path: string; mode: string; owner: string; data: string }[];
 	net?: NetWorld;
+	users?: SysUser[];
+	procs?: ProcSpec[];
+	units?: string[];
+	unitMock?: Record<string, UnitMock>;
+	docker?: { images: string[] };
 };
 
 const LEARNER_HOME = '/home/learner';
@@ -65,4 +72,10 @@ export function worldFs(w: WorldSpec | null): Fs {
 export function worldNet(w: WorldSpec | null): NetState | undefined {
 	if (!w?.net) return undefined;
 	return { world: w.net, neigh: { [w.net.dns.server]: 'REACHABLE' } };
+}
+
+// 世界の機械の状態（利用者・動いているプロセス・サービス）。どれも無ければ置かない
+export function worldSys(w: WorldSpec | null): SysState | undefined {
+	if (!w?.users && !w?.procs && !w?.units) return undefined;
+	return initialSys(w.users ?? [], w.procs ?? [], w.unitMock);
 }

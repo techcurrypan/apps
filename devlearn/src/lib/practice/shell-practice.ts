@@ -5,7 +5,7 @@ import { gitCommands } from '../tools/git/git.ts';
 import type { Tool } from '../tools/session.ts';
 import { CLOCK_BASE, shellTool, type ShellState } from '../tools/shell/run.ts';
 import { learnerWorld, WORK } from '../tools/shell/world.ts';
-import { worldFs, worldNet, type WorldSpec } from '../tools/shell/worlds.ts';
+import { worldFs, worldNet, worldSys, type WorldSpec } from '../tools/shell/worlds.ts';
 import type { JudgeItem } from './tool-practice.ts';
 
 export type ShellSetup = {
@@ -58,7 +58,13 @@ export function shellInitial(
 	}
 	const base = learnerWorld<GitExt>({ repos: {} }, fs);
 	const cwd = setup.cwd ? abs(setup.cwd) : WORK;
-	return { ...base, cwd, vars: { ...base.vars, PWD: cwd }, net: worldNet(world) };
+	return {
+		...base,
+		cwd,
+		vars: { ...base.vars, PWD: cwd },
+		net: worldNet(world),
+		sys: worldSys(world)
+	};
 }
 
 const modeOf = (s: ShellState<unknown>, p: string) => {

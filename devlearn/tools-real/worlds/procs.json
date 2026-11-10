@@ -41,11 +41,17 @@
 	"procs": [
 		{
 			"user": "shop",
-			"cmd": "python3 /opt/shop/web.py"
+			"cmd": "python3 /opt/shop/web.py",
+			"mock": {
+				"children": ["python3 /opt/shop/worker.py"]
+			}
 		},
 		{
 			"user": "shop",
-			"cmd": "python3 /opt/shop/report.py"
+			"cmd": "python3 /opt/shop/report.py",
+			"mock": {
+				"ignore": ["TERM"]
+			}
 		}
 	]
 }
