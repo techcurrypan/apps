@@ -35,3 +35,30 @@ export function rewind<S>(s: Session<S>, k: number): Session<S> {
 	const n = Math.max(0, Math.min(s.entries.length, Math.trunc(k)));
 	return { ...s, entries: s.entries.slice(0, n) };
 }
+
+// 本物の道具の中には、答えが後から返る物がある（JavaScript の Promise）。形は同じで、打つ所だけ待つ
+export type AsyncTool<S> = {
+	run(state: S, line: string): Promise<Result & { state: S }>;
+};
+
+export type AsyncSession<S> = {
+	tool: AsyncTool<S>;
+	initial: S;
+	entries: Entry<S>[];
+};
+
+export function startAsync<S>(tool: AsyncTool<S>, initial: S): AsyncSession<S> {
+	return { tool, initial, entries: [] };
+}
+
+export async function typeAsync<S>(s: AsyncSession<S>, line: string): Promise<AsyncSession<S>> {
+	const prev = s.entries.at(-1)?.state ?? s.initial;
+	const r = await s.tool.run(prev, line);
+	const entry: Entry<S> = { line, out: r.out, err: r.err, code: r.code, state: r.state };
+	return { ...s, entries: [...s.entries, entry] };
+}
+
+export function rewindAsync<S>(s: AsyncSession<S>, k: number): AsyncSession<S> {
+	const n = Math.max(0, Math.min(s.entries.length, Math.trunc(k)));
+	return { ...s, entries: s.entries.slice(0, n) };
+}
