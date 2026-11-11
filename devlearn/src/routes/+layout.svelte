@@ -2,6 +2,7 @@
 	import '../app.css';
 	import { goto } from '$app/navigation';
 	import { asset, resolve } from '$app/paths';
+	import { page } from '$app/state';
 	import { formatBuiltAt, shortCommit } from '#lib/build-info.ts';
 	import { keyToCommand } from '#lib/player/keys.ts';
 	import { nextTheme, parseTheme, THEME_KEY, themeLabel, type ThemeChoice } from '#lib/theme.ts';
@@ -57,30 +58,35 @@
 
 <svelte:window {onkeydown} />
 
-<div class="page">
-	<header class="site">
-		<a class="home" href={resolve('/')}>devlearn</a>
-		<nav aria-label="全体">
-			<a href={resolve('/map')} aria-keyshortcuts="M">地図</a>
-		</nav>
-		<div class="tools">
-			<button type="button" onclick={cycleTheme} aria-keyshortcuts="T">
-				配色：{themeLabel(theme)}
-			</button>
-			<button type="button" onclick={() => help?.open()} aria-keyshortcuts="?">キー</button>
-		</div>
-	</header>
+<!-- 街 /town は画面いっぱいの 3D の街に板を重ねる（screen-design.md 第 10 章）。帯と配信の版は街の中に出す -->
+{#if page.route.id === '/town'}
+	{@render children()}
+{:else}
+	<div class="page">
+		<header class="site">
+			<a class="home" href={resolve('/')}>devlearn</a>
+			<nav aria-label="全体">
+				<a href={resolve('/map')} aria-keyshortcuts="M">地図</a>
+			</nav>
+			<div class="tools">
+				<button type="button" onclick={cycleTheme} aria-keyshortcuts="T">
+					配色：{themeLabel(theme)}
+				</button>
+				<button type="button" onclick={() => help?.open()} aria-keyshortcuts="?">キー</button>
+			</div>
+		</header>
 
-	<main>
-		{@render children()}
-	</main>
+		<main>
+			{@render children()}
+		</main>
 
-	<footer class="site">
-		<span>配信：<code data-testid="commit">{commit}</code></span>
-		<span>組み立て：<code data-testid="built-at">{builtAt}</code></span>
-		<a href={asset('third-party-licenses.txt')}>他者の物のライセンス</a>
-	</footer>
-</div>
+		<footer class="site">
+			<span>配信：<code data-testid="commit">{commit}</code></span>
+			<span>組み立て：<code data-testid="built-at">{builtAt}</code></span>
+			<a href={asset('third-party-licenses.txt')}>他者の物のライセンス</a>
+		</footer>
+	</div>
+{/if}
 
 <HelpDialog bind:this={help} />
 

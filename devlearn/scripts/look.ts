@@ -3,102 +3,15 @@
 //   npx tsx scripts/look.ts <URL の根> <撮った画面の置き場>
 // 例: npx tsx scripts/look.ts https://devlearn.techcurrybread.workers.dev docs/progress/shots
 import { spawn } from 'node:child_process';
-import { mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { CHROME, sleep, Tab } from './lib/cdp.ts';
 
 const base = (process.argv[2] ?? 'http://localhost:4173').replace(/\/$/, '');
 const outDir = process.argv[3] ?? 'docs/progress/shots';
 const lessonId = process.argv[4] ?? 'git-001';
-const CHROME = process.env.CHROME ?? 'C:/Program Files/Google/Chrome/Application/chrome.exe';
 const PORT = 9333;
-
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-
-type Msg = { id?: number; result?: Record<string, unknown>; error?: { message: string } };
-
-class Tab {
-	private next = 1;
-	private waiting = new Map<number, (m: Msg) => void>();
-	constructor(private ws: WebSocket) {
-		ws.addEventListener('message', (ev) => {
-			const m = JSON.parse(String(ev.data)) as Msg;
-			if (m.id && this.waiting.has(m.id)) {
-				this.waiting.get(m.id)?.(m);
-				this.waiting.delete(m.id);
-			}
-		});
-	}
-	send(method: string, params: Record<string, unknown> = {}): Promise<Record<string, unknown>> {
-		const id = this.next++;
-		this.ws.send(JSON.stringify({ id, method, params }));
-		return new Promise((resolve, reject) => {
-			this.waiting.set(id, (m) =>
-				m.error ? reject(new Error(m.error.message)) : resolve(m.result ?? {})
-			);
-		});
-	}
-	async eval<T>(expr: string): Promise<T> {
-		const r = await this.send('Runtime.evaluate', { expression: expr, returnByValue: true });
-		return (r.result as { value: T }).value;
-	}
-	async key(key: string, shift = false) {
-		const codes: Record<string, [string, number]> = {
-			ArrowRight: ['ArrowRight', 39],
-			ArrowLeft: ['ArrowLeft', 37],
-			Home: ['Home', 36],
-			End: ['End', 35],
-			Tab: ['Tab', 9],
-			' ': ['Space', 32]
-		};
-		const [code, kc] = codes[key] ?? [`Key${key.toUpperCase()}`, key.toUpperCase().charCodeAt(0)];
-		const text = key.length === 1 ? key : undefined;
-		const modifiers = shift ? 8 : 0;
-		await this.send('Input.dispatchKeyEvent', {
-			type: 'keyDown',
-			key,
-			code,
-			windowsVirtualKeyCode: kc,
-			text,
-			modifiers
-		});
-		await this.send('Input.dispatchKeyEvent', {
-			type: 'keyUp',
-			key,
-			code,
-			windowsVirtualKeyCode: kc,
-			modifiers
-		});
-	}
-	async size(width: number, height: number, mobile: boolean) {
-		await this.send('Emulation.setDeviceMetricsOverride', {
-			width,
-			height,
-			deviceScaleFactor: 1,
-			mobile
-		});
-	}
-	async scheme(dark: boolean) {
-		await this.send('Emulation.setEmulatedMedia', {
-			features: [{ name: 'prefers-color-scheme', value: dark ? 'dark' : 'light' }]
-		});
-	}
-	async go(url: string) {
-		await this.send('Page.navigate', { url });
-		for (let i = 0; i < 100; i++) {
-			await sleep(100);
-			if ((await this.eval<string>('document.readyState')) === 'complete') break;
-		}
-		await sleep(600);
-	}
-	async shot(file: string) {
-		const r = await this.send('Page.captureScreenshot', {
-			format: 'png',
-			captureBeyondViewport: false
-		});
-		writeFileSync(file, Buffer.from(String(r.data), 'base64'));
-	}
-}
 
 type Report = { ok: boolean; name: string; detail: string };
 const results: Report[] = [];
