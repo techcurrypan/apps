@@ -3,8 +3,10 @@
 	// 板の色は --dl-* のトークン、文字は --dl-font（screen-design.md 第 10 章）。
 	import { onMount } from 'svelte';
 	import { newTownUi, startTown, type TownHandle } from '#lib/city/game.ts';
-	import TownLesson from '#lib/city/TownLesson.svelte';
+	import { resolve } from '$app/paths';
 	import { shortCommit } from '#lib/build-info.ts';
+	import { lessons } from '#lib/content/lessons.ts';
+	const lessonIds = new Set(lessons.map((l) => l.id));
 
 	const ui = $state(newTownUi());
 	let canvas = $state<HTMLCanvasElement>();
@@ -23,6 +25,7 @@
 	const fmt = (n: number) => Math.round(n).toLocaleString('ja-JP');
 	const satLevel = $derived(ui.sat > 70 ? 'good' : ui.sat > 55 ? 'mid' : 'bad');
 	const hpLevel = (h: number) => (h > 70 ? 'good' : h > 55 ? 'mid' : 'bad');
+	const DOUBT = ['疑い無し', '疑い 1', '疑い 2'];
 
 	const TOOLS = [
 		{ id: 'select', label: '選ぶ', d: 'M5 3 L19 12 L12 13.5 L9 20 Z' },
@@ -72,10 +75,12 @@
 					stroke-linecap="round"
 				/></svg
 			>
-			<div><b>みなと町</b><small>港の町 ・ 町長 1 年目</small></div>
+			<div><b>みなと町</b><small>{ui.chapter} ・ {ui.goals.rankName}</small></div>
 		</div>
 		<div class="glass time" role="group" aria-label="時間">
-			<div class="d"><span>{ui.date}</span><strong>{ui.clock}</strong></div>
+			<div class="d">
+				<span>{ui.day} 日目<i class="dt"> ・ {ui.date}</i></span><strong>{ui.clock}</strong>
+			</div>
 			{#each [['❚❚', '一時停止'], ['▶', '速さ 1'], ['▶▶', '速さ 2'], ['▶▶▶', '速さ 3']] as [sym, label], i (i)}
 				<button
 					class="spd"
@@ -85,6 +90,9 @@
 					onclick={() => game?.setSpeed(i)}>{sym}</button
 				>
 			{/each}
+			<div class="work" class:off={!ui.slots}>
+				<span>勤務</span><strong>{ui.slots ? `残り ${ui.slots} 時間` : '明日 9:00 から'}</strong>
+			</div>
 		</div>
 		<div class="spacer"></div>
 		<div class="glass stats">
@@ -123,7 +131,8 @@
 						><strong>{r.title}</strong><small
 							>{r.who} ・
 							<em class:hot={r.left <= 1}>{r.left <= 1 ? '! ' : ''}あと {Math.max(0, r.left)} 日</em
-							></small
+							>
+							・ {DOUBT[r.doubt]}</small
 						></span
 					>
 				</button>
@@ -131,14 +140,28 @@
 			{#each ui.done as d (d.id)}
 				<div class="req done">
 					<span class="av ok">✓</span>
-					<span class="tx"
-						><strong>{d.title}</strong><small
-							>{d.how === 'learned' ? '学んだ手で応えた' : '業者に任せた'}</small
-						></span
-					>
+					<span class="tx"><strong>{d.title}</strong><small>{d.how}</small></span>
 				</div>
 			{/each}
 		</div>
+		<section class="goals" aria-label="次の目標">
+			<h4>次の目標</h4>
+			<p>
+				依頼主の満足度 <b>{ui.goals.clientSat}</b>
+				<small>（合格 40 ・ 良 70 ・ 優 90）</small><br />章の締めまで あと {ui.goals.daysLeft} 日
+			</p>
+			<div class="meter wide">
+				<i
+					class={ui.goals.clientSat >= 70 ? 'good' : ui.goals.clientSat >= 40 ? 'mid' : 'bad'}
+					style:width="{ui.goals.clientSat}%"
+				></i>
+			</div>
+			<p>
+				{#if ui.goals.rankNext !== null}次の町の格まで 人口 あと {fmt(
+						Math.max(0, ui.goals.rankNext)
+					)} 人{:else}町の格は最上{/if}
+			</p>
+		</section>
 	</aside>
 
 	<div class="side">
@@ -221,11 +244,13 @@
 			<section class="glass legend">
 				<strong>地下の仕組み</strong>
 				<span><i style:background="#4aa3ff"></i>通信の幹線（流れている）</span>
-				<span><i style:background="#b48cff"></i>記録庫へ流れる記録</span>
-				<span><i style:background="#ff5a3c"></i>混んでいる所</span>
-				<span><i style:background="#3fd0c0"></i>帳簿の倉庫へ流れる予約</span>
-				<span><i style:background="#ffb000"></i>門番で止まる接続</span>
-				<span><i style:background="#56d68a"></i>直した所・通した接続</span>
+				<span><i style:background="#ff5a3c"></i>要望の届いている所（困っている）</span>
+				{#each ui.systems as x (x.field)}
+					<span
+						><i style:background={x.color}></i>{x.name}（{x.fieldName}） ・ つないだ建物 {x.links}</span
+					>
+				{/each}
+				<span><i style:background="#8a9099"></i>業者の箱（中身は見えない）</span>
 				<p>建物を暗くして、地面の下を流れる物だけを光らせている</p>
 			</section>
 		{/if}
@@ -305,7 +330,9 @@
 	<div class="help glass">
 		左ドラッグ 移動 ・ 右ドラッグ 回転 ・ ホイール ズーム<br /><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd
 		><kbd>D</kbd> 移動 <kbd>Q</kbd><kbd>E</kbd> 回転
-		<kbd>Space</kbd> 一時停止<br /><span class="ver">配信 <code>{commit}</code></span>
+		<kbd>Space</kbd> 一時停止 <kbd>N</kbd> 明日の朝へ <kbd>R</kbd> 変化をもう一度<br /><span
+			class="ver">配信 <code>{commit}</code></span
+		>
 	</div>
 
 	{#if ui.dialog}
@@ -321,14 +348,19 @@
 					</header>
 					<ol class="intro">
 						<li>
-							<b>要望が届く</b><span>町の人が困りごとを持ってくる。街の上に <em>!</em> が出る</span>
+							<b>要望が届く</b><span
+								>毎朝 8:00 に町の人が困りごとを持ってくる。街の上に <em>!</em> が出る</span
+							>
 						</li>
 						<li>
-							<b>解説で学ぶ</b><span>困りごとに効く IT の仕組みを、動きを見ながら覚える</span>
+							<b>学んだ手で原因を絞る</b><span
+								>候補 4
+								つから原因を見つけて直す。学んでいなくても、様子を聞く・頼み込む・手探りで直す・外に頼む、で片付く</span
+							>
 						</li>
 						<li>
 							<b>応えると街が変わる</b><span
-								>学んだ手で応えると、街と地下の仕組みが育つ。学ばずに業者へ任せることもできる</span
+								>学んだ手で直すと、その分野の仕組みの建物が建ち、地下の流れになる。外に頼むと中身の見えない箱が建つ</span
 							>
 						</li>
 					</ol>
@@ -342,75 +374,145 @@
 						>
 					</div>
 				</div>
+			{:else if ui.dialog.kind === 'result'}
+				{@const d = ui.dialog}
+				<div class="card" role="dialog" aria-modal="true" aria-label="章の結果">
+					<header>
+						<span class="av big" class:ok={d.passed}>{d.passed ? '✓' : '−'}</span>
+						<div>
+							<span class="kick">章の締め</span>
+							<h2>{d.title}</h2>
+						</div>
+					</header>
+					<p class="quote">{d.body}</p>
+					<div class="opts">
+						{#if d.passed}
+							<button type="button" class="opt good" onclick={() => game?.closeDlg()}
+								><span><strong>続ける</strong><small>街はそのまま次の章へ続く</small></span><b>▶</b
+								></button
+							>
+						{:else}
+							{#each d.days as x (x.minute)}
+								<button type="button" class="opt" onclick={() => game?.restartAt(x.minute)}
+									><span
+										><strong>{x.label}やり直す</strong><small
+											>その時点より後の手（道や区画も）は無くなる</small
+										></span
+									><b>↺</b></button
+								>
+							{/each}
+						{/if}
+					</div>
+				</div>
 			{:else}
 				{@const d = ui.dialog}
-				<div class="card" role="dialog" aria-modal="true" aria-label={d.who + 'からの要望'}>
-					<header>
+				<div class="card req4" role="dialog" aria-modal="true" aria-label={d.who + 'からの要望'}>
+					<header class="band">
 						<span class="av big" style:background="{d.color}22" style:color={d.color}>{d.icon}</span
 						>
 						<div>
-							<span class="kick">要望 ・ 期限 あと {d.left} 日</span>
+							<span class="kick"
+								>要望 ・ 期限 あと {d.left} 日 ・ 勤務 {d.slots
+									? `残り ${d.slots} 時間`
+									: '明日 9:00 から'}</span
+							>
 							<h2>{d.title}</h2>
-							<span class="who">{d.who}</span>
+							<span class="who">{d.who}（{d.place}）</span>
 						</div>
 						<button class="x" type="button" aria-label="閉じる" onclick={() => game?.closeDlg()}
 							>×</button
 						>
 					</header>
-					<p class="quote">{d.quote}</p>
-					<div class="conds">
-						{#each d.conds as c (c)}<div><small>条件</small>{c}</div>{/each}
-						<div><small>見返り</small>{d.reward}</div>
-					</div>
-					<button
-						type="button"
-						class="lessonBtn"
-						disabled={d.learned}
-						onclick={() => game?.openLesson(d.lid, () => game?.openReq(d.id))}
-					>
-						<span
-							><small
-								>この要望に効く解説（{d.lesson.tool} ・ {d.lesson.steps.length} ステップ）</small
-							><strong>{d.lesson.title}</strong></span
-						>
-						<em>{d.learned ? '学んだ ✓' : '解説を受ける →'}</em>
-					</button>
-					<div class="opts">
-						<button
-							type="button"
-							class="opt good"
-							disabled={!(d.learned && d.needOk)}
-							onclick={() => game?.answer(d.id, 'learned')}
-						>
-							<span
-								><strong>{d.learnedOpt.label}</strong><small
-									>{d.learned
-										? d.learnedOpt.note
-										: d.needOk
-											? '解説を受けると選べる'
-											: '先に記録庫を建てると選べる'}</small
-								></span
-							><b>¥{d.learnedOpt.cost}</b>
-						</button>
-						<button type="button" class="opt" onclick={() => game?.answer(d.id, 'out')}
-							><span><strong>{d.outOpt.label}</strong><small>{d.outOpt.note}</small></span><b
-								>¥{d.outOpt.cost}</b
-							></button
-						>
+					<section class="stage" aria-label="候補と疑い">
+						<p class="quote">「{d.title}。何とかなりませんか」</p>
+						<div class="cands">
+							{#each d.cands as c (c.id)}
+								<div class="cand {c.state}">
+									<small>{c.state === 'ok' ? '✓ 確定' : c.state === 'out' ? '消' : '候補'}</small>
+									<span>{c.label}</span>
+								</div>
+							{/each}
+						</div>
+						<p class="doubt" aria-label="依頼主の疑い">
+							疑い
+							{#each [0, 1] as k (k)}<i class:on={k < d.doubt}></i>{/each}
+							{d.doubt}
+							{d.doubt ? '（0 になるまで直させてもらえない）' : ''}
+						</p>
+					</section>
+					<section class="ops" aria-label="打てる手">
+						{#each [['learned', '学んだ手'], ['any', 'いつでもの手']] as [kind, label] (kind)}
+							<h4>{label}</h4>
+							<div class="moves">
+								{#each d.moves.filter((m) => m.kind === kind) as m (m.key)}
+									<button
+										type="button"
+										class="mv"
+										class:good={m.kind === 'learned'}
+										disabled={!m.ok}
+										onclick={() => game?.doMove(m.key)}
+									>
+										<span
+											><strong>{m.label}</strong><small
+												>{m.ok
+													? m.lessonTitle
+														? `${m.lesson} ${m.lessonTitle}`
+														: m.label === '外に頼む'
+															? `¥${fmt(d.cost)} ・ 明日の朝に片付く`
+															: ''
+													: m.why}</small
+											></span
+										><b>{m.slots} 時間</b>
+									</button>
+								{/each}
+							</div>
+						{/each}
 						<button type="button" class="later" onclick={() => game?.closeDlg()}
 							>後回しにする</button
 						>
-					</div>
+					</section>
+					<section class="script" aria-label="理由と数">
+						{#if d.last.length}
+							<ul class="last">
+								{#each d.last as l, i (i)}<li>{l}</li>{/each}
+							</ul>
+						{/if}
+						{#if d.evidence}<pre class="ev">{d.evidence}</pre>{/if}
+						<dl class="nums">
+							<div>
+								<dt>依頼主の満足度</dt>
+								<dd>{d.clientSat}（合格 40 ・ 良 70 ・ 優 90）</dd>
+							</div>
+							<div>
+								<dt>見返り</dt>
+								<dd>¥{fmt(d.reward)}（直したとき）</dd>
+							</div>
+						</dl>
+						{#if d.lessons.some((x) => !x.learned)}
+							<h4>この要望に効くレッスン</h4>
+							<ul class="lessons">
+								{#each d.lessons.filter((x) => !x.learned).slice(0, 6) as x (x.lesson)}
+									<li>
+										{#if lessonIds.has(x.lesson)}
+											<a href={resolve('/lesson/[id]', { id: x.lesson })}>{x.lesson} {x.title}</a>
+										{:else}
+											<span>{x.lesson} {x.title}</span><small>（準備中）</small>
+										{/if}
+										<em>学ぶと「{x.move}」が使える</em>
+									</li>
+								{/each}
+							</ul>
+						{/if}
+						{#if d.notes.length}
+							<h4>この要望の記録</h4>
+							<ol class="notes">
+								{#each d.notes as n, i (i)}<li>{n}</li>{/each}
+							</ol>
+						{/if}
+					</section>
 				</div>
 			{/if}
 		</div>
-	{/if}
-	{#if ui.lesson}
-		<TownLesson
-			lesson={ui.lesson}
-			onclose={() => game?.closeLesson()}
-			onfinish={(lid) => game?.finishLesson(lid)}
-		/>
 	{/if}
 </div>
 
@@ -655,7 +757,9 @@
 		color: var(--dl-text-muted);
 	}
 	.reqList {
-		overflow: auto;
+		overflow-x: hidden;
+		overflow-y: auto;
+		min-height: 0;
 		padding: 4px 8px 10px;
 		display: flex;
 		flex-direction: column;
@@ -1020,6 +1124,16 @@
 		}
 	}
 	/* toasts */
+	/* 知らせは新しい 3 件だけ（携帯は 2 件）。古い物は消えるまで隠す */
+	.toast:nth-child(n + 4) {
+		display: none;
+	}
+	.d .dt {
+		font-style: normal;
+	}
+	.work strong {
+		white-space: nowrap;
+	}
 	.toasts {
 		position: fixed;
 		left: 50%;
@@ -1158,56 +1272,220 @@
 		font-size: 14px;
 		line-height: 1.85;
 	}
-	.conds {
+	/* 要望の板：帯・舞台・操作帯・台本（screen-design.md 10.4） */
+	.town :global(.card.req4) {
+		width: min(920px, 100%);
 		display: grid;
-		grid-template-columns: repeat(3, minmax(0, 1fr));
-		gap: 8px;
-		margin: 0 18px 12px;
+		grid-template-columns: 3fr 2fr;
+		grid-template-areas: 'band band' 'stage script' 'ops script';
+		align-content: start;
 	}
-	.conds div {
+	.req4 .band {
+		grid-area: band;
+	}
+	.stage {
+		grid-area: stage;
+	}
+	.ops {
+		grid-area: ops;
+		padding: 0 18px 18px;
+	}
+	.script {
+		grid-area: script;
+		padding: 14px 18px 18px;
+		border-left: 1px solid var(--dl-border);
+		font-size: 12px;
+		line-height: 1.7;
+	}
+	.cands {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 8px;
+		margin: 0 18px 10px;
+	}
+	.cand {
 		padding: 8px 10px;
 		border-radius: 10px;
+		border: 1px solid var(--dl-border);
 		background: var(--dl-bg);
-		font-size: 12px;
+		font-size: 13px;
 		line-height: 1.5;
+		transition:
+			opacity var(--dl-motion-op, 0.3s),
+			border-color var(--dl-motion-op, 0.3s);
 	}
-	.conds small {
+	.cand small {
 		display: block;
-		color: var(--dl-text-muted);
 		font-size: 10px;
+		color: var(--dl-text-muted);
 	}
-	.town .lessonBtn {
+	.cand.out {
+		opacity: 0.45;
+	}
+	.cand.out span {
+		text-decoration: line-through;
+	}
+	.cand.ok {
+		border: 2px solid var(--dl-done);
+	}
+	.cand.ok small {
+		color: var(--dl-done);
+		font-weight: 700;
+	}
+	.doubt {
+		margin: 0 18px 12px;
+		font-size: 12px;
+		color: var(--dl-text-muted);
+	}
+	.doubt i {
+		display: inline-block;
+		width: 10px;
+		height: 10px;
+		margin: 0 2px;
+		border-radius: 50%;
+		border: 1px solid var(--dl-warn);
+		vertical-align: -1px;
+	}
+	.doubt i.on {
+		background: var(--dl-warn);
+	}
+	.ops h4,
+	.script h4,
+	.goals h4 {
+		margin: 10px 0 6px;
+		font-size: 11px;
+		color: var(--dl-text-muted);
+		letter-spacing: 0.06em;
+	}
+	.moves {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 6px;
+	}
+	.town .mv {
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		gap: 10px;
-		width: calc(100% - 36px);
-		margin: 0 18px 10px;
-		min-height: 60px;
-		padding: 10px 14px;
-		border-radius: 12px;
-		border: 1px solid var(--dl-now);
-		background: var(--dl-surface-raised);
+		gap: 8px;
+		min-height: 52px;
+		padding: 8px 10px;
+		border-radius: 10px;
+		border: 1px solid var(--dl-border-strong);
+		background: var(--dl-bg);
 		text-align: left;
 		cursor: pointer;
 	}
-	.lessonBtn small {
+	.mv strong {
 		display: block;
-		font-size: 11px;
-		color: var(--dl-now);
-	}
-	.lessonBtn strong {
-		font-size: 15px;
-	}
-	.lessonBtn em {
-		font-style: normal;
-		font-weight: 700;
 		font-size: 13px;
 	}
-	.town .lessonBtn:disabled {
-		opacity: 0.75;
-		cursor: default;
-		color: var(--dl-text);
+	.mv small {
+		display: block;
+		font-size: 11px;
+		line-height: 1.4;
+		color: var(--dl-text-muted);
+	}
+	.mv b {
+		flex: none;
+		font-family: var(--dl-font-code);
+		font-size: 11px;
+		color: var(--dl-text-muted);
+	}
+	.town .mv.good:not(:disabled) {
+		border: 2px solid var(--dl-done);
+	}
+	.town .mv:disabled {
+		opacity: 0.6;
+		cursor: not-allowed;
+		border-style: dashed;
+	}
+	.ops .later {
+		width: 100%;
+		margin-top: 10px;
+	}
+	.last {
+		margin: 0 0 8px;
+		padding: 8px 10px 8px 24px;
+		border-radius: 10px;
+		background: var(--dl-surface-raised);
+		border-left: 3px solid var(--dl-now);
+	}
+	.ev {
+		margin: 0 0 8px;
+		padding: 8px 10px;
+		border-radius: 8px;
+		background: var(--dl-bg);
+		font-family: var(--dl-font-code);
+		font-size: 12px;
+		white-space: pre-wrap;
+	}
+	.nums div {
+		display: flex;
+		justify-content: space-between;
+		gap: 8px;
+	}
+	.nums dt {
+		color: var(--dl-text-muted);
+	}
+	.nums dd {
+		margin: 0;
+		font-family: var(--dl-font-code);
+	}
+	.lessons,
+	.notes {
+		margin: 0;
+		padding-left: 18px;
+	}
+	.lessons em {
+		display: block;
+		font-style: normal;
+		color: var(--dl-text-muted);
+	}
+	.lessons small {
+		color: var(--dl-text-muted);
+	}
+	.goals {
+		padding: 4px 14px 12px;
+		border-top: 1px solid var(--dl-border);
+		font-size: 12px;
+		line-height: 1.6;
+	}
+	.goals {
+		flex: none;
+	}
+	.goals p {
+		margin: 0 0 4px;
+		font-size: 12px;
+		line-height: 1.6;
+	}
+	.goals b {
+		font-family: var(--dl-font-code);
+		font-size: 14px;
+	}
+	.goals small {
+		color: var(--dl-text-muted);
+	}
+	.meter.wide {
+		width: 100%;
+		margin: 2px 0 6px;
+	}
+	.work {
+		display: flex;
+		flex-direction: column;
+		line-height: 1.1;
+		padding: 0 6px 0 10px;
+		border-left: 1px solid var(--dl-border);
+		min-width: 92px;
+	}
+	.work span {
+		font-size: 11px;
+		color: var(--dl-text-muted);
+	}
+	.work strong {
+		font-size: 13px;
+	}
+	.work.off strong {
+		color: var(--dl-text-muted);
 	}
 	.opts {
 		display: flex;
@@ -1384,8 +1662,34 @@
 		.tools {
 			width: 100%;
 		}
-		.conds {
+		.town :global(.card.req4) {
 			grid-template-columns: 1fr;
+			grid-template-areas: 'band' 'stage' 'ops' 'script';
+		}
+		.script {
+			border-left: 0;
+			border-top: 1px solid var(--dl-border);
+		}
+		.moves,
+		.cands {
+			grid-template-columns: 1fr;
+		}
+		.work {
+			min-width: 0;
+			padding-left: 6px;
+		}
+		.work span,
+		.d .dt {
+			display: none;
+		}
+		.work strong {
+			font-size: 11px;
+		}
+		.time .d {
+			min-width: 0;
+		}
+		.toast:nth-child(n + 3) {
+			display: none;
 		}
 		.toasts {
 			top: 200px;

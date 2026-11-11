@@ -2,7 +2,7 @@
 // 試作 docs/prototype/src/game.js の placeOnLot・spawn・bulldoze・roadPlan・addRoad・onHour・demand・incomeParts を、
 // DOM・WebGL・実時間を知らない純粋な関数に移した。元の状態は書き換えず、新しい状態を返す。
 // 試作が擬似乱数で決めていた物（区画に建つ物の色と形、建つかどうか）は、種と区画の番号と時からの式（mix32）にした。
-// 数は試作のまま。8-2c で game-design.md 第 15 章の数にする。
+// 数は game-design.md 15.5・15.6（段 8-2c）。
 import { clockOf } from './clock.ts';
 import { mix32 } from './mix.ts';
 import type { MapLot, TownMap } from './map.ts';
@@ -34,7 +34,13 @@ export type Placed = {
 };
 export type Pt = { x: number; z: number };
 export type Road = { a: Pt; b: Pt; L: number };
-export type LedgerRow = { t: string; text: string; v: number };
+export type LedgerRow = {
+	t: string;
+	text: string;
+	v: number;
+	/** 毎時の収支をまとめた行（何時間ぶんか） */ hours?: number;
+	day?: number;
+};
 export type BuildState = {
 	money: number;
 	lots: Lot[];
@@ -75,38 +81,41 @@ export function jobs(s: BuildState, map: TownMap, minute: number): number {
 	return n;
 }
 
-/** 需要（試作の式）。sat は町の満足度（0〜1） */
+/** 需要（15.5。試作の式）。sat は町の満足度（0〜100） */
 export function demand(s: BuildState, map: TownMap, sat: number, minute: number) {
 	const nH = s.placed.filter((b) => b.kind === 'house').length,
 		nS = s.placed.filter((b) => b.kind === 'shop').length;
 	const p = pop(s, map, minute);
 	const cl = (v: number) => Math.round(Math.max(5, Math.min(95, v)));
 	return {
-		res: cl(50 + (sat - 0.6) * 120 + nS * 5 - nH * 3),
+		res: cl(50 + 1.2 * (sat - 60) + nS * 5 - nH * 3),
 		com: cl(30 + nH * 4 - nS * 9 + p / 300),
 		job: cl(40 + p / 300 - jobs(s, map, minute) / 200)
 	};
 }
 
-/** 1 時間ごとの収支の内訳（試作の式）。outs は業者に任せた数 */
-export function incomeParts(
-	s: BuildState,
-	map: TownMap,
-	outs: number,
-	minute: number
-): [string, number][] {
+export const UPKEEP = 70;
+const fmt = (n: number) => n.toLocaleString('en-US');
+
+/** 1 時間ごとの収支の内訳（15.5） */
+export function incomeParts(s: BuildState, map: TownMap, minute: number): [string, number][] {
 	const roadLen = s.roads.reduce((a, r) => a + r.L, 0);
+	const p = pop(s, map, minute),
+		j = jobs(s, map, minute);
 	const parts: [string, number][] = [
-		['住民税（人口 × 0.018）', pop(s, map, minute) * 0.018],
-		['店と会社の税（働く場所 × 0.012）', jobs(s, map, minute) * 0.012],
-		['町の施設の維持費', -14],
-		['引いた道路の維持費（1 km あたり 8）', (-roadLen / 1000) * 8],
-		['業者に任せた仕組みの使用料（1 件 3）', -outs * 3]
+		[`住民税（人口 ${fmt(p)} × 0.02）`, Math.floor(p * 0.02)],
+		[`店と会社の税（働く場所 ${fmt(j)} × 0.01）`, Math.floor(j * 0.01)],
+		['町の施設の維持費', -UPKEEP]
 	];
-	return parts.filter((x) => Math.abs(x[1]) > 0.01);
+	if (roadLen > 0)
+		parts.push([
+			`引いた道路の維持費（${Math.round(roadLen) / 1000} km）`,
+			-Math.floor((roadLen * 8) / 1000)
+		]);
+	return parts;
 }
-export function income(s: BuildState, map: TownMap, outs: number, minute: number): number {
-	return Math.round(incomeParts(s, map, outs, minute).reduce((a, x) => a + x[1], 0));
+export function income(s: BuildState, map: TownMap, minute: number): number {
+	return incomeParts(s, map, minute).reduce((a, x) => a + x[1], 0);
 }
 
 /** 区画に建つ物の形（試作の spawn と同じ大きさ） */
@@ -204,7 +213,7 @@ export function placeLot(
 	};
 }
 
-export function bulldoze(s: BuildState, id: number, minute: number): Result {
+export function bulldoze(s: BuildState, id: number): Result {
 	const p = s.placed.find((x) => x.id === id);
 	if (!p) return { ok: false, why: '自分で建てた建物だけ取り壊せる', state: s };
 	const lots = s.lots.slice();
@@ -215,37 +224,46 @@ export function bulldoze(s: BuildState, id: number, minute: number): Result {
 		state: {
 			...s,
 			lots,
-			placed: s.placed.filter((x) => x !== p),
-			money: s.money + 30,
-			ledger: ledger(s, minute, '取り壊して資材を売った', 30)
+			placed: s.placed.filter((x) => x !== p)
 		}
 	};
 }
 
 export type HourResult = { state: BuildState; income: number; grown: Placed[] };
 
-/** 時（:00）の処理：収支を足す → 指定した区画が育つ（試作の onHour） */
+/** 時（:00）の処理：収支を足す → 指定した区画が育つ（15.5 の毎時の処理の順）。sat は町の満足度（0〜100） */
 export function hourly(
 	s: BuildState,
 	map: TownMap,
 	minute: number,
 	sat: number,
-	outs: number,
 	seed: number
 ): HourResult {
-	const hr = Math.floor(minute / 60) % 24;
-	const v = income(s, map, outs, minute);
-	let st: BuildState = { ...s, money: s.money + v };
-	if (hr % 6 === 0)
-		st = {
-			...st,
-			ledger: ledger(
-				st,
-				minute,
-				'6 時間ぶんの収支を受け取った（1 時間 ' + (v >= 0 ? '+' : '') + v + '）',
-				v * 6
-			)
-		};
+	const v = income(s, map, minute - 60);
+	const day = Math.floor(minute / (24 * 60));
+	const top = s.ledger[0];
+	const rows =
+		top && top.hours && top.day === day
+			? [
+					{
+						...top,
+						text: `1 時間の収支（${top.hours + 1} 時間ぶん）`,
+						v: top.v + v,
+						hours: top.hours + 1
+					},
+					...s.ledger.slice(1)
+				]
+			: [
+					{
+						t: clockOf(minute).text,
+						text: '1 時間の収支（1 時間ぶん）',
+						v,
+						hours: 1,
+						day
+					},
+					...s.ledger
+				].slice(0, 12);
+	let st: BuildState = { ...s, money: s.money + v, ledger: rows };
 	const dm = demand(st, map, sat, minute);
 	const grown: Placed[] = [];
 	const absHour = Math.floor(minute / 60);

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { mix32 } from './mix.ts';
-import { average, bumpNear, initHappy, type Spot } from './happy.ts';
+import { addNear, baseHappy, happyOf, parkBonus, type Spot } from './happy.ts';
 
 describe('mix32（種と番号からの整数の混ぜ合わせ）', () => {
 	it('同じ入力で同じ値。32 ビットの符号なし整数', () => {
@@ -28,27 +28,36 @@ const spots: Spot[] = [
 	{ id: 3, x: 200, z: 0 }
 ];
 
-describe('建物ごとの満足度', () => {
-	it('始まりは種と建物の番号だけで決まり、0.55〜0.80（試作の幅）', () => {
-		const a = initHappy(spots, 1);
-		expect(initHappy(spots, 1)).toEqual(a);
-		for (const s of spots) {
-			expect(a[s.id]).toBeGreaterThanOrEqual(0.55);
-			expect(a[s.id]).toBeLessThan(0.8);
+describe('建物ごとの満足度（game-design.md 15.5）', () => {
+	it('基礎は 55 + (mix32(種, 建物の番号) mod 11)。55〜65', () => {
+		for (let id = 0; id < 300; id++) {
+			const b = baseHappy(1, id);
+			expect(b).toBe(55 + (mix32(1, id) % 11));
+			expect(b).toBeGreaterThanOrEqual(55);
+			expect(b).toBeLessThanOrEqual(65);
 		}
-		expect(initHappy(spots, 2)).not.toEqual(a);
 	});
-	it('近くの建物だけが動き、上限と下限で止まる。元の値は変えない', () => {
-		const h = { 1: 0.95, 2: 0.6, 3: 0.6 };
-		const up = bumpNear(h, spots, 0, 0, 60, 0.12, 0, 1);
-		expect(up).toEqual({ 1: 1, 2: 0.72, 3: 0.6 });
-		expect(h).toEqual({ 1: 0.95, 2: 0.6, 3: 0.6 });
-		const down = bumpNear(h, spots, 0, 0, 60, -0.5, 0.2, 1);
-		expect(down[1]).toBeCloseTo(0.45);
-		expect(down[2]).toBe(0.2);
+	it('公園：60 m 以内の公園 1 つにつき +6、+12 まで', () => {
+		expect(parkBonus({ x: 0, z: 0 }, [])).toBe(0);
+		expect(parkBonus({ x: 0, z: 0 }, [{ x: 59, z: 0 }])).toBe(6);
+		expect(parkBonus({ x: 0, z: 0 }, [{ x: 61, z: 0 }])).toBe(0);
+		const three = [
+			{ x: 10, z: 0 },
+			{ x: 0, z: 10 },
+			{ x: -10, z: 0 }
+		];
+		expect(parkBonus({ x: 0, z: 0 }, three)).toBe(12);
 	});
-	it('値の無い建物は 0.6 として数える（試作と同じ）', () => {
-		expect(bumpNear({}, spots, 200, 0, 10, 0.1, 0, 1)).toEqual({ 3: 0.7 });
-		expect(average({ 1: 0.8 }, [1, 2])).toBeCloseTo(0.7);
+	it('要望の項：依頼主の建物から 100 m 以内に、依頼主の満足度と同じ動きを足す。元の表は変えない', () => {
+		const d0 = {};
+		const d1 = addNear(d0, spots, 0, 0, 100, 4);
+		expect(d1).toEqual({ 1: 4, 2: 4 });
+		expect(addNear(d1, spots, 0, 0, 100, -5)).toEqual({ 1: -1, 2: -1 });
+		expect(d0).toEqual({});
+	});
+	it('建物の満足度は 基礎 + 公園 + 要望 を 0〜100 に収める', () => {
+		expect(happyOf(60, 12, 40)).toBe(100);
+		expect(happyOf(60, 0, -70)).toBe(0);
+		expect(happyOf(57, 6, -3)).toBe(60);
 	});
 });

@@ -1,13 +1,25 @@
 // 街の時計。状態の時刻は「ゲーム内の分」の整数（game-design.md 15.1）。
 // DOM・WebGL・実時間を知らない。描画は実時間を足し込んで整数の分にし、tick を呼ぶだけ。
-// 段 8-2b：試作の時計（11 月 10 日 15:30 に始まり、30 日で月が替わる）をそのまま移した。8-2c で 15.2 の 1 日の流れにする。
+// 日付は試作の時計のまま（30 日で月が替わる）。1 日の流れは 15.2（8:00 朝・9:00〜17:00 勤務・17:00 締め）。
 
 /** 分 0 は 11 月 1 日 0:00 */
 export const FIRST_MONTH = 11;
 export const DAYS_PER_MONTH = 30;
 export const MIN_PER_DAY = 24 * 60;
-/** 試作の始まり：11 月 10 日 15:30 */
-export const START_MINUTE = 9 * MIN_PER_DAY + 15 * 60 + 30;
+/** 始まり：1 日目（試作の日付の 11 月 10 日）の 8:00。朝の処理を終えた所 */
+export const START_MINUTE = 9 * MIN_PER_DAY + 8 * 60;
+export const MORNING = 8 * 60;
+export const WORK_START = 9 * 60;
+export const WORK_END = 17 * 60;
+
+const dayStart = (minute: number) => Math.floor(minute / MIN_PER_DAY) * MIN_PER_DAY;
+/** 手を打ち始める時刻（9:00 より前なら 9:00） */
+export const workFrom = (minute: number) => Math.max(minute, dayStart(minute) + WORK_START);
+/** 今日の勤務の残り（コマ = 1 時間）。0〜8 */
+export function slotsLeft(minute: number): number {
+	const t = workFrom(minute) - dayStart(minute);
+	return t >= WORK_END ? 0 : Math.floor((WORK_END - t) / 60);
+}
 
 export type ClockEvent = { type: 'hour'; hour: number; at: number } | { type: 'day'; at: number };
 

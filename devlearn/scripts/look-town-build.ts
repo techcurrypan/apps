@@ -80,13 +80,16 @@ async function main() {
 		);
 		await tab.shot(`${outDir}/${prefix}-build-road.png`);
 		const rp = await tab.eval<{ n: number; same: boolean; answered: string }>(`(() => {
-			const g = window.__game; g.answer('board', 'out'); g.setSpeed(2); window.__frame(60, 0.1);
+			const g = window.__game; g.nextMorning();
+			const r = g.town().desk.requests.find((x) => x.status === 'open'); g.openReq(r.id);
+			g.doMove(g.ui.dialog.moves.findIndex((m) => m.label === '様子を聞く')); g.closeDlg();
+			g.setSpeed(2); window.__frame(60, 0.1);
 			const a = JSON.stringify(g.town()), b = JSON.stringify(g.replayed());
-			return { n: g.save().actions.length, same: a === b, answered: JSON.stringify(g.town().answered) }; })()`);
+			return { n: g.save().actions.length, same: a === b, answered: g.town().desk.requests.find((x) => x.notes.length)?.notes[0] ?? '' }; })()`);
 		check(
 			'手の記録から作り直すと、遊んだ後と同じ状態になる',
 			rp.same && rp.n === 11,
-			`記録 ${rp.n} 手 ・ 応えた ${rp.answered}`
+			`記録 ${rp.n} 手 ・ ${rp.answered}`
 		);
 	} finally {
 		chrome.kill();

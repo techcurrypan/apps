@@ -1,7 +1,10 @@
 // 状態が読む街の形（game-design.md 15.9・15.11）。gen の決まった出力のうち、建物の番号・形・住む人・働く場所、
 // 始まりの区画、交差点、地形の高さだけを取り出す。保存しない（毎回 gen から作る）。
 import { generateCity, terrainH } from '../city/gen.ts';
-import type { FeatKey } from './requests.ts';
+
+/** 試作の街の目印の建物（gen の FEAT）のうち、要望の依頼主と仕組みの建物に使う物 */
+export type FeatKey =
+	'board' | 'annex' | 'school' | 'shopMain' | 'clinic' | 'dbvault' | 'warehouse' | 'gate' | 'hall';
 
 export type MapBuilding = {
 	id: number;

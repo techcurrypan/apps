@@ -1,38 +1,69 @@
-// みなと町：遊びの層（時刻と光、車・人・船、要望と解説、建てる道具、地下の仕組みの表示、操作）。
-// 試作 docs/prototype/src/game.js を TypeScript に移した物（段 8-2a）。処理は変えていない。
-// 変えたのは：型を付けた・グローバルを引数にした・板を innerHTML でなく ui（Svelte の $state）に書くようにした・
-// 撮影の口（window.__game など）を #still のときだけ出すようにした、だけ。
-// 状態の計算を描画から切り離すのは 8-2b で行う。
+// みなと町：遊びの層（時刻と光、車・人・船、要望、建てる道具、地下の仕組みの表示、操作）。
+// 試作 docs/prototype/src/game.js を TypeScript に移した物（段 8-2a）。
+// 状態（時計・資金・区画・要望・満足度・仕組みの建物）は src/lib/game/ の純粋な関数だけで変わる（8-2b・8-2c）。
+// ここは状態を読んで描き、手を applyTown に渡すだけ。見た目だけの動き（車・人・船・建つ様子）は種つきの擬似乱数と描画の時刻で動く。
 
 import { createEngine, type Engine, type Light, type Mat4 } from './engine.ts';
 import { generateCity, GEN, type Bld, type Col, type RNode } from './gen.ts';
-import { clockOf, MIN_PER_DAY } from '../game/clock.ts';
-import { DEFAULT_HAPPY } from '../game/happy.ts';
+import { clockOf, MIN_PER_DAY, MORNING, slotsLeft } from '../game/clock.ts';
 import {
 	applyTown,
 	avgHappy as avgHappyOf,
-	startTown as startTownState,
-	replayTown,
-	tickTown,
-	type TownAction,
-	type TownSave,
-	type TownEvent,
-	type TownState
-} from '../game/town.ts';
-import { REQ } from '../game/requests.ts';
-import {
-	BUILD_MIN,
-	demand as demandOf,
+	chapterDay,
+	deskCtx,
+	happyAt,
 	income as incomeOf,
 	incomeParts as incomePartsOf,
-	pop as popOf,
+	demand as demandOf,
+	population,
+	RANK_NAMES,
+	RANKS,
+	replayTown,
+	startTown as startTownState,
+	tickTown,
+	type TownAction,
+	type TownEvent,
+	type TownSave,
+	type TownState
+} from '../game/town.ts';
+import {
+	causeLabel,
+	CLIENTS,
+	DAYS_PER_CHAPTER,
+	groupOf,
+	lessonsFor,
+	movesFor,
+	outCost,
+	reward,
+	SYSTEM_NAMES,
+	type Change,
+	type DeskAction,
+	type Req
+} from '../game/desk.ts';
+import {
+	BUILD_MIN,
 	roadPlan as roadPlanOf,
 	snapPoint as snapPointOf,
 	type Placed,
 	type RoadPlan,
 	type SnapPt
 } from '../game/build.ts';
-import { mapOf } from '../game/map.ts';
+import { mapOf, type FeatKey } from '../game/map.ts';
+import { fieldName } from '../content/fields.ts';
+import { loadProgress } from '../progress.ts';
+import {
+	BOX_ID,
+	BOX_SPOT,
+	CLIENT_LOOK,
+	FIELD_COLOR,
+	SYSTEM_FEAT,
+	SYSTEM_ID,
+	SYSTEM_SPOT,
+	type Rect
+} from './systems.ts';
+
+/** 遊びの記録を置く所（game-design.md 15.9） */
+export const TOWN_KEY = 'devlearn.town';
 
 /** 種の既定（game-design.md 7.1） */
 const SEED = 1;
@@ -57,6 +88,7 @@ export type ReqRow = {
 	title: string;
 	who: string;
 	left: number;
+	doubt: number;
 };
 export type DoneRow = { id: string; title: string; how: string };
 export type InfoView = {
@@ -69,45 +101,52 @@ export type InfoView = {
 };
 export type LedgerRow = { t: string; text: string; v: number };
 export type BudgetView = { parts: [string, number][]; income: number; ledger: LedgerRow[] };
-export type ReqOpt = { label: string; note: string; cost: number };
+export type CandView = { id: string; label: string; state: 'live' | 'out' | 'ok' };
+export type MoveView = {
+	key: number;
+	kind: 'learned' | 'any';
+	label: string;
+	slots: number;
+	ok: boolean;
+	why: string;
+	lesson?: string;
+	lessonTitle?: string;
+};
 export type ReqDialog = {
 	kind: 'req';
 	id: string;
 	icon: string;
 	color: string;
-	left: number;
-	title: string;
 	who: string;
-	quote: string;
-	conds: string[];
-	reward: string;
-	lesson: LessonData;
-	lid: string;
-	learned: boolean;
-	needOk: boolean;
-	learnedOpt: ReqOpt;
-	outOpt: ReqOpt;
-};
-export type Dialog = null | { kind: 'intro' } | ReqDialog;
-export type LessonNode = { id: string; x: number; y: number; label: string; sub: string };
-/** 札：[置き場, 字, 強調, 横のずれ, 縦のずれ] */
-export type Tok = [string, string, number, number, number];
-export type LessonStep = {
-	t: string;
-	d: string;
-	cmd: string;
-	facts: [string, string][];
-	tok: Record<string, Tok>;
-};
-export type LessonData = {
+	place: string;
 	title: string;
-	tool: string;
-	edges: [string, string, string][];
-	vh: number;
-	nodes: LessonNode[];
-	steps: LessonStep[];
+	left: number;
+	doubt: number;
+	slots: number;
+	cands: CandView[];
+	moves: MoveView[];
+	evidence: string | null;
+	notes: string[];
+	last: string[];
+	reward: number;
+	cost: number;
+	clientSat: number;
+	lessons: { lesson: string; title: string; move: string; learned: boolean }[];
 };
-export type LessonView = { lid: string; data: LessonData };
+export type ResultDialog = {
+	kind: 'result';
+	passed: boolean;
+	title: string;
+	body: string;
+	days: { label: string; minute: number }[];
+};
+export type Dialog = null | { kind: 'intro' } | ReqDialog | ResultDialog;
+export type Goals = {
+	clientSat: number;
+	daysLeft: number;
+	rankNext: number | null;
+	rankName: string;
+};
 
 export type TownUi = {
 	ready: boolean;
@@ -130,14 +169,20 @@ export type TownUi = {
 	budgetOpen: boolean;
 	budget: BudgetView;
 	dialog: Dialog;
-	lesson: LessonView | null;
+	/** 章・日目・町の格・勤務の残り（上の帯） */
+	chapter: string;
+	day: number;
+	slots: number;
+	goals: Goals;
+	/** 建った仕組みの建物（地下の仕組みの凡例） */
+	systems: { field: string; name: string; fieldName: string; color: string; links: number }[];
 };
 
 export function newTownUi(): TownUi {
 	return {
 		ready: false,
 		noGL: '',
-		clock: '15:30',
+		clock: '08:00',
 		date: '11月10日',
 		pop: 0,
 		money: 0,
@@ -155,7 +200,11 @@ export function newTownUi(): TownUi {
 		budgetOpen: false,
 		budget: { parts: [], income: 0, ledger: [] },
 		dialog: null,
-		lesson: null
+		chapter: '第 1 章',
+		day: 1,
+		slots: 8,
+		goals: { clientSat: 50, daysLeft: 7, rankNext: null, rankName: '' },
+		systems: []
 	};
 }
 
@@ -163,9 +212,10 @@ export type TownHandle = ReturnType<typeof startTown>;
 
 type Layers = { canvas: HTMLCanvasElement; markers: HTMLElement; floaters: HTMLElement };
 
-// 試作のまま：組み立て後の建物（区画に建つ家・店・公園）
+// 試作のまま：組み立て後の建物（区画に建つ家・店・公園）。仕組みの建物と業者の箱も同じ形で描く
 type Built = Bld & {
-	player: true;
+	player: boolean;
+	field?: string;
 	lot: { y0?: number };
 	floors?: number;
 	wall?: Col;
@@ -301,14 +351,41 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 		roadStart: null as SnapPt | null,
 		prevSpeed: 1
 	};
-	/** 街づくりの状態（src/lib/game/build.ts） */
 	const MAP = mapOf(city);
-	/** 街の状態の全部（src/lib/game/town.ts）。apply と tickTown だけで変わる */
+	/** 修了したレッスンの集まり（学習の記録を読むだけ。段 4 の 4.3）。撮影の口からは差し替えられる */
+	let learnedOverride: Set<string> | null = null;
+	const learned = (): Set<string> => learnedOverride ?? new Set(loadProgress().done);
+	/** 街の状態の全部（src/lib/game/town.ts）。applyTown と tickTown だけで変わる */
 	let ts: TownState = startTownState(SEED, MAP);
-	const allB = (): AnyB[] => (city.B as AnyB[]).concat(builtList());
-	const hp = (id: number) => ts.happy[id] || DEFAULT_HAPPY;
-	const pop = () => popOf(ts.build, MAP, ts.minute);
-	const outs = () => Object.values(ts.answered).filter((v) => v === 'out').length;
+	/** 打てた手の記録（何分目に・何をした。game-design.md 15.9）。任意の時点はここから作り直す */
+	let log: TownSave['actions'] = [];
+	let restored = false;
+	if (!still) {
+		try {
+			const raw = localStorage.getItem(TOWN_KEY);
+			const sv = raw ? (JSON.parse(raw) as TownSave) : null;
+			if (sv && sv.version === 1 && sv.seed === SEED && Array.isArray(sv.actions)) {
+				ts = replayTown(sv, MAP).state;
+				log = sv.actions.slice();
+				restored = true;
+			}
+		} catch {
+			/* 読めない記録は使わない */
+		}
+	}
+	const save = (): TownSave => ({ version: 1, seed: SEED, now: ts.minute, actions: log.slice() });
+	function persist() {
+		if (still) return;
+		try {
+			localStorage.setItem(TOWN_KEY, JSON.stringify(save()));
+		} catch {
+			/* 置けなくても遊べる */
+		}
+	}
+	const allB = (): AnyB[] => (city.B as AnyB[]).concat(builtList(), extraList());
+	/** 建物の満足度（0〜1。描画の色に使う） */
+	const hp = (id: number) => happyAt(ts, MAP, id) / 100;
+	const pop = () => population(ts, MAP);
 	const avgHappy = () => avgHappyOf(ts, MAP);
 
 	// ---------------- camera ----------------
@@ -780,6 +857,8 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 			const [ax, az] = pts[k],
 				[bx, bz] = pts[k + 1];
 			const L = Math.hypot(bx - ax, bz - az);
+			// 長さ 0 の区間は向きが決まらない（0 で割ると NaN になり、にじみが黒い四角に広がる）
+			if (L < 0.01) continue;
 			const n = Math.max(1, Math.ceil(L / 6));
 			const ux = (bx - ax) / L,
 				uz = (bz - az) / L,
@@ -842,14 +921,29 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 	) {
 		cyl(g, x, z, 0.2, h || 1.6, r, 18, col, { m: 4 });
 	}
+	/** 依頼主の建物ごとの、受付中の要望の数 */
+	function openAt(): Map<FeatKey, number> {
+		const m = new Map<FeatKey, number>();
+		for (const r of ts.desk.requests)
+			if (r.status === 'open') {
+				const k = CLIENTS[r.group].at;
+				m.set(k, (m.get(k) ?? 0) + 1);
+			}
+		return m;
+	}
+	const CLIENT_KEYS = [...new Set(Object.values(CLIENTS).map((c) => c.at))];
+	/** その依頼主の建物に、最後につないだ仕組みの分野 */
+	const linkedField = (k: FeatKey) => {
+		let f: string | null = null;
+		for (const x of ts.systems) if (x.links.includes(k)) f = x.field;
+		return f;
+	};
 	function buildInfra() {
 		const g = new Geo(1 << 14);
 		const BLUE = HX('#4aa3ff'),
-			VIO = HX('#b48cff'),
 			RED = HX('#ff5a3c'),
-			GRN = HX('#56d68a');
-		const hall = [cx(F.hall), cz(F.hall)];
-		// trunk lines along roads
+			GRAY = HX('#8a9099');
+		// trunk lines along roads（試作のまま）
 		tube(
 			g,
 			[
@@ -886,40 +980,7 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 			g,
 			[
 				[40, -80],
-				[hall[0], hall[1]]
-			],
-			1.1,
-			BLUE,
-			0.4
-		);
-		tube(
-			g,
-			[
-				[-80, 0],
-				[-80, 40],
-				[cx(F.school), cz(F.school)]
-			],
-			1.1,
-			ts.answered.school ? GRN : RED,
-			0.4
-		);
-		tube(
-			g,
-			[
-				[-160, -80],
-				[-160, -40],
-				[cx(F.clinic), cz(F.clinic)]
-			],
-			1.1,
-			BLUE,
-			0.4
-		);
-		tube(
-			g,
-			[
-				[80, 0],
-				[80, 160],
-				[150, 180]
+				[cx(F.hall), cz(F.hall)]
 			],
 			1.1,
 			BLUE,
@@ -936,107 +997,67 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 			0.4
 		);
 		node(g, F.tower.x, F.tower.z, 4, BLUE, 3);
-		node(g, hall[0], hall[1], 3.2, BLUE);
-		node(g, cx(F.clinic), cz(F.clinic), 2.4, BLUE);
-		node(g, 150, 180, 2.4, BLUE);
-		node(
-			g,
-			cx(F.school),
-			cz(F.school),
-			ts.answered.school ? 2.6 : 3.6,
-			ts.answered.school ? GRN : RED,
-			ts.answered.school ? 1.6 : 2.4
-		);
-		if (ts.answered.school === 'learned') {
-			node(g, cx(F.school) - 22, cz(F.school) + 12, 2.0, GRN);
+		node(g, cx(F.hall), cz(F.hall), 3.2, BLUE);
+		// 依頼主の建物への線：受付中の要望があると赤（脈打つ）、直してつないだら分野の色（15.4）
+		const open = openAt();
+		for (const k of CLIENT_KEYS) {
+			const b = F[k];
+			const f = linkedField(k);
+			const col = open.get(k) ? RED : f ? HX(FIELD_COLOR[f]) : BLUE;
 			tube(
 				g,
 				[
-					[cx(F.school), cz(F.school)],
-					[cx(F.school) - 22, cz(F.school) + 12]
+					[cx(b), 0],
+					[cx(b), cz(b)]
 				],
-				0.9,
-				GRN,
+				1.1,
+				col,
 				0.4
 			);
+			node(g, cx(b), cz(b), open.get(k) ? 3.6 : 2.6, col, open.get(k) ? 2.4 : 1.6);
 		}
-		if (ts.answered.board) {
-			const an = [cx(F.annex), cz(F.annex)];
-			const col = ts.answered.board === 'learned' ? VIO : HX('#8a9099');
-			tube(
-				g,
-				[[cx(F.board), cz(F.board)], [cx(F.board), cz(F.board) - 8], [an[0], cz(F.board) - 8], an],
-				1.2,
-				col,
-				0.6
-			);
-			node(g, an[0], an[1], 3, col, 2.2);
-			if (ts.answered.shop)
+		// 仕組みの建物と、つないだ依頼主の建物
+		for (const x of ts.systems) {
+			const sb = systemB(x.field);
+			const col = HX(FIELD_COLOR[x.field]);
+			node(g, cx(sb), cz(sb), 3, col, 2.2);
+			for (const k of x.links) {
+				const c = F[k];
 				tube(
 					g,
-					[[cx(F.shopMain), cz(F.shopMain)], [cx(F.shopMain), 0], [an[0], 0], an],
-					1.0,
+					[
+						[cx(c), cz(c)],
+						[cx(c), cz(sb)],
+						[cx(sb), cz(sb)]
+					],
+					1.2,
 					col,
 					0.6
 				);
+			}
 		}
-		const TEAL = HX('#3fd0c0'),
-			ORG = HX('#ffb000');
-		if (ts.answered.clinic) {
-			const dv = [cx(F.dbvault), cz(F.dbvault)];
-			const col = ts.answered.clinic === 'learned' ? TEAL : HX('#8a9099');
+		// 業者の箱：灰色の線で回線につながるだけ。分野の色を持たない
+		for (const bx of ts.boxes) {
+			const r = BOX_SPOT[bx.client];
+			if (!r) continue;
 			tube(
 				g,
 				[
-					[F.clinic.x1 + 1.6, cz(F.clinic)],
-					[F.clinic.x1 + 1.6, dv[1]],
-					[F.dbvault.x1 + 0.6, dv[1]]
-				],
-				1.2,
-				col,
-				0.6
-			);
-			tube(
-				g,
-				[
-					[-80, cz(F.clinic)],
-					[F.clinic.x1 + 1.6, cz(F.clinic)]
+					[cx(r), cz(r)],
+					[cx(r), 0]
 				],
 				1.0,
-				BLUE,
+				GRAY,
 				0.4
 			);
-			node(g, dv[0], dv[1], 2.8, col, 2);
-		}
-		const wh = [cx(F.warehouse), cz(F.warehouse)],
-			gt = [cx(F.gate), cz(F.gate)];
-		if (ts.answered.harbor === 'learned') {
-			tube(g, [[250, 0], [250, 150], [gt[0], 150], gt], 1.2, ORG, 0.4);
-			node(g, gt[0], gt[1], 3, ORG, 2.2);
-			tube(g, [gt, wh], 1.1, GRN, 0.5);
-			tube(
-				g,
-				[
-					[80, 160],
-					[80, 150],
-					[gt[0] + 4, 150],
-					[gt[0] + 4, gt[1]]
-				],
-				1.0,
-				GRN,
-				0.45
-			);
-		} else if (ts.answered.harbor) {
-			tube(g, [[250, 0], [250, 150], [wh[0], 150], wh], 1.2, HX('#8a9099'), 0.4);
-			node(g, wh[0], wh[1], 2.6, HX('#8a9099'), 2);
-		} else {
-			tube(g, [[250, 0], [250, 150], [wh[0], 150], wh], 1.2, RED, 0.4);
-			node(g, wh[0], wh[1], 3.2, RED, 2.4);
+			node(g, cx(r), cz(r), 2.2, GRAY, 1.8);
 		}
 		E.setMesh('infra', g.out(), true);
 	}
 	buildInfra();
 	function applyInfoColors() {
+		const open = openAt();
+		const rgb = (h: string) => HX(h).slice(0, 3);
 		for (const b of allB()) {
 			const rise = Math.round(E.getRise(b.id) * 255);
 			if (S.view === 'happy') {
@@ -1047,24 +1068,23 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 				E.setData(b.id, c[0] * 255, c[1] * 255, c[2] * 255, rise);
 			} else if (S.view === 'infra') {
 				let c = [0, 0, 0];
-				if (b === F.annex)
-					c = ts.answered.board === 'learned' ? [0.75, 0.6, 1] : [0.55, 0.58, 0.62];
-				if (b === F.school) c = ts.answered.school ? [0.4, 0.85, 0.55] : [1, 0.45, 0.35];
-				if (b === F.hall || b === F.clinic || b.kind === 'tower') c = [0.4, 0.65, 1];
-				if (b === F.board) c = ts.answered.board ? [0.75, 0.6, 1] : [1, 0.75, 0.4];
-				if (b === F.shopMain) c = ts.answered.shop ? [0.75, 0.6, 1] : [1, 0.85, 0.45];
-				if (b === F.dbvault) c = [0.3, 0.85, 0.78];
-				if (b === F.gate) c = [1, 0.7, 0.2];
-				if (b === F.warehouse)
-					c =
-						ts.answered.harbor === 'learned'
-							? [0.4, 0.85, 0.55]
-							: ts.answered.harbor
-								? [0.55, 0.58, 0.62]
-								: [1, 0.45, 0.35];
+				if (b === F.hall || b.kind === 'tower') c = [0.4, 0.65, 1];
+				const k = CLIENT_KEYS.find((x) => F[x] === b);
+				if (k) {
+					const f = linkedField(k);
+					c = open.get(k) ? [1, 0.45, 0.35] : f ? rgb(FIELD_COLOR[f]) : [0.4, 0.65, 1];
+				}
+				const sf = 'field' in b && b.field ? b.field : sysFieldOf(b);
+				if (sf) c = rgb(FIELD_COLOR[sf]);
+				if (b.kind === 'box') c = [0.55, 0.58, 0.62];
 				E.setData(b.id, c[0] * 255, c[1] * 255, c[2] * 255, rise);
 			} else E.setData(b.id, 0, 0, 0, rise);
 		}
+	}
+	/** 試作の街の隠れた建物のうち、仕組みの建物に使う物の分野 */
+	function sysFieldOf(b: AnyB): string | null {
+		for (const [f, k] of Object.entries(SYSTEM_FEAT)) if (k && F[k] === b) return f;
+		return null;
 	}
 
 	// ---------------- constructions ----------------
@@ -1127,6 +1147,73 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 		return b;
 	}
 	const builtList = () => ts.build.placed.map(builtOf);
+	// 仕組みの建物（試作の街に無い 8 分野）と業者の箱。状態の systems・boxes を読んで描くだけ
+	const FIELD_ORDER = Object.keys(SYSTEM_SPOT);
+	const extraCache = new Map<string, Built>();
+	function spotB(
+		key: string,
+		id: number,
+		r: Rect,
+		kind: string,
+		name: string,
+		h: number,
+		field?: string
+	) {
+		const k = key + ':' + h;
+		let b = extraCache.get(k);
+		if (!b) {
+			const y0 = Math.max(
+				Y,
+				...[
+					[r.x0, r.z0],
+					[r.x1, r.z0],
+					[r.x0, r.z1],
+					[r.x1, r.z1]
+				].map(([x, z]) => city.terrainH(x, z) + 0.05)
+			);
+			b = { id, kind, name, ...r, h, residents: 0, jobs: 0, player: false, field, lot: { y0 } };
+			extraCache.set(k, b);
+		}
+		return b;
+	}
+	function systemB(field: string): AnyB {
+		const fk = SYSTEM_FEAT[field];
+		if (fk) return F[fk];
+		return spotB(
+			'sys-' + field,
+			SYSTEM_ID + FIELD_ORDER.indexOf(field),
+			SYSTEM_SPOT[field],
+			'system',
+			SYSTEM_NAMES[field],
+			9,
+			field
+		);
+	}
+	function boxB(client: FeatKey, count: number): Built {
+		return spotB(
+			'box-' + client,
+			BOX_ID + CLIENT_KEYS.indexOf(client),
+			BOX_SPOT[client],
+			'box',
+			'業者の箱（中身は見えない）',
+			2.6 * count
+		);
+	}
+	function extraList(): Built[] {
+		const out: Built[] = [];
+		for (const x of ts.systems) if (!SYSTEM_FEAT[x.field]) out.push(systemB(x.field) as Built);
+		for (const bx of ts.boxes) if (BOX_SPOT[bx.client]) out.push(boxB(bx.client, bx.count));
+		return out;
+	}
+	/** 仕組みの建物が建っているか（試作の隠れた建物は、建つまで隠す） */
+	function syncSystems() {
+		for (const [f, k] of Object.entries(SYSTEM_FEAT)) {
+			if (!k) continue;
+			const has = ts.systems.some((x) => x.field === f);
+			F[k].hidden = !has;
+			if (!constructions.some((c) => c.b === F[k])) E.setData(F[k].id, 0, 0, 0, has ? 255 : 0);
+		}
+	}
 	function rebuildBuilt() {
 		const g = new Geo(1 << 14);
 		// player roads and the lots they opened
@@ -1247,6 +1334,37 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 					{ id }
 				);
 			}
+		}
+		for (const b of extraList()) {
+			const id = b.id;
+			const y = b.lot.y0 ?? Y;
+			if (b.kind === 'box') {
+				const n = Math.round(b.h / 2.6);
+				for (let k = 0; k < n; k++) {
+					const y0 = y + k * 2.6;
+					box(g, b.x0 + 0.3, y0, b.z0 + 0.3, b.x1 - 0.3, y0 + 2.5, b.z1 - 0.3, HX('#8a9099'), {
+						id,
+						top: HX('#6f757d'),
+						ao: 0.8
+					});
+				}
+				continue;
+			}
+			// 仕組みの建物：2 階の箱に、分野の色の屋根と帯（色だけに頼らないよう、板と凡例に分野の名前を出す）
+			const col = HX(FIELD_COLOR[b.field ?? 'net']);
+			box(g, b.x0, y, b.z0, b.x1, y + 7.4, b.z1, HX('#e9e6df'), { id, top: col, ao: 0.72 });
+			box(g, b.x0 - 0.05, y, b.z0 - 0.05, b.x1 + 0.05, y + 0.45, b.z1 + 0.05, HX('#9b958a'), {
+				id,
+				ao: 0.9
+			});
+			for (const f of faces(b.x0, b.z0, b.x1, b.z1)) {
+				fquad(g, f, 0.4, f.L - 0.4, y + 5.6, y + 6.6, 0.06, mulc(col, 0.85), 1, id, 31.5);
+				windows(g, f, y + 0.6, 2, 2.6, 2.4, 1.0, 1.2, 0.8, HX('#2a3a48'), id, 1.2);
+			}
+			const mx = (b.x0 + b.x1) / 2,
+				mz = (b.z0 + b.z1) / 2;
+			box(g, mx - 0.12, y + 7.4, mz - 0.12, mx + 0.12, y + 10.5, mz + 0.12, HX('#cfd3d8'), { id });
+			box(g, mx - 0.5, y + 10.2, mz - 0.5, mx + 0.5, y + 10.8, mz + 0.5, col, { id });
 		}
 		E.setMesh('built', g.out(), true);
 	}
@@ -1384,8 +1502,26 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 			toast('ここには引けない', r.why, 'warn');
 			return;
 		}
-		const na = trafficNode(plan.a.x, plan.a.z),
-			nb2 = trafficNode(plan.b.x, plan.b.z);
+		roadTraffic(plan.a, plan.b, plan.L);
+		rebuildBuilt();
+		lotMarkers();
+		mesh('lots').visible = true;
+		toast(
+			'道路を引いた',
+			Math.round(plan.L) +
+				' m ・ ¥' +
+				plan.cost +
+				' ・ 沿いに空き区画が ' +
+				(r.opened ?? 0) +
+				' つできた。住宅地や商業地を建てられる',
+			''
+		);
+		sfxNote();
+	}
+	/** 引いた道に車を 4 台入れる（見た目だけ。15.6） */
+	function roadTraffic(a: Pt, b: Pt, len: number) {
+		const na = trafficNode(a.x, a.z),
+			nb2 = trafficNode(b.x, b.z);
 		na.nb.push(nb2);
 		nb2.nb.push(na);
 		for (let k = 0; k < 4; k++) {
@@ -1393,7 +1529,7 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 				a: na,
 				b: nb2,
 				c: null,
-				t: (k * plan.L) / 5,
+				t: (k * len) / 5,
 				phase: 'seg',
 				type: 'car',
 				col: pick(PAL.car),
@@ -1410,20 +1546,6 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 			chooseNext(car);
 			cars.push(car);
 		}
-		rebuildBuilt();
-		lotMarkers();
-		mesh('lots').visible = true;
-		toast(
-			'道路を引いた',
-			Math.round(plan.L) +
-				' m ・ ¥' +
-				plan.cost +
-				' ・ 沿いに空き区画が ' +
-				r.opened +
-				' つできた。住宅地や商業地を建てられる',
-			''
-		);
-		sfxNote();
 	}
 	function previewRoad(plan: RoadPlan | null) {
 		const g = new Geo(2048);
@@ -1492,45 +1614,127 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 			}
 		}
 	}
-	// ---------------- requests & lessons ----------------
-	const LESSONS: Record<string, LessonData> = LESSON_DATA;
+	// ---------------- requests ----------------
+	/** 1 日の始まり（8:00）の数。17:00 の日報に使う */
+	let dayStart = { clientSat: ts.desk.clientSat, money: ts.build.money, done: 0 };
+	const doneCount = () => ts.desk.requests.filter((r) => r.status !== 'open').length;
 	/** 状態の知らせ（tickTown・applyTown の結果）を、知らせ・印・絵に映す */
 	function onEvents(evs: TownEvent[]) {
 		let reqs = false,
-			grown = false;
+			built = false,
+			infra = false;
 		for (const e of evs) {
-			if (e.type === 'arrive') {
-				toast('要望が届いた', REQ[e.id].who + '：' + REQ[e.id].title, 'req');
+			if (e.type === 'grown') built = true;
+			else if (e.type === 'hour' && e.hour === MORNING / 60) {
+				dayStart = { clientSat: ts.desk.clientSat, money: ts.build.money, done: doneCount() };
+			} else if (e.type === 'hour' && e.hour === 17) dayReport(e.at);
+			else if (e.type === 'day') reqs = true;
+			else if (e.type === 'rank') {
+				toast('町の格が上がった', `「${RANK_NAMES[e.rank]}」になった ・ 報酬 ¥300`, 'learn');
 				sfxNote();
+			} else if (e.type === 'chapter') {
+				toast(
+					e.chapter === 'free'
+						? `自由の章（${e.freeRound} 回目）が始まった`
+						: `第 ${e.chapter} 章が始まった`,
+					'依頼主の満足度は 50 から。街はそのまま続く',
+					'learn'
+				);
 				reqs = true;
-			} else if (e.type === 'expire') {
-				toast('期限を過ぎた', REQ[e.id].who + 'の満足度が下がった', 'warn');
-				reqs = true;
-			} else if (e.type === 'day') reqs = true;
-			else if (e.type === 'grown') grown = true;
+			} else if (e.type === 'box') {
+				const r = BOX_SPOT[e.client];
+				if (r) floater(cx(r), Y + 8, cz(r), '業者の箱', '');
+				built = infra = true;
+			} else if (e.type === 'system') built = infra = true;
+			else if (e.type === 'link') infra = true;
+			else if (e.type === 'desk') {
+				reqs = infra = true;
+				const arrive = e.changes.filter((c) => c.what === 'arrive');
+				if (arrive.length) {
+					toast(`要望が ${arrive.length} 件届いた`, arrive.map((c) => c.why).join(' ／ '), 'req');
+					sfxNote();
+				}
+				for (const c of e.changes)
+					if (c.what === 'expire') toast('期限を過ぎた', c.why + ' ・ 依頼主の満足度 −5', 'warn');
+				if (e.from === 'close') onClose(e.changes);
+			}
 		}
-		if (grown) {
+		if (built) {
 			rebuildBuilt();
 			lotMarkers();
 			sfxNote();
 		}
-		if (reqs) {
-			renderReqs();
-			if (S.view !== 'ground') applyInfoColors();
+		if (infra) {
+			syncSystems();
+			buildInfra();
 		}
+		if (reqs || infra) {
+			renderReqs();
+			applyInfoColors();
+		}
+		if (evs.length) renderHUD();
 	}
-	/** 手を 1 つ当てる（状態は town.ts だけが変える） */
-	/** 打てた手の記録（何分目に・何をした。game-design.md 15.9）。任意の時点はここから作り直す */
-	const log: TownSave['actions'] = [];
+	/** 17:00 の日報：その日に動いた数と理由（15.2） */
+	function dayReport(at: number) {
+		const d = ts.desk.clientSat - dayStart.clientSat;
+		const m = ts.build.money - dayStart.money;
+		toast(
+			`日報 ・ ${Math.floor((at - ts.chapterStart) / MIN_PER_DAY) + 1} 日目の締め`,
+			`依頼主の満足度 ${dayStart.clientSat} → ${ts.desk.clientSat}（${d >= 0 ? '+' : ''}${d}） ・ 資金 ${m >= 0 ? '+' : '−'}${Math.abs(m)} ・ 片付いた要望 ${doneCount() - dayStart.done} 件`,
+			''
+		);
+	}
+	/** 章の締めの結果（合格・失敗）の板（15.7） */
+	function onClose(changes: Change[]) {
+		const c = changes.find((x) => x.what === 'status');
+		if (!c || c.what !== 'status') return;
+		const passed = ts.desk.result === 'passed';
+		const days: { label: string; minute: number }[] = [];
+		for (let d = 1; d <= Math.min(DAYS_PER_CHAPTER, chapterDay(ts)); d++)
+			days.push({
+				label: d === 1 ? '章の初め（1 日目の朝）から' : `${d} 日目の朝から`,
+				minute: ts.chapterStart + (d - 1) * MIN_PER_DAY
+			});
+		ui.dialog = {
+			kind: 'result',
+			passed,
+			title: passed ? `章の合格 ・ 評価「${ts.desk.grade}」` : 'この章は失敗',
+			body: c.why + (passed ? '。明日の朝 8:00 から次の章が始まる' : '。時計は止まった'),
+			days: passed ? [] : days
+		};
+		S.prevSpeed = passed ? S.speed || 1 : 0;
+		setSpeed(0);
+	}
+	/** 手の記録を、その時点の前で切って作り直す（巻き戻し。15.7・段 4 の 12 章） */
+	function restartAt(minute: number) {
+		const cut: TownSave = {
+			version: 1,
+			seed: SEED,
+			now: minute,
+			actions: log.filter((a) => a.at < minute)
+		};
+		try {
+			localStorage.setItem(TOWN_KEY, JSON.stringify(cut));
+		} catch {
+			/* 置けなくても作り直す */
+		}
+		// 道と車も記録から作り直すため、読み込み直す
+		location.reload();
+	}
+
+	/** 手を 1 つ当てる（状態は town.ts だけが変える）。打てた手だけを記録に残す */
 	function act(a: TownAction) {
-		const r = applyTown(ts, a, MAP);
+		const at = ts.minute;
+		const r = applyTown(ts, a, MAP, learned());
 		if (r.ok) {
 			ts = r.state;
-			log.push({ at: ts.minute, action: a });
+			log.push({ at, action: a });
+			onEvents(r.events);
+			renderHUD();
+			persist();
 		}
 		return r;
 	}
-	const save = (): TownSave => ({ version: 1, seed: SEED, now: ts.minute, actions: log.slice() });
 	// ---------------- UI ----------------
 	function setSpeed(v: number) {
 		S.speed = v;
@@ -1541,8 +1745,8 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 		road: '街の端の交差点（または引いた道の端）を押し、伸ばしたい先を押す。東の畑の方へ引ける ・ ¥2/m ・ 右クリックでやめる',
 		home: '空き区画を押すと住宅地に指定する（¥20）。住の需要があると、家が少しずつ建っていく',
 		shop: '空き区画を押すと商業地に指定する（¥20）。商の需要があると、店が少しずつ建っていく',
-		park: '光っている空き地を押すと公園ができる（¥80）',
-		bulldoze: '自分で建てた建物を押すと取り壊す'
+		park: '光っている空き地を押すと公園ができる（¥80）。60 m 以内の建物の満足度 +6',
+		bulldoze: '自分で建てた建物を押すと取り壊す（資金は戻らない）'
 	};
 	function setTool(t: string) {
 		S.tool = S.tool === t && t !== 'select' ? 'select' : t;
@@ -1580,19 +1784,25 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 		ui.pop = pop();
 		ui.money = ts.build.money;
 		ui.income = income();
-		ui.sat = Math.round(avgHappy() * 100);
+		ui.sat = Math.round(avgHappy());
 		ui.demand = demand();
+		const day = Math.max(1, chapterDay(ts));
+		const c = ts.desk.chapter;
+		ui.chapter = c === 'free' ? `自由の章 ${ts.desk.freeRound}` : `第 ${c} 章`;
+		ui.day = day;
+		ui.slots = slotsLeft(ts.minute);
+		const p = ui.pop;
+		ui.goals = {
+			clientSat: ts.desk.clientSat,
+			daysLeft: Math.max(0, DAYS_PER_CHAPTER - day),
+			rankNext: ts.rank < RANKS.length ? RANKS[ts.rank] - p : null,
+			rankName: RANK_NAMES[ts.rank]
+		};
 		if (ui.budgetOpen) renderBudget();
 	}
-	function demand() {
-		return demandOf(ts.build, MAP, avgHappy(), ts.minute);
-	}
-	function incomeParts(): [string, number][] {
-		return incomePartsOf(ts.build, MAP, outs(), ts.minute);
-	}
-	function income() {
-		return incomeOf(ts.build, MAP, outs(), ts.minute);
-	}
+	const demand = () => demandOf(ts, MAP);
+	const incomeParts = () => incomePartsOf(ts, MAP);
+	const income = () => incomeOf(ts, MAP);
 	function renderBudget() {
 		ui.budget = { parts: incomeParts(), income: income(), ledger: ts.build.ledger.slice() };
 	}
@@ -1600,57 +1810,95 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 		ui.budgetOpen = !ui.budgetOpen;
 		if (ui.budgetOpen) renderBudget();
 	}
+	const lookOf = (who: string) => CLIENT_LOOK[who] ?? { icon: '!', color: '#ff9d4d' };
+	const openReqs = () =>
+		ts.desk.requests
+			.filter((r) => r.status === 'open')
+			.sort((a, b) => a.due - b.due || (a.id < b.id ? -1 : 1));
+	const HOW: Record<string, string> = {
+		learned: '学んだ手で直した',
+		grope: '手探りで直した',
+		temp: '再起動でしのいだ（2 日後に再び届く）',
+		out: '外に頼んだ'
+	};
 	function renderReqs() {
-		ui.reqs = ts.requests.map((r) => {
-			const d = REQ[r.id];
+		const day = chapterDay(ts);
+		ui.reqs = openReqs().map((r) => {
+			const c = CLIENTS[r.group];
+			const lk = lookOf(c.who);
 			return {
 				id: r.id,
-				icon: d.icon,
-				color: d.color,
-				title: d.title,
-				who: d.who,
-				left: r.due - S.day
+				icon: lk.icon,
+				color: lk.color,
+				title: groupOf(r.group).symptom,
+				who: c.who,
+				left: r.due - day,
+				doubt: r.doubt
 			};
 		});
-		ui.done = Object.keys(ts.answered).map((id) => ({
-			id,
-			title: REQ[id].title,
-			how: ts.answered[id]
+		ui.done = ts.desk.requests
+			.filter((r) => r.status !== 'open')
+			.slice(-6)
+			.reverse()
+			.map((r) => ({
+				id: r.id,
+				title: groupOf(r.group).symptom,
+				how:
+					r.status === 'expired'
+						? '期限を過ぎた'
+						: r.status === 'outsourced'
+							? '外に頼んだ（明日の朝に片付く）'
+							: HOW[r.how ?? 'out']
+			}));
+		ui.systems = ts.systems.map((x) => ({
+			field: x.field,
+			name: SYSTEM_NAMES[x.field],
+			fieldName: fieldName(x.field),
+			color: FIELD_COLOR[x.field],
+			links: x.links.length
 		}));
 		renderMarkers();
 	}
-	const markerEls = new Map<string, HTMLElement>();
+	/** 印は依頼主の建物ごとに 1 つ。2 件以上あるときは件数を添える（15.3） */
+	const markerEls = new Map<FeatKey, HTMLElement>();
 	function renderMarkers() {
+		const open = openAt();
 		for (const [k, el] of markerEls)
-			if (!ts.requests.find((r) => r.id === k)) {
+			if (!open.get(k)) {
 				el.remove();
 				markerEls.delete(k);
 			}
-		for (const r of ts.requests)
-			if (!markerEls.has(r.id)) {
-				const d = REQ[r.id];
-				const el = document.createElement('button');
-				el.type = 'button';
+		for (const [k, n] of open) {
+			const first = openReqs().find((r) => CLIENTS[r.group].at === k);
+			if (!first) continue;
+			const who = CLIENTS[first.group].who;
+			let el = markerEls.get(k);
+			if (!el) {
+				const btn = document.createElement('button');
+				btn.type = 'button';
+				el = btn;
 				el.className = 'marker';
-				el.style.setProperty('--c', d.color);
-				el.setAttribute('aria-label', d.who + 'の要望を開く');
 				const pin = document.createElement('span');
 				pin.className = 'pin';
 				const bang = document.createElement('b');
-				bang.textContent = '!';
 				pin.appendChild(bang);
 				const lbl = document.createElement('span');
 				lbl.className = 'lbl';
-				lbl.textContent = d.who;
 				el.appendChild(pin);
 				el.appendChild(lbl);
 				el.addEventListener('click', (e) => {
 					e.stopPropagation();
-					openReq(r.id);
+					const r = openReqs().find((x) => CLIENTS[x.group].at === k);
+					if (r) openReq(r.id);
 				});
 				layers.markers.appendChild(el);
-				markerEls.set(r.id, el);
+				markerEls.set(k, el);
 			}
+			el.style.setProperty('--c', lookOf(who).color);
+			(el.querySelector('.pin b') as HTMLElement).textContent = n > 1 ? '!' + n : '!';
+			(el.querySelector('.lbl') as HTMLElement).textContent = who;
+			el.setAttribute('aria-label', `${who}の要望を開く（${n} 件）`);
+		}
 	}
 	let toastSeq = 0;
 	const timers = new Set<ReturnType<typeof setTimeout>>();
@@ -1694,150 +1942,153 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 		floats.push({ x, y, z, el, t: 0 });
 	}
 
-	// request dialog
-	function openReq(id: string) {
-		const d = REQ[id];
-		const r = ts.requests.find((x) => x.id === id);
+	// ---------------- 要望の板（screen-design.md 10.4） ----------------
+	let moveList: DeskAction[] = [];
+	let lastLines: string[] = [];
+	function openReq(id: string, keepLines = false) {
+		const r = ts.desk.requests.find((x) => x.id === id);
 		if (!r) return;
-		const b = F[d.at];
-		flyTo(cx(b), cz(b), 110, 0.55);
-		const learned = !!ts.learned[d.lesson];
-		const needOk = !d.needs || ts.answered[d.needs] === 'learned';
+		const c = CLIENTS[r.group];
+		const g = groupOf(r.group);
+		const b = F[c.at];
+		if (!ui.dialog || ui.dialog.kind !== 'req' || ui.dialog.id !== id) {
+			flyTo(cx(b), cz(b), 110, 0.55);
+			if (!keepLines) lastLines = [];
+		}
+		const L = learned();
+		const opts = movesFor(ts.desk, id, L, deskCtx(ts));
+		// 学んだ手は、打てる物を先に、学んでいない物はまとめて「効くレッスン」に出す
+		const shown = opts.filter((o) => o.kind === 'any' || !o.lesson || L.has(o.lesson));
+		moveList = shown.map((o) => o.action);
+		const lk = lookOf(c.who);
 		ui.dialog = {
 			kind: 'req',
 			id,
-			icon: d.icon,
-			color: d.color,
-			left: Math.max(0, r.due - S.day),
-			title: d.title,
-			who: d.who,
-			quote: d.quote,
-			conds: d.conds,
-			reward: d.reward,
-			lesson: LESSONS[d.lesson],
-			lid: d.lesson,
-			learned,
-			needOk,
-			learnedOpt: d.learnedOpt,
-			outOpt: d.outOpt
+			icon: lk.icon,
+			color: lk.color,
+			who: c.who,
+			place: b.name,
+			title: g.symptom,
+			left: Math.max(0, r.due - chapterDay(ts)),
+			doubt: r.doubt,
+			slots: slotsLeft(ts.minute),
+			cands: r.candidates.map((x) => ({
+				id: x,
+				label: causeLabel(x),
+				state: r.confirmed && x === r.truth ? 'ok' : r.ruledOut.includes(x) ? 'out' : 'live'
+			})),
+			moves: shown.map((o, key) => ({
+				key,
+				kind: o.kind,
+				label: o.label,
+				slots: o.slots,
+				ok: o.ok,
+				why: o.why,
+				lesson: o.lesson,
+				lessonTitle: o.lessonTitle
+			})),
+			evidence: r.evidence,
+			notes: r.notes.slice(),
+			last: lastLines,
+			reward: reward(g),
+			cost: outCost(g),
+			clientSat: ts.desk.clientSat,
+			lessons: lessonsFor(r).map((x) => ({ ...x, learned: L.has(x.lesson) }))
 		};
-		S.prevSpeed = S.speed;
+		if (S.speed) S.prevSpeed = S.speed;
 		setSpeed(0);
 	}
 	function closeDlg() {
 		ui.dialog = null;
 		setSpeed(S.prevSpeed || 1);
 	}
-	let lessonBack: (() => void) | null = null;
-	// lesson player（試作の簡略な解説。8-2c で段 6 の再生装置につなぎ替える）
-	function openLesson(lid: string, back: () => void) {
-		ui.dialog = null;
-		lessonBack = back;
-		ui.lesson = { lid, data: LESSONS[lid] };
-	}
-	function closeLesson() {
-		ui.lesson = null;
-		lessonBack?.();
-	}
-	function finishLesson(lid: string) {
-		act({ type: 'learn', lesson: lid });
-		ui.lesson = null;
-		toast('解説を修了', LESSONS[lid].title + ' ・ 応え方が 1 つ増えた', 'learn');
-		lessonBack?.();
-	}
-
-	function answer(id: string, how: string) {
-		const d = REQ[id];
-		const r = act({ type: 'answer', id, how: how === 'learned' ? 'learned' : 'out' });
+	/** 板の手を打つ。片付いたら板を閉じ、街の変化を見せる（G-5） */
+	function doMove(key: number) {
+		const a = moveList[key];
+		const d = ui.dialog;
+		if (!a || !d || d.kind !== 'req') return;
+		const before: Req | undefined = ts.desk.requests.find((x) => x.id === a.request);
+		const sys0 = new Set(ts.systems.map((x) => x.field));
+		const r = act(a);
 		if (!r.ok) {
-			toast(r.why.startsWith('資金') ? '資金が足りない' : '選べない', r.why, 'warn');
+			toast('打てない', r.why, 'warn');
 			return;
 		}
-		closeDlg();
-		renderReqs();
-		const target = F[d.at];
-		if (d.builds) {
-			const bb = F[d.builds];
-			bb.hidden = false;
-			const v = d.view as number[];
-			flyTo(cx(bb) + v[0], cz(bb) + v[1], v[2], v[3], v[4]);
-			construct(bb, 3.4, () => resolveEffects(id, how));
-		} else if (id === 'school') {
-			flyTo(cx(F.school), cz(F.school), 120, 0.55);
-			later(() => resolveEffects(id, how), 1200);
-		} else {
-			flyTo(cx(target), cz(target), 110, 0.55);
-			later(() => resolveEffects(id, how), 1200);
-		}
+		const ev = r.events.filter((e) => e.type === 'desk' && e.from === 'move');
+		lastLines = ev.flatMap((e) => (e.type === 'desk' ? e.changes.map((c) => c.why) : []));
+		const after = ts.desk.requests.find((x) => x.id === a.request);
 		sfxNote();
+		if (!before || !after || after.status === 'open') {
+			openReq(a.request, true);
+			return;
+		}
+		ui.dialog = null;
+		const built = ts.systems.find((x) => !sys0.has(x.field));
+		showChange(after, built?.field ?? null, lastLines);
 	}
-	function resolveEffects(id: string, how: string) {
-		const d = REQ[id];
-		const t = F[d.at];
-		let n = 0;
-		const r = how === 'learned' ? 110 : 70;
-		for (const b of city.B) {
-			const dd = Math.hypot(cx(b) - cx(t), cz(b) - cz(t));
-			if (dd < r && !b.hidden) {
-				if (n < (how === 'learned' ? 7 : 3) && b.kind !== 'board') {
-					floater(cx(b), b.h + 3 + (b.y0 || 0), cz(b), '満足 ↑', 'good');
+	/** 応えた結果を見せる：カメラが動き、仕組みの建物が建ち、周りに満足の印（G-5） */
+	let lastChange: { req: Req; field: string | null } | null = null;
+	function showChange(r: Req, field: string | null, lines: string[]) {
+		lastChange = { req: r, field };
+		const t = F[CLIENTS[r.group].at];
+		const up = lines.some((l) => l.startsWith('依頼主の満足度 +'));
+		const cheer = () => {
+			let n = 0;
+			for (const b of city.B) {
+				if (n >= 7 || b.hidden || b.kind === 'board') continue;
+				if (Math.hypot(cx(b) - cx(t), cz(b) - cz(t)) < 100) {
+					floater(cx(b), b.h + 3 + (b.y0 || 0), cz(b), up ? '満足 ↑' : '…', up ? 'good' : '');
 					n++;
 				}
 			}
-		}
-		buildInfra();
-		applyInfoColors();
-		const lines: Record<string, string> = {
-			board:
-				how === 'learned'
-					? '掲示板を直すたびに、直した人・日時・中身が記録庫へ流れ込む。前の文面にも戻せる。'
-					: '仕組みは入ったが中身が見えない。町の誰も使い方を説明できない。',
-			school:
-				how === 'learned'
-					? '中継器を 1 台足して振り分けた。昼休みの待ちが消えた。'
-					: '回線は太くなったが、費用がかさんだ。混む理由は分からないまま。',
-			shop:
-				how === 'learned'
-					? '前に建てた記録庫に、商店街の帳面がそのままつながった。'
-					: '業者の箱が 1 つ増えた。記録庫とは別の仕組みになった。',
-			clinic:
-				how === 'learned'
-					? '予約を表にして、日ごとの数と二重の予約がすぐ出るようになった。'
-					: '機械は入ったが、数え方は業者しか分からない。',
-			harbor:
-				how === 'learned'
-					? '事務所からだけ記録へ届くようになり、断った接続は門番の記録に残る。'
-					: '見張りは付いたが、毎月の費用がかかり続ける。'
 		};
+		if (field) {
+			const sb = systemB(field);
+			flyTo(cx(sb), cz(sb), 95, 0.6);
+			construct(sb, 3.4, cheer);
+		} else {
+			flyTo(cx(t), cz(t), 110, 0.55);
+			later(cheer, 1200);
+		}
+		setSpeed(S.prevSpeed || 1);
 		toast(
-			how === 'learned' ? '要望に応えた ・ 満足度 大きく上昇' : '要望に応えた ・ 満足度 少し上昇',
-			lines[id],
-			how === 'learned' ? 'learn' : '',
+			r.status === 'outsourced' ? '外に頼んだ' : '要望に応えた',
+			lines.join(' ／ '),
+			r.how === 'learned' ? 'learn' : '',
 			[
-				['↻ 変化をもう一度', () => replayChange(id), ''],
+				['↻ 変化をもう一度', replayChange, ''],
 				['地下の仕組みで見る', () => setView('infra'), 'pri']
 			]
 		);
 	}
-	function replayChange(id: string) {
+	/** 最後の変化をもう一度（描画だけ。状態は変えない。15.4） */
+	function replayChange() {
+		if (!lastChange) return;
 		setView('ground');
-		const d = REQ[id];
-		if (d.builds) {
-			const bb = F[d.builds];
-			const v = d.view as number[];
-			flyTo(cx(bb) + v[0], cz(bb) + v[1], v[2], v[3], v[4]);
-			construct(bb, 3.4, () => {
+		const { req, field } = lastChange;
+		const t = F[CLIENTS[req.group].at];
+		if (field) {
+			const sb = systemB(field);
+			flyTo(cx(sb), cz(sb), 95, 0.6);
+			construct(sb, 3.4, () => {
 				for (const b of city.B)
-					if (Math.hypot(cx(b) - cx(bb), cz(b) - cz(bb)) < 80 && !b.hidden && b.kind !== 'board')
+					if (Math.hypot(cx(b) - cx(t), cz(b) - cz(t)) < 100 && !b.hidden && b.kind !== 'board')
 						floater(cx(b), b.h + 3, cz(b), '満足 ↑', 'good');
 			});
 		} else {
-			const t = F[REQ[id].at];
 			flyTo(cx(t), cz(t), 120, 0.55);
-			later(() => {
-				setView('infra');
-			}, 900);
+			later(() => setView('infra'), 900);
 		}
+	}
+	/** 明日の朝 8:00 まで送る（記録には入らない。15.2） */
+	function nextMorning() {
+		const d = Math.floor(ts.minute / MIN_PER_DAY) * MIN_PER_DAY + MORNING;
+		const to = d > ts.minute ? d : d + MIN_PER_DAY;
+		const t = tickTown(ts, to, MAP);
+		ts = t.state;
+		frac = 0;
+		onEvents(t.events);
+		persist();
 	}
 
 	// building info
@@ -1973,9 +2224,19 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 			setSpeed(S.speed ? 0 : 1);
 		}
 		if (['1', '2', '3'].includes(e.key)) setSpeed(+e.key);
+		const k = e.key.toLowerCase();
+		if (!ui.dialog) {
+			if (k === 'n')
+				toast('明日の朝 8:00 まで送る？', '夜の間も収支は入り、区画は育つ', '', [
+					['送る', nextMorning, 'pri']
+				]);
+			if (k === 'r') replayChange();
+			if (e.key === '+' || e.key === ';') cam.v.dist *= 0.85;
+			if (e.key === '-') cam.v.dist *= 1.18;
+			clampCam();
+		}
 		if (e.key === 'Escape') {
-			if (ui.lesson) closeLesson();
-			else if (ui.dialog) closeDlg();
+			if (ui.dialog && ui.dialog.kind !== 'result') closeDlg();
 			else {
 				setTool('select');
 				select(null);
@@ -2106,7 +2367,7 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 			return;
 		}
 		if (b) {
-			const req = ts.requests.find((r) => F[REQ[r.id].at] === b);
+			const req = openReqs().find((r) => F[CLIENTS[r.group].at] === b);
 			if (req) {
 				openReq(req.id);
 				return;
@@ -2156,8 +2417,11 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 			setView,
 			setTool,
 			openReq,
-			answer,
-			openLesson,
+			doMove,
+			closeDlg,
+			ui,
+			setLearned: (ids: string[] | null) => (learnedOverride = ids ? new Set(ids) : null),
+			nextMorning,
 			city,
 			E,
 			setSpeed,
@@ -2198,8 +2462,6 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 		}
 		if (keys.has('q')) cam.v.yaw += 1.2 * dtR;
 		if (keys.has('e')) cam.v.yaw -= 1.2 * dtR;
-		if (keys.has('r')) cam.v.dist *= 1 - dtR;
-		if (keys.has('f')) cam.v.dist *= 1 + dtR;
 		clampCam();
 		if (cam.fly) {
 			cam.fly.t = Math.min(1, cam.fly.t + dtR / 1.4);
@@ -2343,10 +2605,8 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 				(1 - ((p[1] / p[3]) * 0.5 + 0.5)) * rc.height
 			];
 		};
-		for (const r of ts.requests) {
-			const el = markerEls.get(r.id);
-			if (!el) continue;
-			const b = F[REQ[r.id].at];
+		for (const [k, el] of markerEls) {
+			const b = F[k];
 			const p = proj(cx(b), (b.y0 || 0) + b.h + Y + 4, cz(b));
 			if (!p) {
 				el.style.display = 'none';
@@ -2374,6 +2634,8 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 		if (!STILL) raf = requestAnimationFrame(frame);
 	}
 	// initial
+	for (const rd of ts.build.roads) roadTraffic(rd.a, rd.b, rd.L);
+	syncSystems();
 	rebuildBuilt();
 	lotMarkers();
 	previewRoad(null);
@@ -2384,10 +2646,20 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 	setView('ground');
 	renderReqs();
 	renderHUD();
-	if (!STILL) {
+	if (!STILL && !restored) {
 		ui.dialog = { kind: 'intro' };
 		S.prevSpeed = 1;
 		setSpeed(0);
+	} else if (!STILL && ts.desk.result === 'failed') {
+		onClose([
+			{
+				what: 'status',
+				request: '',
+				before: 'playing',
+				after: 'failed',
+				why: `依頼主の満足度 ${ts.desk.clientSat}`
+			}
+		]);
 	}
 	function startIntro() {
 		closeDlg();
@@ -2418,10 +2690,10 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 		setView,
 		openReq,
 		closeDlg,
-		answer,
-		openLesson,
-		closeLesson,
-		finishLesson,
+		doMove,
+		restartAt,
+		replayChange,
+		nextMorning,
 		startIntro,
 		toggleBudget,
 		select: () => select(null),
@@ -2444,328 +2716,3 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 		}
 	};
 }
-
-// ---------------- 試作の簡略な解説の中身（試作のまま。8-2c で段 6 の再生装置につなぎ替える） ----------------
-const LESSON_DATA: Record<string, LessonData> = {
-	git: {
-		title: '変更を記録して共有する',
-		tool: 'Git',
-		edges: [
-			['desk', 'vault', '記録する'],
-			['vault', 'shelf', '送る']
-		],
-		vh: 180,
-		nodes: [
-			{ id: 'desk', x: 95, y: 82, label: '手元の机', sub: '作業中の文面' },
-			{ id: 'vault', x: 300, y: 82, label: '記録庫', sub: '直した履歴' },
-			{ id: 'shelf', x: 505, y: 82, label: 'みんなの棚', sub: '町で共有' }
-		],
-		steps: [
-			{
-				t: '掲示板の文面を直す',
-				d: '机の上にある「祭り 10/12」を「祭り 10/19」に書き換える。まだどこにも残っていない。',
-				cmd: '（文面を編集）',
-				facts: [
-					['机', '10/19（直した）'],
-					['記録庫', 'まだ空'],
-					['棚', '10/12 のまま']
-				],
-				tok: { v1: ['desk', '10/12', 0, -36, 0], v2: ['desk', '10/19', 1, 36, 0] }
-			},
-			{
-				t: '直した内容を記録する',
-				d: '直した文面を記録庫に入れる。前の文面も消えずに一緒に残る。',
-				cmd: 'git commit -m "祭りの日付を直す"',
-				facts: [
-					['机', '10/19'],
-					['記録庫', '10/12 → 10/19 の 2 件'],
-					['棚', '10/12 のまま']
-				],
-				tok: { v1: ['vault', '10/12', 1, -36, 0], v2: ['vault', '10/19', 1, 36, 0] }
-			},
-			{
-				t: '記録には名前と日時がつく',
-				d: '1 件ごとに「誰が・いつ・何を」が付く。あとから見れば、書き換えた人が分かる。',
-				cmd: 'git log',
-				facts: [
-					['10/19 の記録', '会長 ・ 11/10 15:42'],
-					['10/12 の記録', '事務 ・ 10/01 09:10']
-				],
-				tok: {
-					v1: ['vault', '10/12', 0, -36, 0],
-					v2: ['vault', '10/19', 1, 36, 0],
-					tag: ['vault', '会長 11/10', 1, 36, 30]
-				}
-			},
-			{
-				t: 'みんなの棚に送る',
-				d: '記録庫の最新をみんなの棚に送る。町の誰が見ても 10/19 になる。',
-				cmd: 'git push',
-				facts: [
-					['棚', '10/19（最新）'],
-					['記録庫', '2 件のまま']
-				],
-				tok: {
-					v1: ['vault', '10/12', 0, -36, 0],
-					v2: ['shelf', '10/19', 1, 0, 0],
-					tag: ['vault', '会長 11/10', 0, 36, 30]
-				}
-			},
-			{
-				t: '前の文面に戻す',
-				d: '間違いだったら、記録庫から 10/12 を取り出して戻せる。戻したこと自体も記録に残る。',
-				cmd: 'git revert HEAD',
-				facts: [
-					['机', '10/12（戻した）'],
-					['記録庫', '3 件（戻した記録も残る）']
-				],
-				tok: {
-					v1: ['desk', '10/12', 1, 0, 0],
-					v2: ['shelf', '10/19', 0, 0, 0],
-					tag: ['vault', '戻した記録', 1, 0, 30]
-				}
-			}
-		]
-	},
-	net: {
-		title: '混む通り道を分ける',
-		tool: 'ネットワーク',
-		edges: [
-			['room', 'ap1', ''],
-			['room', 'ap2', ''],
-			['ap1', 'net', ''],
-			['ap2', 'net', '']
-		],
-		vh: 240,
-		nodes: [
-			{ id: 'room', x: 95, y: 120, label: '教室の端末', sub: '30 台' },
-			{ id: 'ap1', x: 300, y: 70, label: '中継器 1', sub: '1 台で受ける' },
-			{ id: 'ap2', x: 300, y: 175, label: '中継器 2', sub: 'まだ無い' },
-			{ id: 'net', x: 505, y: 120, label: '資料の置き場', sub: '学校の中' }
-		],
-		steps: [
-			{
-				t: '端末が 1 台の中継器に集まる',
-				d: '昼休み、30 台が同じ中継器に一斉につなぐ。',
-				cmd: '（観察）',
-				facts: [
-					['中継器 1', '30 台'],
-					['中継器 2', '無し']
-				],
-				tok: {
-					a: ['room', '端末', 1, -28, 0],
-					b: ['room', '端末', 1, 28, 0],
-					c: ['room', '端末', 1, 80, 0]
-				}
-			},
-			{
-				t: '順番待ちができる',
-				d: '中継器は一度に少しずつしか送れないので、待ち行列ができて資料が開かない。',
-				cmd: 'ping 資料の置き場 → 遅い',
-				facts: [
-					['待ち', '長い'],
-					['応答', '2 秒以上']
-				],
-				tok: {
-					a: ['ap1', '待ち', 1, -44, 0],
-					b: ['ap1', '待ち', 1, 0, 0],
-					c: ['ap1', '待ち', 1, 44, 0]
-				}
-			},
-			{
-				t: '中継器をもう 1 台置く',
-				d: '廊下の反対側に中継器 2 を置く。電源とケーブルだけで済む。',
-				cmd: '（中継器 2 を設置）',
-				facts: [['中継器 2', '設置した']],
-				tok: {
-					a: ['ap1', '待ち', 1, -44, 0],
-					b: ['ap1', '待ち', 1, 0, 0],
-					c: ['ap1', '待ち', 1, 44, 0]
-				}
-			},
-			{
-				t: '近い方へ振り分ける',
-				d: '端末を近い中継器へ分ける。1 台あたり 15 台になり、待ちが半分になる。',
-				cmd: '（振り分けを設定）',
-				facts: [
-					['中継器 1', '15 台'],
-					['中継器 2', '15 台']
-				],
-				tok: {
-					a: ['ap1', '端末', 1, -20, 0],
-					b: ['ap2', '端末', 1, -20, 0],
-					c: ['ap2', '端末', 1, 28, 0]
-				}
-			},
-			{
-				t: '資料がすぐ開く',
-				d: '待ちが減って、昼休みでも資料が開くようになる。',
-				cmd: 'ping 資料の置き場 → 速い',
-				facts: [
-					['応答', '0.1 秒'],
-					['待ち', 'ほぼ無し']
-				],
-				tok: {
-					a: ['net', '届いた', 1, -36, 0],
-					b: ['net', '届いた', 1, 16, 0],
-					c: ['net', '届いた', 1, 68, 0]
-				}
-			}
-		]
-	},
-	db: {
-		title: '帳簿の数を数える',
-		tool: 'SQL',
-		vh: 180,
-		edges: [
-			['paper', 'table', '入れる'],
-			['table', 'ask', '数える']
-		],
-		nodes: [
-			{ id: 'paper', x: 95, y: 82, label: '受付の帳面', sub: '紙に手書き' },
-			{ id: 'table', x: 300, y: 82, label: '予約の表', sub: '1 行 1 件' },
-			{ id: 'ask', x: 505, y: 82, label: '問い合わせ', sub: '数を出す' }
-		],
-		steps: [
-			{
-				t: '帳面に予約が書いてある',
-				d: '紙の帳面に予約がばらばらに書いてある。数えるたびに数え間違える。',
-				cmd: '（帳面を見る）',
-				facts: [
-					['帳面', '3 件の書き込み'],
-					['表', 'まだ無い']
-				],
-				tok: {
-					a: ['paper', '佐藤 11/12', 0, -40, -8],
-					b: ['paper', '田中 11/12', 0, 40, -8],
-					c: ['paper', '佐藤 11/12', 1, 0, 24]
-				}
-			},
-			{
-				t: '表に 1 行ずつ入れる',
-				d: '1 件を 1 行にして表に入れる。名前と日付の欄に分ける。',
-				cmd: "INSERT INTO yoyaku (name, day) VALUES ('佐藤', '11/12');",
-				facts: [
-					['表', '3 行'],
-					['欄', 'name ・ day']
-				],
-				tok: {
-					a: ['table', '佐藤 11/12', 0, -40, -8],
-					b: ['table', '田中 11/12', 0, 40, -8],
-					c: ['table', '佐藤 11/12', 0, 0, 24]
-				}
-			},
-			{
-				t: '日付で絞る',
-				d: '明日（11/12）の行だけを取り出す。',
-				cmd: "SELECT * FROM yoyaku WHERE day = '11/12';",
-				facts: [['当たった行', '3 行']],
-				tok: {
-					a: ['table', '佐藤 11/12', 1, -40, -8],
-					b: ['table', '田中 11/12', 1, 40, -8],
-					c: ['table', '佐藤 11/12', 1, 0, 24]
-				}
-			},
-			{
-				t: '数を数える',
-				d: '絞った行の数を数える。紙で数えるより速く、何度数えても同じ数になる。',
-				cmd: "SELECT COUNT(*) FROM yoyaku WHERE day = '11/12';",
-				facts: [['答え', '3']],
-				tok: {
-					a: ['table', '佐藤 11/12', 0, -40, -8],
-					b: ['table', '田中 11/12', 0, 40, -8],
-					c: ['table', '佐藤 11/12', 0, 0, 24],
-					n: ['ask', '3 件', 1, 0, 0]
-				}
-			},
-			{
-				t: '二重の予約を見つける',
-				d: '同じ名前でまとめて、2 回以上ある人を探す。佐藤さんが二重だった。',
-				cmd: 'SELECT name, COUNT(*) FROM yoyaku GROUP BY name HAVING COUNT(*) > 1;',
-				facts: [
-					['二重', '佐藤 2 件'],
-					['本当の数', '2 人']
-				],
-				tok: {
-					a: ['table', '佐藤 11/12', 1, -40, -8],
-					b: ['table', '田中 11/12', 0, 40, -8],
-					c: ['table', '佐藤 11/12', 1, 0, 24],
-					n: ['ask', '佐藤が二重', 1, 0, 0]
-				}
-			}
-		]
-	},
-	sec: {
-		title: '入口を絞る',
-		tool: 'ファイアウォール',
-		vh: 180,
-		edges: [
-			['out', 'gate', 'つなぐ'],
-			['gate', 'rec', '通す']
-		],
-		nodes: [
-			{ id: 'out', x: 95, y: 82, label: '外の網', sub: '事務所と知らない所' },
-			{ id: 'gate', x: 300, y: 82, label: '門番', sub: 'まだ無い' },
-			{ id: 'rec', x: 505, y: 82, label: '荷の記録', sub: '倉庫の機械' }
-		],
-		steps: [
-			{
-				t: '全ての口が開いている',
-				d: '記録の機械は、どこからつないでも返事をする。',
-				cmd: '（観察）',
-				facts: [['開いている口', '全部']],
-				tok: {
-					a: ['out', '事務所', 0, -40, -8],
-					b: ['out', '知らない所', 1, 40, -8],
-					c: ['out', '知らない所', 1, 0, 24]
-				}
-			},
-			{
-				t: '知らない所から記録まで届く',
-				d: '夜中の知らない所からの接続が、そのまま記録まで届いてしまう。',
-				cmd: '（記録の機械の跡を見る）',
-				facts: [
-					['届いた接続', '3 件'],
-					['うち知らない所', '2 件']
-				],
-				tok: {
-					a: ['rec', '事務所', 0, -40, -8],
-					b: ['rec', '知らない所', 1, 40, -8],
-					c: ['rec', '知らない所', 1, 0, 24]
-				}
-			},
-			{
-				t: '門番を置く',
-				d: '記録の前に門番を置く。決まりに当たる接続だけを通す。',
-				cmd: 'deny all',
-				facts: [['門番', '置いた ・ まず全部断る']],
-				tok: {
-					a: ['gate', '事務所', 0, -40, -8],
-					b: ['gate', '知らない所', 1, 40, -8],
-					c: ['gate', '知らない所', 1, 0, 24]
-				}
-			},
-			{
-				t: '事務所だけ通す',
-				d: '事務所から記録の口への接続だけを許す決まりを足す。',
-				cmd: 'allow from 事務所 to 記録 port 443',
-				facts: [
-					['通した', '事務所 1 件'],
-					['断った', '知らない所 2 件']
-				],
-				tok: {
-					a: ['rec', '事務所', 1, 0, 0],
-					b: ['gate', '断った', 1, 40, -8],
-					c: ['gate', '断った', 1, 0, 24]
-				}
-			},
-			{
-				t: '断った記録を残す',
-				d: '断った接続を記録に残す。何度来たか、どこからかが後で分かる。',
-				cmd: 'log deny',
-				facts: [['断った記録', '2 件 ・ 夜中 2:10 と 2:12']],
-				tok: { a: ['rec', '事務所', 0, 0, 0], b: ['gate', '断った 2 件', 1, 0, 8] }
-			}
-		]
-	}
-};

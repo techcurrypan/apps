@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { START_MINUTE } from './clock.ts';
+import { MOVES } from './data.ts';
 import { townMap } from './map.ts';
 import {
 	applyTown,
@@ -13,17 +14,27 @@ import {
 
 const map = townMap();
 const T = START_MINUTE;
+const DAY = 24 * 60;
+
+// 種 1 の 1 日目の要望 3 件に、決まった遊び方で応える
+const first = startTown(1, map).desk.requests;
+const hit = MOVES.find((m) => m.tests.includes(first[0].truth))!;
+const other = MOVES.find(
+	(m) => m.lesson !== hit.lesson && m.tests.some((c) => first[1].candidates.includes(c))
+)!;
+/** 修了したレッスン：1 件目の原因を調べられる手だけ */
+const LEARNED = new Set([hit.lesson]);
 
 /** 決まった遊び方：時刻と手の並び。打てた手だけを記録に残す（画面の act と同じ） */
 const PLAN: { at: number; action: TownAction }[] = [
 	{ at: T + 5, action: { type: 'zone', lot: 0, kind: 'home' } },
 	{ at: T + 5, action: { type: 'zone', lot: 1, kind: 'shop' } },
-	{ at: T + 30, action: { type: 'answer', id: 'board', how: 'learned' } }, // 学ぶ前なので打てない
-	{ at: T + 31, action: { type: 'learn', lesson: 'git' } },
-	{ at: T + 32, action: { type: 'answer', id: 'board', how: 'learned' } },
-	{ at: T + 200, action: { type: 'park', lot: 2 } },
-	{ at: T + 200, action: { type: 'answer', id: 'shop', how: 'out' } },
-	{ at: T + 26 * 60, action: { type: 'answer', id: 'school', how: 'out' } }
+	{ at: T + 30, action: { type: 'test', move: other.lesson, request: first[1].id } }, // 学んでいないので打てない
+	{ at: T + 30, action: { type: 'test', move: hit.lesson, request: first[0].id } },
+	{ at: T + 200, action: { type: 'ask', request: first[1].id } },
+	{ at: T + 300, action: { type: 'park', lot: 2 } },
+	{ at: T + 300, action: { type: 'outsource', request: first[2].id } },
+	{ at: T + DAY + 90, action: { type: 'ask', request: first[1].id } }
 ];
 
 function play(seed: number, until: number) {
@@ -33,7 +44,7 @@ function play(seed: number, until: number) {
 	for (const p of PLAN) {
 		if (p.at > until) break;
 		s = tickTown(s, p.at, map).state;
-		const r = applyTown(s, p.action, map);
+		const r = applyTown(s, p.action, map, LEARNED);
 		if (r.ok) {
 			s = r.state;
 			actions.push({ at: p.at, action: p.action });
@@ -49,7 +60,9 @@ describe('手の記録から作り直す（game-design.md 15.9・15.11 の repla
 	it('記録には打てた手だけが入る', () => {
 		const { save } = play(1, T + 2 * 24 * 60);
 		expect(save.actions).toHaveLength(7);
-		expect(save.actions.some((a) => a.action.type === 'answer' && a.at === T + 30)).toBe(false);
+		expect(
+			save.actions.some((a) => a.action.type === 'test' && a.action.move === other.lesson)
+		).toBe(false);
 	});
 
 	it('記録から作り直すと、遊んだ後と同じ状態になる', () => {
@@ -89,8 +102,10 @@ describe('手の記録から作り直す（game-design.md 15.9・15.11 の repla
 	it('時の流れの知らせ（届いた・育った）も作り直せる', () => {
 		const { save } = play(1, T + 2 * 24 * 60);
 		const ev = replayTown(save, map).events;
-		expect(ev).toContainEqual({ type: 'arrive', id: 'board', at: T + 20 });
+		const morning2 = ev.find((e) => e.type === 'desk' && e.from === 'morning' && e.at === T + DAY);
+		expect(morning2).toBeDefined();
 		expect(ev.some((e) => e.type === 'grown')).toBe(true);
+		expect(ev.some((e) => e.type === 'box')).toBe(true);
 		for (let i = 1; i < ev.length; i++) expect(ev[i].at).toBeGreaterThanOrEqual(ev[i - 1].at);
 	});
 
@@ -98,10 +113,11 @@ describe('手の記録から作り直す（game-design.md 15.9・15.11 の repla
 		const save: TownSave = {
 			version: 1,
 			seed: 1,
-			now: T + 60,
-			actions: [{ at: T + 30, action: { type: 'answer', id: 'board', how: 'learned' } }]
+			now: T + 300,
+			actions: [{ at: T + 30, action: { type: 'test', move: other.lesson, request: first[1].id } }]
 		};
 		const s = replayTown(save, map).state;
-		expect(s.answered).toEqual({ board: 'learned' });
+		const r = s.desk.requests.find((x) => x.id === first[1].id)!;
+		expect(r.notes.length).toBe(1);
 	});
 });

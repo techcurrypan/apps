@@ -3,7 +3,7 @@
 // DOM・WebGL・実時間を知らない。日は「章の何日目か」（1〜7）。時計と資金と街は town.ts が持ち、ここへは ctx で渡す。
 import { CAUSES, GROUPS, MOVES, TITLES } from './data.ts';
 import type { GroupRow, MoveRow } from './data-parse.ts';
-import type { FeatKey } from './requests.ts';
+import type { FeatKey } from './map.ts';
 
 export type Chapter = 1 | 2 | 3 | 4 | 'free';
 export type Status = 'open' | 'solved' | 'temp' | 'outsourced' | 'expired';
