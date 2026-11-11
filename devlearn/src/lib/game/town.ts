@@ -173,14 +173,15 @@ export const population = (s: TownState, map: TownMap) => pop(s.build, map, s.mi
 
 // ---------------- 始まり ----------------
 
-export function startTown(seed: number, map: TownMap): TownState {
+/** 始まりの街。chapter は章から始める見積もり（15.8）のためだけに使う（画面は 1 章から） */
+export function startTown(seed: number, map: TownMap, chapter: Chapter = 1): TownState {
 	const s: TownState = {
 		version: 1,
 		seed,
 		minute: START_MINUTE,
 		chapterStart: START_MINUTE,
 		build: startBuild(map, START_MONEY),
-		desk: startDesk(seed, 1),
+		desk: startDesk(seed, chapter, chapter === 'free' ? 1 : 0),
 		satDelta: {},
 		systems: [],
 		boxes: [],

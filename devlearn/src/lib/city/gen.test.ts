@@ -41,4 +41,22 @@ describe('街の形（gen.ts）', () => {
 	it('動かない物の三角形が上限内（city-standard.md P-1、90 万以下）', () => {
 		expect(mine.stats.tris).toBeLessThanOrEqual(900_000);
 	});
+
+	it('建物の種類が city-standard.md V-7 を全て含む（灯台は防波堤の先の形で、目印 FEAT.light を持つ）', () => {
+		const kinds = new Set(mine.B.map((b) => b.kind));
+		for (const k of [
+			'house',
+			'apt',
+			'office',
+			'shop',
+			'hall',
+			'school',
+			'clinic',
+			'warehouse',
+			'shrine'
+		])
+			expect(kinds.has(k), k).toBe(true);
+		expect(mine.FEAT.light).toHaveLength(3);
+		expect(mine.FEAT.tower.b.kind).toBe('tower');
+	});
 });
