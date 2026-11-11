@@ -5,9 +5,29 @@
 // 状態の計算を描画から切り離すのは 8-2b で行う。
 
 import { createEngine, type Engine, type Light, type Mat4 } from './engine.ts';
-import { generateCity, GEN, type Bld, type Col, type Lot, type RNode } from './gen.ts';
+import { generateCity, GEN, type Bld, type Col, type RNode } from './gen.ts';
 import { clockOf, MIN_PER_DAY, START_MINUTE, tick } from '../game/clock.ts';
 import { bumpNear, DEFAULT_HAPPY, initHappy, type Happy, type Spot } from '../game/happy.ts';
+import {
+	BUILD_MIN,
+	bulldoze,
+	demand as demandOf,
+	income as incomeOf,
+	incomeParts as incomePartsOf,
+	hourly,
+	pay,
+	placeLot,
+	pop as popOf,
+	road,
+	roadPlan as roadPlanOf,
+	snapPoint as snapPointOf,
+	startBuild,
+	type BuildState,
+	type Placed,
+	type RoadPlan,
+	type SnapPt
+} from '../game/build.ts';
+import { mapOf } from '../game/map.ts';
 
 /** 種の既定（game-design.md 7.1） */
 const SEED = 1;
@@ -141,7 +161,7 @@ type Layers = { canvas: HTMLCanvasElement; markers: HTMLElement; floaters: HTMLE
 // 試作のまま：組み立て後の建物（区画に建つ家・店・公園）
 type Built = Bld & {
 	player: true;
-	lot: Lot;
+	lot: { y0?: number };
 	floors?: number;
 	wall?: Col;
 	roof?: Col;
@@ -149,9 +169,7 @@ type Built = Bld & {
 	trees?: [number, number, Col][];
 };
 type AnyB = Bld | Built;
-type Pt = { x: number; z: number; node?: RNode | null };
-type RoadPlan = { a: Pt; b: Pt; L: number; cost: number; ok: boolean; why: string };
-type Road = { a: { x: number; z: number }; b: { x: number; z: number }; L: number };
+type Pt = { x: number; z: number };
 type Seg = {
 	ux: number;
 	uz: number;
@@ -289,7 +307,6 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 			return clockOf(clk).day;
 		},
 		speed: 1,
-		money: 5000,
 		view: 'ground',
 		tool: 'select',
 		sel: null as AnyB | null,
@@ -298,26 +315,23 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 		requests: [] as { id: string; dayIn: number; due: number }[],
 		/** 建物ごとの満足度（状態。src/lib/game/happy.ts） */
 		happy: {} as Happy,
-		built: [] as Built[],
-		nextId: 4000,
 		infra: 0,
 		infraTarget: 0,
-		roads: [] as Road[],
-		roadStart: null as Pt | null,
-		ledger: [] as LedgerRow[],
-		plan: null as RoadPlan | null,
+		roadStart: null as SnapPt | null,
 		prevSpeed: 1
 	};
-	const allB = (): AnyB[] => (city.B as AnyB[]).concat(S.built);
+	/** 街づくりの状態（src/lib/game/build.ts） */
+	const MAP = mapOf(city);
+	let st: BuildState = startBuild(MAP, 5000);
+	const allB = (): AnyB[] => (city.B as AnyB[]).concat(builtList());
 	const spotOf = (b: Bld): Spot => ({ id: b.id, x: (b.x0 + b.x1) / 2, z: (b.z0 + b.z1) / 2 });
 	const SPOTS = city.B.map(spotOf);
 	S.happy = initHappy(SPOTS, SEED);
 	// 試作はここで満足度の始まりを擬似乱数から引いていた。見た目だけの擬似乱数（車・人・船・公園の木）の並びを試作と同じに保つため、同じ数だけ引いて捨てる
 	for (let i = 0; i < city.B.length; i++) R();
 	const hp = (id: number) => S.happy[id] || DEFAULT_HAPPY;
-	const pop = () =>
-		allB().reduce((s, b) => s + (b.residents || 0) * (E.getRise(b.id) > 0.99 ? 1 : 0), 0);
-	const jobs = () => allB().reduce((s, b) => s + (b.jobs || 0), 0);
+	const pop = () => popOf(st, MAP, clk);
+	const outs = () => Object.values(S.answered).filter((v) => v === 'out').length;
 	const avgHappy = () => {
 		let s = 0,
 			n = 0;
@@ -755,8 +769,8 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 						fx < 34 ? HX('#2f6fae') : HX('#f2f2ee')
 					);
 			}
-		// construction effects
-		for (const cn of constructions) {
+		// construction effects（要望で建つ物と、区画に建つ物）
+		for (const cn of scaffolds()) {
 			const b = cn.b;
 			const p = cn.p;
 			if (p >= 1) continue;
@@ -1085,6 +1099,16 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 	}
 
 	// ---------------- constructions ----------------
+	/** 足場を描く物：要望で建つ物（実時間）と、区画に建つ物（ゲーム内の時刻） */
+	function scaffolds(): { b: AnyB; p: number }[] {
+		const now = clk + frac;
+		const list: { b: AnyB; p: number }[] = constructions.slice();
+		for (const p of st.placed) {
+			const t = (now - p.startedAt) / BUILD_MIN;
+			if (t < 1) list.push({ b: builtOf(p), p: Math.max(0, t) });
+		}
+		return list;
+	}
 	const constructions: Construction[] = [];
 	function construct(b: AnyB, dur?: number, onDone?: () => void) {
 		E.setData(b.id, 0, 0, 0, 0);
@@ -1092,11 +1116,53 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 	}
 
 	// ---------------- player buildings (zoning) ----------------
+	// 状態（資金・出入り・区画・建てた物・道路）は src/lib/game/build.ts の純粋な関数で変える（段 8-2b）。
+	// ここは状態を読んで描くだけ。建てた物の色と形は、状態の look から決める（見た目だけ）
+	const builtCache = new Map<number, Built>();
+	function builtOf(p: Placed): Built {
+		const hit = builtCache.get(p.id);
+		if (hit && hit.lot === st.lots[p.lot]) return hit;
+		const r = GEN.mulberry(p.look);
+		const pk = <T>(a: readonly T[]): T => a[Math.floor(r() * a.length)];
+		const L = st.lots[p.lot];
+		const b: Built = {
+			id: p.id,
+			kind: p.kind,
+			name: p.kind === 'park' ? '小さな公園' : p.kind === 'house' ? '新しい住宅' : '新しい商店',
+			x0: p.x0,
+			z0: p.z0,
+			x1: p.x1,
+			z1: p.z1,
+			h: p.h,
+			residents: p.residents,
+			jobs: p.jobs,
+			floors: p.floors,
+			player: true,
+			lot: L
+		};
+		if (p.kind === 'park') {
+			const trees: [number, number, Col][] = [];
+			for (let k = 0; k < 4; k++)
+				trees.push([
+					L.x0 + 3 + r() * (L.x1 - L.x0 - 6),
+					L.z0 + 3 + r() * (L.z1 - L.z0 - 6),
+					pk(PAL.leafA.concat(PAL.leafG))
+				]);
+			b.trees = trees;
+		} else {
+			b.wall = jit(pk(PAL.wallHouse), 0.08, r);
+			b.roof = p.kind === 'house' ? jit(pk(PAL.roofHouse), 0.15, r) : pk(PAL.awning);
+			b.sign = pk(PAL.sign);
+		}
+		builtCache.set(p.id, b);
+		return b;
+	}
+	const builtList = () => st.placed.map(builtOf);
 	function rebuildBuilt() {
 		const g = new Geo(1 << 14);
 		// player roads and the lots they opened
-		for (const rd of S.roads) roadGeo(g, rd);
-		for (const L of city.lots)
+		for (const rd of st.roads) roadGeo(g, rd);
+		for (const L of st.lots)
 			if (L.y0 !== undefined) {
 				const y = L.y0;
 				q(
@@ -1112,7 +1178,7 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 					[0, 1, 0]
 				);
 			}
-		for (const L of city.lots)
+		for (const L of st.lots)
 			if (L.zone && !L.taken) {
 				const y = (L.y0 !== undefined ? L.y0 : city.Y) + 0.04;
 				const c = L.zone === 'home' ? HX('#5fae6a') : HX('#5a8fd0');
@@ -1133,7 +1199,7 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 				box(g, sx - 0.06, y, sz - 0.06, sx + 0.06, y + 1.6, sz + 0.06, HX('#8a6a48'));
 				box(g, sx - 0.7, y + 1.0, sz - 0.04, sx + 0.7, y + 1.7, sz + 0.04, HX('#f4efe0'));
 			}
-		for (const b of S.built) {
+		for (const b of builtList()) {
 			const id = b.id;
 			const Y = b.lot && b.lot.y0 !== undefined ? b.lot.y0 : city.Y;
 			if (b.kind === 'house') {
@@ -1219,7 +1285,7 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 		const g = new Geo(4096);
 		const col =
 			S.tool === 'home' ? HX('#56d68a') : S.tool === 'shop' ? HX('#4aa3ff') : HX('#e7d36b');
-		for (const L of city.lots) {
+		for (const L of st.lots) {
 			if (L.taken || (L.zone && S.tool !== 'park')) continue;
 			const p = 0.6;
 			const Y = L.y0 !== undefined ? L.y0 : city.Y;
@@ -1258,110 +1324,9 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 		}
 		E.setMesh('lots', g.out(), true);
 	}
-	const COST = { home: 120, shop: 180, park: 80 };
 	// ---------------- roads (player) ----------------
-	const RW = 11,
-		ROAD_COST = 2;
+	const RW = 11;
 	const TH = city.terrainH;
-	const nearNode = (x: number, z: number, r: number) => {
-		let best: RNode | null = null,
-			bd = r;
-		for (const n of NODES) {
-			const d = Math.hypot(n.x - x, n.z - z);
-			if (d < bd) {
-				bd = d;
-				best = n;
-			}
-		}
-		return best;
-	};
-	function snapPoint(g: number[]): Pt {
-		const n = nearNode(g[0], g[1], 16);
-		if (n) return { x: n.x, z: n.z, node: n };
-		return { x: Math.round(g[0] / 10) * 10, z: Math.round(g[1] / 10) * 10, node: null };
-	}
-	function roadPlan(a: Pt, p: Pt): RoadPlan {
-		const dx = p.x - a.x,
-			dz = p.z - a.z;
-		let b: Pt;
-		if (Math.abs(dx) >= Math.abs(dz)) b = { x: a.x + Math.round(dx / 10) * 10, z: a.z };
-		else b = { x: a.x, z: a.z + Math.round(dz / 10) * 10 };
-		const en = nearNode(b.x, b.z, 8);
-		if (en && (en.x === a.x || en.z === a.z)) {
-			b.x = en.x;
-			b.z = en.z;
-			b.node = en;
-		}
-		const L = Math.hypot(b.x - a.x, b.z - a.z);
-		const res: RoadPlan = { a, b, L, cost: Math.round(L * ROAD_COST), ok: true, why: '' };
-		if (L < 20) {
-			res.ok = false;
-			res.why = '短すぎる（20 m 以上）';
-			return res;
-		}
-		if (L > 400) {
-			res.ok = false;
-			res.why = '長すぎる（400 m まで）';
-			return res;
-		}
-		const ux = (b.x - a.x) / L,
-			uz = (b.z - a.z) / L;
-		for (let t = 0; t <= L; t += 5)
-			for (const o of [-RW / 2, 0, RW / 2]) {
-				const x = a.x + ux * t - uz * o,
-					z = a.z + uz * t + ux * o;
-				const nearEnd = (t < 10 && a.node) || (t > L - 10 && b.node);
-				if (!nearEnd && x > -248 && x < 248 && z > -248 && z < 208) {
-					res.ok = false;
-					res.why = '街の中には引けない（今ある道の端から外へ伸ばす）';
-					return res;
-				}
-				if (x > 249 && Math.abs(z - 30 * Math.sin((x - 249) * 0.005)) < 12) {
-					res.ok = false;
-					res.why = '町の外へ出る道と重なる';
-					return res;
-				}
-				const h = TH(x, z);
-				if (h < -0.5) {
-					res.ok = false;
-					res.why = '水の上には引けない';
-					return res;
-				}
-				if (h > 3.5) {
-					res.ok = false;
-					res.why = '坂が急すぎる';
-					return res;
-				}
-				for (const bd of allB())
-					if (x > bd.x0 - 1 && x < bd.x1 + 1 && z > bd.z0 - 1 && z < bd.z1 + 1) {
-						res.ok = false;
-						res.why = '建物に当たる';
-						return res;
-					}
-				for (const L2 of city.lots)
-					if (L2.taken && x > L2.x0 && x < L2.x1 && z > L2.z0 && z < L2.z1) {
-						res.ok = false;
-						res.why = '建てた区画に当たる';
-						return res;
-					}
-				for (const rd of S.roads) {
-					const rx0 = Math.min(rd.a.x, rd.b.x) - RW / 2,
-						rx1 = Math.max(rd.a.x, rd.b.x) + RW / 2,
-						rz0 = Math.min(rd.a.z, rd.b.z) - RW / 2,
-						rz1 = Math.max(rd.a.z, rd.b.z) + RW / 2;
-					if (!nearEnd && t > 8 && t < L - 8 && x > rx0 && x < rx1 && z > rz0 && z < rz1) {
-						res.ok = false;
-						res.why = '引いた道と重なる';
-						return res;
-					}
-				}
-			}
-		if (S.money < res.cost) {
-			res.ok = false;
-			res.why = '資金が足りない（¥' + res.cost + '）';
-		}
-		return res;
-	}
 	function roadY(x: number, z: number) {
 		return Math.max(TH(x, z), TH(x + 4, z), TH(x - 4, z), TH(x, z + 4), TH(x, z - 4), 0) + 0.14;
 	}
@@ -1436,88 +1401,25 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 				);
 			}
 	}
+	/** 交通（見た目だけ）の交差点。道の端の点に当たる物を探し、無ければ足す */
+	function trafficNode(x: number, z: number): RNode {
+		const f = NODES.find((n) => n.x === x && n.z === z);
+		if (f) return f;
+		const n: RNode = { x, z, nb: [], w: RW };
+		NODES.push(n);
+		return n;
+	}
 	function addRoad(plan: RoadPlan) {
-		const { a, b } = plan;
-		S.money -= plan.cost;
-		ledger('道路を引いた（' + Math.round(plan.L) + ' m）', -plan.cost);
-		const na =
-			a.node ||
-			(() => {
-				const n: RNode = { x: a.x, z: a.z, nb: [], w: RW };
-				NODES.push(n);
-				return n;
-			})();
-		const nb2 =
-			b.node ||
-			(() => {
-				const n: RNode = { x: b.x, z: b.z, nb: [], w: RW };
-				NODES.push(n);
-				return n;
-			})();
+		const r = road(st, MAP, plan.a, plan.b, clk);
+		if (!r.ok) {
+			toast('ここには引けない', r.why, 'warn');
+			return;
+		}
+		st = r.state;
+		const na = trafficNode(plan.a.x, plan.a.z),
+			nb2 = trafficNode(plan.b.x, plan.b.z);
 		na.nb.push(nb2);
 		nb2.nb.push(na);
-		const rd = { a: { x: a.x, z: a.z }, b: { x: b.x, z: b.z }, L: plan.L };
-		S.roads.push(rd);
-		// open lots on both sides
-		const ux = (b.x - a.x) / plan.L,
-			uz = (b.z - a.z) / plan.L,
-			px = -uz,
-			pz = ux;
-		let opened = 0;
-		for (let t = 9; t + 14 <= plan.L - 8; t += 15)
-			for (const side of [-1, 1]) {
-				const c0 = [
-						a.x + ux * t + px * side * (RW / 2 + 2.5),
-						a.z + uz * t + pz * side * (RW / 2 + 2.5)
-					],
-					c1 = [
-						a.x + ux * (t + 14) + px * side * (RW / 2 + 24.5),
-						a.z + uz * (t + 14) + pz * side * (RW / 2 + 24.5)
-					];
-				const L: Lot = {
-					x0: Math.min(c0[0], c1[0]),
-					x1: Math.max(c0[0], c1[0]),
-					z0: Math.min(c0[1], c1[1]),
-					z1: Math.max(c0[1], c1[1]),
-					front: '',
-					cx: 0,
-					cz: 0
-				};
-				let ok = true;
-				const hs: number[] = [];
-				for (const [x, z] of [
-					[L.x0, L.z0],
-					[L.x1, L.z0],
-					[L.x0, L.z1],
-					[L.x1, L.z1],
-					[(L.x0 + L.x1) / 2, (L.z0 + L.z1) / 2]
-				]) {
-					const h = TH(x, z);
-					hs.push(h);
-					if (h < -0.5 || h > 3) ok = false;
-					if (x > -248 && x < 248 && z > -248 && z < 208) ok = false;
-				}
-				if (!ok) continue;
-				const hit = (o: { x0: number; x1: number; z0: number; z1: number }) =>
-					!(o.x1 < L.x0 || o.x0 > L.x1 || o.z1 < L.z0 || o.z0 > L.z1);
-				if (city.B.some(hit) || city.lots.some(hit)) continue;
-				if (
-					S.roads.some((r2) =>
-						hit({
-							x0: Math.min(r2.a.x, r2.b.x) - RW / 2 - 2,
-							x1: Math.max(r2.a.x, r2.b.x) + RW / 2 + 2,
-							z0: Math.min(r2.a.z, r2.b.z) - RW / 2 - 2,
-							z1: Math.max(r2.a.z, r2.b.z) + RW / 2 + 2
-						})
-					)
-				)
-					continue;
-				L.y0 = Math.max(...hs, 0) + 0.25;
-				L.cx = (L.x0 + L.x1) / 2;
-				L.cz = (L.z0 + L.z1) / 2;
-				city.lots.push(L);
-				opened++;
-			}
 		for (let k = 0; k < 4; k++) {
 			const car: Car = {
 				a: na,
@@ -1549,7 +1451,7 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 				' m ・ ¥' +
 				plan.cost +
 				' ・ 沿いに空き区画が ' +
-				opened +
+				r.opened +
 				' つできた。住宅地や商業地を建てられる',
 			''
 		);
@@ -1567,141 +1469,64 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 		E.setMesh('preview', g.out(), true);
 	}
 	let lastPlanKey = '';
-	const ZONE_COST = 20;
-	function ledger(text: string, v: number) {
-		S.ledger.unshift({
-			t:
-				String(Math.floor(S.minute / 60) % 24).padStart(2, '0') +
-				':' +
-				String(Math.floor(S.minute % 60)).padStart(2, '0'),
-			text,
-			v
-		});
-		S.ledger.length = Math.min(S.ledger.length, 12);
-	}
-	function placeOnLot(L: Lot) {
-		const kind = S.tool;
-		if (kind === 'park') {
-			if (S.money < COST.park) {
-				toast('資金が足りない', '必要 ¥' + COST.park, 'warn');
-				return;
-			}
-			S.money -= COST.park;
-			ledger('公園を作った', -COST.park);
-			spawn(L, 'park');
+	const snapPoint = (g: readonly number[]) => snapPointOf(st, MAP, g);
+	const roadPlan = (a: SnapPt, p: Pt) => roadPlanOf(st, MAP, a, p);
+	function placeOnLot(i: number) {
+		const tool = S.tool === 'park' ? 'park' : S.tool === 'shop' ? 'shop' : 'home';
+		const L = st.lots[i];
+		const r = placeLot(st, MAP, i, tool, clk, SEED);
+		if (!r.ok) {
+			toast(L.zone && tool !== 'park' ? '指定済みの区画' : '資金が足りない', r.why, 'warn');
 			return;
 		}
-		if (L.zone) {
-			toast(
-				'指定済みの区画',
-				(L.zone === 'home' ? '住宅地' : '商業地') + 'に指定してある。需要があると建物が建つ',
-				'warn'
-			);
-			return;
-		}
-		if (S.money < ZONE_COST) {
-			toast('資金が足りない', '必要 ¥' + ZONE_COST, 'warn');
-			return;
-		}
-		S.money -= ZONE_COST;
-		L.zone = kind;
-		ledger((kind === 'home' ? '住宅地' : '商業地') + 'に指定した', -ZONE_COST);
-		floater(
-			L.cx || (L.x0 + L.x1) / 2,
-			4 + (L.y0 || Y),
-			L.cz || (L.z0 + L.z1) / 2,
-			kind === 'home' ? '住宅地' : '商業地',
-			'good'
-		);
+		st = r.state;
+		if (tool === 'park') {
+			const p = st.placed[st.placed.length - 1];
+			S.happy = { ...S.happy, [p.id]: 0.7 };
+			S.happy = bumpNear(S.happy, SPOTS, (p.x0 + p.x1) / 2, (p.z0 + p.z1) / 2, 60, 0.06, 0, 1);
+		} else floater(L.cx, 4 + (L.y0 || Y), L.cz, tool === 'home' ? '住宅地' : '商業地', 'good');
 		rebuildBuilt();
 		lotMarkers();
 		sfxNote();
 	}
-	function spawn(L: Lot, kind: string) {
-		L.taken = true;
-		const pad = 3.5;
-		const id = S.nextId++;
-		let b: Built;
-		if (kind === 'park') {
-			const trees: [number, number, Col][] = [];
-			for (let k = 0; k < 4; k++)
-				trees.push([
-					L.x0 + 3 + R() * (L.x1 - L.x0 - 6),
-					L.z0 + 3 + R() * (L.z1 - L.z0 - 6),
-					pick(PAL.leafA.concat(PAL.leafG))
-				]);
-			b = {
-				id,
-				kind: 'park',
-				name: '小さな公園',
-				x0: L.x0 + 0.6,
-				z0: L.z0 + 0.6,
-				x1: L.x1 - 0.6,
-				z1: L.z1 - 0.6,
-				h: 7,
-				residents: 0,
-				trees,
-				player: true,
-				lot: L
-			};
-		} else {
-			const w = L.x1 - L.x0,
-				d = L.z1 - L.z0;
-			const sw = Math.min(w, d) - 2 * pad,
-				sd = Math.max(8, Math.min(11, Math.max(w, d) - 2 * pad));
-			const x0 = (L.x0 + L.x1) / 2 - (w < d ? sw : sd) / 2,
-				z0 = (L.z0 + L.z1) / 2 - (w < d ? sd : sw) / 2;
-			b = {
-				id,
-				kind,
-				name: kind === 'home' ? '新しい住宅' : '新しい商店',
-				x0,
-				z0,
-				x1: x0 + (w < d ? sw : sd),
-				z1: z0 + (w < d ? sd : sw),
-				floors: 2,
-				h: kind === 'home' ? 9.5 : 8,
-				residents: kind === 'home' ? 5 : 2,
-				jobs: kind === 'shop' ? 6 : 0,
-				wall: jit(pick(PAL.wallHouse), 0.08, R),
-				roof: kind === 'home' ? jit(pick(PAL.roofHouse), 0.15, R) : pick(PAL.awning),
-				sign: pick(PAL.sign),
-				player: true,
-				lot: L
-			};
-			if (kind === 'home') b.kind = 'house';
-		}
-		const nb = b;
-		S.built.push(nb);
-		S.happy = { ...S.happy, [id]: 0.7 };
-		rebuildBuilt();
-		lotMarkers();
-		construct(nb, 2.6, () => {
-			floater(
-				cx(nb),
-				nb.h + 2,
-				cz(nb),
-				kind === 'park' ? '満足度 ↑' : kind === 'home' ? '+' + nb.residents + ' 人' : '+6 仕事',
-				'good'
-			);
-			if (kind === 'park') S.happy = bumpNear(S.happy, SPOTS, cx(nb), cz(nb), 60, 0.06, 0, 1);
-		});
-		sfxNote();
-	}
-	function bulldoze(b: AnyB) {
-		if (!('player' in b)) {
-			toast('取り壊せない', '自分で建てた建物だけ取り壊せる', 'warn');
+	function bulldozeB(b: AnyB) {
+		const r = bulldoze(st, b.id, clk);
+		if (!r.ok) {
+			toast('取り壊せない', r.why, 'warn');
 			return;
 		}
-		S.built = S.built.filter((x) => x !== b);
-		b.lot.taken = false;
-		S.money += 30;
-		ledger('取り壊して資材を売った', 30);
+		st = r.state;
+		builtCache.delete(b.id);
 		rebuildBuilt();
 		lotMarkers();
 		select(null);
 	}
-
+	/** 建ち始めた・建ち終えた物（ゲーム内の時刻で進む。描画は状態の分から建つ途中の絵を描く） */
+	const doneIds = new Set<number>();
+	function placedProgress() {
+		const now = clk + frac;
+		for (const p of st.placed) {
+			const t = Math.max(0, Math.min(1, (now - p.startedAt) / BUILD_MIN));
+			const e = t < 0.25 ? 0 : (t - 0.25) / 0.75;
+			E.setData(p.id, 0, 0, 0, Math.round(255 * (1 - Math.pow(1 - e, 3))));
+			if (t >= 1 && !doneIds.has(p.id)) {
+				doneIds.add(p.id);
+				const b = builtOf(p);
+				floater(
+					cx(b),
+					b.h + 2,
+					cz(b),
+					p.kind === 'park'
+						? '満足度 ↑'
+						: p.kind === 'house'
+							? '+' + p.residents + ' 人'
+							: '+6 仕事',
+					'good'
+				);
+				applyInfoColors();
+			}
+		}
+	}
 	// ---------------- requests & lessons ----------------
 	const REQ: Record<string, Req> = {
 		board: {
@@ -1880,63 +1705,37 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 		ui.clock = String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
 		ui.date = clockOf(clk).date;
 		ui.pop = pop();
-		ui.money = S.money;
+		ui.money = st.money;
 		ui.income = income();
 		ui.sat = Math.round(avgHappy() * 100);
 		ui.demand = demand();
 		if (ui.budgetOpen) renderBudget();
 	}
 	function demand() {
-		const sat = avgHappy();
-		const nH = S.built.filter((b) => b.kind === 'house').length,
-			nS = S.built.filter((b) => b.kind === 'shop').length;
-		const cl = (v: number) => Math.round(Math.max(5, Math.min(95, v)));
-		return {
-			res: cl(50 + (sat - 0.6) * 120 + nS * 5 - nH * 3),
-			com: cl(30 + nH * 4 - nS * 9 + pop() / 300),
-			job: cl(40 + pop() / 300 - jobs() / 200)
-		};
+		return demandOf(st, MAP, avgHappy(), clk);
 	}
 	function incomeParts(): [string, number][] {
-		const roadLen = S.roads.reduce((a, r2) => a + r2.L, 0);
-		const outs = Object.values(S.answered).filter((v) => v === 'out').length;
-		const parts: [string, number][] = [
-			['住民税（人口 × 0.018）', pop() * 0.018],
-			['店と会社の税（働く場所 × 0.012）', jobs() * 0.012],
-			['町の施設の維持費', -14],
-			['引いた道路の維持費（1 km あたり 8）', (-roadLen / 1000) * 8],
-			['業者に任せた仕組みの使用料（1 件 3）', -outs * 3]
-		];
-		return parts.filter((x) => Math.abs(x[1]) > 0.01);
+		return incomePartsOf(st, MAP, outs(), clk);
 	}
 	function income() {
-		return Math.round(incomeParts().reduce((a, x) => a + x[1], 0));
+		return incomeOf(st, MAP, outs(), clk);
 	}
 	function renderBudget() {
-		ui.budget = { parts: incomeParts(), income: income(), ledger: S.ledger.slice() };
+		ui.budget = { parts: incomeParts(), income: income(), ledger: st.ledger.slice() };
 	}
 	function toggleBudget() {
 		ui.budgetOpen = !ui.budgetOpen;
 		if (ui.budgetOpen) renderBudget();
 	}
-	function onHour(hr: number) {
-		const v = income();
-		S.money += v;
-		if (hr % 6 === 0)
-			ledger('6 時間ぶんの収支を受け取った（1 時間 ' + (v >= 0 ? '+' : '') + v + '）', v * 6);
-		const dm = demand();
-		let grown = 0;
-		city.lots.forEach((L, i) => {
-			if (!L.zone || L.taken || grown >= 2) return;
-			const d = L.zone === 'home' ? dm.res : dm.com;
-			const p = Math.max(0, (d - 30) / 120);
-			const hsh =
-				Math.abs(Math.sin((i + 1) * 12.9898 + (S.day * 24 + hr) * 78.233) * 43758.5453) % 1;
-			if (hsh < p) {
-				spawn(L, L.zone);
-				grown++;
-			}
-		});
+	function onHour() {
+		const r = hourly(st, MAP, clk, avgHappy(), outs(), SEED);
+		st = r.state;
+		if (r.grown.length) {
+			for (const p of r.grown) S.happy = { ...S.happy, [p.id]: 0.7 };
+			rebuildBuilt();
+			lotMarkers();
+			sfxNote();
+		}
 	}
 	function renderReqs() {
 		ui.reqs = S.requests.map((r) => {
@@ -2087,14 +1886,13 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 	function answer(id: string, how: string) {
 		const d = REQ[id];
 		const cost = how === 'learned' ? d.learnedOpt.cost : d.outOpt.cost;
-		if (S.money < cost) {
+		if (st.money < cost) {
 			toast('資金が足りない', '必要 ¥' + cost, 'warn');
 			return;
 		}
-		S.money -= cost;
+		st = pay(st, clk, '要望：' + (how === 'learned' ? d.learnedOpt.label : d.outOpt.label), -cost);
 		S.answered[id] = how;
 		S.requests = S.requests.filter((r) => r.id !== id);
-		ledger('要望：' + (how === 'learned' ? d.learnedOpt.label : d.outOpt.label), -cost);
 		closeDlg();
 		renderReqs();
 		const target = d.at();
@@ -2407,7 +2205,6 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 			lastPlanKey = key;
 			const plan = roadPlan(S.roadStart, p);
 			previewRoad(plan);
-			S.plan = plan;
 			ui.hint = plan.ok
 				? Math.round(plan.L) + ' m ・ ¥' + plan.cost + ' ・ 押すと引く'
 				: '引けない：' + plan.why;
@@ -2440,8 +2237,7 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 				return;
 			}
 			addRoad(plan);
-			const endN = NODES.find((n) => n.x === plan.b.x && n.z === plan.b.z);
-			S.roadStart = { x: plan.b.x, z: plan.b.z, node: endN };
+			S.roadStart = { x: plan.b.x, z: plan.b.z, node: true };
 			lastPlanKey = '';
 			previewRoad(null);
 			ui.hint = '続けて伸ばせる。別の所から引くなら右クリック';
@@ -2450,15 +2246,15 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 		if (['home', 'shop', 'park'].includes(S.tool)) {
 			const g = groundHit(rr);
 			if (!g) return;
-			const L = city.lots.find(
+			const i = st.lots.findIndex(
 				(l) => !l.taken && g[0] > l.x0 && g[0] < l.x1 && g[1] > l.z0 && g[1] < l.z1
 			);
-			if (L) placeOnLot(L);
+			if (i >= 0) placeOnLot(i);
 			return;
 		}
 		const b = hitBuilding(rr);
 		if (S.tool === 'bulldoze') {
-			if (b) bulldoze(b);
+			if (b) bulldozeB(b);
 			return;
 		}
 		if (b) {
@@ -2501,6 +2297,7 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 	const W = window as unknown as StillHooks;
 	if (STILL)
 		W.__game = {
+			state: () => st,
 			onHour,
 			demand,
 			S,
@@ -2573,7 +2370,7 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 			clk = t.minute;
 			for (const ev of t.events) {
 				if (ev.type === 'day') onNewDay();
-				else onHour(ev.hour);
+				else onHour();
 			}
 			const bySeg = new Map<string, Car[]>();
 			for (const c of cars)
@@ -2635,6 +2432,7 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 		}
 		for (let i = constructions.length - 1; i >= 0; i--)
 			if (constructions[i].p >= 1) constructions.splice(i, 1);
+		placedProgress();
 		// render
 		const hour = S.minute / 60;
 		const L = lightAt(hour);
