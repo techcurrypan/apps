@@ -11,7 +11,14 @@ export const START_MINUTE = 9 * MIN_PER_DAY + 15 * 60 + 30;
 
 export type ClockEvent = { type: 'hour'; hour: number; at: number } | { type: 'day'; at: number };
 
-export type Clock = { month: number; day: number; hour: number; min: number; text: string; date: string };
+export type Clock = {
+	month: number;
+	day: number;
+	hour: number;
+	min: number;
+	text: string;
+	date: string;
+};
 
 export function clockOf(minute: number): Clock {
 	const dayIndex = Math.floor(minute / MIN_PER_DAY);

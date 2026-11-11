@@ -7,6 +7,10 @@
 import { createEngine, type Engine, type Light, type Mat4 } from './engine.ts';
 import { generateCity, GEN, type Bld, type Col, type Lot, type RNode } from './gen.ts';
 import { clockOf, MIN_PER_DAY, START_MINUTE, tick } from '../game/clock.ts';
+import { bumpNear, DEFAULT_HAPPY, initHappy, type Happy, type Spot } from '../game/happy.ts';
+
+/** 種の既定（game-design.md 7.1） */
+const SEED = 1;
 
 type City = ReturnType<typeof generateCity>;
 
@@ -292,7 +296,8 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 		learned: {} as Record<string, boolean>,
 		answered: {} as Record<string, string>,
 		requests: [] as { id: string; dayIn: number; due: number }[],
-		buildingsHappy: new Map<number, number>(),
+		/** 建物ごとの満足度（状態。src/lib/game/happy.ts） */
+		happy: {} as Happy,
 		built: [] as Built[],
 		nextId: 4000,
 		infra: 0,
@@ -304,7 +309,12 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 		prevSpeed: 1
 	};
 	const allB = (): AnyB[] => (city.B as AnyB[]).concat(S.built);
-	for (const b of city.B) S.buildingsHappy.set(b.id, 0.55 + R() * 0.25);
+	const spotOf = (b: Bld): Spot => ({ id: b.id, x: (b.x0 + b.x1) / 2, z: (b.z0 + b.z1) / 2 });
+	const SPOTS = city.B.map(spotOf);
+	S.happy = initHappy(SPOTS, SEED);
+	// 試作はここで満足度の始まりを擬似乱数から引いていた。見た目だけの擬似乱数（車・人・船・公園の木）の並びを試作と同じに保つため、同じ数だけ引いて捨てる
+	for (let i = 0; i < city.B.length; i++) R();
+	const hp = (id: number) => S.happy[id] || DEFAULT_HAPPY;
 	const pop = () =>
 		allB().reduce((s, b) => s + (b.residents || 0) * (E.getRise(b.id) > 0.99 ? 1 : 0), 0);
 	const jobs = () => allB().reduce((s, b) => s + (b.jobs || 0), 0);
@@ -313,7 +323,7 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 			n = 0;
 		for (const b of allB()) {
 			if (b.hidden && E.getRise(b.id) < 0.5) continue;
-			s += S.buildingsHappy.get(b.id) || 0.6;
+			s += hp(b.id);
 			n++;
 		}
 		return s / n;
@@ -1048,7 +1058,7 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 		for (const b of allB()) {
 			const rise = Math.round(E.getRise(b.id) * 255);
 			if (S.view === 'happy') {
-				const h = S.buildingsHappy.get(b.id) || 0.6;
+				const h = hp(b.id);
 				const t = Math.max(0, Math.min(1, (h - 0.35) / 0.55));
 				const c =
 					t < 0.5 ? [1, 0.35 + t * 1.1, 0.25] : [1 - (t - 0.5) * 1.3, 0.9, 0.35 + (t - 0.5) * 0.3];
@@ -1663,7 +1673,7 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 		}
 		const nb = b;
 		S.built.push(nb);
-		S.buildingsHappy.set(id, 0.7);
+		S.happy = { ...S.happy, [id]: 0.7 };
 		rebuildBuilt();
 		lotMarkers();
 		construct(nb, 2.6, () => {
@@ -1674,10 +1684,7 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 				kind === 'park' ? '満足度 ↑' : kind === 'home' ? '+' + nb.residents + ' 人' : '+6 仕事',
 				'good'
 			);
-			if (kind === 'park')
-				for (const o of city.B)
-					if (Math.hypot(cx(o) - cx(nb), cz(o) - cz(nb)) < 60)
-						S.buildingsHappy.set(o.id, Math.min(1, (S.buildingsHappy.get(o.id) || 0.6) + 0.06));
+			if (kind === 'park') S.happy = bumpNear(S.happy, SPOTS, cx(nb), cz(nb), 60, 0.06, 0, 1);
 		});
 		sfxNote();
 	}
@@ -2111,10 +2118,20 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 		const t = d.at();
 		const k = how === 'learned' ? 1 : 0.5;
 		let n = 0;
+		const r = how === 'learned' ? 110 : 70;
+		S.happy = bumpNear(
+			S.happy,
+			city.B.filter((b) => !b.hidden).map(spotOf),
+			cx(t),
+			cz(t),
+			r,
+			0.12 * k,
+			0,
+			1
+		);
 		for (const b of city.B) {
 			const dd = Math.hypot(cx(b) - cx(t), cz(b) - cz(t));
-			if (dd < (how === 'learned' ? 110 : 70) && !b.hidden) {
-				S.buildingsHappy.set(b.id, Math.min(1, (S.buildingsHappy.get(b.id) || 0.6) + 0.12 * k));
+			if (dd < r && !b.hidden) {
 				if (n < (how === 'learned' ? 7 : 3) && b.kind !== 'board') {
 					floater(cx(b), b.h + 3 + (b.y0 || 0), cz(b), '満足 ↑', 'good');
 					n++;
@@ -2184,7 +2201,7 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 			ui.info = null;
 			return;
 		}
-		const h = Math.round((S.buildingsHappy.get(b.id) || 0.6) * 100);
+		const h = Math.round(hp(b.id) * 100);
 		const voices: Record<string, string[]> = {
 			house: ['静かで住みやすい', 'もう少しお店が近いといい', '夜の街灯がうれしい'],
 			apt: ['駅まで歩けたらいいのに', 'ベランダから港が見える'],
@@ -2718,9 +2735,7 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 			if (r.due < S.day) {
 				toast('期限を過ぎた', REQ[r.id].who + 'の満足度が下がった', 'warn');
 				const t = REQ[r.id].at();
-				for (const b of city.B)
-					if (Math.hypot(cx(b) - cx(t), cz(b) - cz(t)) < 90)
-						S.buildingsHappy.set(b.id, Math.max(0.2, (S.buildingsHappy.get(b.id) || 0.6) - 0.08));
+				S.happy = bumpNear(S.happy, SPOTS, cx(t), cz(t), 90, -0.08, 0.2, 1);
 				r.due = S.day + 2;
 			}
 		renderReqs();

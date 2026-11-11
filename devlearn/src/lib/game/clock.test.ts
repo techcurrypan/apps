@@ -3,7 +3,14 @@ import { clockOf, START_MINUTE, tick, type ClockEvent } from './clock.ts';
 
 describe('街の時計（ゲーム内の分）', () => {
 	it('始まりは試作と同じ 11 月 10 日 15:30', () => {
-		expect(clockOf(START_MINUTE)).toEqual({ month: 11, day: 10, hour: 15, min: 30, text: '15:30', date: '11月10日' });
+		expect(clockOf(START_MINUTE)).toEqual({
+			month: 11,
+			day: 10,
+			hour: 15,
+			min: 30,
+			text: '15:30',
+			date: '11月10日'
+		});
 	});
 
 	it('時をまたぐと、その時の知らせを出す', () => {
