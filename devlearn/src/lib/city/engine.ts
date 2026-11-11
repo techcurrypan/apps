@@ -120,7 +120,7 @@ float hash2(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
 float vnoise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
  return mix(mix(hash2(i),hash2(i+vec2(1,0)),f.x),mix(hash2(i+vec2(0,1)),hash2(i+vec2(1,1)),f.x),f.y);}
 float fbm(vec2 p){float s=0.,a=.5;for(int i=0;i<5;i++){s+=a*vnoise(p);p=p*2.03+vec2(17.1,9.2);a*=.5;}return s;}
-vec3 lin(vec3 c){return pow(c,vec3(2.2));}
+vec3 lin(vec3 c){return pow(max(c,vec3(0.)),vec3(2.2));}
 `;
 
 const VS_MAIN = `#version 300 es
@@ -156,7 +156,7 @@ float shadowF(vec3 n){
 }
 vec3 skyAt(vec3 r){ float h=clamp(r.y,0.,1.); vec3 c=mix(uHorCol,uSkyCol,pow(h,0.55)); float sd=max(dot(r,uSunDir),0.); c+=uSunCol*0.25*pow(sd,8.); return c; }
 void main(){
-  vec3 N=normalize(vN); vec3 V=normalize(uCam-vW);
+  vec3 N=dot(vN,vN)>1e-12?normalize(vN):vec3(0.,1.,0.); vec3 V=normalize(uCam-vW);
   if(!gl_FrontFacing && vMat!=2.) N=-N;
   vec3 base=lin(vC); float m=vMat;
   if(m==5.){ float st=step(0.,sin((vW.x+vW.z)*3.1)); base*=0.82+0.18*st; }
@@ -284,8 +284,12 @@ void main(){
 
 const FS_BRIGHT = `#version 300 es
 precision highp float; in vec2 vUv; out vec4 o; uniform sampler2D uTex; uniform vec2 uPx; uniform vec2 uDir; uniform float uPass;
+// 数でない点（NaN・無限大）をにじみに入れない。入れると 1/4 の大きさでぼかした黒い四角に広がる（段 8-2a の申し送り）
+// isnan は端末の組み立てで消されることがあるので、指数の桁で見分ける
+bool bad(float v){ return (floatBitsToUint(v)&0x7f800000u)==0x7f800000u; }
+vec3 fin(vec3 c){ return (bad(c.r)||bad(c.g)||bad(c.b))?vec3(0.):clamp(c,vec3(0.),vec3(64.)); }
 void main(){
-  if(uPass<0.5){ vec3 c=vec3(0.); for(int x=-1;x<=1;x++)for(int y=-1;y<=1;y++) c+=texture(uTex,vUv+vec2(x,y)*uPx).rgb; c/=9.;
+  if(uPass<0.5){ vec3 c=vec3(0.); for(int x=-1;x<=1;x++)for(int y=-1;y<=1;y++) c+=fin(texture(uTex,vUv+vec2(x,y)*uPx).rgb); c/=9.;
     float l=max(max(c.r,c.g),c.b); o=vec4(c*smoothstep(2.0,4.0,l),1.); return; }
   vec3 s=vec3(0.); float w=0.;
   for(int i=-6;i<=6;i++){ float k=exp(-float(i*i)/14.); s+=texture(uTex,vUv+uDir*float(i)*uPx*1.6).rgb*k; w+=k; }
@@ -303,7 +307,7 @@ void main(){
   vec3 Px=vpos(vUv+vec2(uPx.x,0.)), Py=vpos(vUv+vec2(0.,uPx.y));
   vec3 Nx=vpos(vUv-vec2(uPx.x,0.)), Ny=vpos(vUv-vec2(0.,uPx.y));
   vec3 dx=abs(Px.z-P.z)<abs(Nx.z-P.z)?Px-P:P-Nx; vec3 dy=abs(Py.z-P.z)<abs(Ny.z-P.z)?Py-P:P-Ny;
-  vec3 N=normalize(cross(dx,dy)); if(dot(N,P)>0.) N=-N;
+  vec3 cn=cross(dx,dy); vec3 N=dot(cn,cn)>1e-20?normalize(cn):vec3(0.,0.,1.); if(dot(N,P)>0.) N=-N;
   vec2 ip=mod(floor(gl_FragCoord.xy),4.); float rnd=((ip.x*4.+ip.y)/16.+h1(floor(gl_FragCoord.xy/4.))*0.0)*6.2831;
   vec3 T=normalize(cross(N,abs(N.y)<0.9?vec3(0.,1.,0.):vec3(1.,0.,0.))); vec3 Bt=cross(N,T);
   float R=uR*(1.+(-P.z)*0.006);

@@ -2044,7 +2044,7 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 		};
 		if (field) {
 			const sb = systemB(field);
-			flyTo(cx(sb), cz(sb), 95, 0.6);
+			flyTo(cx(sb), cz(sb), 120, 1.05);
 			construct(sb, 3.4, cheer);
 		} else {
 			flyTo(cx(t), cz(t), 110, 0.55);
@@ -2069,7 +2069,7 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 		const t = F[CLIENTS[req.group].at];
 		if (field) {
 			const sb = systemB(field);
-			flyTo(cx(sb), cz(sb), 95, 0.6);
+			flyTo(cx(sb), cz(sb), 120, 1.05);
 			construct(sb, 3.4, () => {
 				for (const b of city.B)
 					if (Math.hypot(cx(b) - cx(t), cz(b) - cz(t)) < 100 && !b.hidden && b.kind !== 'board')
