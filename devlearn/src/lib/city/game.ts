@@ -6,6 +6,7 @@
 
 import { createEngine, type Engine, type Light, type Mat4 } from './engine.ts';
 import { generateCity, GEN, type Bld, type Col, type Lot, type RNode } from './gen.ts';
+import { clockOf, MIN_PER_DAY, START_MINUTE, tick } from '../game/clock.ts';
 
 type City = ReturnType<typeof generateCity>;
 
@@ -268,10 +269,21 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 	for (const b of city.B) if (b.hidden) E.setData(b.id, 0, 0, 0, 0);
 
 	// ---------------- state ----------------
+	// 時計は状態（src/lib/game/clock.ts の整数の分）。描画のための端数（frac）だけをここで持つ（段 8-2b）
+	let clk = START_MINUTE;
+	let frac = 0;
 	const S = {
-		day: 10,
-		month: 11,
-		minute: 15 * 60 + 30,
+		/** その日の 0 時からの分（端数つき。描画の光に使う）。撮影の口から書き換えられる（city-standard.md 第 6 章） */
+		get minute() {
+			return (clk % MIN_PER_DAY) + frac;
+		},
+		set minute(v: number) {
+			clk = Math.floor(clk / MIN_PER_DAY) * MIN_PER_DAY + Math.floor(v);
+			frac = v - Math.floor(v);
+		},
+		get day() {
+			return clockOf(clk).day;
+		},
 		speed: 1,
 		money: 5000,
 		view: 'ground',
@@ -1859,7 +1871,7 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 		const h = Math.floor(S.minute / 60) % 24,
 			m = Math.floor(S.minute % 60);
 		ui.clock = String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
-		ui.date = S.month + '月' + S.day + '日';
+		ui.date = clockOf(clk).date;
 		ui.pop = pop();
 		ui.money = S.money;
 		ui.income = income();
@@ -2466,8 +2478,7 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 	let FT = 16,
 		QS = 1;
 	let TIME = 0,
-		last = performance.now(),
-		lastHour = Math.floor(S.minute / 60);
+		last = performance.now();
 	let raf = 0;
 	let stopped = false;
 	const W = window as unknown as StillHooks;
@@ -2538,20 +2549,14 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 		for (const p of CAMK) cam[p] += (cam.v[p] - cam[p]) * sm;
 		// sim
 		if (mult) {
-			S.minute += dtR * 10 * mult;
-			if (S.minute >= 24 * 60) {
-				S.minute -= 24 * 60;
-				S.day += 1;
-				if (S.day > 30) {
-					S.day = 1;
-					S.month = (S.month % 12) + 1;
-				}
-				onNewDay();
-			}
-			const hr = Math.floor(S.minute / 60);
-			if (hr !== lastHour) {
-				lastHour = hr;
-				onHour(hr);
+			frac += dtR * 10 * mult;
+			const whole = Math.floor(frac);
+			frac -= whole;
+			const t = tick(clk, clk + whole);
+			clk = t.minute;
+			for (const ev of t.events) {
+				if (ev.type === 'day') onNewDay();
+				else onHour(ev.hour);
 			}
 			const bySeg = new Map<string, Car[]>();
 			for (const c of cars)
