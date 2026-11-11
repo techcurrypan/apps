@@ -63,7 +63,9 @@ async function waitReady(tab: Tab) {
 async function shoot(tab: Tab, url: string, who: string) {
 	await tab.go(url);
 	if (!(await waitReady(tab))) throw new Error(`${who}: 街が描けなかった（${url}）`);
-	// 届いた要望の知らせ（1.8 秒後）が出てから撮る。どちらも同じ時に出る
+	// 届いた要望の知らせが出てから撮る。試作は 1.8 秒後（実時間）、本番は始まりから 20 分後（ゲーム内の時刻）に届くので、
+	// どちらにも同じだけ時計を進めて（速さ 1 で 25 コマ × 0.1 秒 = 25 分）、2.6 秒待つ
+	await tab.eval('(() => { window.__game.setSpeed(1); window.__frame(25, 0.1); })()');
 	await sleep(2600);
 	for (const s of VIEWS) {
 		await tab.eval(`(() => {

@@ -1,6 +1,7 @@
 // 状態が読む街の形（game-design.md 15.9・15.11）。gen の決まった出力のうち、建物の番号・形・住む人・働く場所、
 // 始まりの区画、交差点、地形の高さだけを取り出す。保存しない（毎回 gen から作る）。
 import { generateCity, terrainH } from '../city/gen.ts';
+import type { FeatKey } from './requests.ts';
 
 export type MapBuilding = {
 	id: number;
@@ -14,7 +15,10 @@ export type MapBuilding = {
 	hidden: boolean;
 };
 export type MapLot = { x0: number; z0: number; x1: number; z1: number; cx: number; cz: number };
+export type FeatSpot = { id: number; x: number; z: number };
 export type TownMap = {
+	/** 目印の建物（要望の依頼主・建つ仕組みの建物） */
+	feat: Record<FeatKey, FeatSpot>;
 	buildings: MapBuilding[];
 	lots: MapLot[];
 	nodes: { x: number; z: number }[];
@@ -24,7 +28,24 @@ export type TownMap = {
 };
 
 export function mapOf(city: ReturnType<typeof generateCity>): TownMap {
+	const keys: FeatKey[] = [
+		'board',
+		'annex',
+		'school',
+		'shopMain',
+		'clinic',
+		'dbvault',
+		'warehouse',
+		'gate',
+		'hall'
+	];
+	const feat = {} as Record<FeatKey, FeatSpot>;
+	for (const k of keys) {
+		const b = city.FEAT[k];
+		feat[k] = { id: b.id, x: (b.x0 + b.x1) / 2, z: (b.z0 + b.z1) / 2 };
+	}
 	return {
+		feat,
 		buildings: city.B.map((b) => ({
 			id: b.id,
 			kind: b.kind,

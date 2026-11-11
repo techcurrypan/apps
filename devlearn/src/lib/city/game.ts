@@ -6,23 +6,26 @@
 
 import { createEngine, type Engine, type Light, type Mat4 } from './engine.ts';
 import { generateCity, GEN, type Bld, type Col, type RNode } from './gen.ts';
-import { clockOf, MIN_PER_DAY, START_MINUTE, tick } from '../game/clock.ts';
-import { bumpNear, DEFAULT_HAPPY, initHappy, type Happy, type Spot } from '../game/happy.ts';
+import { clockOf, MIN_PER_DAY } from '../game/clock.ts';
+import { DEFAULT_HAPPY } from '../game/happy.ts';
+import {
+	applyTown,
+	avgHappy as avgHappyOf,
+	startTown as startTownState,
+	tickTown,
+	type TownAction,
+	type TownEvent,
+	type TownState
+} from '../game/town.ts';
+import { REQ } from '../game/requests.ts';
 import {
 	BUILD_MIN,
-	bulldoze,
 	demand as demandOf,
 	income as incomeOf,
 	incomeParts as incomePartsOf,
-	hourly,
-	pay,
-	placeLot,
 	pop as popOf,
-	road,
 	roadPlan as roadPlanOf,
 	snapPoint as snapPointOf,
-	startBuild,
-	type BuildState,
 	type Placed,
 	type RoadPlan,
 	type SnapPt
@@ -224,24 +227,6 @@ type Boat = {
 	h?: number;
 	ph?: number;
 };
-type Req = {
-	id: string;
-	who: string;
-	icon: string;
-	color: string;
-	at: () => Bld;
-	builds?: () => Bld;
-	view?: number[];
-	title: string;
-	due: number;
-	needs?: string;
-	quote: string;
-	conds: string[];
-	reward: string;
-	lesson: string;
-	learnedOpt: ReqOpt;
-	outOpt: ReqOpt;
-};
 type Construction = { b: AnyB; p: number; dur: number; onDone?: () => void };
 type Floater = { x: number; y: number; z: number; el: HTMLElement; t: number };
 type Drag = {
@@ -292,29 +277,23 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 
 	// ---------------- state ----------------
 	// 時計は状態（src/lib/game/clock.ts の整数の分）。描画のための端数（frac）だけをここで持つ（段 8-2b）
-	let clk = START_MINUTE;
 	let frac = 0;
 	const S = {
 		/** その日の 0 時からの分（端数つき。描画の光に使う）。撮影の口から書き換えられる（city-standard.md 第 6 章） */
 		get minute() {
-			return (clk % MIN_PER_DAY) + frac;
+			return (ts.minute % MIN_PER_DAY) + frac;
 		},
 		set minute(v: number) {
-			clk = Math.floor(clk / MIN_PER_DAY) * MIN_PER_DAY + Math.floor(v);
+			ts = { ...ts, minute: Math.floor(ts.minute / MIN_PER_DAY) * MIN_PER_DAY + Math.floor(v) };
 			frac = v - Math.floor(v);
 		},
 		get day() {
-			return clockOf(clk).day;
+			return clockOf(ts.minute).day;
 		},
 		speed: 1,
 		view: 'ground',
 		tool: 'select',
 		sel: null as AnyB | null,
-		learned: {} as Record<string, boolean>,
-		answered: {} as Record<string, string>,
-		requests: [] as { id: string; dayIn: number; due: number }[],
-		/** 建物ごとの満足度（状態。src/lib/game/happy.ts） */
-		happy: {} as Happy,
 		infra: 0,
 		infraTarget: 0,
 		roadStart: null as SnapPt | null,
@@ -322,26 +301,13 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 	};
 	/** 街づくりの状態（src/lib/game/build.ts） */
 	const MAP = mapOf(city);
-	let st: BuildState = startBuild(MAP, 5000);
+	/** 街の状態の全部（src/lib/game/town.ts）。apply と tickTown だけで変わる */
+	let ts: TownState = startTownState(SEED, MAP);
 	const allB = (): AnyB[] => (city.B as AnyB[]).concat(builtList());
-	const spotOf = (b: Bld): Spot => ({ id: b.id, x: (b.x0 + b.x1) / 2, z: (b.z0 + b.z1) / 2 });
-	const SPOTS = city.B.map(spotOf);
-	S.happy = initHappy(SPOTS, SEED);
-	// 試作はここで満足度の始まりを擬似乱数から引いていた。見た目だけの擬似乱数（車・人・船・公園の木）の並びを試作と同じに保つため、同じ数だけ引いて捨てる
-	for (let i = 0; i < city.B.length; i++) R();
-	const hp = (id: number) => S.happy[id] || DEFAULT_HAPPY;
-	const pop = () => popOf(st, MAP, clk);
-	const outs = () => Object.values(S.answered).filter((v) => v === 'out').length;
-	const avgHappy = () => {
-		let s = 0,
-			n = 0;
-		for (const b of allB()) {
-			if (b.hidden && E.getRise(b.id) < 0.5) continue;
-			s += hp(b.id);
-			n++;
-		}
-		return s / n;
-	};
+	const hp = (id: number) => ts.happy[id] || DEFAULT_HAPPY;
+	const pop = () => popOf(ts.build, MAP, ts.minute);
+	const outs = () => Object.values(ts.answered).filter((v) => v === 'out').length;
+	const avgHappy = () => avgHappyOf(ts, MAP);
 
 	// ---------------- camera ----------------
 	type CamV = { tx: number; tz: number; yaw: number; pitch: number; dist: number };
@@ -932,7 +898,7 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 				[cx(F.school), cz(F.school)]
 			],
 			1.1,
-			S.answered.school ? GRN : RED,
+			ts.answered.school ? GRN : RED,
 			0.4
 		);
 		tube(
@@ -975,11 +941,11 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 			g,
 			cx(F.school),
 			cz(F.school),
-			S.answered.school ? 2.6 : 3.6,
-			S.answered.school ? GRN : RED,
-			S.answered.school ? 1.6 : 2.4
+			ts.answered.school ? 2.6 : 3.6,
+			ts.answered.school ? GRN : RED,
+			ts.answered.school ? 1.6 : 2.4
 		);
-		if (S.answered.school === 'learned') {
+		if (ts.answered.school === 'learned') {
 			node(g, cx(F.school) - 22, cz(F.school) + 12, 2.0, GRN);
 			tube(
 				g,
@@ -992,9 +958,9 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 				0.4
 			);
 		}
-		if (S.answered.board) {
+		if (ts.answered.board) {
 			const an = [cx(F.annex), cz(F.annex)];
-			const col = S.answered.board === 'learned' ? VIO : HX('#8a9099');
+			const col = ts.answered.board === 'learned' ? VIO : HX('#8a9099');
 			tube(
 				g,
 				[[cx(F.board), cz(F.board)], [cx(F.board), cz(F.board) - 8], [an[0], cz(F.board) - 8], an],
@@ -1003,7 +969,7 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 				0.6
 			);
 			node(g, an[0], an[1], 3, col, 2.2);
-			if (S.answered.shop)
+			if (ts.answered.shop)
 				tube(
 					g,
 					[[cx(F.shopMain), cz(F.shopMain)], [cx(F.shopMain), 0], [an[0], 0], an],
@@ -1014,9 +980,9 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 		}
 		const TEAL = HX('#3fd0c0'),
 			ORG = HX('#ffb000');
-		if (S.answered.clinic) {
+		if (ts.answered.clinic) {
 			const dv = [cx(F.dbvault), cz(F.dbvault)];
-			const col = S.answered.clinic === 'learned' ? TEAL : HX('#8a9099');
+			const col = ts.answered.clinic === 'learned' ? TEAL : HX('#8a9099');
 			tube(
 				g,
 				[
@@ -1042,7 +1008,7 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 		}
 		const wh = [cx(F.warehouse), cz(F.warehouse)],
 			gt = [cx(F.gate), cz(F.gate)];
-		if (S.answered.harbor === 'learned') {
+		if (ts.answered.harbor === 'learned') {
 			tube(g, [[250, 0], [250, 150], [gt[0], 150], gt], 1.2, ORG, 0.4);
 			node(g, gt[0], gt[1], 3, ORG, 2.2);
 			tube(g, [gt, wh], 1.1, GRN, 0.5);
@@ -1058,7 +1024,7 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 				GRN,
 				0.45
 			);
-		} else if (S.answered.harbor) {
+		} else if (ts.answered.harbor) {
 			tube(g, [[250, 0], [250, 150], [wh[0], 150], wh], 1.2, HX('#8a9099'), 0.4);
 			node(g, wh[0], wh[1], 2.6, HX('#8a9099'), 2);
 		} else {
@@ -1079,18 +1045,19 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 				E.setData(b.id, c[0] * 255, c[1] * 255, c[2] * 255, rise);
 			} else if (S.view === 'infra') {
 				let c = [0, 0, 0];
-				if (b === F.annex) c = S.answered.board === 'learned' ? [0.75, 0.6, 1] : [0.55, 0.58, 0.62];
-				if (b === F.school) c = S.answered.school ? [0.4, 0.85, 0.55] : [1, 0.45, 0.35];
+				if (b === F.annex)
+					c = ts.answered.board === 'learned' ? [0.75, 0.6, 1] : [0.55, 0.58, 0.62];
+				if (b === F.school) c = ts.answered.school ? [0.4, 0.85, 0.55] : [1, 0.45, 0.35];
 				if (b === F.hall || b === F.clinic || b.kind === 'tower') c = [0.4, 0.65, 1];
-				if (b === F.board) c = S.answered.board ? [0.75, 0.6, 1] : [1, 0.75, 0.4];
-				if (b === F.shopMain) c = S.answered.shop ? [0.75, 0.6, 1] : [1, 0.85, 0.45];
+				if (b === F.board) c = ts.answered.board ? [0.75, 0.6, 1] : [1, 0.75, 0.4];
+				if (b === F.shopMain) c = ts.answered.shop ? [0.75, 0.6, 1] : [1, 0.85, 0.45];
 				if (b === F.dbvault) c = [0.3, 0.85, 0.78];
 				if (b === F.gate) c = [1, 0.7, 0.2];
 				if (b === F.warehouse)
 					c =
-						S.answered.harbor === 'learned'
+						ts.answered.harbor === 'learned'
 							? [0.4, 0.85, 0.55]
-							: S.answered.harbor
+							: ts.answered.harbor
 								? [0.55, 0.58, 0.62]
 								: [1, 0.45, 0.35];
 				E.setData(b.id, c[0] * 255, c[1] * 255, c[2] * 255, rise);
@@ -1101,9 +1068,9 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 	// ---------------- constructions ----------------
 	/** 足場を描く物：要望で建つ物（実時間）と、区画に建つ物（ゲーム内の時刻） */
 	function scaffolds(): { b: AnyB; p: number }[] {
-		const now = clk + frac;
+		const now = ts.minute + frac;
 		const list: { b: AnyB; p: number }[] = constructions.slice();
-		for (const p of st.placed) {
+		for (const p of ts.build.placed) {
 			const t = (now - p.startedAt) / BUILD_MIN;
 			if (t < 1) list.push({ b: builtOf(p), p: Math.max(0, t) });
 		}
@@ -1121,10 +1088,10 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 	const builtCache = new Map<number, Built>();
 	function builtOf(p: Placed): Built {
 		const hit = builtCache.get(p.id);
-		if (hit && hit.lot === st.lots[p.lot]) return hit;
+		if (hit && hit.lot === ts.build.lots[p.lot]) return hit;
 		const r = GEN.mulberry(p.look);
 		const pk = <T>(a: readonly T[]): T => a[Math.floor(r() * a.length)];
-		const L = st.lots[p.lot];
+		const L = ts.build.lots[p.lot];
 		const b: Built = {
 			id: p.id,
 			kind: p.kind,
@@ -1157,12 +1124,12 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 		builtCache.set(p.id, b);
 		return b;
 	}
-	const builtList = () => st.placed.map(builtOf);
+	const builtList = () => ts.build.placed.map(builtOf);
 	function rebuildBuilt() {
 		const g = new Geo(1 << 14);
 		// player roads and the lots they opened
-		for (const rd of st.roads) roadGeo(g, rd);
-		for (const L of st.lots)
+		for (const rd of ts.build.roads) roadGeo(g, rd);
+		for (const L of ts.build.lots)
 			if (L.y0 !== undefined) {
 				const y = L.y0;
 				q(
@@ -1178,7 +1145,7 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 					[0, 1, 0]
 				);
 			}
-		for (const L of st.lots)
+		for (const L of ts.build.lots)
 			if (L.zone && !L.taken) {
 				const y = (L.y0 !== undefined ? L.y0 : city.Y) + 0.04;
 				const c = L.zone === 'home' ? HX('#5fae6a') : HX('#5a8fd0');
@@ -1285,7 +1252,7 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 		const g = new Geo(4096);
 		const col =
 			S.tool === 'home' ? HX('#56d68a') : S.tool === 'shop' ? HX('#4aa3ff') : HX('#e7d36b');
-		for (const L of st.lots) {
+		for (const L of ts.build.lots) {
 			if (L.taken || (L.zone && S.tool !== 'park')) continue;
 			const p = 0.6;
 			const Y = L.y0 !== undefined ? L.y0 : city.Y;
@@ -1410,12 +1377,11 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 		return n;
 	}
 	function addRoad(plan: RoadPlan) {
-		const r = road(st, MAP, plan.a, plan.b, clk);
+		const r = act({ type: 'road', a: plan.a, b: plan.b });
 		if (!r.ok) {
 			toast('ここには引けない', r.why, 'warn');
 			return;
 		}
-		st = r.state;
 		const na = trafficNode(plan.a.x, plan.a.z),
 			nb2 = trafficNode(plan.b.x, plan.b.z);
 		na.nb.push(nb2);
@@ -1469,33 +1435,30 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 		E.setMesh('preview', g.out(), true);
 	}
 	let lastPlanKey = '';
-	const snapPoint = (g: readonly number[]) => snapPointOf(st, MAP, g);
-	const roadPlan = (a: SnapPt, p: Pt) => roadPlanOf(st, MAP, a, p);
+	const snapPoint = (g: readonly number[]) => snapPointOf(ts.build, MAP, g);
+	const roadPlan = (a: SnapPt, p: Pt) => roadPlanOf(ts.build, MAP, a, p);
 	function placeOnLot(i: number) {
 		const tool = S.tool === 'park' ? 'park' : S.tool === 'shop' ? 'shop' : 'home';
-		const L = st.lots[i];
-		const r = placeLot(st, MAP, i, tool, clk, SEED);
+		const L = ts.build.lots[i];
+		const r = act(
+			tool === 'park' ? { type: 'park', lot: i } : { type: 'zone', lot: i, kind: tool }
+		);
 		if (!r.ok) {
 			toast(L.zone && tool !== 'park' ? '指定済みの区画' : '資金が足りない', r.why, 'warn');
 			return;
 		}
-		st = r.state;
-		if (tool === 'park') {
-			const p = st.placed[st.placed.length - 1];
-			S.happy = { ...S.happy, [p.id]: 0.7 };
-			S.happy = bumpNear(S.happy, SPOTS, (p.x0 + p.x1) / 2, (p.z0 + p.z1) / 2, 60, 0.06, 0, 1);
-		} else floater(L.cx, 4 + (L.y0 || Y), L.cz, tool === 'home' ? '住宅地' : '商業地', 'good');
+		if (tool !== 'park')
+			floater(L.cx, 4 + (L.y0 || Y), L.cz, tool === 'home' ? '住宅地' : '商業地', 'good');
 		rebuildBuilt();
 		lotMarkers();
 		sfxNote();
 	}
 	function bulldozeB(b: AnyB) {
-		const r = bulldoze(st, b.id, clk);
+		const r = act({ type: 'bulldoze', id: b.id });
 		if (!r.ok) {
 			toast('取り壊せない', r.why, 'warn');
 			return;
 		}
-		st = r.state;
 		builtCache.delete(b.id);
 		rebuildBuilt();
 		lotMarkers();
@@ -1504,8 +1467,8 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 	/** 建ち始めた・建ち終えた物（ゲーム内の時刻で進む。描画は状態の分から建つ途中の絵を描く） */
 	const doneIds = new Set<number>();
 	function placedProgress() {
-		const now = clk + frac;
-		for (const p of st.placed) {
+		const now = ts.minute + frac;
+		for (const p of ts.build.placed) {
 			const t = Math.max(0, Math.min(1, (now - p.startedAt) / BUILD_MIN));
 			const e = t < 0.25 ? 0 : (t - 0.25) / 0.75;
 			E.setData(p.id, 0, 0, 0, Math.round(255 * (1 - Math.pow(1 - e, 3))));
@@ -1528,136 +1491,38 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 		}
 	}
 	// ---------------- requests & lessons ----------------
-	const REQ: Record<string, Req> = {
-		board: {
-			id: 'board',
-			who: '町内会長',
-			icon: '町',
-			color: '#ff9d4d',
-			at: () => F.board,
-			builds: () => F.annex,
-			view: [-8, 6, 105, 0.62, -0.4],
-			title: '掲示板を、誰がいつ直したか残したい',
-			due: 3,
-			quote:
-				'「お祭りの日付が、いつの間にか書き換わっていたんです。誰が直したのか分かるようにしてもらえませんか。前の文面にも戻せると助かります」',
-			conds: ['直した人と日時が残る', '前の文面に戻せる'],
-			reward: '満足度 最大 +6',
-			lesson: 'git',
-			learnedOpt: {
-				label: '役場の隣に記録庫を建てる',
-				note: '学んだ手 ・ 中身が見える ・ 後の要望にも使える',
-				cost: 200
-			},
-			outOpt: { label: '外の業者に任せる', note: '学ばなくても選べる ・ 中身は見えない', cost: 900 }
-		},
-		school: {
-			id: 'school',
-			who: '港の学校の先生',
-			icon: '学',
-			color: '#6fb3ff',
-			at: () => F.school,
-			title: '昼休みになると校内の無線が止まる',
-			due: 4,
-			quote:
-				'「昼休みにみんなが一斉につなぐと、授業の資料が開かなくなるんです。午後の授業までに何とかなりませんか」',
-			conds: ['昼休みでも資料が開く', '新しい機械は最小限'],
-			reward: '満足度 最大 +5',
-			lesson: 'net',
-			learnedOpt: {
-				label: '中継器を 1 台足して振り分ける',
-				note: '学んだ手 ・ 混む理由が見える',
-				cost: 300
-			},
-			outOpt: {
-				label: '業者に回線を太くしてもらう',
-				note: '学ばなくても選べる ・ 費用が高い',
-				cost: 1200
-			}
-		},
-		shop: {
-			id: 'shop',
-			who: '商店街の会長',
-			icon: '店',
-			color: '#f2c14e',
-			at: () => F.shopMain,
-			title: '売上の控えを、なくさず残したい',
-			due: 5,
-			needs: 'board',
-			quote:
-				'「帳面が雨で濡れて、先月の売上が分からなくなりました。役場の記録庫みたいに残せませんか」',
-			conds: ['毎日の控えが残る', '誰が書いたか分かる'],
-			reward: '満足度 最大 +5',
-			lesson: 'git',
-			learnedOpt: {
-				label: '記録庫に商店街の帳面をつなぐ',
-				note: '前に学んだ記録庫をそのまま使える',
-				cost: 100
-			},
-			outOpt: { label: '外の業者に任せる', note: '学ばなくても選べる', cost: 800 }
-		},
-		clinic: {
-			id: 'clinic',
-			who: '診療所の受付',
-			icon: '診',
-			color: '#3fd0c0',
-			at: () => F.clinic,
-			builds: () => F.dbvault,
-			view: [0, 0, 85, 0.62, -2.4],
-			title: '予約の数が、帳面と合わない',
-			due: 4,
-			quote:
-				'「同じ人の予約が 2 回書いてあったり、数えるたびに数が違ったりするんです。明日の予約が何件か、すぐ分かるようにしたい」',
-			conds: ['日ごとの予約の数がすぐ分かる', '二重の予約を見つけられる'],
-			reward: '満足度 最大 +5',
-			lesson: 'db',
-			learnedOpt: {
-				label: '診療所の隣に帳簿の倉庫を建てる',
-				note: '学んだ手 ・ 表にして数えられる',
-				cost: 250
-			},
-			outOpt: {
-				label: '外の業者に予約の機械を入れてもらう',
-				note: '学ばなくても選べる ・ 中身は見えない',
-				cost: 1000
-			}
-		},
-		harbor: {
-			id: 'harbor',
-			who: '港の倉庫の番頭',
-			icon: '港',
-			color: '#ff7a59',
-			at: () => F.warehouse,
-			builds: () => F.gate,
-			view: [0, 10, 110, 0.6, 2.6],
-			title: '夜中に、知らない所から記録へつながろうとする',
-			due: 4,
-			quote:
-				'「荷の記録を見る機械に、夜中に知らない所から何度もつなごうとした跡があるんです。うちの事務所からだけ見られるようにできませんか」',
-			conds: ['事務所からは今まで通り見られる', '知らない所からは届かない'],
-			reward: '満足度 最大 +5',
-			lesson: 'sec',
-			learnedOpt: {
-				label: '港の入口に門番の小屋を建てる',
-				note: '学んだ手 ・ 断った記録が残る',
-				cost: 300
-			},
-			outOpt: {
-				label: '外の業者に見張ってもらう',
-				note: '学ばなくても選べる ・ 毎月の費用がかさむ',
-				cost: 1100
-			}
-		}
-	};
 	const LESSONS: Record<string, LessonData> = LESSON_DATA;
-	function addRequest(id: string) {
-		if (S.requests.find((r) => r.id === id) || S.answered[id]) return;
-		S.requests.push({ id, dayIn: S.day, due: S.day + REQ[id].due });
-		toast('要望が届いた', REQ[id].who + '：' + REQ[id].title, 'req');
-		renderReqs();
-		sfxNote();
+	/** 状態の知らせ（tickTown・applyTown の結果）を、知らせ・印・絵に映す */
+	function onEvents(evs: TownEvent[]) {
+		let reqs = false,
+			grown = false;
+		for (const e of evs) {
+			if (e.type === 'arrive') {
+				toast('要望が届いた', REQ[e.id].who + '：' + REQ[e.id].title, 'req');
+				sfxNote();
+				reqs = true;
+			} else if (e.type === 'expire') {
+				toast('期限を過ぎた', REQ[e.id].who + 'の満足度が下がった', 'warn');
+				reqs = true;
+			} else if (e.type === 'day') reqs = true;
+			else if (e.type === 'grown') grown = true;
+		}
+		if (grown) {
+			rebuildBuilt();
+			lotMarkers();
+			sfxNote();
+		}
+		if (reqs) {
+			renderReqs();
+			if (S.view !== 'ground') applyInfoColors();
+		}
 	}
-
+	/** 手を 1 つ当てる（状態は town.ts だけが変える） */
+	function act(a: TownAction) {
+		const r = applyTown(ts, a, MAP);
+		if (r.ok) ts = r.state;
+		return r;
+	}
 	// ---------------- UI ----------------
 	function setSpeed(v: number) {
 		S.speed = v;
@@ -1703,42 +1568,32 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 		const h = Math.floor(S.minute / 60) % 24,
 			m = Math.floor(S.minute % 60);
 		ui.clock = String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
-		ui.date = clockOf(clk).date;
+		ui.date = clockOf(ts.minute).date;
 		ui.pop = pop();
-		ui.money = st.money;
+		ui.money = ts.build.money;
 		ui.income = income();
 		ui.sat = Math.round(avgHappy() * 100);
 		ui.demand = demand();
 		if (ui.budgetOpen) renderBudget();
 	}
 	function demand() {
-		return demandOf(st, MAP, avgHappy(), clk);
+		return demandOf(ts.build, MAP, avgHappy(), ts.minute);
 	}
 	function incomeParts(): [string, number][] {
-		return incomePartsOf(st, MAP, outs(), clk);
+		return incomePartsOf(ts.build, MAP, outs(), ts.minute);
 	}
 	function income() {
-		return incomeOf(st, MAP, outs(), clk);
+		return incomeOf(ts.build, MAP, outs(), ts.minute);
 	}
 	function renderBudget() {
-		ui.budget = { parts: incomeParts(), income: income(), ledger: st.ledger.slice() };
+		ui.budget = { parts: incomeParts(), income: income(), ledger: ts.build.ledger.slice() };
 	}
 	function toggleBudget() {
 		ui.budgetOpen = !ui.budgetOpen;
 		if (ui.budgetOpen) renderBudget();
 	}
-	function onHour() {
-		const r = hourly(st, MAP, clk, avgHappy(), outs(), SEED);
-		st = r.state;
-		if (r.grown.length) {
-			for (const p of r.grown) S.happy = { ...S.happy, [p.id]: 0.7 };
-			rebuildBuilt();
-			lotMarkers();
-			sfxNote();
-		}
-	}
 	function renderReqs() {
-		ui.reqs = S.requests.map((r) => {
+		ui.reqs = ts.requests.map((r) => {
 			const d = REQ[r.id];
 			return {
 				id: r.id,
@@ -1749,21 +1604,21 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 				left: r.due - S.day
 			};
 		});
-		ui.done = Object.keys(S.answered).map((id) => ({
+		ui.done = Object.keys(ts.answered).map((id) => ({
 			id,
 			title: REQ[id].title,
-			how: S.answered[id]
+			how: ts.answered[id]
 		}));
 		renderMarkers();
 	}
 	const markerEls = new Map<string, HTMLElement>();
 	function renderMarkers() {
 		for (const [k, el] of markerEls)
-			if (!S.requests.find((r) => r.id === k)) {
+			if (!ts.requests.find((r) => r.id === k)) {
 				el.remove();
 				markerEls.delete(k);
 			}
-		for (const r of S.requests)
+		for (const r of ts.requests)
 			if (!markerEls.has(r.id)) {
 				const d = REQ[r.id];
 				const el = document.createElement('button');
@@ -1834,12 +1689,12 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 	// request dialog
 	function openReq(id: string) {
 		const d = REQ[id];
-		const r = S.requests.find((x) => x.id === id);
+		const r = ts.requests.find((x) => x.id === id);
 		if (!r) return;
-		const b = d.at();
+		const b = F[d.at];
 		flyTo(cx(b), cz(b), 110, 0.55);
-		const learned = !!S.learned[d.lesson];
-		const needOk = !d.needs || S.answered[d.needs] === 'learned';
+		const learned = !!ts.learned[d.lesson];
+		const needOk = !d.needs || ts.answered[d.needs] === 'learned';
 		ui.dialog = {
 			kind: 'req',
 			id,
@@ -1877,7 +1732,7 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 		lessonBack?.();
 	}
 	function finishLesson(lid: string) {
-		S.learned[lid] = true;
+		act({ type: 'learn', lesson: lid });
 		ui.lesson = null;
 		toast('解説を修了', LESSONS[lid].title + ' ・ 応え方が 1 つ増えた', 'learn');
 		lessonBack?.();
@@ -1885,19 +1740,16 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 
 	function answer(id: string, how: string) {
 		const d = REQ[id];
-		const cost = how === 'learned' ? d.learnedOpt.cost : d.outOpt.cost;
-		if (st.money < cost) {
-			toast('資金が足りない', '必要 ¥' + cost, 'warn');
+		const r = act({ type: 'answer', id, how: how === 'learned' ? 'learned' : 'out' });
+		if (!r.ok) {
+			toast(r.why.startsWith('資金') ? '資金が足りない' : '選べない', r.why, 'warn');
 			return;
 		}
-		st = pay(st, clk, '要望：' + (how === 'learned' ? d.learnedOpt.label : d.outOpt.label), -cost);
-		S.answered[id] = how;
-		S.requests = S.requests.filter((r) => r.id !== id);
 		closeDlg();
 		renderReqs();
-		const target = d.at();
+		const target = F[d.at];
 		if (d.builds) {
-			const bb = d.builds();
+			const bb = F[d.builds];
 			bb.hidden = false;
 			const v = d.view as number[];
 			flyTo(cx(bb) + v[0], cz(bb) + v[1], v[2], v[3], v[4]);
@@ -1913,20 +1765,9 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 	}
 	function resolveEffects(id: string, how: string) {
 		const d = REQ[id];
-		const t = d.at();
-		const k = how === 'learned' ? 1 : 0.5;
+		const t = F[d.at];
 		let n = 0;
 		const r = how === 'learned' ? 110 : 70;
-		S.happy = bumpNear(
-			S.happy,
-			city.B.filter((b) => !b.hidden).map(spotOf),
-			cx(t),
-			cz(t),
-			r,
-			0.12 * k,
-			0,
-			1
-		);
 		for (const b of city.B) {
 			const dd = Math.hypot(cx(b) - cx(t), cz(b) - cz(t));
 			if (dd < r && !b.hidden) {
@@ -1969,13 +1810,12 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 				['地下の仕組みで見る', () => setView('infra'), 'pri']
 			]
 		);
-		if (id === 'board') later(() => addRequest('shop'), 9000);
 	}
 	function replayChange(id: string) {
 		setView('ground');
 		const d = REQ[id];
 		if (d.builds) {
-			const bb = d.builds();
+			const bb = F[d.builds];
 			const v = d.view as number[];
 			flyTo(cx(bb) + v[0], cz(bb) + v[1], v[2], v[3], v[4]);
 			construct(bb, 3.4, () => {
@@ -1984,7 +1824,7 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 						floater(cx(b), b.h + 3, cz(b), '満足 ↑', 'good');
 			});
 		} else {
-			const t = REQ[id].at();
+			const t = F[REQ[id].at];
 			flyTo(cx(t), cz(t), 120, 0.55);
 			later(() => {
 				setView('infra');
@@ -2246,7 +2086,7 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 		if (['home', 'shop', 'park'].includes(S.tool)) {
 			const g = groundHit(rr);
 			if (!g) return;
-			const i = st.lots.findIndex(
+			const i = ts.build.lots.findIndex(
 				(l) => !l.taken && g[0] > l.x0 && g[0] < l.x1 && g[1] > l.z0 && g[1] < l.z1
 			);
 			if (i >= 0) placeOnLot(i);
@@ -2258,7 +2098,7 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 			return;
 		}
 		if (b) {
-			const req = S.requests.find((r) => REQ[r.id].at() === b);
+			const req = ts.requests.find((r) => F[REQ[r.id].at] === b);
 			if (req) {
 				openReq(req.id);
 				return;
@@ -2297,8 +2137,8 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 	const W = window as unknown as StillHooks;
 	if (STILL)
 		W.__game = {
-			state: () => st,
-			onHour,
+			state: () => ts.build,
+			town: () => ts,
 			demand,
 			S,
 			cam,
@@ -2314,8 +2154,7 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 			roadPlan,
 			addRoad,
 			snapPoint,
-			placeOnLot,
-			addRequest: (id: string) => addRequest(id)
+			placeOnLot
 		};
 	function frame(now: number) {
 		if (stopped) return;
@@ -2366,11 +2205,10 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 			frac += dtR * 10 * mult;
 			const whole = Math.floor(frac);
 			frac -= whole;
-			const t = tick(clk, clk + whole);
-			clk = t.minute;
-			for (const ev of t.events) {
-				if (ev.type === 'day') onNewDay();
-				else onHour();
+			if (whole > 0) {
+				const t = tickTown(ts, ts.minute + whole, MAP);
+				ts = t.state;
+				onEvents(t.events);
 			}
 			const bySeg = new Map<string, Car[]>();
 			for (const c of cars)
@@ -2495,10 +2333,10 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 				(1 - ((p[1] / p[3]) * 0.5 + 0.5)) * rc.height
 			];
 		};
-		for (const r of S.requests) {
+		for (const r of ts.requests) {
 			const el = markerEls.get(r.id);
 			if (!el) continue;
-			const b = REQ[r.id].at();
+			const b = F[REQ[r.id].at];
 			const p = proj(cx(b), (b.y0 || 0) + b.h + Y + 4, cz(b));
 			if (!p) {
 				el.style.display = 'none';
@@ -2525,20 +2363,6 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 		if (S.sel && Math.floor(now / 1000) !== Math.floor((now - dtR * 1000) / 1000)) select(S.sel);
 		if (!STILL) raf = requestAnimationFrame(frame);
 	}
-	function onNewDay() {
-		if (S.day === 11 && !S.answered.school) addRequest('school');
-		if (S.day === 12 && !S.answered.clinic) addRequest('clinic');
-		if (S.day === 13 && !S.answered.harbor) addRequest('harbor');
-		for (const r of S.requests)
-			if (r.due < S.day) {
-				toast('期限を過ぎた', REQ[r.id].who + 'の満足度が下がった', 'warn');
-				const t = REQ[r.id].at();
-				S.happy = bumpNear(S.happy, SPOTS, cx(t), cz(t), 90, -0.08, 0.2, 1);
-				r.due = S.day + 2;
-			}
-		renderReqs();
-		if (S.view !== 'ground') applyInfoColors();
-	}
 	// initial
 	rebuildBuilt();
 	lotMarkers();
@@ -2554,10 +2378,9 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 		ui.dialog = { kind: 'intro' };
 		S.prevSpeed = 1;
 		setSpeed(0);
-	} else later(() => addRequest('board'), 1800);
+	}
 	function startIntro() {
 		closeDlg();
-		later(() => addRequest('board'), 2500);
 	}
 	ui.ready = true;
 	if (STILL) {
