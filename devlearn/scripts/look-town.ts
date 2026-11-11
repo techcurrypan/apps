@@ -95,7 +95,7 @@ async function pair(tab: Tab, left: string, right: string, out: string): Promise
 		const box = [330, 230, 620, 390];
 		const da = g.getImageData(box[0], 40 + box[1], box[2], box[3]).data, db = g.getImageData(a.width + 16 + box[0], 40 + box[1], box[2], box[3]).data;
 		let n = 0; for (let k = 0; k < da.length; k += 4) if (Math.max(Math.abs(da[k] - db[k]), Math.abs(da[k + 1] - db[k + 1]), Math.abs(da[k + 2] - db[k + 2])) > 24) n++;
-		return { png: c.toDataURL('image/png'), diff: (100 * n) / (box[2] * box[3]) };
+		return { png: c.toDataURL(${JSON.stringify(out.endsWith('.jpg') ? 'image/jpeg' : 'image/png')}, 0.88), diff: (100 * n) / (box[2] * box[3]) };
 	})()`);
 	writeFileSync(out, Buffer.from(r.png.split(',')[1], 'base64'));
 	return r.diff;
@@ -107,13 +107,16 @@ async function main() {
 		await tab.size(1280, 720, false);
 		await tab.scheme(true);
 		const proto = pathToFileURL(resolve('docs/prototype/minato.html')).href + '#still';
-		await shoot(tab, proto, 'proto');
-		await shoot(tab, `${base}/town#still`, 'town');
+		// ONLY_PAIR=1 なら撮り直さず、置き場にある 2 枚を並べ直すだけ
+		if (process.env.ONLY_PAIR !== '1') {
+			await shoot(tab, proto, 'proto');
+			await shoot(tab, `${base}/town#still`, 'town');
+		}
 		if (process.env.PAIR !== '0')
 			for (const s of VIEWS) {
 				const f = (who: string) => `${outDir}/${prefix}-${s.name}-${who}.png`;
-				const d = await pair(tab, f('proto'), f('town'), f('pair'));
-				console.log(`並べた ${prefix}-${s.name}-pair.png  3D の部分で違う点 ${d.toFixed(2)}%`);
+				const d = await pair(tab, f('proto'), f('town'), `${outDir}/${prefix}-${s.name}-pair.jpg`);
+				console.log(`並べた ${prefix}-${s.name}-pair.jpg  3D の部分で違う点 ${d.toFixed(2)}%`);
 			}
 	} finally {
 		chrome.kill();
