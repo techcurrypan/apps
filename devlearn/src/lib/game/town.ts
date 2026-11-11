@@ -49,6 +49,14 @@ export type TownEvent =
 	| { type: 'expire'; id: string; at: number }
 	| { type: 'grown'; ids: number[]; at: number };
 
+/** 保存する物：種と、打てた手の記録と、時計の今（game-design.md 15.9） */
+export type TownSave = {
+	version: 1;
+	seed: number;
+	now: number;
+	actions: { at: number; action: TownAction }[];
+};
+
 export type ApplyResult = { ok: boolean; why: string; state: TownState; opened?: number };
 
 const spots = (map: TownMap): Spot[] =>
@@ -158,7 +166,12 @@ export function tickTown(
 }
 
 /** 手を 1 つ当てる。打てないときは理由を返し、状態を変えない */
-export function applyTown(s: TownState, a: TownAction, map: TownMap): ApplyResult {
+export function applyTown(
+	s: TownState,
+	a: TownAction,
+	map: TownMap,
+	opt: { replay?: boolean } = {}
+): ApplyResult {
 	const fail = (why: string): ApplyResult => ({ ok: false, why, state: s });
 	switch (a.type) {
 		case 'zone':
@@ -203,7 +216,8 @@ export function applyTown(s: TownState, a: TownAction, map: TownMap): ApplyResul
 		case 'answer': {
 			const d = REQ[a.id];
 			if (!d || !s.requests.some((r) => r.id === a.id)) return fail('届いていない要望');
-			if (a.how === 'learned') {
+			// 当て直しでは学んだ手の可否を問わない（記録にあるのは打てた手。15.9）
+			if (a.how === 'learned' && !opt.replay) {
 				if (!s.learned[d.lesson]) return fail('解説を受けると選べる');
 				if (d.needs && s.answered[d.needs] !== 'learned') return fail('先に記録庫を建てると選べる');
 			}
@@ -243,4 +257,23 @@ export function applyTown(s: TownState, a: TownAction, map: TownMap): ApplyResul
 			return { ok: true, why: '', state: st };
 		}
 	}
+}
+
+/** 手の記録から作り直す。states[k] は k 番目の手を当てた直後の状態、state は now の状態（15.9・15.11） */
+export function replayTown(
+	save: TownSave,
+	map: TownMap
+): { state: TownState; states: TownState[]; events: TownEvent[] } {
+	let s = startTown(save.seed, map);
+	const states: TownState[] = [];
+	const events: TownEvent[] = [];
+	for (const { at, action } of save.actions) {
+		const t = tickTown(s, at, map);
+		events.push(...t.events);
+		s = applyTown(t.state, action, map, { replay: true }).state;
+		states.push(s);
+	}
+	const t = tickTown(s, save.now, map);
+	events.push(...t.events);
+	return { state: t.state, states, events };
 }

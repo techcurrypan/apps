@@ -1,6 +1,7 @@
 // 街づくりの操作を、街 /town#still の撮影の口から動かして確かめる（段 8-2b。CI では走らせない）。
 //   npx tsx scripts/look-town-build.ts <街の URL の根> <撮った画面の置き場> [名前の頭]
 // 9 つの空き区画を住宅地に指定し、速さ 3 で時計を進めて建つのを待ち、東の畑へ道路を引く。
+// 終わりに要望に応え、手の記録から作り直した状態が、遊んだ後の状態と一字も違わないことを確かめる（15.9）。
 import { openChrome, sleep } from './lib/cdp.ts';
 
 const base = (process.argv[2] ?? 'http://localhost:5173').replace(/\/$/, '');
@@ -78,6 +79,15 @@ async function main() {
 			`(() => { const g = window.__game; g.cam.v = { tx: 330, tz: -60, yaw: 0.9, pitch: 0.7, dist: 220 }; window.__snap(); window.__frame(5, 0.05); })()`
 		);
 		await tab.shot(`${outDir}/${prefix}-build-road.png`);
+		const rp = await tab.eval<{ n: number; same: boolean; answered: string }>(`(() => {
+			const g = window.__game; g.answer('board', 'out'); g.setSpeed(2); window.__frame(60, 0.1);
+			const a = JSON.stringify(g.town()), b = JSON.stringify(g.replayed());
+			return { n: g.save().actions.length, same: a === b, answered: JSON.stringify(g.town().answered) }; })()`);
+		check(
+			'手の記録から作り直すと、遊んだ後と同じ状態になる',
+			rp.same && rp.n === 11,
+			`記録 ${rp.n} 手 ・ 応えた ${rp.answered}`
+		);
 	} finally {
 		chrome.kill();
 	}

@@ -12,8 +12,10 @@ import {
 	applyTown,
 	avgHappy as avgHappyOf,
 	startTown as startTownState,
+	replayTown,
 	tickTown,
 	type TownAction,
+	type TownSave,
 	type TownEvent,
 	type TownState
 } from '../game/town.ts';
@@ -1518,11 +1520,17 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 		}
 	}
 	/** 手を 1 つ当てる（状態は town.ts だけが変える） */
+	/** 打てた手の記録（何分目に・何をした。game-design.md 15.9）。任意の時点はここから作り直す */
+	const log: TownSave['actions'] = [];
 	function act(a: TownAction) {
 		const r = applyTown(ts, a, MAP);
-		if (r.ok) ts = r.state;
+		if (r.ok) {
+			ts = r.state;
+			log.push({ at: ts.minute, action: a });
+		}
 		return r;
 	}
+	const save = (): TownSave => ({ version: 1, seed: SEED, now: ts.minute, actions: log.slice() });
 	// ---------------- UI ----------------
 	function setSpeed(v: number) {
 		S.speed = v;
@@ -2139,6 +2147,8 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 		W.__game = {
 			state: () => ts.build,
 			town: () => ts,
+			save,
+			replayed: () => replayTown(save(), MAP).state,
 			demand,
 			S,
 			cam,
