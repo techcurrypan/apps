@@ -51,6 +51,7 @@ import {
 import { mapOf, type FeatKey } from '../game/map.ts';
 import { fieldName } from '../content/fields.ts';
 import { loadProgress } from '../progress.ts';
+import { frameSeconds } from './time.ts';
 import { gainedLessons, gainNotices, KNOWN_KEY, parseKnown } from '../game/learn.ts';
 import {
 	BOX_ID,
@@ -2633,7 +2634,7 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 		};
 	function frame(now: number) {
 		if (stopped) return;
-		const dtR = Math.min(0.1, (now - last) / 1000);
+		const dtR = frameSeconds(now, last);
 		last = now;
 		const mult = [0, 1, 3, 8][S.speed];
 		TIME += dtR * (mult ? 1 : 0.0) + (mult ? 0 : 0);

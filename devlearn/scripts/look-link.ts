@@ -69,6 +69,19 @@ async function main() {
 			steps.join(' ・ ')
 		);
 
+		// 画面を行き来して開き直した街も、3D を描いている（8 回目の行き来の後。描画の 1 コマ目の時刻のずれで止まっていた）
+		await sleep(1500);
+		const drawn = await tab.eval<{ w: number; markers: number }>(`(() => {
+			const c = document.querySelector('#view');
+			const ms = [...document.querySelectorAll('.layer > *')].filter((m) => { const r = m.getBoundingClientRect(); return r.width && r.left > 40 && r.top > 40; });
+			return { w: c ? c.width : 0, markers: ms.length };
+		})()`);
+		check(
+			'1b 行き来して開き直した街も描けている（画布が画面の大きさ・印が建物の上）',
+			drawn.w > 300 && drawn.markers > 0,
+			`画布の幅 ${drawn.w} ・ 置かれた印 ${drawn.markers}`
+		);
+
 		// ---------- 2. 要望の板 → レッスン → 修了 → 戻る ----------
 		await sleep(1000);
 		await tab.key('n');
@@ -110,7 +123,8 @@ async function main() {
 		await typeIn('git commit -m "first commit"');
 		await sleep(1200);
 		const progress = await tab.eval<string>(`localStorage.getItem('devlearn.progress') ?? ''`);
-		// 「次」の段へ
+		// 「次」の段へ（端末の入力の欄から焦点を外してから。欄の中では 1 字のキーは効かない）
+		await tab.eval('document.activeElement?.blur()');
 		for (let i = 0; i < 4; i++) await tab.key('ArrowRight', true);
 		await sleep(400);
 		const nextText = await tab.eval<string>(
