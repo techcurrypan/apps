@@ -295,3 +295,11 @@ export const formNames: Record<string, string> = {
 	pick: '選ぶ',
 	fix: '直す'
 };
+
+/** 流す 1 件の呼び方（結果の表の見出し） */
+export const FIX_CASE_NAMES: Record<FixEngine, string> = {
+	firewall: '通信',
+	html: '書き込み',
+	cookie: '要求',
+	policy: '操作'
+};

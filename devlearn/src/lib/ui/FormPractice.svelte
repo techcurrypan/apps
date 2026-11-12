@@ -14,6 +14,7 @@
 		type OrderSetup,
 		type PickSetup,
 		type SortSetup,
+		FIX_CASE_NAMES,
 		FIX_RESULTS
 	} from '../practice/forms.ts';
 
@@ -185,7 +186,10 @@
 					<figcaption>流した結果（1 行ずつ）</figcaption>
 					{#if answer.kind === 'fix'}
 						<table>
-							<thead><tr><th>通信</th><th>直す前</th><th>直した後</th></tr></thead>
+							<thead
+								><tr><th>{FIX_CASE_NAMES[fix.engine]}</th><th>直す前</th><th>直した後</th></tr
+								></thead
+							>
 							<tbody>
 								{#each judge.rows as r, i (r.key)}
 									<tr class:bad={!r.ok} style:animation-delay="{i * 0.45}s">

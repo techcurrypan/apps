@@ -12,7 +12,7 @@
 | `prg` | 12 | **12（済）** | 通る | prg-002・prg-008・prg-010（`840d4d3`、19 / 19。`shots/phase-10-prg-*`） |
 | `lnx` | 11 | **11（済）** | 通る | lnx-005・lnx-007・lnx-011（`4453a99`、18 / 18。`shots/phase-10-0-lnx-*`） |
 | `net` | 13 | **13（済）** | 通る | net-004・net-008・net-009・net-010（`0268787`、26 / 26 と 6 / 6。`shots/phase-10-0-net-*`） |
-| `sec` | 13 | 3（001・009・011） | 通る | — |
+| `sec` | 13 | **13（済）** | 通る | sec-005・sec-006・sec-008・sec-010（`4809f06`、26 / 26。`shots/phase-10-0-sec-*`） |
 | `db` | 11 | 1（001） | 通る | — |
 | `git` | 10 | 1（001） | 通る | — |
 | `ctr` | 9 | 1（001） | 通る | — |
@@ -20,7 +20,7 @@
 | `ci` | 8 | 0 | — | — |
 | `ai` | 37 | 0 | — | — |
 | `sta` | 29 | 0 | — | — |
-| 計 | 163 | 42 | | |
+| 計 | 163 | 52 | | |
 
 `docs/content-sources-log.md`：旧資料から取った問題は、ここまで無し。
 
@@ -130,4 +130,17 @@
   - 本物の Ubuntu にある網の命令（nslookup・host・tracepath・wget）に command not found と返していた。模擬だと分かる日本語で返す（D-13）
 - 公開 URL で net-004（shell）・net-008（shell）・net-009（order）・net-010（calc）を `look-practice.ts` で通した：`2c17485` で 26 / 26、直した後の `0268787` で net-008 を 6 / 6
 - 段 10-1 の次の分野（`sec`）のために、直す（fix）の仕組みに html（XSS）・cookie（SameSite と確かめの値）・policy（権限の方針）を足した（`forms.test.ts`）
+
+### `sec`（済、2026-11-13）
+
+- sec-002〜008・010・012・013 を書いた（shell 模擬 4 本・sql 本物 1 本・git 模擬 1 本・sort 1 本・fix 3 本）。道具の例は道具に打って得た物で、`solutions.test.ts` が打ち直して一字ずつ比べる
+- 直す（fix）の仕組みを 3 つ足した（`forms.ts`、`forms.test.ts`）
+  - html（sec-006）：型の `{名前}` はそのまま、`{名前|escape}` は `< > & " '` を文字の印に替えて埋める。入力から `<script` か `on…=` の属性が頁に入れば「スクリプトが動く」
+  - cookie（sec-007）：`SameSite` と `Secure` で、その要求に Cookie が付くか（Strict は同じサイトだけ、Lax は他のサイトからの頁の移動の GET にも、None は Secure があれば全て）。「確かめの値：見る」なら、送る要求は値もそろって通る（頁を見るだけの要求は値を見ない）
+  - policy（sec-010）：`allow|deny 操作 対象`。止める行が 1 つでも当たれば止め、無ければ許す行で許し、どれにも当たらなければ止める
+- sec-005 の SQL インジェクション：SQLite の端末にはプレースホルダに値を渡す口が無いので、実戦は「値の中の ' を '' と重ねて、値として包む」で同じ結果（O'Hara の 1 行）を確かめる。解説で ? と値を別に渡す形を示す
+- 見つけて直した物
+  - 本物の Ubuntu にある md5sum・sha1sum・sha512sum に command not found と返していた。模擬だと分かる日本語で返す（D-13）
+  - 直す（fix）の結果の表の見出しが、どの仕組みでも「通信」だった。仕組みごとに 通信・書き込み・要求・操作 にした（公開 URL の sec-006 で見つけた）
+- 公開 URL（`4809f06`）で sec-005（sql）・sec-006（fix html）・sec-008（shell ssh）・sec-010（fix policy）を `look-practice.ts` で通した：26 / 26
 
