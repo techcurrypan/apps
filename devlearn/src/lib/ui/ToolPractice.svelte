@@ -70,7 +70,7 @@
 				class="link"
 				class:b={sp.bold}
 				title={sp.link}>{sp.text}</span
-			>{:else if sp.bold}<b>{sp.text}</b>{:else}{sp.text}{/if}{:else}{' '}{/each}
+			>{:else if sp.bold}<b>{sp.text}</b>{:else}{sp.text}{/if}{:else}&nbsp;{/each}
 {/snippet}
 
 <div class="grid" data-steps={run.steps.length}>
