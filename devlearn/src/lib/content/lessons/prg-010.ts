@@ -13,7 +13,7 @@ export const prg010: Lesson = {
 	title: '手数を数える',
 	goal: '入力の件数が増えたとき、処理の手数がどう増えるかを数えることができる',
 	prereq: ['prg-003'],
-	related: [],
+	related: ['db-009'],
 	next: ['prg-011'],
 	explain: [
 		{

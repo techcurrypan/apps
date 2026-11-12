@@ -19,7 +19,7 @@ export const sec005: Lesson = {
 	level: 2,
 	title: 'SQL インジェクション',
 	goal: '入力が SQL に混ざる仕組みを確かめ、プレースホルダで防ぐことができる',
-	prereq: [],
+	prereq: ['db-002'],
 	related: ['sec-007'],
 	next: ['sec-006'],
 	explain: [

@@ -19,7 +19,7 @@ export const db001: Lesson = {
 	goal: 'SELECT で、表から列を選んで取り出すことができる',
 	prereq: [],
 	related: [],
-	next: [],
+	next: ['db-002'],
 	explain: [
 		{
 			n: 1,

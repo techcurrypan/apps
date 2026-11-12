@@ -12,7 +12,7 @@ export const prg005: Lesson = {
 	title: '配列を変換する',
 	goal: 'map と filter で、配列の中身がどう変わるかを追うことができる',
 	prereq: ['prg-004'],
-	related: [],
+	related: ['db-002'],
 	next: ['prg-006'],
 	explain: [
 		{

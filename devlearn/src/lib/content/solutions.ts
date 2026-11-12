@@ -4,6 +4,132 @@ import type { FormAnswer } from '../practice/forms.ts';
 
 /** レッスンごとの解き方（合格まで）と、間違いの手（mistakes の順に 1 つずつ） */
 export const SOLUTIONS: Record<string, { pass: string[]; wrong: string[][] }> = {
+	'db-002': {
+		pass: ["SELECT name, kind FROM items WHERE kind = '惣菜' OR stock = 0;"],
+		wrong: [
+			['SELECT name, kind FROM items WHERE kind = 惣菜 OR stock = 0;'],
+			["SELECT * FROM items WHERE kind = '惣菜' OR stock = 0;"],
+			["SELECT name, kind FROM item WHERE kind = '惣菜' OR stock = 0;"]
+		]
+	},
+	'db-003': {
+		pass: ['SELECT name, stock FROM items ORDER BY stock DESC LIMIT 3;'],
+		wrong: [
+			['SELECT name, stock FROM items ORDER BY stock DESC;'],
+			['SELECT name, stock FROM items ORDER BY stock LIMIT 3;'],
+			['SELECT name, stock FROM items LIMIT 3 ORDER BY stock DESC;']
+		]
+	},
+	'db-004': {
+		pass: ['SELECT item_id, SUM(qty) AS total FROM sales GROUP BY item_id HAVING total >= 4;'],
+		wrong: [
+			['SELECT item_id, SUM(qty) AS total FROM sales WHERE SUM(qty) >= 4 GROUP BY item_id;'],
+			['SELECT item_id, SUM(qty) AS total FROM sales GROUP BY item_id;'],
+			['SELECT item_id, SUM(qtty) AS total FROM sales GROUP BY item_id HAVING total >= 4;']
+		]
+	},
+	'db-005': {
+		pass: [
+			"SELECT i.name, s.qty FROM sales s JOIN items i ON i.id = s.item_id WHERE s.day = '11-11';"
+		],
+		wrong: [
+			["SELECT name, qty FROM sales JOIN items ON id = item_id WHERE day = '11-11';"],
+			[
+				"SELECT i.name, s.qty FROM items i LEFT JOIN sales s ON s.item_id = i.id AND s.day = '11-11';"
+			],
+			['SELECT i.name, s.qty FROM sales s JOIN items i ON i.id = s.item_id;']
+		]
+	},
+	'db-006': {
+		pass: [
+			"UPDATE items SET stock = 20 WHERE name = 'メロンパン';",
+			'SELECT name, stock FROM items;'
+		],
+		wrong: [
+			['UPDATE items SET stock = 20;'],
+			["UPDATE items SET stock = 20 WHERE name = 'メロンパソ';"],
+			["UPDATE items SET stok = 20 WHERE name = 'メロンパン';"]
+		]
+	},
+	'db-007': {
+		pass: [
+			'CREATE TABLE staff (code TEXT PRIMARY KEY, name TEXT NOT NULL);',
+			"INSERT INTO staff VALUES ('S1', 'hanako');",
+			"INSERT INTO staff VALUES ('S1', 'taro');",
+			"INSERT INTO staff VALUES ('S2', NULL);",
+			"INSERT INTO staff VALUES ('S2', 'jiro');",
+			'SELECT * FROM staff;'
+		],
+		wrong: [
+			[
+				'CREATE TABLE staff (code TEXT, name TEXT NOT NULL);',
+				"INSERT INTO staff VALUES ('S1', 'hanako');",
+				"INSERT INTO staff VALUES ('S1', 'taro');",
+				'SELECT * FROM staff;'
+			],
+			[
+				'CREATE TABLE staff (code TEXT PRIMARY KEY, name TEXT);',
+				"INSERT INTO staff VALUES ('S1', 'hanako');",
+				"INSERT INTO staff VALUES ('S2', NULL);",
+				'SELECT * FROM staff;'
+			],
+			["INSERT INTO staff VALUES ('S1', 'hanako');"]
+		]
+	},
+	'db-008': {
+		pass: [
+			'CREATE TABLE customers (name TEXT PRIMARY KEY, phone TEXT NOT NULL);',
+			'INSERT INTO customers SELECT DISTINCT customer, phone FROM orders_flat;',
+			'SELECT * FROM customers;'
+		],
+		wrong: [
+			[
+				'CREATE TABLE customers (name TEXT PRIMARY KEY, phone TEXT NOT NULL);',
+				'INSERT INTO customers SELECT customer, phone FROM orders_flat;'
+			],
+			[
+				'CREATE TABLE customers (name TEXT PRIMARY KEY, phone TEXT NOT NULL);',
+				'INSERT INTO customers SELECT DISTINCT name, phone FROM orders_flat;'
+			],
+			['INSERT INTO customers SELECT DISTINCT customer, phone FROM orders_flat;']
+		]
+	},
+	'db-009': {
+		pass: [
+			'CREATE INDEX idx_day ON receipts(day);',
+			"EXPLAIN QUERY PLAN SELECT * FROM receipts WHERE day = '11-05';"
+		],
+		wrong: [
+			["EXPLAIN QUERY PLAN SELECT * FROM receipts WHERE day = '11-05';"],
+			['CREATE INDEX idx_day ON receipts(day);', 'CREATE INDEX idx_day ON receipts(day);'],
+			['CREATE INDEX idx_day ON receipts(days);']
+		]
+	},
+	'db-010': {
+		pass: [
+			'BEGIN;',
+			"UPDATE accounts SET points = points - 300 WHERE name = 'hanako';",
+			"UPDATE accounts SET points = points + 300 WHERE name = 'taro';",
+			'COMMIT;',
+			'SELECT * FROM accounts;'
+		],
+		wrong: [
+			[
+				'BEGIN;',
+				"UPDATE accounts SET points = points - 300 WHERE name = 'hanako';",
+				"UPDATE accounts SET points = points + 300 WHERE name = 'taroo';"
+			],
+			['COMMIT;'],
+			['BEGIN;', "UPDATE accounts SET points = points - 3000 WHERE name = 'hanako';"]
+		]
+	},
+	'db-011': {
+		pass: ['SELECT id, item FROM reviews WHERE stars IS NULL;'],
+		wrong: [
+			['SELECT id, item FROM reviews WHERE stars IS NOT NULL;'],
+			['SELECT id, item FROM reviews WHERE star IS NULL;']
+		]
+	},
 	'sec-002': {
 		pass: ["printf 'salt1:password123' | sha256sum"],
 		wrong: [

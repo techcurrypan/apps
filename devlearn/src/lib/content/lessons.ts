@@ -51,6 +51,16 @@ import { sec011 } from './lessons/sec-011.ts';
 import { sec012 } from './lessons/sec-012.ts';
 import { sec013 } from './lessons/sec-013.ts';
 import { db001 } from './lessons/db-001.ts';
+import { db002 } from './lessons/db-002.ts';
+import { db003 } from './lessons/db-003.ts';
+import { db004 } from './lessons/db-004.ts';
+import { db005 } from './lessons/db-005.ts';
+import { db006 } from './lessons/db-006.ts';
+import { db007 } from './lessons/db-007.ts';
+import { db008 } from './lessons/db-008.ts';
+import { db009 } from './lessons/db-009.ts';
+import { db010 } from './lessons/db-010.ts';
+import { db011 } from './lessons/db-011.ts';
 import { git001 } from './lessons/git-001.ts';
 import { ctr001 } from './lessons/ctr-001.ts';
 
@@ -105,6 +115,16 @@ export const lessons: readonly Lesson[] = [
 	sec012,
 	sec013,
 	db001,
+	db002,
+	db003,
+	db004,
+	db005,
+	db006,
+	db007,
+	db008,
+	db009,
+	db010,
+	db011,
 	git001,
 	ctr001
 ];
