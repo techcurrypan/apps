@@ -219,6 +219,8 @@ export const rebaseCmd = (ctx: Ctx, args: string[]): R => {
 	if (flag) return unsupported(s, `git rebase ${flag}`);
 	const [upName] = args;
 	if (!upName) return unsupported(s, '土台の無い git rebase');
+	// 本物は「枝へ移ってから積み直す」。模擬はその形を持たないので、今の枝で黙って積み直さずに知らせる
+	if (args.length > 1) return unsupported(s, 'git rebase 土台 枝（枝へ移ってから積み直す形）');
 	const upstream = resolveRev(repo, upName);
 	if (!upstream) return fail(s, `fatal: invalid upstream '${upName}'\n`, 128);
 	const tip = headCommit(repo);

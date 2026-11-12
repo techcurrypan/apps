@@ -56,6 +56,12 @@ describe('記録の外', () => {
 		expect(s.entries[1].code).toBe(1);
 	});
 
+	it('git rebase 土台 枝 の形（枝へ移ってから積み直す）は扱わないと返す。黙って今の枝で積み直さない', () => {
+		const s = typeAll(['git init', 'git commit --allow-empty -m a', 'git rebase main feature']);
+		expect(s.entries[2].err).toContain('模擬の git');
+		expect(s.entries[2].code).toBe(1);
+	});
+
 	it('リポジトリは作業場所に .git を作る', () => {
 		const s = typeAll(['git init']);
 		expect(current(s).fs[`${WORK}/.git`]?.kind).toBe('dir');
