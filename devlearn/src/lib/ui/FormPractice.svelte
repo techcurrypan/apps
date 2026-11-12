@@ -60,6 +60,10 @@
 	const cardText = (id: string) => order.cards.find((c) => c.id === id)?.text ?? id;
 	const RES: Record<string, string> = { allow: '通す', deny: '止める' };
 	const runKey = $derived(`${flow}:${replay}`);
+	// ✕ の行の添え書き。並べるは最初に誤った札で止まり、その先は流れない。ほかの形は、その行が違う
+	const firstBad = $derived(judge ? judge.rows.findIndex((r) => !r.ok) : -1);
+	const badNote = (i: number) =>
+		form !== 'order' ? '（違う）' : i === firstBad ? '（ここで止まった）' : '（その先は流れない）';
 </script>
 
 <div class="grid" data-form={form} data-tries={attempts.length}>
@@ -176,7 +180,7 @@
 
 		{#if judge}
 			{#key runKey}
-				<figure class="flow" aria-label="流した結果">
+				<figure class="flow" aria-label="流した結果" data-run={runKey}>
 					<figcaption>流した結果（1 行ずつ）</figcaption>
 					{#if answer.kind === 'fix'}
 						<table>
@@ -196,7 +200,7 @@
 							{#each judge.rows as r, i (r.key)}
 								<li class:bad={!r.ok} style:animation-delay="{i * 0.45}s">
 									<span aria-hidden="true">{r.ok ? '✓' : '✕'}</span>
-									{r.text}{#if !r.ok}<em>（ここで止まった）</em>{/if}
+									{r.text}{#if !r.ok}<em>{badNote(i)}</em>{/if}
 								</li>
 							{/each}
 						</ol>
