@@ -51,6 +51,7 @@ import {
 import { mapOf, type FeatKey } from '../game/map.ts';
 import { fieldName } from '../content/fields.ts';
 import { loadProgress } from '../progress.ts';
+import { gainedLessons, gainNotices, KNOWN_KEY, parseKnown } from '../game/learn.ts';
 import {
 	BOX_ID,
 	BOX_SPOT,
@@ -111,6 +112,8 @@ export type MoveView = {
 	why: string;
 	lesson?: string;
 	lessonTitle?: string;
+	/** 前に街を開いたときから増えた手（段 9。前 → 後で見せる） */
+	fresh?: boolean;
 };
 export type ReqDialog = {
 	kind: 'req';
@@ -2163,7 +2166,8 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 				ok: o.ok,
 				why: o.why,
 				lesson: o.lesson,
-				lessonTitle: o.lessonTitle
+				lessonTitle: o.lessonTitle,
+				fresh: !!o.lesson && freshLessons.has(o.lesson)
 			})),
 			evidence: r.evidence,
 			notes: r.notes.slice(),
@@ -2678,6 +2682,8 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 				const t = tickTown(ts, ts.minute + whole, MAP);
 				ts = t.state;
 				onEvents(t.events);
+				// 時が進んだ分も残す（レッスンへ行って戻っても、同じ時点から続く。段 9）
+				if (t.events.some((e) => e.type === 'hour')) persist();
 			}
 			const bySeg = new Map<string, Car[]>();
 			for (const c of cars)
@@ -2875,6 +2881,42 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 	function startIntro() {
 		closeDlg();
 	}
+	// ---------------- 学びとの接続（段 9） ----------------
+	/** この画面を開いている間に増えたと知らせた手（要望の板で「新しく使える」と出す） */
+	const freshLessons = new Set<string>();
+	/** 修了の記録を読み、前に見た集まりから増えた手を知らせる。街は修了の記録を書き換えない */
+	function checkGained() {
+		if (STILL && !learnedOverride) return;
+		const done = [...learned()];
+		let known: string[] = [];
+		try {
+			known = parseKnown(localStorage.getItem(KNOWN_KEY));
+			localStorage.setItem(KNOWN_KEY, JSON.stringify(done));
+		} catch {
+			/* 覚えておけなくても遊べる */
+		}
+		const gained = gainedLessons(known, done);
+		if (!gained.length) return;
+		for (const id of gained) freshLessons.add(id);
+		for (const n of gainNotices(ts, gained)) {
+			const where = n.requests.length
+				? `効く要望：${n.requests.map((r) => `${r.who}『${r.symptom}』`).join('、')}`
+				: '今は効く要望が無い。後で届いた要望に使える';
+			toast(
+				`使える手が増えた：${n.move}`,
+				`${n.lesson} ${n.title} を修了した ・ ${where}`,
+				'learn'
+			);
+		}
+		renderReqs();
+		const d = ui.dialog;
+		if (d && d.kind === 'req') openReq(d.id, true);
+	}
+	checkGained();
+	on(window, 'focus', () => checkGained());
+	const onHide = () => persist();
+	window.addEventListener('pagehide', onHide);
+	offs.push(() => window.removeEventListener('pagehide', onHide));
 	ui.ready = true;
 	if (STILL) {
 		W.__ready = true;
@@ -2909,6 +2951,7 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 		toggleBudget,
 		select: () => select(null),
 		dispose() {
+			persist();
 			stopped = true;
 			cancelAnimationFrame(raf);
 			for (const t of timers) clearTimeout(t);

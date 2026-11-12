@@ -17,6 +17,7 @@
 	import Stage from './Stage.svelte';
 	import { inField, wideQuery } from './dom.ts';
 	import ToolPractice from './ToolPractice.svelte';
+	import TownReturn from './TownReturn.svelte';
 	import { practiceTools } from '../practice/tool-practice.ts';
 	import { loadProgress, markDone, saveProgress } from '../progress.ts';
 
@@ -105,6 +106,7 @@
 		<span>{lesson.title}</span>
 		<span aria-hidden="true">›</span>
 		<strong>{partLabel(part)}</strong>
+		<a class="totown" href={resolve('/town')} aria-keyshortcuts="G">街へ</a>
 	</nav>
 
 	<div class="parts" role="tablist" aria-label="段">
@@ -217,6 +219,7 @@
 						{/each}
 					</ul>
 				{/if}
+				<TownReturn lessonId={lesson.id} />
 			{/if}
 		</div>
 	{/if}
@@ -234,6 +237,9 @@
 		gap: var(--dl-space-2);
 		font-size: var(--dl-text-small);
 		color: var(--dl-text-muted);
+	}
+	.totown {
+		margin-left: auto;
 	}
 	.parts {
 		display: flex;

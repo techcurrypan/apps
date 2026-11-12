@@ -24,4 +24,8 @@ describe('街への入口', () => {
 		const src = readFileSync(new URL('../../routes/town/+page.svelte', import.meta.url), 'utf8');
 		expect(src).toMatch(/href=\{resolve\('\/map'\)\}[^>]*>地図</);
 	});
+	it('レッスンの帯に「街へ」の入口がある', () => {
+		const src = readFileSync(new URL('./LessonView.svelte', import.meta.url), 'utf8');
+		expect(src).toMatch(/href=\{resolve\('\/town'\)\}[^>]*>街へ</);
+	});
 });

@@ -471,11 +471,13 @@
 										type="button"
 										class="mv"
 										class:good={m.kind === 'learned'}
+										class:fresh={m.fresh}
 										disabled={!m.ok}
 										onclick={() => game?.doMove(m.key)}
 									>
 										<span
-											><strong>{m.label}</strong><small
+											>{#if m.fresh}<i class="new">新しく使える ・ 前：学んでいない → 後：使える</i
+												>{/if}<strong>{m.label}</strong><small
 												>{m.ok
 													? m.lessonTitle
 														? `${m.lesson} ${m.lessonTitle}`
@@ -513,7 +515,10 @@
 						{#if d.lessons.some((x) => !x.learned)}
 							<h4>この要望に効くレッスン</h4>
 							<ul class="lessons">
-								{#each d.lessons.filter((x) => !x.learned).slice(0, 6) as x (x.lesson)}
+								{#each d.lessons
+									.filter((x) => !x.learned)
+									.sort((a, b) => Number(lessonIds.has(b.lesson)) - Number(lessonIds.has(a.lesson)))
+									.slice(0, 6) as x (x.lesson)}
 									<li>
 										{#if lessonIds.has(x.lesson)}
 											<a href={resolve('/lesson/[id]', { id: x.lesson })}>{x.lesson} {x.title}</a>
@@ -1474,6 +1479,17 @@
 	}
 	.town .mv.good:not(:disabled) {
 		border: 2px solid var(--dl-done);
+	}
+	.town .mv.fresh {
+		outline: 2px solid var(--dl-now);
+		outline-offset: 2px;
+	}
+	.mv .new {
+		display: block;
+		font-style: normal;
+		font-size: 11px;
+		color: var(--dl-now);
+		font-weight: 700;
 	}
 	.town .mv:disabled {
 		opacity: 0.6;
