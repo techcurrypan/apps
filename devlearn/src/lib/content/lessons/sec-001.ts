@@ -15,7 +15,7 @@ export const sec001: Lesson = {
 	goal: '認証と認可の違いを、要求ごとに見分けることができる',
 	prereq: [],
 	related: ['lnx-011'],
-	next: [],
+	next: ['sec-002', 'sec-010'],
 	explain: [
 		{
 			n: 1,

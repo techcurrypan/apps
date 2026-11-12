@@ -131,12 +131,12 @@ export function cookieSent(line: string, req: Record<string, string>): boolean {
 	if (same === 'strict') return false;
 	return req.method === 'GET' && req.top === 'yes'; // Lax：他のサイトからは、GET の頁の移動だけ
 }
-/** 受け付け：Cookie が付き、「確かめの値：見る」なら値（token=yes）もそろえば pass */
+/** 受け付け：Cookie が付き、「確かめの値：見る」なら、送る要求（op が send。既定）は値（token=yes）もそろえば pass。頁を見る（op: view）は値を見ない */
 function cookieFlow(lines: string[], input: Record<string, string>): 'pass' | 'stop' {
 	const cookie = lines.find((l) => /^Set-Cookie:/i.test(l)) ?? '';
 	const look = lines.some((l) => /確かめの値：見る/.test(l));
 	if (!cookieSent(cookie, input)) return 'stop';
-	if (look && input.token !== 'yes') return 'stop';
+	if (look && (input.op ?? 'send') === 'send' && input.token !== 'yes') return 'stop';
 	return 'pass';
 }
 

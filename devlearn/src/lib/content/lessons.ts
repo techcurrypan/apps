@@ -38,8 +38,18 @@ import { net011 } from './lessons/net-011.ts';
 import { net012 } from './lessons/net-012.ts';
 import { net013 } from './lessons/net-013.ts';
 import { sec001 } from './lessons/sec-001.ts';
+import { sec002 } from './lessons/sec-002.ts';
+import { sec003 } from './lessons/sec-003.ts';
+import { sec004 } from './lessons/sec-004.ts';
+import { sec005 } from './lessons/sec-005.ts';
+import { sec006 } from './lessons/sec-006.ts';
+import { sec007 } from './lessons/sec-007.ts';
+import { sec008 } from './lessons/sec-008.ts';
 import { sec009 } from './lessons/sec-009.ts';
+import { sec010 } from './lessons/sec-010.ts';
 import { sec011 } from './lessons/sec-011.ts';
+import { sec012 } from './lessons/sec-012.ts';
+import { sec013 } from './lessons/sec-013.ts';
 import { db001 } from './lessons/db-001.ts';
 import { git001 } from './lessons/git-001.ts';
 import { ctr001 } from './lessons/ctr-001.ts';
@@ -82,8 +92,18 @@ export const lessons: readonly Lesson[] = [
 	net012,
 	net013,
 	sec001,
+	sec002,
+	sec003,
+	sec004,
+	sec005,
+	sec006,
+	sec007,
+	sec008,
 	sec009,
+	sec010,
 	sec011,
+	sec012,
+	sec013,
 	db001,
 	git001,
 	ctr001

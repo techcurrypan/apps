@@ -4,6 +4,63 @@ import type { FormAnswer } from '../practice/forms.ts';
 
 /** レッスンごとの解き方（合格まで）と、間違いの手（mistakes の順に 1 つずつ） */
 export const SOLUTIONS: Record<string, { pass: string[]; wrong: string[][] }> = {
+	'sec-002': {
+		pass: ["printf 'salt1:password123' | sha256sum"],
+		wrong: [
+			["printf 'password123' | sha256sum"],
+			["echo 'salt1:password123' | sha256sum"],
+			["printf 'salt1:password123' | md5sum"]
+		]
+	},
+	'sec-004': {
+		pass: ['openssl verify -CAfile root-ca.pem -untrusted inter-ca.pem server.pem'],
+		wrong: [
+			['openssl verify -CAfile root-ca.pem server.pem'],
+			['openssl verify -CAfile inter-ca.pem server.pem'],
+			['openssl verify -CAfile root-ca.pem -untrusted inter-ca.pem old.pem']
+		]
+	},
+	'sec-005': {
+		pass: ["SELECT name, mail FROM members WHERE name = 'O''Hara';"],
+		wrong: [
+			["SELECT name, mail FROM members WHERE name = 'O'Hara';"],
+			["SELECT name, mail FROM members WHERE name = '' OR '1'='1';"],
+			["SELECT name, mail FROM member WHERE name = 'O''Hara';"]
+		]
+	},
+	'sec-008': {
+		pass: [
+			"ssh-keygen -t ed25519 -N '' -f ~/.ssh/id_ed25519",
+			'cat ~/.ssh/id_ed25519.pub >> ~/.ssh/authorized_keys',
+			'ssh -o StrictHostKeyChecking=accept-new ssh.example.com hostname -I'
+		],
+		wrong: [
+			['ssh -o StrictHostKeyChecking=accept-new ssh.example.com hostname -I'],
+			['ssh ssh.example.com hostname -I'],
+			[
+				"ssh-keygen -t ed25519 -N '' -f ~/.ssh/id_ed25519",
+				"ssh-keygen -t ed25519 -N '' -f ~/.ssh/id_ed25519"
+			],
+			['ssh -o StrictHostKeyChecking=accept-new shh.example.com hostname -I']
+		]
+	},
+	'sec-012': {
+		pass: ["grep ' 401 ' access.log | cut -d ' ' -f 1 | sort | uniq -c | sort -rn | head -n 1"],
+		wrong: [
+			["cut -d ' ' -f 1 access.log | sort | uniq -c | sort -rn | head -n 1"],
+			["grep ' 401 ' access.log | cut -d ' '"],
+			["grep ' 401 ' access.log | cut -d ' ' -f 0"],
+			["cut -d ' ' -f 1 acess.log"]
+		]
+	},
+	'sec-013': {
+		pass: ["printf '.env\\n' > .gitignore", 'git add .', 'git commit -m "first"'],
+		wrong: [
+			['git add .', 'git status --short'],
+			['git add .', 'git commit -m "first"'],
+			['git add .gitignore']
+		]
+	},
 	'net-002': {
 		pass: ['ping -c 1 192.0.2.80', 'ip neigh show 192.0.2.80'],
 		wrong: [
@@ -314,6 +371,90 @@ export const SOLUTIONS: Record<string, { pass: string[]; wrong: string[][] }> = 
 
 /** 形の実戦の解き方（合格する答え）と、間違いの答え（mistakes の順に 1 つずつ） */
 export const FORM_SOLUTIONS: Record<string, { pass: FormAnswer; wrong: FormAnswer[] }> = {
+	'sec-003': {
+		pass: {
+			kind: 'sort',
+			bins: {
+				bulk: 'common',
+				sendkey: 'pub',
+				openkey: 'priv',
+				sign: 'priv',
+				verify: 'pub',
+				publish: 'pub'
+			}
+		},
+		wrong: [
+			{
+				kind: 'sort',
+				bins: {
+					bulk: 'common',
+					sendkey: 'priv',
+					openkey: 'priv',
+					sign: 'priv',
+					verify: 'pub',
+					publish: 'pub'
+				}
+			},
+			{
+				kind: 'sort',
+				bins: {
+					bulk: 'common',
+					sendkey: 'pub',
+					openkey: 'priv',
+					sign: 'pub',
+					verify: 'pub',
+					publish: 'pub'
+				}
+			},
+			{
+				kind: 'sort',
+				bins: {
+					bulk: 'pub',
+					sendkey: 'pub',
+					openkey: 'priv',
+					sign: 'priv',
+					verify: 'pub',
+					publish: 'pub'
+				}
+			},
+			{
+				kind: 'sort',
+				bins: {
+					bulk: 'common',
+					sendkey: 'pub',
+					openkey: 'priv',
+					sign: 'priv',
+					verify: 'pub',
+					publish: 'priv'
+				}
+			}
+		]
+	},
+	'sec-006': {
+		pass: { kind: 'fix', lines: { n: 'esc', c: 'esc' } },
+		wrong: [
+			{ kind: 'fix', lines: { n: 'esc', c: 'pre' } },
+			{ kind: 'fix', lines: { c: 'esc' } },
+			{ kind: 'fix', lines: { n: 'esc' } }
+		]
+	},
+	'sec-007': {
+		pass: { kind: 'fix', lines: { c: 'lax' } },
+		wrong: [
+			{ kind: 'fix', lines: { c: 'strict' } },
+			{ kind: 'fix', lines: { c: 'nosecure', t: 'look' } },
+			{ kind: 'fix', lines: {} }
+		]
+	},
+	'sec-010': {
+		pass: { kind: 'fix', lines: { p1: 'sales', p2: 'daily', p3: 'nodelete' } },
+		wrong: [
+			{ kind: 'fix', lines: { p1: 'denyall', p2: 'daily' } },
+			{ kind: 'fix', lines: {} },
+			{ kind: 'fix', lines: { p1: 'sales', p3: 'daily' } },
+			{ kind: 'fix', lines: { p1: 'sales', p2: 'sales' } }
+		]
+	},
 	'net-009': {
 		pass: { kind: 'order', order: ['tcp', 'ch', 'sh', 'cert', 'verify', 'fin', 'data'] },
 		wrong: [

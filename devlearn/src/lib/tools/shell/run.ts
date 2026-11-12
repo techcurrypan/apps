@@ -102,7 +102,11 @@ export const NOT_MOCKED: ReadonlySet<string> = new Set([
 	'nslookup',
 	'host',
 	'tracepath',
-	'wget'
+	'wget',
+	// coreutils のほかのハッシュ（sha256sum だけを模擬にした）
+	'md5sum',
+	'sha1sum',
+	'sha512sum'
 ]);
 // 組み込みにしか無い物（/usr/bin に同じ名前の物が無い）
 export const BUILTIN_ONLY: ReadonlySet<string> = new Set(['cd', 'export', 'unset', 'exit']);

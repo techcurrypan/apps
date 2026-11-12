@@ -14,8 +14,8 @@ export const net009: Lesson = {
 	level: 2,
 	title: 'HTTPS と TLS',
 	goal: 'TLS で鍵を決め、暗号の通信が始まるまでを並べることができる',
-	prereq: ['net-007'],
-	related: [],
+	prereq: ['net-007', 'sec-003'],
+	related: ['sec-004'],
 	next: [],
 	explain: [
 		{

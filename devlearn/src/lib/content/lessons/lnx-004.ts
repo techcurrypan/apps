@@ -12,7 +12,7 @@ export const lnx004: Lesson = {
 	title: '権限を読み、変える',
 	goal: 'ls -l の権限を読み、chmod で変えることができる',
 	prereq: ['lnx-002'],
-	related: [],
+	related: ['sec-010'],
 	next: ['lnx-011'],
 	explain: [
 		{

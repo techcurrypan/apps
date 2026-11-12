@@ -16,7 +16,7 @@ export const lnx006: Lesson = {
 	title: 'grep で探す',
 	goal: 'grep と正規表現で、行を絞り込むことができる',
 	prereq: ['lnx-005'],
-	related: [],
+	related: ['sec-012'],
 	next: ['lnx-009'],
 	explain: [
 		{

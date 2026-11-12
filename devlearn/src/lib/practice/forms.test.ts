@@ -221,10 +221,16 @@ describe('fix の cookie（Cookie の SameSite。CSRF）', () => {
 						id: 'trap',
 						name: '罠から送金',
 						input: { site: 'other', method: 'POST', top: 'yes', token: 'no' }
+					},
+					// 頁を見るだけ（op: view）は、確かめの値を見ない
+					{
+						id: 'link',
+						name: '他のサイトのリンクから頁を開く',
+						input: { site: 'other', method: 'GET', top: 'yes', token: 'no', op: 'view' }
 					}
 				]
 			},
-			{ expect: { shop: 'pass', trap: 'stop' } },
+			{ expect: { shop: 'pass', trap: 'stop', link: 'pass' } },
 			[M('case:trap:pass')]
 		);
 		expect(judgeForm(p, { kind: 'fix', lines: {} }).mistake?.match).toBe('case:trap:pass');

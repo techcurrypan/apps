@@ -17,7 +17,7 @@ export const sec009: Lesson = {
 	goal: '規則の並びから、通る通信と止まる通信を決めることができる',
 	prereq: ['net-006'],
 	related: [],
-	next: [],
+	next: ['sec-012'],
 	explain: [
 		{
 			n: 1,

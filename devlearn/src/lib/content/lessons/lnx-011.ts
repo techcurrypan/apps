@@ -14,7 +14,7 @@ export const lnx011: Lesson = {
 	goal: '利用者・グループと sudo で、誰が何をできるかを確かめることができる',
 	prereq: ['lnx-004'],
 	related: ['sec-001'],
-	next: [],
+	next: ['sec-010'],
 	explain: [
 		{
 			n: 1,

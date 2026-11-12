@@ -149,6 +149,9 @@ describe('本物にはあるが模擬が扱わない命令（D-13）', () => {
 			'nslookup shop.example.com',
 			'host shop.example.com',
 			'tracepath 198.51.100.7',
+			'md5sum a.txt',
+			'sha1sum a.txt',
+			'sha512sum a.txt',
 			'wget http://shop.example.com/'
 		]) {
 			const e = last(run([line]));
