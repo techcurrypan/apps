@@ -113,7 +113,11 @@ export async function openChrome(
 		`--remote-debugging-port=${port}`,
 		`--user-data-dir=${profile}`,
 		'--no-first-run',
-		'--allow-file-access-from-files'
+		'--allow-file-access-from-files',
+		// 窓が隠れても描画を止めない（頭のある Chrome で 1 コマの時間を測るため）
+		'--disable-backgrounding-occluded-windows',
+		'--disable-renderer-backgrounding',
+		'--disable-background-timer-throttling'
 	];
 	if (opts.headless !== false) args.unshift('--headless=new');
 	if (opts.gpu) args.push('--enable-gpu', '--ignore-gpu-blocklist', '--use-angle=d3d11');

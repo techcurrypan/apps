@@ -49,6 +49,7 @@ async function main() {
 			await tab.size(1280, 720, false);
 			await tab.go(`${base}/town`);
 			await tab.eval(`localStorage.removeItem('devlearn.town')`);
+			await tab.go('about:blank');
 			const t0 = Date.now();
 			await tab.send('Page.navigate', { url: `${base}/town` });
 			let sawBoot = false;
@@ -57,7 +58,7 @@ async function main() {
 				await sleep(50);
 				const st = await tab
 					.eval<{ boot: string; done: boolean }>(
-						`({ boot: document.querySelector('.boot')?.textContent ?? '', done: document.readyState === 'complete' && !!document.querySelector('#view') && !document.querySelector('.boot') })`
+						`({ boot: document.querySelector('.boot')?.textContent ?? '', done: location.pathname === '/town' && document.readyState === 'complete' && !!document.querySelector('#view') && !document.querySelector('.boot') })`
 					)
 					.catch(() => ({ boot: '', done: false }));
 				if (st.boot.includes('街を描いています')) sawBoot = true;
@@ -104,6 +105,21 @@ async function main() {
 				);
 			const state = () =>
 				tab.eval<string>(`localStorage.getItem('devlearn.town') ?? ''`).then((s) => s);
+			// 広い幅の板どうしが重ならない（S-2。8-2e で、操作の案内が道具の帯に隠れていたのを直した）
+			const wide = await tab.eval<string[]>(`(() => {
+				const r = (s) => { const e = document.querySelector(s); return e && e.offsetParent ? e.getBoundingClientRect() : null; };
+				const boxes = { 上: r('.top'), 要望: r('.reqs'), 道具: r('.tools'), 案内: r('.help'), 右: r('.legend') };
+				const names = Object.keys(boxes); const out = [];
+				for (let i = 0; i < names.length; i++) for (let j = i + 1; j < names.length; j++) {
+					const a = boxes[names[i]], b = boxes[names[j]];
+					if (a && b && !(a.right <= b.left || b.right <= a.left || a.bottom <= b.top || b.bottom <= a.top)) out.push(names[i] + '×' + names[j]);
+				}
+				return out; })()`);
+			check(
+				'S-2 1280×720：上・要望・道具・操作の案内が重ならない',
+				wide.length === 0,
+				wide.join(' ') || '重なり無し'
+			);
 			// 遊び方の板：Enter で閉じる
 			await focusBtn('.opt', '町を見て回る');
 			await tab.key('Enter');

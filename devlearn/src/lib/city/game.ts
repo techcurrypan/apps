@@ -1035,6 +1035,23 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 				0.4
 			);
 			node(g, cx(b), cz(b), open.get(k) ? 3.6 : 2.6, col, open.get(k) ? 2.4 : 1.6);
+			// 受付中：建物の足元を赤い枠で囲む（上に立つ印に隠れても、困っている所が分かるように。G-6）
+			if (open.get(k)) {
+				const m = 3;
+				tube(
+					g,
+					[
+						[b.x0 - m, b.z0 - m],
+						[b.x1 + m, b.z0 - m],
+						[b.x1 + m, b.z1 + m],
+						[b.x0 - m, b.z1 + m],
+						[b.x0 - m, b.z0 - m]
+					],
+					1.4,
+					RED,
+					0.5
+				);
+			}
 		}
 		// 仕組みの建物と、つないだ依頼主の建物
 		for (const x of ts.systems) {

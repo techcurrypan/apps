@@ -1661,7 +1661,9 @@
 	.help {
 		position: fixed;
 		right: 12px;
-		bottom: 14px;
+		/* 道具の帯（44px の釦と字）の上に置き、帯と重ねない */
+		bottom: calc(14px + 84px + env(safe-area-inset-bottom, 0px));
+		max-width: 330px;
 		z-index: 4;
 		padding: 8px 12px;
 		font-size: 11px;
