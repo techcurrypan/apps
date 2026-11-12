@@ -171,12 +171,19 @@ async function reset(tab: Tab, id: string) {
 
 async function main() {
 	const { tab, chrome } = await openChrome(PORT);
-	const list = lessons.filter((l) => !only || l.id === only);
+	const list = lessons.filter((l) => !only || only.split(',').includes(l.id));
 	for (const l of list) {
 		const form = l.practice.form;
 		const label = `${l.id}（${form ?? `${l.practice.tool?.name}`}）`;
 		await tab.size(1280, 900, false);
 		await tab.scheme(false);
+		// 解説の 3 つ目のステップ（動きの途中と後）を撮る
+		await tab.go(`${base}/lesson/${l.id}`);
+		await tab.eval('document.activeElement?.blur()');
+		await tab.key('ArrowRight');
+		await tab.key('ArrowRight');
+		await sleep(500);
+		await tab.shot(join(outDir, `phase-10-${l.id}-explain3.png`));
 		await reset(tab, l.id);
 		const inPractice = await tab.eval<boolean>(
 			`!!document.querySelector('[role="tabpanel"][aria-label="実戦"]')`

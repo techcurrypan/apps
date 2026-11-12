@@ -58,6 +58,8 @@ describe('書いたレッスンの実戦', () => {
 			expect(r.passed).toBe(false);
 			for (const line of sol.pass) r = await typeRun(r, line);
 			expect(r.passed).toBe(true);
+			// 合格した行に、間違いの返事を出さない（match が正しい出力に含まれていない）
+			expect(r.steps.at(-1)?.mistake ?? null).toBeNull();
 		});
 		l.practice.mistakes.forEach((m, i) => {
 			it(`${l.id}：間違い ${i + 1}「${m.when}」で、なぜと次の一手が出る`, async () => {

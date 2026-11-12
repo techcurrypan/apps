@@ -13,8 +13,8 @@ export const prg001: Lesson = {
 	title: '値と変数',
 	goal: '変数に入れた値と、書き換えた後の値を追うことができる',
 	prereq: [],
-	related: [],
-	next: [],
+	related: ['prg-012'],
+	next: ['prg-002'],
 	explain: [
 		{
 			n: 1,
