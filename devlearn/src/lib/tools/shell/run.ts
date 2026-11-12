@@ -97,7 +97,12 @@ export const NOT_MOCKED: ReadonlySet<string> = new Set([
 	'top',
 	'htop',
 	'source',
-	'alias'
+	'alias',
+	// 網の命令（Ubuntu 24.04 の既定で入っている。dig と同じ包みの nslookup・host、iputils の tracepath、wget）
+	'nslookup',
+	'host',
+	'tracepath',
+	'wget'
 ]);
 // 組み込みにしか無い物（/usr/bin に同じ名前の物が無い）
 export const BUILTIN_ONLY: ReadonlySet<string> = new Set(['cd', 'export', 'unset', 'exit']);

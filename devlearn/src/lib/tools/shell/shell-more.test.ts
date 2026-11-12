@@ -140,7 +140,17 @@ describe('命令の置き換え $( )', () => {
 
 describe('本物にはあるが模擬が扱わない命令（D-13）', () => {
 	it('set・less などは command not found でなく、模擬だと分かる日本語で返す', () => {
-		for (const line of ['set -e', 'less app.log', 'vi a.txt', 'nano a.txt', 'top']) {
+		for (const line of [
+			'set -e',
+			'less app.log',
+			'vi a.txt',
+			'nano a.txt',
+			'top',
+			'nslookup shop.example.com',
+			'host shop.example.com',
+			'tracepath 198.51.100.7',
+			'wget http://shop.example.com/'
+		]) {
 			const e = last(run([line]));
 			const name = line.split(' ')[0];
 			expect(e?.err, line).toBe(`（模擬の端末は ${name} を扱わない）\n`);
