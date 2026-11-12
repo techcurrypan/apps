@@ -1,0 +1,168 @@
+// 段 10-0：打つコマンドが無い題材の実戦の形 5 つ（explanation-standard.md 第 6 章・curriculum.md 3.2）
+import { describe, expect, it } from 'vitest';
+import type { Mistake, Practice } from '../lesson/types.ts';
+import { firewall, judgeForm, type FormAnswer } from './forms.ts';
+
+const M = (match: string): Mistake => ({
+	when: match,
+	why: `why ${match}`,
+	next: `next ${match}`,
+	match
+});
+const P = (form: string, setup: unknown, success: unknown, mistakes: Mistake[] = []): Practice => ({
+	goal: 'g',
+	form,
+	setup,
+	success,
+	mistakes
+});
+
+describe('calc 計算する', () => {
+	const p = P(
+		'calc',
+		{ data: [{ k: 'IP', v: '192.168.10.37' }], steps: [{ label: '網' }, { label: '割合' }] },
+		{ values: ['192.168.10.0', '0.25'], digits: 2 },
+		[M('1=192.168.10.37')]
+	);
+	it('段ごとに正しい値なら合格。数は丸めの桁で比べる', () => {
+		const a: FormAnswer = { kind: 'calc', values: ['192.168.10.0', '0.249'] };
+		const r = judgeForm(p, a);
+		expect(r.passed).toBe(true);
+		expect(r.rows.map((x) => x.ok)).toEqual([true, true]);
+	});
+	it('よくある誤りの値は、その間違いの返事', () => {
+		const r = judgeForm(p, { kind: 'calc', values: ['192.168.10.37', '0.25'] });
+		expect(r.passed).toBe(false);
+		expect(r.mistake?.why).toBe('why 1=192.168.10.37');
+	});
+});
+
+describe('order 並べる', () => {
+	const p = P(
+		'order',
+		{
+			cards: [
+				{ id: 'ack', text: 'ACK' },
+				{ id: 'syn', text: 'SYN' },
+				{ id: 'sa', text: 'SYN+ACK' }
+			]
+		},
+		{ orders: [['syn', 'sa', 'ack']] },
+		[M('ack<sa')]
+	);
+	it('正しい順なら合格。流すと、順が誤った所で止まる', () => {
+		expect(judgeForm(p, { kind: 'order', order: ['syn', 'sa', 'ack'] }).passed).toBe(true);
+		const r = judgeForm(p, { kind: 'order', order: ['syn', 'ack', 'sa'] });
+		expect(r.passed).toBe(false);
+		expect(r.rows.map((x) => x.ok)).toEqual([true, false, false]);
+		expect(r.mistake?.match).toBe('ack<sa');
+	});
+});
+
+describe('sort 振り分ける', () => {
+	const p = P(
+		'sort',
+		{
+			items: [
+				{ id: 'pw', text: '合言葉' },
+				{ id: 'role', text: '役割' }
+			],
+			bins: [
+				{ id: 'authn', label: '認証' },
+				{ id: 'authz', label: '認可' }
+			]
+		},
+		{ bins: { pw: 'authn', role: 'authz' } },
+		[M('pw:authz')]
+	);
+	it('全ての項目が正しい区分なら合格。誤った区分は返事', () => {
+		expect(judgeForm(p, { kind: 'sort', bins: { pw: 'authn', role: 'authz' } }).passed).toBe(true);
+		const r = judgeForm(p, { kind: 'sort', bins: { pw: 'authz', role: 'authz' } });
+		expect(r.passed).toBe(false);
+		expect(r.mistake?.match).toBe('pw:authz');
+	});
+	it('入れていない項目があると合格しない', () => {
+		expect(judgeForm(p, { kind: 'sort', bins: { pw: 'authn' } }).passed).toBe(false);
+	});
+});
+
+describe('pick 選ぶ', () => {
+	const p = P(
+		'pick',
+		{
+			situation: ['From: a'],
+			choices: [
+				{ id: 'a', text: 'A', result: '開いた' },
+				{ id: 'b', text: 'B', result: '止めた' }
+			]
+		},
+		{ choice: 'b' },
+		[M('pick:a')]
+	);
+	it('正しい選択肢で合格。選んだ物の結果が流れる', () => {
+		const r = judgeForm(p, { kind: 'pick', choice: 'b' });
+		expect(r.passed).toBe(true);
+		expect(r.rows[0].text).toContain('止めた');
+		expect(judgeForm(p, { kind: 'pick', choice: 'a' }).mistake?.match).toBe('pick:a');
+	});
+});
+
+describe('fix 直す（規則を上から当てる）', () => {
+	it('規則は上から当て、最初に当たった物で決まる', () => {
+		const rules = [
+			'allow tcp 22 from 203.0.113.0/24',
+			'deny tcp any from any',
+			'allow tcp 80 from any'
+		];
+		expect(firewall(rules, { proto: 'tcp', port: 22, from: '203.0.113.5' })).toEqual({
+			result: 'allow',
+			line: 1
+		});
+		expect(firewall(rules, { proto: 'tcp', port: 80, from: '198.51.100.7' })).toEqual({
+			result: 'deny',
+			line: 2
+		});
+		expect(firewall(rules, { proto: 'udp', port: 53, from: '198.51.100.7' })).toEqual({
+			result: 'deny',
+			line: 0
+		});
+	});
+	const p = P(
+		'fix',
+		{
+			engine: 'firewall',
+			lines: [
+				{ id: 'r1', text: 'allow tcp 22 from 203.0.113.0/24' },
+				{ id: 'r2', text: 'deny tcp any from any' },
+				{ id: 'r3', text: 'allow tcp 80 from any' }
+			],
+			options: [
+				{ line: 'r2', id: 'web', text: 'allow tcp 80 from any' },
+				{ line: 'r3', id: 'deny', text: 'deny tcp any from any' },
+				{ line: 'r2', id: 'all', text: 'allow tcp any from any' }
+			],
+			cases: [
+				{ id: 'ssh', name: '管理の SSH', packet: { proto: 'tcp', port: 22, from: '203.0.113.5' } },
+				{ id: 'web', name: '客の Web', packet: { proto: 'tcp', port: 80, from: '198.51.100.7' } },
+				{ id: 'db', name: '外から DB', packet: { proto: 'tcp', port: 5432, from: '198.51.100.7' } }
+			]
+		},
+		{ expect: { ssh: 'allow', web: 'allow', db: 'deny' } },
+		[M('r2:all')]
+	);
+	it('直した後に流して、期待どおりなら合格。直す前と後の両方の結果を返す', () => {
+		const r = judgeForm(p, { kind: 'fix', lines: { r2: 'web', r3: 'deny' } });
+		expect(r.passed).toBe(true);
+		expect(r.rows.map((x) => [x.before, x.after])).toEqual([
+			['allow', 'allow'],
+			['deny', 'allow'],
+			['deny', 'deny']
+		]);
+	});
+	it('誤った替え方は返事。結果が期待と違う行に印', () => {
+		const r = judgeForm(p, { kind: 'fix', lines: { r2: 'all' } });
+		expect(r.passed).toBe(false);
+		expect(r.mistake?.match).toBe('r2:all');
+		expect(r.rows.find((x) => x.key === 'db')?.ok).toBe(false);
+	});
+});

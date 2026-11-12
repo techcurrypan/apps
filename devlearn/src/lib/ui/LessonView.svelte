@@ -17,6 +17,7 @@
 	import Stage from './Stage.svelte';
 	import { inField, wideQuery } from './dom.ts';
 	import ToolPractice from './ToolPractice.svelte';
+	import FormPractice from './FormPractice.svelte';
 	import TownReturn from './TownReturn.svelte';
 	import { runTools } from '../practice/run.ts';
 	import { loadProgress, markDone, saveProgress } from '../progress.ts';
@@ -149,6 +150,10 @@
 	{:else if part === 'practice' && hasTool}
 		<div role="tabpanel" aria-label={partLabel(part)}>
 			<ToolPractice practice={lesson.practice} replay={practiceReplay} {onpass} />
+		</div>
+	{:else if part === 'practice' && lesson.practice.form}
+		<div role="tabpanel" aria-label={partLabel(part)}>
+			<FormPractice practice={lesson.practice} replay={practiceReplay} {onpass} />
 		</div>
 	{:else}
 		<div class="panel" role="tabpanel" aria-label={partLabel(part)}>

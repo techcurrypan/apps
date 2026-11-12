@@ -16,7 +16,7 @@ export const git001: Lesson = {
 	level: 1,
 	title: 'add と commit で記録を積む',
 	goal: 'git add と git commit で、変更が記録に入るまでの流れを追うことができる',
-	prereq: [],
+	prereq: ['lnx-001'],
 	related: [],
 	next: [],
 	explain: [
