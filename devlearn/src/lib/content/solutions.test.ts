@@ -4,14 +4,12 @@ import { describe, expect, it } from 'vitest';
 import { lessons } from './lessons.ts';
 import { openRun, typeRun } from '../practice/run.ts';
 import { blankAnswer, judgeForm } from '../practice/forms.ts';
+import { screenLines } from '../practice/terminal.ts';
 import { EXAMPLE_SETUP, FORM_SOLUTIONS, SOLUTIONS } from './solutions.ts';
 
 const NL = String.fromCharCode(10);
-/** 出力を行に分ける（最後の改行の後の空の行は数えない） */
-const splitOut = (t: string) => {
-	const a = t.split(NL);
-	return a.at(-1) === '' ? a.slice(0, -1) : a;
-};
+/** 出力を、画面の端末に見える行に分ける（最後の改行の後の空の行は数えない。CR を解き、字の飾りを外す） */
+const splitOut = (t: string) => screenLines(t);
 
 describe('書いたレッスンの例は、道具に打つと同じ物が返る', () => {
 	// git-001 の例は段 2 で手元の git 2.54.0 を日時を固定して打った物で、commit の ID が模擬の時計と違う（例の前書きに書いてある）

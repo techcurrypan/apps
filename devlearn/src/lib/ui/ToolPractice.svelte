@@ -3,7 +3,7 @@
 	// 履歴の行から、その時点まで巻き戻せる（screen-design.md 3.2・3.4）。道具は git・shell・docker（模擬）、js・sql（本物）。
 	import sqlWasm from 'sql.js/dist/sql-wasm-browser.wasm?url';
 	import type { Practice } from '../lesson/types.ts';
-	import { terminalLines } from '../practice/terminal.ts';
+	import { terminalLines, terminalSpans } from '../practice/terminal.ts';
 	import { boardAt, openRun, rewindRun, typeRun, useSqlWasm, type Run } from '../practice/run.ts';
 	import BoardStage from './BoardStage.svelte';
 	import GitStage from './GitStage.svelte';
@@ -65,6 +65,14 @@
 	}
 </script>
 
+{#snippet spans(l: string)}
+	{#each terminalSpans(l) as sp, k (k)}{#if sp.link}<span
+				class="link"
+				class:b={sp.bold}
+				title={sp.link}>{sp.text}</span
+			>{:else if sp.bold}<b>{sp.text}</b>{:else}{sp.text}{/if}{:else}{' '}{/each}
+{/snippet}
+
 <div class="grid" data-steps={run.steps.length}>
 	<div class="left">
 		<p class="band">
@@ -86,8 +94,8 @@
 				{:else}
 					<div class="cmd">▶ 走らせた（{lineCount(s.line)} 行）</div>
 				{/if}
-				{#each terminalLines(s.out) as l, j (j)}<div class="out">{l || ' '}</div>{/each}
-				{#each terminalLines(s.err) as l, j (j)}<div class="err">{l || ' '}</div>{/each}
+				{#each terminalLines(s.out) as l, j (j)}<div class="out">{@render spans(l)}</div>{/each}
+				{#each terminalLines(s.err) as l, j (j)}<div class="err">{@render spans(l)}</div>{/each}
 			{:else}
 				<div class="hint">ここに打った物と、返ってきた物が出る</div>
 			{/each}
@@ -224,6 +232,14 @@
 	}
 	.err {
 		color: var(--dl-wrong);
+	}
+	/* curl が端末に出す字の飾り：見出しの太字と、押せる印（行き先は title に。作り物の網なので押して飛ばさない） */
+	.terminal b,
+	.terminal .b {
+		font-weight: 700;
+	}
+	.terminal .link {
+		text-decoration: underline;
 	}
 	.hint {
 		color: var(--dl-text-muted);

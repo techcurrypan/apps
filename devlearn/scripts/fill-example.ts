@@ -13,7 +13,9 @@ const server = await createServer({
 });
 type RunMod = typeof import('../src/lib/practice/run.ts');
 type Lessons = typeof import('../src/lib/content/lessons.ts');
+type TermMod = typeof import('../src/lib/practice/terminal.ts');
 const { openRun, typeRun } = (await server.ssrLoadModule('/src/lib/practice/run.ts')) as RunMod;
+const { screenLines } = (await server.ssrLoadModule('/src/lib/practice/terminal.ts')) as TermMod;
 const path = `src/lib/content/lessons/${id}.ts`;
 const { lessons } = (await server.ssrLoadModule('/src/lib/content/lessons.ts')) as Lessons;
 const lesson = lessons.find((l) => l.id === id);
@@ -28,8 +30,7 @@ for (const c of cmds) {
 	r = await typeRun(r, c);
 	const st = r.steps.at(-1);
 	const out = `${st?.out ?? ''}${st?.err ?? ''}`;
-	const rows = out.split(NL);
-	if (rows.at(-1) === '') rows.pop();
+	const rows = screenLines(out);
 	lines.push(`${name === 'sql' ? 'sqlite> ' : '$ '}${c}`, ...rows);
 }
 const src = readFileSync(path, 'utf8');
