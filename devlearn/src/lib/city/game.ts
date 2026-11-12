@@ -2812,7 +2812,9 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 				continue;
 			}
 			const b = F[k];
-			const p = proj(cx(b), (b.y0 || 0) + b.h + Y + 4, cz(b));
+			// 地下の仕組みでは印を高く上げ、赤く塗った建物の屋根が印に隠れないようにする（G-6）
+			const lift = 4 + 14 * S.infra;
+			const p = proj(cx(b), (b.y0 || 0) + b.h + Y + lift, cz(b));
 			if (!p) {
 				el.style.display = 'none';
 				continue;
