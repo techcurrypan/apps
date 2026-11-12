@@ -26,3 +26,21 @@ describe('Astryx theme-neutral 0.7.11', () => {
 		expect(list).toContain('Copyright (c) 2026 Meta Platforms, Inc.');
 	});
 });
+
+describe('sql.js 1.15.2（SQL の実戦の道具。wasm を配信物に含める）', () => {
+	it('版と wasm が記録のまま', () => {
+		const pkg = JSON.parse(readFileSync('node_modules/sql.js/package.json', 'utf8')) as {
+			version: string;
+		};
+		expect(pkg.version).toBe('1.15.2');
+		const wasm = readFileSync('node_modules/sql.js/dist/sql-wasm-browser.wasm');
+		expect(createHash('sha256').update(wasm).digest('hex')).toBe(
+			'0dfeecda2070b36da0cd4f6afa250af9453de528a983770f85b13d5d6b667572'
+		);
+	});
+	it('配信物のライセンスの一覧に、sql.js の著作権表示と許諾の文がある', () => {
+		const list = readFileSync('static/third-party-licenses.txt', 'utf8');
+		expect(list).toContain('sql.js 1.15.2');
+		expect(list).toContain('Copyright (c) 2017 sql.js authors');
+	});
+});

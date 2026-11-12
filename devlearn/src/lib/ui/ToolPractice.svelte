@@ -1,48 +1,67 @@
 <script lang="ts">
-	// 実戦（道具を使う）：舞台に道具の状態、操作帯に 1 行の入力、台本に目的と返事・合格の項目・履歴。
-	// 履歴の行から、その時点まで巻き戻せる（screen-design.md 3.2・3.4）。
+	// 実戦（道具を使う）：舞台に道具の状態、操作帯に 1 行の入力（js は書いた物の全体）、台本に目的と返事・合格の項目・履歴。
+	// 履歴の行から、その時点まで巻き戻せる（screen-design.md 3.2・3.4）。道具は git・shell・docker（模擬）、js・sql（本物）。
+	import sqlWasm from 'sql.js/dist/sql-wasm-browser.wasm?url';
 	import type { Practice } from '../lesson/types.ts';
-	import { gitPicture } from '../practice/git-picture.ts';
 	import { terminalLines } from '../practice/terminal.ts';
-	import {
-		openPractice,
-		rewindPractice,
-		typePractice,
-		type PracticeRun
-	} from '../practice/tool-practice.ts';
+	import { boardAt, openRun, rewindRun, typeRun, useSqlWasm, type Run } from '../practice/run.ts';
+	import BoardStage from './BoardStage.svelte';
 	import GitStage from './GitStage.svelte';
 
 	type Props = { practice: Practice; replay: number; onpass: () => void };
 	let { practice, replay, onpass }: Props = $props();
 
+	useSqlWasm(sqlWasm);
 	// レッスンが替わったら作り直す。打つ・戻すで書き換える（書き換えられる $derived）
-	let run = $derived<PracticeRun>(openPractice(practice));
+	let run = $derived<Run>(openRun(practice));
 	let line = $state('');
+	let code = $derived(run.editor ?? '');
+	let busy = $state(false);
 	let localReplay = $state(0);
 	let terminal = $state<HTMLElement>();
 
-	const entries = $derived(run.session.entries);
-	const afterState = $derived(entries.at(-1)?.state ?? run.session.initial);
-	const beforeState = $derived(
-		entries.length === 0 ? null : (entries.at(-2)?.state ?? run.session.initial)
-	);
-	const after = $derived(gitPicture(afterState));
-	const before = $derived(beforeState ? gitPicture(beforeState) : null);
+	const n = $derived(run.steps.length);
+	const before = $derived(n === 0 ? null : boardAt(run, n - 1));
 	const last = $derived(run.steps.at(-1));
+	const name = $derived(practice.tool?.name ?? '');
+	const PLACE: Record<string, string> = {
+		git: 'git status',
+		shell: 'ls',
+		docker: 'docker images',
+		sql: 'SELECT * FROM 表;'
+	};
 
-	function submit(e: SubmitEvent) {
-		e.preventDefault();
-		const text = line.trim();
-		if (!text) return;
+	async function send(text: string) {
+		if (!text.trim() || busy) return;
+		busy = true;
 		const was = run.passed;
-		run = typePractice(run, text);
-		line = '';
+		try {
+			run = await typeRun(run, run.editor === null ? text.trim() : text);
+		} finally {
+			busy = false;
+		}
+		if (run.editor === null) line = '';
 		if (run.passed && !was) onpass();
 		queueMicrotask(() => terminal?.scrollTo({ top: terminal.scrollHeight }));
 	}
+	function submit(e: SubmitEvent) {
+		e.preventDefault();
+		void send(run.editor === null ? line : code);
+	}
+	// 書いた物の欄：Ctrl（Mac は ⌘）+ Enter で走らせる。Enter は改行
+	function onEditorKey(e: KeyboardEvent) {
+		if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+			e.preventDefault();
+			void send(code);
+		}
+	}
+
+	const NL = String.fromCharCode(10);
+	const lineCount = (t: string) => t.split(NL).length;
+	const firstLine = (t: string) => t.split(NL)[0];
 
 	function rewindTo(k: number) {
-		run = rewindPractice(run, k);
+		run = rewindRun(run, k);
 	}
 </script>
 
@@ -52,10 +71,21 @@
 			実戦 ・ 打った回数 {run.steps.length}
 			{#if run.passed}<strong class="ok">✓ 合格</strong>{/if}
 		</p>
-		<GitStage {before} {after} run={replay + localReplay} />
+		{#if run.git}
+			<GitStage before={before?.git ?? null} after={run.git} run={replay + localReplay} />
+		{:else}
+			<BoardStage before={before?.board ?? null} after={run.board} run={replay + localReplay} />
+		{/if}
 		<div class="terminal" bind:this={terminal} aria-label="端末" role="log">
 			{#each run.steps as s, i (i)}
-				<div class="cmd"><span aria-hidden="true">$</span> {s.line}</div>
+				{#if run.editor === null}
+					<div class="cmd">
+						<span aria-hidden="true">{run.kit.prompt === 'sqlite>' ? 'sqlite>' : '$'}</span>
+						{s.line}
+					</div>
+				{:else}
+					<div class="cmd">▶ 走らせた（{lineCount(s.line)} 行）</div>
+				{/if}
 				{#each terminalLines(s.out) as l, j (j)}<div class="out">{l || ' '}</div>{/each}
 				{#each terminalLines(s.err) as l, j (j)}<div class="err">{l || ' '}</div>{/each}
 			{:else}
@@ -63,16 +93,28 @@
 			{/each}
 		</div>
 		<form class="controls" onsubmit={submit}>
-			<label for="tool-line" class="prompt">learner@demo $</label>
-			<input
-				id="tool-line"
-				bind:value={line}
-				autocomplete="off"
-				autocapitalize="off"
-				spellcheck="false"
-				placeholder="git status"
-			/>
-			<button type="submit">打つ</button>
+			{#if run.editor === null}
+				<label for="tool-line" class="prompt">{run.kit.prompt}</label>
+				<input
+					id="tool-line"
+					bind:value={line}
+					autocomplete="off"
+					autocapitalize="off"
+					spellcheck="false"
+					placeholder={PLACE[name] ?? ''}
+				/>
+			{:else}
+				<label for="tool-line" class="prompt">{run.kit.prompt}（Ctrl + Enter で走らせる）</label>
+				<textarea
+					id="tool-line"
+					bind:value={code}
+					rows="8"
+					autocomplete="off"
+					autocapitalize="off"
+					spellcheck="false"
+					onkeydown={onEditorKey}></textarea>
+			{/if}
+			<button type="submit" disabled={busy}>{run.editor === null ? '打つ' : '走らせる'}</button>
 			<button type="button" onclick={() => localReplay++} aria-keyshortcuts="R">↻ もう一度</button>
 		</form>
 	</div>
@@ -82,9 +124,9 @@
 			<h2>実戦</h2>
 			<p class="goal">{practice.goal}</p>
 			<p class="meta">
-				道具：<code>{practice.tool?.name}</code>（{practice.tool?.mode === 'real'
-					? '本物'
-					: '模擬'}。 本物と同じ出力・同じエラーを返す）
+				道具：<code>{name}</code>（{practice.tool?.mode === 'real'
+					? '本物。このブラウザの中で動く'
+					: '模擬。本物と同じ出力・同じエラーを返す'}）
 			</p>
 			{#if last?.mistake}
 				<div class="reply wrong" role="status">
@@ -127,7 +169,7 @@
 					<li aria-current={i === run.steps.length - 1 ? 'step' : undefined}>
 						<button type="button" onclick={() => rewindTo(i + 1)}>
 							{i + 1}
-							{s.code === 0 ? '✓' : '✕'} <code>{s.line}</code>
+							{s.code === 0 ? '✓' : '✕'} <code>{firstLine(s.line)}</code>
 						</button>
 					</li>
 				{/each}
@@ -197,6 +239,17 @@
 		font-family: var(--dl-font-code);
 		font-size: var(--dl-text-small);
 		color: var(--dl-text-muted);
+	}
+	textarea {
+		flex: 1 1 100%;
+		font-family: var(--dl-font-code);
+		font-size: var(--dl-text-body);
+		padding: var(--dl-space-2);
+		border: 1.5px solid var(--dl-border-strong);
+		border-radius: var(--dl-radius-inner);
+		background: var(--dl-surface);
+		color: var(--dl-text);
+		resize: vertical;
 	}
 	input {
 		flex: 1 1 12rem;

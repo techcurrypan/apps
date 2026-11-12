@@ -18,7 +18,7 @@
 	import { inField, wideQuery } from './dom.ts';
 	import ToolPractice from './ToolPractice.svelte';
 	import TownReturn from './TownReturn.svelte';
-	import { practiceTools } from '../practice/tool-practice.ts';
+	import { runTools } from '../practice/run.ts';
 	import { loadProgress, markDone, saveProgress } from '../progress.ts';
 
 	type Props = { lesson: Lesson; known: ReadonlyMap<string, string> };
@@ -28,9 +28,7 @@
 	let player = $state<PlayerState>(initial(1));
 	let checked = $state<boolean[]>([]);
 	let practiceReplay = $state(0);
-	const hasTool = $derived(
-		(practiceTools as readonly string[]).includes(lesson.practice.tool?.name ?? '')
-	);
+	const hasTool = $derived(runTools.includes(lesson.practice.tool?.name ?? ''));
 	function onpass() {
 		saveProgress(markDone(loadProgress(), lesson.id));
 	}
