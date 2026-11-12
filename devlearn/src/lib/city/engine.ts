@@ -142,7 +142,7 @@ void main(){
 const FS_MAIN = `#version 300 es
 precision highp float; precision highp sampler2DShadow;
 in vec3 vW; in vec3 vN; in vec3 vC; in vec4 vL; flat in float vMat; flat in float vId; in float vU; flat in float vS; in vec4 vInfo;
-uniform vec3 uSunDir,uSunCol,uSkyCol,uHorCol,uGndCol,uCam; uniform float uNight,uTime,uInfo,uSel,uFogDen,uAmb,uTexel;
+uniform vec3 uSunDir,uSunCol,uSkyCol,uHorCol,uGndCol,uCam; uniform float uNight,uTime,uInfo,uSel,uFogDen,uAmb,uTexel,uMotion;
 uniform sampler2DShadow uShadow;
 out vec4 o;
 ${GLSL_COMMON}
@@ -200,8 +200,8 @@ void main(){
   if(m==3.){ col=mix(col,vec3(1.,0.82,0.55)*5.,uNight); }
   if(m==7.){ col=base*1.6; }
   if(m==8.){ col=mix(col,base*3.5,uNight); }
-  if(m==4.){ float ph=fract(vU*0.035-uTime*0.9); float pulse=smoothstep(0.75,1.,ph)+smoothstep(0.25,0.,ph)*0.3; col=base*(0.7+3.0*pulse); }
-  if(m==6.){ col=base*(0.9+0.5*sin(uTime*4.)); }
+  if(m==4.){ float ph=fract(vU*0.035-uTime*0.9*uMotion); float pulse=mix(0.45,smoothstep(0.75,1.,ph)+smoothstep(0.25,0.,ph)*0.3,uMotion); col=base*(0.7+3.0*pulse); }
+  if(m==6.){ col=base*(0.9+0.5*sin(uTime*4.)*uMotion+0.25*(1.-uMotion)); }
   if(uInfo>0.&&m!=4.&&m!=6.){
     float g=dot(col,vec3(0.3,0.5,0.2));
     vec3 dim=lin(vec3(0.11,0.14,0.19))*(0.5+0.8*ndl*sh)+g*0.06;
@@ -367,6 +367,8 @@ export type RenderParams = {
 	opaque: string[];
 	casters: string[];
 	glow?: string[];
+	/** 1 = 流れと点滅を動かす。0 = 止める（動きを減らす設定。screen-design.md 10.7） */
+	motion?: number;
 };
 
 export type Mesh = {
@@ -662,6 +664,7 @@ export function createEngine(canvas: HTMLCanvasElement) {
 		gl.uniform3fv(u.uCam, S.eye);
 		gl.uniform1f(u.uNight, L.night);
 		gl.uniform1f(u.uTime, S.time);
+		gl.uniform1f(u.uMotion, S.motion ?? 1);
 		gl.uniform1f(u.uInfo, S.info);
 		gl.uniform1f(u.uSel, S.sel || -1);
 		gl.uniform1f(u.uFogDen, S.fog);
@@ -784,5 +787,43 @@ export function createEngine(canvas: HTMLCanvasElement) {
 			return DATA[id * 4 + 3] / 255;
 		},
 		info: { hasF, SM, samples }
+	};
+}
+
+/**
+ * WebGL2 が無い端末で、遊びの層（状態・板・知らせ）を描かずに動かすための入れ物（city-standard.md P-4、screen-design.md 10.8）。
+ * 形は受け取って捨てる。建物ごとの値（建ち上がり）だけは持つ
+ */
+export function createNullEngine(): Engine {
+	const DATA = new Uint8Array(128 * 128 * 4);
+	for (let i = 0; i < 128 * 128; i++) DATA[i * 4 + 3] = 255;
+	const meshes: Record<string, Mesh | undefined> = {};
+	const none = {} as unknown;
+	const I: Mat4 = new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
+	return {
+		gl: { getExtension: () => null } as unknown as WebGL2RenderingContext,
+		setMesh(name: string, arr: Float32Array) {
+			const m = (meshes[name] ??= {
+				vao: none as WebGLVertexArrayObject,
+				buf: none as WebGLBuffer,
+				count: 0,
+				visible: true,
+				cap: 0
+			});
+			m.count = arr.length / 12;
+			return m;
+		},
+		meshes,
+		render: () => ({ VP: I, LVP: I }),
+		M4,
+		setData(id: number, r: number, g: number, b: number, a?: number) {
+			const k = id * 4;
+			DATA[k] = r;
+			DATA[k + 1] = g;
+			DATA[k + 2] = b;
+			if (a !== undefined) DATA[k + 3] = a;
+		},
+		getRise: (id: number) => DATA[id * 4 + 3] / 255,
+		info: { hasF: false, SM: 0, samples: 0 }
 	};
 }

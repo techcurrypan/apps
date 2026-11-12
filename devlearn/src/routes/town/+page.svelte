@@ -12,7 +12,7 @@
 	let canvas = $state<HTMLCanvasElement>();
 	let markers = $state<HTMLElement>();
 	let floaters = $state<HTMLElement>();
-	let game: TownHandle = null;
+	let game: TownHandle | null = null;
 	const commit = shortCommit(__COMMIT__);
 
 	onMount(() => {
@@ -45,9 +45,14 @@
 <svelte:head><title>みなと町 ・ devlearn</title></svelte:head>
 
 <div class="town">
-	<canvas bind:this={canvas} id="view" aria-label="みなと町の 3D の街並み"></canvas>
+	<canvas
+		bind:this={canvas}
+		id="view"
+		tabindex="0"
+		aria-label="みなと町の 3D の街並み。Enter で画面の真ん中の建物を選ぶ"
+	></canvas>
 	{#if ui.noGL}
-		<div class="boot">{ui.noGL}</div>
+		<div class="nogl" role="status">{ui.noGL}</div>
 	{:else if !ui.ready}
 		<div class="boot">街を描いています…</div>
 	{/if}
@@ -76,6 +81,7 @@
 				/></svg
 			>
 			<div><b>みなと町</b><small>{ui.chapter} ・ {ui.goals.rankName}</small></div>
+			<a class="tomap" href={resolve('/map')} aria-keyshortcuts="M">地図</a>
 		</div>
 		<div class="glass time" role="group" aria-label="時間">
 			<div class="d">
@@ -164,6 +170,8 @@
 		</section>
 	</aside>
 
+	<div class="layer" bind:this={markers}></div>
+	<div class="layer" bind:this={floaters}></div>
 	<div class="side">
 		{#if ui.budgetOpen}
 			<section class="glass budget" aria-label="資金の内訳">
@@ -264,9 +272,6 @@
 		{/if}
 	</div>
 
-	<div class="layer" bind:this={markers}></div>
-	<div class="layer" bind:this={floaters}></div>
-
 	<div class="toasts">
 		{#each ui.toasts as t (t.id)}
 			<div class="toast {t.kind}" class:out={t.out} role="status">
@@ -284,6 +289,23 @@
 
 	<nav class="toolbar" aria-label="操作">
 		{#if ui.hint}<span class="glass hint">{ui.hint}</span>{/if}
+		{#if ui.pick}
+			<div class="glass pick" aria-live="polite" tabindex="-1">
+				<strong>{ui.pick.title}</strong>
+				{#if ui.pick.plan}<p class="plan">{ui.pick.plan}</p>{/if}
+				{#if ui.pick.items.length}
+					<ol role="listbox" aria-label={ui.pick.title}>
+						{#each ui.pick.items as it, i (i)}
+							{#if Math.abs(i - ui.pick.sel) <= 2}
+								<li role="option" aria-selected={i === ui.pick.sel} class:on={i === ui.pick.sel}>
+									{it}
+								</li>
+							{/if}
+						{/each}
+					</ol>
+				{/if}
+			</div>
+		{/if}
 		<div class="glass tools">
 			{#each TOOLS as t (t.id)}
 				<button
@@ -542,6 +564,59 @@
 		display: block;
 		touch-action: none;
 		cursor: grab;
+	}
+	.tomap {
+		display: inline-flex;
+		align-items: center;
+		min-height: var(--dl-tap);
+		padding: 0 10px;
+		margin-left: 4px;
+		border-radius: 8px;
+		border: 1px solid var(--dl-border);
+		color: var(--dl-text);
+		font-size: 12px;
+		text-decoration: none;
+	}
+	.nogl {
+		position: fixed;
+		left: 50%;
+		bottom: 112px;
+		transform: translateX(-50%);
+		max-width: calc(100% - 24px);
+		padding: 10px 14px;
+		border-radius: 12px;
+		border: 1px solid var(--dl-warn);
+		background: var(--dl-surface);
+		font-size: 13px;
+		z-index: 6;
+	}
+	.pick {
+		display: block;
+		max-width: min(520px, calc(100vw - 24px));
+		padding: 8px 12px;
+		font-size: 12px;
+	}
+	.pick ol {
+		margin: 4px 0 0;
+		padding: 0;
+		list-style: none;
+	}
+	.pick li {
+		padding: 2px 8px;
+		border-radius: 6px;
+		color: var(--dl-text-muted);
+	}
+	.pick li.on {
+		color: var(--dl-text);
+		outline: 2px solid var(--dl-now);
+	}
+	.pick .plan {
+		margin: 4px 0 0;
+		font-family: var(--dl-font-code);
+	}
+	#view:focus-visible {
+		outline: 3px solid var(--dl-now);
+		outline-offset: -3px;
 	}
 	.boot {
 		position: fixed;

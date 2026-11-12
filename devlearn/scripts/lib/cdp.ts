@@ -43,13 +43,19 @@ export class Tab {
 		const codes: Record<string, [string, number]> = {
 			ArrowRight: ['ArrowRight', 39],
 			ArrowLeft: ['ArrowLeft', 37],
+			ArrowUp: ['ArrowUp', 38],
+			ArrowDown: ['ArrowDown', 40],
+			Enter: ['Enter', 13],
+			Escape: ['Escape', 27],
+			'[': ['BracketLeft', 219],
+			']': ['BracketRight', 221],
 			Home: ['Home', 36],
 			End: ['End', 35],
 			Tab: ['Tab', 9],
 			' ': ['Space', 32]
 		};
 		const [code, kc] = codes[key] ?? [`Key${key.toUpperCase()}`, key.toUpperCase().charCodeAt(0)];
-		const text = key.length === 1 ? key : undefined;
+		const text = key.length === 1 ? key : key === 'Enter' ? String.fromCharCode(13) : undefined;
 		const modifiers = shift ? 8 : 0;
 		await this.send('Input.dispatchKeyEvent', {
 			type: 'keyDown',
@@ -100,7 +106,7 @@ export class Tab {
 /** 頭の無い Chrome を立ち上げ、最初の頁につなぐ。gpu を true にすると、手元の GPU で描く（街の重さを測るとき） */
 export async function openChrome(
 	port: number,
-	opts: { gpu?: boolean; headless?: boolean } = {}
+	opts: { gpu?: boolean; headless?: boolean; args?: string[] } = {}
 ): Promise<{ tab: Tab; chrome: ChildProcess }> {
 	const profile = mkdtempSync(join(tmpdir(), 'devlearn-look-'));
 	const args = [
@@ -112,7 +118,7 @@ export async function openChrome(
 	if (opts.headless !== false) args.unshift('--headless=new');
 	if (opts.gpu) args.push('--enable-gpu', '--ignore-gpu-blocklist', '--use-angle=d3d11');
 	else args.push('--disable-gpu');
-	args.push('about:blank');
+	args.push(...(opts.args ?? []), 'about:blank');
 	const chrome = spawn(CHROME, args);
 	let wsUrl = '';
 	for (let i = 0; i < 50 && !wsUrl; i++) {

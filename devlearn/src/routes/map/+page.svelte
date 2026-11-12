@@ -17,6 +17,9 @@
 
 <h1>地図</h1>
 <p>どのレッスンも、いつでも、どこからでも開ける。前提は推奨として示すだけ。</p>
+<p class="town">
+	<a href={resolve('/town')} aria-keyshortcuts="G">街で遊ぶ：学んだ手を、みなと町の要望で使う</a>
+</p>
 
 <div class="fields">
 	{#each byField as f (f.id)}
@@ -39,6 +42,9 @@
 </div>
 
 <style>
+	.town a {
+		font-weight: 700;
+	}
 	.fields {
 		display: grid;
 		grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));

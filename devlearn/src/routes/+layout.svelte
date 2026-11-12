@@ -50,6 +50,9 @@
 		if (!c) return;
 		if (c.type === 'theme') cycleTheme();
 		else if (c.type === 'map') goto(resolve('/map'));
+		// G：学習 ⇄ 街（screen-design.md 6 章・10.6）
+		else if (c.type === 'work')
+			goto(page.route.id === '/town' ? resolve('/map') : resolve('/town'));
 		else if (c.type === 'help') help?.open();
 		else return;
 		e.preventDefault();
@@ -67,6 +70,7 @@
 			<a class="home" href={resolve('/')}>devlearn</a>
 			<nav aria-label="全体">
 				<a href={resolve('/map')} aria-keyshortcuts="M">地図</a>
+				<a href={resolve('/town')} aria-keyshortcuts="G">街</a>
 			</nav>
 			<div class="tools">
 				<button type="button" onclick={cycleTheme} aria-keyshortcuts="T">
@@ -111,6 +115,10 @@
 		font-weight: 700;
 		color: var(--dl-text);
 		text-decoration: none;
+	}
+	nav {
+		display: flex;
+		gap: var(--dl-space-3);
 	}
 	nav a {
 		color: var(--dl-text);

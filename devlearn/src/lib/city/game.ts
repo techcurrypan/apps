@@ -3,7 +3,7 @@
 // 状態（時計・資金・区画・要望・満足度・仕組みの建物）は src/lib/game/ の純粋な関数だけで変わる（8-2b・8-2c）。
 // ここは状態を読んで描き、手を applyTown に渡すだけ。見た目だけの動き（車・人・船・建つ様子）は種つきの擬似乱数と描画の時刻で動く。
 
-import { createEngine, type Engine, type Light, type Mat4 } from './engine.ts';
+import { createEngine, createNullEngine, type Engine, type Light, type Mat4 } from './engine.ts';
 import { generateCity, GEN, type Bld, type Col, type RNode } from './gen.ts';
 import { clockOf, MIN_PER_DAY, MORNING, slotsLeft } from '../game/clock.ts';
 import {
@@ -141,6 +141,8 @@ export type ResultDialog = {
 	days: { label: string; minute: number }[];
 };
 export type Dialog = null | { kind: 'intro' } | ReqDialog | ResultDialog;
+/** キーボードだけで道具を使う一覧（screen-design.md 10.6） */
+export type PickView = { title: string; items: string[]; sel: number; plan: string };
 export type Goals = {
 	clientSat: number;
 	daysLeft: number;
@@ -174,6 +176,7 @@ export type TownUi = {
 	day: number;
 	slots: number;
 	goals: Goals;
+	pick: PickView | null;
 	/** 建った仕組みの建物（地下の仕組みの凡例） */
 	systems: { field: string; name: string; fieldName: string; color: string; links: number }[];
 };
@@ -204,7 +207,8 @@ export function newTownUi(): TownUi {
 		day: 1,
 		slots: 8,
 		goals: { clientSat: 50, daysLeft: 7, rankNext: null, rankName: '' },
-		systems: []
+		systems: [],
+		pick: null
 	};
 }
 
@@ -303,11 +307,14 @@ type StillHooks = {
 export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 	const canvas = layers.canvas;
 	let E: Engine;
+	let noGL = false;
 	try {
 		E = createEngine(canvas);
 	} catch {
-		ui.noGL = 'この端末では 3D 表示（WebGL2）が使えません。';
-		return null;
+		// 3D は描けないが、状態・板・知らせは同じに動かす（P-4・screen-design.md 10.8）
+		E = createNullEngine();
+		noGL = true;
+		ui.noGL = 'この端末では 3D の街（WebGL2）を描けない。要望の一覧と、解き方の板で遊べる';
 	}
 	const eng = E;
 	const city: City = generateCity();
@@ -387,6 +394,19 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 	const hp = (id: number) => happyAt(ts, MAP, id) / 100;
 	const pop = () => population(ts, MAP);
 	const avgHappy = () => avgHappyOf(ts, MAP);
+
+	// ---------------- 動きを減らす設定（screen-design.md 10.7） ----------------
+	const mq =
+		typeof matchMedia === 'function' ? matchMedia('(prefers-reduced-motion: reduce)') : null;
+	let RM = !!mq?.matches;
+	const onRM = () => (RM = !!mq?.matches);
+	mq?.addEventListener('change', onRM);
+	/** 前と後の絵を見せる長さ（秒。--dl-motion-hold） */
+	function holdSec() {
+		const v = getComputedStyle(document.documentElement).getPropertyValue('--dl-motion-hold');
+		const m = /([\d.]+)\s*(ms|s)/.exec(v);
+		return m ? (m[2] === 'ms' ? +m[1] / 1000 : +m[1]) : 1.2;
+	}
 
 	// ---------------- camera ----------------
 	type CamV = { tx: number; tz: number; yaw: number; pitch: number; dist: number };
@@ -1732,6 +1752,7 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 			onEvents(r.events);
 			renderHUD();
 			persist();
+			if (ui.pick && !(S.tool === 'road' && S.roadStart)) refreshPick();
 		}
 		return r;
 	}
@@ -1748,10 +1769,149 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 		park: '光っている空き地を押すと公園ができる（¥80）。60 m 以内の建物の満足度 +6',
 		bulldoze: '自分で建てた建物を押すと取り壊す（資金は戻らない）'
 	};
+	// ---------------- キーボードだけで道具を使う（screen-design.md 10.6） ----------------
+	/** 町の真ん中から見た向きと距離（区画と道の始まりの名前） */
+	function placeName(x: number, z: number) {
+		const dirs = ['東', '南東', '南', '南西', '西', '北西', '北', '北東'];
+		const a = Math.round(Math.atan2(z, x) / (Math.PI / 4));
+		return `町の${dirs[(a + 8) % 8]} ${Math.round(Math.hypot(x, z) / 10) * 10} m`;
+	}
+	let pickKeys: number[] = [];
+	let roadStarts: SnapPt[] = [];
+	const kRoad = { dir: 0, len: 100 };
+	const DIRS = [
+		[1, 0],
+		[0, 1],
+		[-1, 0],
+		[0, -1]
+	];
+	/** 道を引き始められる点：街の端の交差点と引いた道の端のうち、どれかの向きに 100 m 引ける物 */
+	function findRoadStarts(): SnapPt[] {
+		const pts: SnapPt[] = [];
+		const cands = [
+			...MAP.nodes.filter((n) => Math.abs(n.x) >= 230 || Math.abs(n.z) >= 190),
+			...ts.build.roads.flatMap((r) => [r.a, r.b])
+		];
+		for (const n of cands) {
+			const a: SnapPt = { x: n.x, z: n.z, node: true };
+			if (pts.some((p) => p.x === a.x && p.z === a.z)) continue;
+			if (DIRS.some(([dx, dz]) => roadPlan(a, { x: a.x + dx * 100, z: a.z + dz * 100 }).ok))
+				pts.push(a);
+		}
+		return pts;
+	}
+	function refreshPick() {
+		if (['home', 'shop', 'park'].includes(S.tool)) {
+			pickKeys = [];
+			const items: string[] = [];
+			ts.build.lots.forEach((L, i) => {
+				if (L.taken || (L.zone && S.tool !== 'park')) return;
+				pickKeys.push(i);
+				items.push(`区画 ${i + 1} ・ ${placeName(L.cx, L.cz)}`);
+			});
+			const sel = ui.pick ? Math.min(ui.pick.sel, Math.max(0, items.length - 1)) : 0;
+			ui.pick = {
+				title: items.length
+					? '使える空き区画（↑↓ で選び Enter）'
+					: '使える空き区画が無い。道路を引くと増える',
+				items,
+				sel,
+				plan: ''
+			};
+		} else if (S.tool === 'road') {
+			if (S.roadStart) {
+				const [dx, dz] = DIRS[kRoad.dir];
+				const plan = roadPlan(S.roadStart, {
+					x: S.roadStart.x + dx * kRoad.len,
+					z: S.roadStart.z + dz * kRoad.len
+				});
+				previewRoad(plan);
+				ui.pick = {
+					title: '矢印で向き、[ ] で長さを 10 m ずつ、Enter で引く',
+					items: [],
+					sel: 0,
+					plan: plan.ok
+						? `${['東', '南', '西', '北'][kRoad.dir]}へ ${Math.round(plan.L)} m ・ ¥${plan.cost}`
+						: `${['東', '南', '西', '北'][kRoad.dir]}へ ${kRoad.len} m ・ 引けない：${plan.why}`
+				};
+			} else {
+				roadStarts = findRoadStarts();
+				ui.pick = {
+					title: '道を引き始められる点（↑↓ で選び Enter）',
+					items: roadStarts.map((p) => `交差点 ・ ${placeName(p.x, p.z)}`),
+					sel: ui.pick ? Math.min(ui.pick.sel, Math.max(0, roadStarts.length - 1)) : 0,
+					plan: ''
+				};
+			}
+		} else ui.pick = null;
+	}
+	function pickFocus() {
+		const pk = ui.pick;
+		if (!pk || !pk.items.length) return;
+		if (S.tool === 'road') {
+			const p = roadStarts[pk.sel];
+			if (p) flyTo(p.x, p.z, 220, 0.85);
+		} else {
+			const L = ts.build.lots[pickKeys[pk.sel]];
+			if (L) flyTo(L.cx, L.cz, 120, 0.75);
+		}
+	}
+	/** 一覧と道路の向きを、キーで動かす。扱ったら true */
+	function pickKey(key: string): boolean {
+		const pk = ui.pick;
+		if (!pk) return false;
+		if (S.tool === 'road' && S.roadStart) {
+			const d = { ArrowRight: 0, ArrowDown: 1, ArrowLeft: 2, ArrowUp: 3 }[key];
+			if (d !== undefined) kRoad.dir = d;
+			else if (key === '[') kRoad.len = Math.max(20, kRoad.len - 10);
+			else if (key === ']') kRoad.len = Math.min(400, kRoad.len + 10);
+			else if (key === 'Enter') {
+				const [dx, dz] = DIRS[kRoad.dir];
+				const plan = roadPlan(S.roadStart, {
+					x: S.roadStart.x + dx * kRoad.len,
+					z: S.roadStart.z + dz * kRoad.len
+				});
+				if (!plan.ok) toast('ここには引けない', plan.why, 'warn');
+				else {
+					addRoad(plan);
+					S.roadStart = { x: plan.b.x, z: plan.b.z, node: true };
+				}
+			} else return false;
+			refreshPick();
+			return true;
+		}
+		if (!pk.items.length) return false;
+		if (key === 'ArrowDown' || key === 'ArrowUp') {
+			pk.sel = (pk.sel + (key === 'ArrowDown' ? 1 : pk.items.length - 1)) % pk.items.length;
+			ui.pick = { ...pk };
+			pickFocus();
+			return true;
+		}
+		if (key === 'Enter') {
+			if (S.tool === 'road') {
+				S.roadStart = roadStarts[pk.sel] ?? null;
+				kRoad.dir = 0;
+				kRoad.len = 100;
+				if (S.roadStart) {
+					const st = S.roadStart;
+					kRoad.dir = Math.max(
+						0,
+						DIRS.findIndex(
+							([dx, dz]) => roadPlan(st, { x: st.x + dx * 100, z: st.z + dz * 100 }).ok
+						)
+					);
+				}
+			} else placeOnLot(pickKeys[pk.sel]);
+			refreshPick();
+			return true;
+		}
+		return false;
+	}
 	function setTool(t: string) {
 		S.tool = S.tool === t && t !== 'select' ? 'select' : t;
 		ui.tool = S.tool;
 		ui.hint = HINTS[S.tool];
+		ui.pick = null;
 		const lots = eng.meshes.lots;
 		if (lots) lots.visible = ['home', 'shop', 'park', 'road'].includes(S.tool);
 		S.roadStart = null;
@@ -1760,14 +1920,15 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 		if (S.tool === 'road') {
 			mesh('lots').visible = true;
 			lotMarkers();
-			if (cam.v.dist > 420 || cam.v.tx < 150) flyTo(330, -20, 300, 0.85, 0.9);
 		}
 		if (['home', 'shop', 'park'].includes(S.tool)) {
 			lotMarkers();
 			mesh('lots').visible = true;
-			if (cam.v.dist > 300 || Math.hypot(cam.v.tx - 200, cam.v.tz - 120) > 200)
-				flyTo(200, 120, 170, 0.75);
 		}
+		// 道具を替えてもカメラは動かさない（D-19、city-standard.md V-14）
+		refreshPick();
+		// 一覧に焦点を移す（↑↓ と Enter をそのまま使えるように）
+		if (ui.pick) later(() => document.querySelector<HTMLElement>('.pick')?.focus(), 0);
 	}
 	function setView(v: string) {
 		S.view = v;
@@ -2134,6 +2295,7 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 	const offs: (() => void)[] = [];
 	on(canvas, 'contextmenu', (e) => e.preventDefault());
 	on(canvas, 'pointerdown', (e) => {
+		if (noGL) return;
 		canvas.setPointerCapture(e.pointerId);
 		drag = {
 			x: e.clientX,
@@ -2218,6 +2380,24 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 	on(window, 'keydown', (e) => {
 		const tg = e.target;
 		if (tg instanceof Element && tg.closest('input,textarea')) return;
+		// 道具の一覧（区画・道の始まり）を開いているときは、矢印と Enter と [ ] を一覧に使う
+		const inPick = tg instanceof Element && !!tg.closest('.pick');
+		const free = !(tg instanceof Element) || tg === document.body || tg === canvas || inPick;
+		if (!ui.dialog && free && pickKey(e.key)) {
+			e.preventDefault();
+			return;
+		}
+		// 街に焦点があるときの Enter：画面の真ん中の建物を選ぶ（印のある建物なら要望を開く）
+		if (e.key === 'Enter' && tg === canvas && !ui.dialog) {
+			const rc = canvas.getBoundingClientRect();
+			const b = hitBuilding(
+				ray({ clientX: rc.left + rc.width / 2, clientY: rc.top + rc.height / 2 })
+			);
+			const req = b && openReqs().find((r) => F[CLIENTS[r.group].at] === b);
+			if (req) openReq(req.id);
+			else select(b);
+			return;
+		}
 		keys.add(e.key.toLowerCase());
 		if (e.key === ' ') {
 			e.preventDefault();
@@ -2464,7 +2644,7 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 		if (keys.has('e')) cam.v.yaw -= 1.2 * dtR;
 		clampCam();
 		if (cam.fly) {
-			cam.fly.t = Math.min(1, cam.fly.t + dtR / 1.4);
+			cam.fly.t = Math.min(1, cam.fly.t + dtR / (RM ? 0.4 : 1.4));
 			const t = cam.fly.t,
 				k = t * t * (3 - 2 * t);
 			for (const p of CAMK) cam.v[p] = cam.fly.from[p] + (cam.fly.to[p] - cam.fly.from[p]) * k;
@@ -2495,19 +2675,21 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 				for (let i = 0; i < arr.length; i++)
 					arr[i].lead = i < arr.length - 1 ? arr[i + 1].t - arr[i].t : null;
 			}
+			// 見た目だけの動きは、動きを減らす設定で半分の速さ（止めると時間の流れが分からなくなる。10.7）
+			const vm = dtR * Math.min(mult, 3) * (RM ? 0.5 : 1);
 			for (const c of cars) {
 				if (c.phase !== 'seg') c.lead = null;
-				stepCar(c, dtR * Math.min(mult, 3));
+				stepCar(c, vm);
 			}
 			for (const p of peds) {
-				p.s += p.v * dtR * Math.min(mult, 3);
+				p.s += p.v * vm;
 				p.bob += dtR * 8;
 			}
 			for (const b of boats) {
 				b.ph = (b.ph || 0) + dtR * 1.5;
 				if (b.kind === 'ferry') {
 					const P = b.path as number[][];
-					b.t = ((b.t as number) + (dtR * Math.min(mult, 3) * b.sp) / 150) % P.length;
+					b.t = ((b.t as number) + (vm * b.sp) / 150) % P.length;
 					const i = Math.floor(b.t),
 						f = b.t - i,
 						A = P[i],
@@ -2516,7 +2698,7 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 					b.z = A[1] + (B2[1] - A[1]) * f;
 					b.h = Math.atan2(B2[1] - A[1], B2[0] - A[0]);
 				} else {
-					b.a = (b.a as number) + b.sp * dtR * Math.min(mult, 3);
+					b.a = (b.a as number) + b.sp * vm;
 					b.x = (b.cx as number) + Math.cos(b.a) * (b.r as number);
 					b.z = (b.cz as number) + Math.sin(b.a) * (b.r as number);
 					b.h = b.a + (b.sp > 0 ? Math.PI / 2 : -Math.PI / 2);
@@ -2532,8 +2714,9 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 		// constructions
 		for (const cn of constructions) {
 			if (cn.p >= 1) continue;
-			cn.p = Math.min(1, cn.p + dtR / cn.dur);
-			const e = cn.p < 0.25 ? 0 : (cn.p - 0.25) / 0.75;
+			// 動きを減らす設定では、足場の絵（前）と建ち終えた絵（後）を、それぞれ --dl-motion-hold の間見せる
+			cn.p = Math.min(1, cn.p + dtR / (RM ? holdSec() * 2 : cn.dur));
+			const e = RM ? (cn.p < 0.5 ? 0 : 1) : cn.p < 0.25 ? 0 : (cn.p - 0.25) / 0.75;
 			E.setData(cn.b.id, 0, 0, 0, Math.round(255 * (1 - Math.pow(1 - e, 3))));
 			if (cn.p >= 1) {
 				applyInfoColors();
@@ -2583,7 +2766,8 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 			aoR: 2.5,
 			opaque,
 			casters: ['city', 'dyn', 'built'],
-			glow: ['glow']
+			glow: ['glow'],
+			motion: RM ? 0 : 1
 		});
 		lastVP = res.VP;
 		if (STILL)
@@ -2606,6 +2790,10 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 			];
 		};
 		for (const [k, el] of markerEls) {
+			if (noGL) {
+				el.style.display = 'none';
+				continue;
+			}
 			const b = F[k];
 			const p = proj(cx(b), (b.y0 || 0) + b.h + Y + 4, cz(b));
 			if (!p) {
@@ -2618,16 +2806,20 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 		for (let i = floats.length - 1; i >= 0; i--) {
 			const f = floats[i];
 			f.t += dtR;
-			const p = proj(f.x, f.y + f.t * 6, f.z);
-			if (!p || f.t > 2.4) {
-				if (f.t > 2.4) {
+			// 動きを減らす設定では、動かさずにその場に 2 秒出す
+			const p = proj(f.x, f.y + (RM ? 0 : f.t * 6), f.z);
+			const life = RM ? 2 : 2.4;
+			if (!p || f.t > life || noGL) {
+				if (f.t > life || noGL) {
 					f.el.remove();
 					floats.splice(i, 1);
 				}
 				continue;
 			}
 			f.el.style.transform = `translate(${p[0]}px, ${p[1]}px)`;
-			f.el.style.opacity = String(f.t < 0.2 ? f.t / 0.2 : Math.max(0, 1 - (f.t - 1.6) / 0.8));
+			f.el.style.opacity = RM
+				? '1'
+				: String(f.t < 0.2 ? f.t / 0.2 : Math.max(0, 1 - (f.t - 1.6) / 0.8));
 		}
 		if (Math.floor(now / 250) !== Math.floor((now - dtR * 1000) / 250)) renderHUD();
 		if (S.sel && Math.floor(now / 1000) !== Math.floor((now - dtR * 1000) / 1000)) select(S.sel);
@@ -2702,6 +2894,7 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 			cancelAnimationFrame(raf);
 			for (const t of timers) clearTimeout(t);
 			for (const off of offs) off();
+			mq?.removeEventListener('change', onRM);
 			for (const el of markerEls.values()) el.remove();
 			for (const f of floats) f.el.remove();
 			const lose = E.gl.getExtension('WEBGL_lose_context');
