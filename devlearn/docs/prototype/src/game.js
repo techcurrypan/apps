@@ -392,7 +392,7 @@
         wall: jit(pick(PAL.wallHouse), 0.08, R), roof: kind === 'home' ? jit(pick(PAL.roofHouse), 0.15, R) : pick(PAL.awning), sign: pick(PAL.sign), player: true, lot: L };
       if (kind === 'home') b.kind = 'house';
     }
-    S.built.push(b); S.buildingsHappy.set(id, 0.7);
+    b.bornH = S.day * 24 + Math.floor(S.minute / 60); S.built.push(b); S.buildingsHappy.set(id, kind === 'park' ? 0.7 : 0.72 + 0.06 * (S.goal > 2 ? 1 : 0));
     rebuildBuilt(); lotMarkers();
     construct(b, 2.6, () => { floater(cx(b), b.h + 2, cz(b), kind === 'park' ? '満足度 ↑' : (kind === 'home' ? '+' + b.residents + ' 人' : '+6 仕事'), 'good'); if (kind === 'park') for (const o of city.B) if (Math.hypot(cx(o) - cx(b), cz(o) - cz(b)) < 60) S.buildingsHappy.set(o.id, Math.min(1, (S.buildingsHappy.get(o.id) || 0.6) + 0.06)); });
     sfxNote();
@@ -489,8 +489,8 @@
     ui.hint.textContent = hints[S.tool]; ui.hint.hidden = !hints[S.tool];
     E.meshes.lots && (E.meshes.lots.visible = ['home', 'shop', 'park', 'road'].includes(S.tool));
     S.roadStart = null; previewRoad(null); lastPlanKey = '';
-    if (S.tool === 'road') { E.meshes.lots.visible = true; lotMarkers(); if (cam.v.dist > 420 || cam.v.tx < 150) flyTo(330, -20, 300, 0.85, 0.9); }
-    if (['home', 'shop', 'park'].includes(S.tool)) { lotMarkers(); E.meshes.lots.visible = true; const L = city.lots[0]; if (cam.v.dist > 300 || Math.hypot(cam.v.tx - 200, cam.v.tz - 120) > 200) flyTo(200, 120, 170, 0.75); }
+    if (S.tool === 'road') { E.meshes.lots.visible = true; lotMarkers(); }
+    if (['home', 'shop', 'park'].includes(S.tool)) { lotMarkers(); E.meshes.lots.visible = true; }
   }
   document.querySelectorAll('[data-view]').forEach((b) => b.addEventListener('click', () => setView(b.dataset.view)));
   function setView(v) {
@@ -534,7 +534,9 @@
   }
   $('#moneyBtn').addEventListener('click', () => { const el = $('#budget'); el.hidden = !el.hidden; if (!el.hidden) renderBudget(); });
   function onHour(hr) {
+    for (const b of S.built) if (b.kind === 'house') { const parkNear = S.built.some((p2) => p2.kind === 'park' && Math.hypot(cx(p2) - cx(b), cz(p2) - cz(b)) < 70); const shopNear = S.built.some((p2) => p2.kind === 'shop' && Math.hypot(cx(p2) - cx(b), cz(p2) - cz(b)) < 90); const tgt = 0.62 + (parkNear ? 0.1 : 0) + (shopNear ? 0.08 : 0) + answeredN() * 0.015; const h0 = S.buildingsHappy.get(b.id) || 0.6; S.buildingsHappy.set(b.id, h0 + (tgt - h0) * 0.15); }
     const v = income(); S.money += v; if (hr % 6 === 0) ledger('6 時間ぶんの収支を受け取った（1 時間 ' + (v >= 0 ? '+' : '') + v + '）', v * 6);
+    growBuildings(hr); checkGoal();
     const dm = demand(); let grown = 0;
     city.lots.forEach((L, i) => {
       if (!L.zone || L.taken || grown >= 2) return;
@@ -665,7 +667,7 @@
   function resolveEffects(id, how) {
     const d = REQ[id]; const t = d.at(); const k = how === 'learned' ? 1 : 0.5; let n = 0;
     for (const b of city.B) { const dd = Math.hypot(cx(b) - cx(t), cz(b) - cz(t)); if (dd < (how === 'learned' ? 110 : 70) && !b.hidden) { S.buildingsHappy.set(b.id, Math.min(1, (S.buildingsHappy.get(b.id) || 0.6) + 0.12 * k)); if (n < (how === 'learned' ? 7 : 3) && b.kind !== 'board') { floater(cx(b), b.h + 3 + (b.y0 || 0), cz(b), '満足 ↑', 'good'); n++; } } }
-    buildInfra(); applyInfoColors();
+    buildInfra(); applyInfoColors(); checkGoal();
     const lines = {
       board: how === 'learned' ? '掲示板を直すたびに、直した人・日時・中身が記録庫へ流れ込む。前の文面にも戻せる。' : '仕組みは入ったが中身が見えない。町の誰も使い方を説明できない。',
       school: how === 'learned' ? '中継器を 1 台足して振り分けた。昼休みの待ちが消えた。' : '回線は太くなったが、費用がかさんだ。混む理由は分からないまま。',
@@ -693,7 +695,7 @@
     const v = voices[b.kind] ? voices[b.kind][b.id % voices[b.kind].length] : '';
     ui.info.innerHTML = `<header><strong>${b.name}</strong><button type="button" class="x" aria-label="閉じる" data-x>×</button></header>
       <dl>${b.residents ? `<div><dt>住んでいる人</dt><dd>${b.residents} 人</dd></div>` : ''}${b.jobs ? `<div><dt>働く場所</dt><dd>${b.jobs} 人分</dd></div>` : ''}<div><dt>満足度</dt><dd><span class="bar"><i style="width:${h}%;background:${h > 70 ? '#56d68a' : h > 55 ? '#f2c14e' : '#ff7a59'}"></i></span>${h}</dd></div></dl>
-      ${v ? `<p class="voice">「${v}」</p>` : ''}${b.player ? '<p class="note">あなたが建てた建物</p>' : ''}`;
+      ${v ? `<p class="voice">「${v}」</p>` : ''}${b.player ? '<p class="note">あなたが建てた建物' + (b.kind === 'house' ? (b.floors >= 3 ? ' ・ 建て替え済み' : ' ・ 満足度 74 以上が続くと 3 階建てに建て替わる（近くに公園や店があると上がる）') : '') + '</p>' : ''}`;
     ui.info.hidden = false; ui.info.querySelector('[data-x]').addEventListener('click', () => select(null));
   }
 
@@ -761,7 +763,7 @@
   const STILL = location.hash.includes('still');
   let FT = 16, QS = 1;
   let TIME = 0, last = performance.now(), simAcc = 0, lastHour = Math.floor(S.minute / 60);
-  window.__game = { onHour, demand, S, cam, flyTo, setView, setTool, openReq, answer, openLesson, city, E, setSpeed, roadPlan, addRoad, snapPoint, placeOnLot, addRequest: (id) => addRequest(id) };
+  window.__game = { checkGoal, onNewDay, onHour, demand, S, cam, flyTo, setView, setTool, openReq, answer, openLesson, city, E, setSpeed, roadPlan, addRoad, snapPoint, placeOnLot, addRequest: (id) => addRequest(id) };
   function frame(now) {
     const dtR = Math.min(0.1, (now - last) / 1000); last = now;
     const mult = [0, 1, 3, 8][S.speed];
@@ -819,7 +821,51 @@
     if (S.sel && Math.floor(now / 1000) !== Math.floor((now - dtR * 1000) / 1000)) select(S.sel);
     if (!STILL) requestAnimationFrame(frame);
   }
+  // ---------------- goals, growth, daily report ----------------
+  const answeredN = () => Object.keys(S.answered).length;
+  const playerHouses = () => S.built.filter((b) => b.kind === 'house').length;
+  const GOALS = [
+    { t: '人口を 2,400 人にする', cur: () => pop(), goal: 2400, fmt: (v) => fmt(v) + ' 人', reward: 300 },
+    { t: '要望に 2 件応える', cur: answeredN, goal: 2, fmt: (v) => v + ' 件', reward: 400 },
+    { t: '自分で家を 8 軒建てる（住宅地を指定する）', cur: playerHouses, goal: 8, fmt: (v) => v + ' 軒', reward: 600 },
+    { t: '満足度を 72 にする', cur: () => Math.round(avgHappy() * 100), goal: 72, fmt: (v) => v, reward: 800 },
+    { t: '人口を 2,600 人にする', cur: () => pop(), goal: 2600, fmt: (v) => fmt(v) + ' 人', reward: 1000 },
+    { t: '届いた要望 5 件に全て応える', cur: answeredN, goal: 5, fmt: (v) => v + ' 件', reward: 1500 }
+  ];
+  const RANKS = ['港の小さな町', '港の町', 'にぎわう港町', '学びの港町', '港の市', '港の都'];
+  S.goal = 0;
+  function renderGoal() {
+    const el = $('#goal'); if (!el) return;
+    if (S.goal >= GOALS.length) { el.innerHTML = '<strong>目標を全て達成した</strong><small>自由に街を育てよう</small>'; return; }
+    const g = GOALS[S.goal]; const v = g.cur(); const pct = Math.max(0, Math.min(100, Math.round(v / g.goal * 100)));
+    el.innerHTML = `<div class="gh"><strong>次の目標</strong><span>${S.goal + 1} / ${GOALS.length}</span></div><p>${g.t}</p><div class="meter wide"><i style="width:${pct}%;background:var(--acc)"></i></div><small>${g.fmt(v)} / ${g.fmt(g.goal)} ・ 報酬 ¥${fmt(g.reward)}</small>`;
+  }
+  function checkGoal() {
+    if (S.goal >= GOALS.length) return; const g = GOALS[S.goal];
+    if (g.cur() >= g.goal) { S.money += g.reward; ledger('目標を達成：' + g.t, g.reward); S.goal++;
+      $('#rank').textContent = RANKS[Math.min(S.goal, RANKS.length - 1)] + ' ・ 町長 1 年目';
+      toast('目標を達成した ・ 町の格が上がった', g.t + ' ・ 報酬 ¥' + fmt(g.reward) + ' ・ 今の町：' + RANKS[Math.min(S.goal, RANKS.length - 1)], 'learn'); sfxNote(); }
+    renderGoal();
+  }
+  function growBuildings(hr) {
+    if (hr % 4 !== 0) return; let up = 0;
+    for (const b of S.built) {
+      if (up >= 2 || b.kind !== 'house' || b.floors >= 3 || E.getRise(b.id) < 1) continue;
+      const age = (S.day * 24 + hr) - (b.bornH || 0); if (age < 18 || (S.buildingsHappy.get(b.id) || 0.6) < 0.74) continue;
+      b.floors = 3; b.residents += 3; b.h += 2.9; b.name = '建て替えた住宅'; up++;
+      rebuildBuilt(); construct(b, 2.2, () => floater(cx(b), b.h + 2 + (b.lot.y0 || Y), cz(b), '建て替え +3 人', 'good'));
+    }
+    if (up) ledger('満足した家が建て替わった（' + up + ' 軒）', 0);
+  }
+  S.dayStart = null;
+  function dailyReport() {
+    const now = { pop: pop(), money: S.money, sat: Math.round(avgHappy() * 100) };
+    if (S.dayStart) { const d = S.dayStart; const sg = (v) => (v >= 0 ? '+' : '−') + fmt(Math.abs(v));
+      toast(S.month + '月' + (S.day - 1) + '日の日報', '人口 ' + sg(now.pop - d.pop) + ' 人 ・ 資金 ' + sg(now.money - d.money) + ' ・ 満足度 ' + d.sat + ' → ' + now.sat + ' ・ 応えた要望 ' + answeredN() + ' 件', ''); }
+    S.dayStart = now;
+  }
   function onNewDay() {
+    dailyReport();
     if (S.day === 11 && !S.answered.school) addRequest('school');
     if (S.day === 12 && !S.answered.clinic) addRequest('clinic');
     if (S.day === 13 && !S.answered.harbor) addRequest('harbor');
@@ -829,7 +875,7 @@
   // initial
   rebuildBuilt(); lotMarkers(); previewRoad(null); E.meshes.lots.visible = false; E.meshes.infra.visible = false;
   setSpeed(1); setTool('select'); setView('ground');
-  renderReqs(); renderHUD();
+  renderReqs(); renderHUD(); renderGoal(); S.dayStart = { pop: pop(), money: S.money, sat: Math.round(avgHappy() * 100) };
   if (!STILL) {
     ui.dlg.innerHTML = `<div class="card" role="dialog" aria-modal="true" aria-label="はじめに"><header><div><span class="kick">はじめに</span><h2>みなと町の町長になった</h2><span class="who">港の小さな町を、町の人の声を聞きながら育てる</span></div></header>
       <ol class="intro"><li><b>要望が届く</b><span>町の人が困りごとを持ってくる。街の上に <em>!</em> が出る</span></li><li><b>解説で学ぶ</b><span>困りごとに効く IT の仕組みを、動きを見ながら覚える</span></li><li><b>応えると街が変わる</b><span>学んだ手で応えると、街と地下の仕組みが育つ。学ばずに業者へ任せることもできる</span></li></ol>

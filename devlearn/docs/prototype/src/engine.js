@@ -196,7 +196,7 @@ void main(){
 const FS_BRIGHT = `#version 300 es
 precision highp float; in vec2 vUv; out vec4 o; uniform sampler2D uTex; uniform vec2 uPx; uniform vec2 uDir; uniform float uPass;
 void main(){
-  if(uPass<0.5){ vec3 c=vec3(0.); for(int x=-1;x<=1;x++)for(int y=-1;y<=1;y++) c+=texture(uTex,vUv+vec2(x,y)*uPx).rgb; c/=9.;
+  if(uPass<0.5){ vec3 c=vec3(0.); for(int x=-1;x<=1;x++)for(int y=-1;y<=1;y++){ vec3 t=texture(uTex,vUv+vec2(x,y)*uPx).rgb; if(any(isnan(t))||any(isinf(t))) t=vec3(0.); c+=clamp(t,0.,64.); } c/=9.;
     float l=max(max(c.r,c.g),c.b); o=vec4(c*smoothstep(2.0,4.0,l),1.); return; }
   vec3 s=vec3(0.); float w=0.;
   for(int i=-6;i<=6;i++){ float k=exp(-float(i*i)/14.); s+=texture(uTex,vUv+uDir*float(i)*uPx*1.6).rgb*k; w+=k; }

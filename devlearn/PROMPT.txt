@@ -20,8 +20,16 @@ CI の設定はリポジトリの根の `.github/workflows/` に置く（ここ�
   段 6 以降        : docs/screen-design.md          段 5 で決めた画面
   段 8 ゲーム      : docs/city-standard.md          街の見た目とゲーム性の水準（最重要）
                      docs/prototype/README.md       試作の手本と、その使い方（土台にする。D-16）
-                     docs/game-design.md            段 4 の設計（8-1 で街に合わせて直す）
+                     docs/game-design.md            段 4 の設計と第 15 章「街」
+  段 9 接続        : docs/screen-design.md          第 3 章と第 10 章（画面の行き来）
+  段 10 本文       : docs/curriculum.md             レッスンの一覧と、各レッスンの実戦の形
+                     docs/tools.md                  道具と、本物の出力の取り方
+  段 11 MCP        : docs/free-services.md          Worker を通る要求の無料枠
   段 10 本文       : docs/content-sources.md        問題の出典の決まり
+
+【毎回まず】
+  docs/decisions.md の「利用者の指摘」を読む。未対応（[ ]）があれば、今の段より先にそれを直し、
+  直したら [x] にして、どう直したかを 1 行書き添える
 
 【やること】
   - docs/plan.md の、終わっていない最初の段を進める
@@ -39,9 +47,8 @@ CI の設定はリポジトリの根の `.github/workflows/` に置く（ここ�
 【終わり方】
   - その段の完成条件を全部満たしたら、次の段へ進む
   - 全部終わったら ALLDONE とだけ出力して終われ
-  - 仕様書だけでは決められない事が出たら、docs/decisions.md の未決に
-    「問題 → 影響 → 変更案」を書いてコミットし、
-    DECISIONNEEDED とだけ出力して終われ
-  - 確認を求めるな。止まるな
-    （例外は 1 つだけ：docs/plan.md 段 8-2f の、利用者に街を見てもらう所。
-      そこでは決められた通りに未決を書き、DECISIONNEEDED で止まる）
+  - 確認を求めるな。止まるな。最後の段（段 12）まで進める
+  - 仕様書で決まっていない細部は、仕様書の目的に一番合う案を自分で選び、
+    docs/decisions.md の「自分で決めたこと」に、選んだ案と理由を書いて進む（CLAUDE.md 第 2 章）
+  - CLAUDE.md 第 2 章の 3 つの場合だけ、docs/decisions.md の未決に
+    「問題 → 影響 → 変更案」を書いてコミットし、DECISIONNEEDED とだけ出力して終われ
