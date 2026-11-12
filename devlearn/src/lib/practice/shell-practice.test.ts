@@ -42,4 +42,11 @@ describe('シェルの実戦', () => {
 		});
 		expect(items.map((i) => i.ok)).toEqual([true, true]);
 	});
+	it('合格の判定：最後の出力は、字の飾り（curl の太字・押せる印）を外して比べ、外した形で見せる', () => {
+		const E = String.fromCharCode(27);
+		const out = `HTTP/1.1 200 OK\r\n${E}[1mServer${E}[0m: x\r\n\r\n`;
+		const want = 'HTTP/1.1 200 OK\r\nServer: x\r\n\r\n';
+		const [item] = judgeShell(shellInitial({}), out, { output: want });
+		expect(item).toEqual({ label: '最後の出力', want, got: want, ok: true });
+	});
 });

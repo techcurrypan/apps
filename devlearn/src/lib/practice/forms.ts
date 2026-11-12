@@ -21,11 +21,20 @@ export type SortSuccess = { bins: Record<string, string> };
 export type PickSetup = { situation: string[]; choices: (Card & { result: string })[] };
 export type PickSuccess = { choice: string };
 export type Packet = { proto: string; port: number; from: string };
+/** 直した行を流す仕組み。firewall は規則、html は頁の型、cookie は Cookie と受け付け、policy は権限の方針 */
+export type FixEngine = 'firewall' | 'html' | 'cookie' | 'policy';
+/** 流す 1 件。firewall は packet、ほかは input（仕組みごとの名前 → 値） */
+export type FixCase = {
+	id: string;
+	name: string;
+	packet?: Packet;
+	input?: Record<string, string>;
+};
 export type FixSetup = {
-	engine: 'firewall';
+	engine: FixEngine;
 	lines: Card[];
 	options: (Card & { line: string })[];
-	cases: { id: string; name: string; packet: Packet }[];
+	cases: FixCase[];
 };
 export type FixSuccess = { expect: Record<string, string> };
 
@@ -81,6 +90,94 @@ export function firewall(rules: string[], p: Packet): { result: 'allow' | 'deny'
 	}
 	return { result: 'deny', line: 0 };
 }
+
+// ---- fix の html：頁の型に入力を埋める。{名前} はそのまま、{名前|escape} は HTML の印に替える ----
+const ESCAPES: Record<string, string> = {
+	'&': '&amp;',
+	'<': '&lt;',
+	'>': '&gt;',
+	'"': '&quot;',
+	"'": '&#39;'
+};
+const escapeHtml = (s: string) => s.replace(/[&<>"']/g, (c) => ESCAPES[c] ?? c);
+/** 埋めた頁と、入力から動く物（<script か on…= の属性）が入ったか。型の行そのものは動く物を持たない前提 */
+export function renderHtml(
+	lines: string[],
+	input: Record<string, string>
+): { html: string; result: 'runs' | 'text' } {
+	const html = lines
+		.map((l) =>
+			l.replace(/\{(\w+)(\|escape)?\}/g, (_, k: string, esc?: string) => {
+				const v = input[k] ?? '';
+				return esc ? escapeHtml(v) : v;
+			})
+		)
+		.join('\n');
+	const runs = /<script\b/i.test(html) || /<[^>]*\son[a-z]+\s*=/i.test(html);
+	return { html, result: runs ? 'runs' : 'text' };
+}
+
+// ---- fix の cookie：Set-Cookie の行の SameSite と Secure で、その要求に Cookie が付くか ----
+// 要求は site（same：同じサイトから / other：他のサイトから）・method（GET / POST）・top（頁の移動なら yes。画像や裏の送信は no）
+export function cookieSent(line: string, req: Record<string, string>): boolean {
+	const attrs = line
+		.replace(/^Set-Cookie:\s*/i, '')
+		.split(';')
+		.map((x) => x.trim().toLowerCase());
+	const same = (attrs.find((a) => a.startsWith('samesite=')) ?? 'samesite=lax').slice(9);
+	const secure = attrs.includes('secure');
+	if (same === 'none') return secure; // Secure の無い None は、ブラウザが受け取らない
+	if (req.site === 'same') return true;
+	if (same === 'strict') return false;
+	return req.method === 'GET' && req.top === 'yes'; // Lax：他のサイトからは、GET の頁の移動だけ
+}
+/** 受け付け：Cookie が付き、「確かめの値：見る」なら値（token=yes）もそろえば pass */
+function cookieFlow(lines: string[], input: Record<string, string>): 'pass' | 'stop' {
+	const cookie = lines.find((l) => /^Set-Cookie:/i.test(l)) ?? '';
+	const look = lines.some((l) => /確かめの値：見る/.test(l));
+	if (!cookieSent(cookie, input)) return 'stop';
+	if (look && input.token !== 'yes') return 'stop';
+	return 'pass';
+}
+
+// ---- fix の policy：権限の方針。1 行は allow|deny 操作|* 対象（* で終われば前方一致）----
+// 止める行が 1 つでも当たれば止める。無ければ、許す行が当たれば許す。どれにも当たらなければ止める
+const hit = (pat: string, v: string) =>
+	pat === '*' || pat === v || (pat.endsWith('*') && v.startsWith(pat.slice(0, -1)));
+export function policy(lines: string[], req: { action: string; target: string }): 'allow' | 'deny' {
+	let allowed = false;
+	for (const l of lines) {
+		const [act, op = '', target = ''] = l.trim().split(/\s+/);
+		if (!hit(op, req.action) || !hit(target, req.target)) continue;
+		if (act === 'deny') return 'deny';
+		if (act === 'allow') allowed = true;
+	}
+	return allowed ? 'allow' : 'deny';
+}
+
+/** 直した行の並びに 1 件を流した結果 */
+export function runFix(engine: FixEngine, lines: string[], c: FixCase): string {
+	const input = c.input ?? {};
+	switch (engine) {
+		case 'firewall':
+			return c.packet ? firewall(lines, c.packet).result : 'deny';
+		case 'html':
+			return renderHtml(lines, input).result;
+		case 'cookie':
+			return cookieFlow(lines, input);
+		case 'policy':
+			return policy(lines, { action: input.action ?? '', target: input.target ?? '' });
+	}
+}
+/** 結果の言い方（画面に出す） */
+export const FIX_RESULTS: Record<string, string> = {
+	allow: '通す',
+	deny: '止める',
+	runs: 'スクリプトが動く',
+	text: '文字として出る',
+	pass: '通る',
+	stop: '止まる'
+};
 
 const rec = (x: unknown) =>
 	typeof x === 'object' && x !== null ? (x as Record<string, unknown>) : {};
@@ -160,8 +257,8 @@ export function judgeForm(p: Practice, a: FormAnswer): FormJudge {
 				return o ? o.text : l.text;
 			});
 			rows = s.cases.map((c) => {
-				const b = firewall(before, c.packet).result;
-				const r = firewall(after, c.packet).result;
+				const b = runFix(s.engine, before, c);
+				const r = runFix(s.engine, after, c);
 				const ok = r === w.expect[c.id];
 				if (!ok) signals.push(`case:${c.id}:${r}`);
 				return { key: c.id, text: c.name, ok, before: b, after: r };

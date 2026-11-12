@@ -49,6 +49,11 @@ export function terminalSpans(line: string): Span[] {
 	return spans;
 }
 
+// 飾りの印だけを外した字（改行・CR はそのまま）。合格の判定で、最後の出力を見える字で比べる
+export function plainText(text: string): string {
+	return text.replace(MARK, '');
+}
+
 // 飾りを外した、見える字だけの行
 export function plainLine(line: string): string {
 	return terminalSpans(line)

@@ -6,6 +6,7 @@ import type { Tool } from '../tools/session.ts';
 import { CLOCK_BASE, shellTool, type ShellState } from '../tools/shell/run.ts';
 import { learnerWorld, WORK } from '../tools/shell/world.ts';
 import { worldFs, worldNet, worldSys, type WorldSpec } from '../tools/shell/worlds.ts';
+import { plainText } from './terminal.ts';
 import type { JudgeItem } from './tool-practice.ts';
 
 export type ShellSetup = {
@@ -93,12 +94,9 @@ export function judgeShell(
 	}
 	for (const [p, m] of Object.entries(want.modes ?? {}))
 		items.push({ label: `${p} の権限`, want: m, got: modeOf(s, p), ok: modeOf(s, p) === m });
+	// 最後の出力は、字の飾り（curl の太字・押せる印）を外した、端末に見える字で比べて見せる
+	const seen = plainText(lastOut);
 	if (want.output !== undefined)
-		items.push({
-			label: '最後の出力',
-			want: want.output,
-			got: lastOut,
-			ok: lastOut === want.output
-		});
+		items.push({ label: '最後の出力', want: want.output, got: seen, ok: seen === want.output });
 	return items;
 }

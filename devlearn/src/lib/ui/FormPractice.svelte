@@ -13,7 +13,8 @@
 		type FormJudge,
 		type OrderSetup,
 		type PickSetup,
-		type SortSetup
+		type SortSetup,
+		FIX_RESULTS
 	} from '../practice/forms.ts';
 
 	type Props = { practice: Practice; replay: number; onpass: () => void };
@@ -58,7 +59,7 @@
 		);
 	}
 	const cardText = (id: string) => order.cards.find((c) => c.id === id)?.text ?? id;
-	const RES: Record<string, string> = { allow: '通す', deny: '止める' };
+	const RES: Record<string, string> = FIX_RESULTS;
 	const runKey = $derived(`${flow}:${replay}`);
 	// ✕ の行の添え書き。並べるは最初に誤った札で止まり、その先は流れない。ほかの形は、その行が違う
 	const firstBad = $derived(judge ? judge.rows.findIndex((r) => !r.ok) : -1);

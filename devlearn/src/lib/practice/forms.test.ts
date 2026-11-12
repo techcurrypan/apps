@@ -1,7 +1,7 @@
 // 段 10-0：打つコマンドが無い題材の実戦の形 5 つ（explanation-standard.md 第 6 章・curriculum.md 3.2）
 import { describe, expect, it } from 'vitest';
 import type { Mistake, Practice } from '../lesson/types.ts';
-import { firewall, judgeForm, type FormAnswer } from './forms.ts';
+import { cookieSent, firewall, judgeForm, policy, renderHtml, type FormAnswer } from './forms.ts';
 
 const M = (match: string): Mistake => ({
 	when: match,
@@ -164,5 +164,86 @@ describe('fix 直す（規則を上から当てる）', () => {
 		expect(r.passed).toBe(false);
 		expect(r.mistake?.match).toBe('r2:all');
 		expect(r.rows.find((x) => x.key === 'db')?.ok).toBe(false);
+	});
+});
+
+describe('fix の html（入力を頁に埋める。XSS）', () => {
+	it('{名前} はそのまま埋め、{名前|escape} は < > & " \' を文字の印に替える', () => {
+		const tpl = ['<p>{name}</p>', '<p>{msg|escape}</p>'];
+		const input = { name: '<b>花</b>', msg: '<script>x()</script>' };
+		expect(renderHtml(tpl, input).html).toBe(
+			'<p><b>花</b></p>\n<p>&lt;script&gt;x()&lt;/script&gt;</p>'
+		);
+	});
+	it('入力から <script や on…= の属性が頁に入ると、動く', () => {
+		expect(renderHtml(['<p>{c}</p>'], { c: '<script>steal()</script>' }).result).toBe('runs');
+		expect(renderHtml(['<p>{c}</p>'], { c: '<img src=x onerror=steal()>' }).result).toBe('runs');
+		expect(renderHtml(['<p>{c|escape}</p>'], { c: '<img src=x onerror=steal()>' }).result).toBe(
+			'text'
+		);
+		expect(renderHtml(['<p>{c}</p>'], { c: 'こんにちは' }).result).toBe('text');
+	});
+});
+
+describe('fix の cookie（Cookie の SameSite。CSRF）', () => {
+	const req = (site: string, method: string, top: string) => ({ site, method, top });
+	it('Strict は同じサイトからだけ。Lax は他のサイトからの頁の移動（GET）にも付く。None は Secure と合わせて全てに付く', () => {
+		const line = (s: string) => `Set-Cookie: session=7f3a; ${s}`;
+		expect(cookieSent(line('SameSite=Strict'), req('other', 'GET', 'yes'))).toBe(false);
+		expect(cookieSent(line('SameSite=Strict'), req('same', 'POST', 'no'))).toBe(true);
+		expect(cookieSent(line('SameSite=Lax'), req('other', 'GET', 'yes'))).toBe(true);
+		expect(cookieSent(line('SameSite=Lax'), req('other', 'POST', 'yes'))).toBe(false);
+		expect(cookieSent(line('SameSite=Lax'), req('other', 'GET', 'no'))).toBe(false);
+		expect(cookieSent(line('SameSite=None; Secure'), req('other', 'POST', 'no'))).toBe(true);
+		// Secure の無い SameSite=None は、ブラウザが受け取らない
+		expect(cookieSent(line('SameSite=None'), req('same', 'GET', 'yes'))).toBe(false);
+	});
+	it('受け付けは、Cookie が付き、確かめの値を見る決まりなら値もそろったときに通る', () => {
+		const p = P(
+			'fix',
+			{
+				engine: 'cookie',
+				lines: [
+					{ id: 'c', text: 'Set-Cookie: session=7f3a; SameSite=None; Secure' },
+					{ id: 't', text: '確かめの値：見ない' }
+				],
+				options: [
+					{ line: 'c', id: 'lax', text: 'Set-Cookie: session=7f3a; SameSite=Lax; Secure' },
+					{ line: 't', id: 'look', text: '確かめの値：見る' }
+				],
+				cases: [
+					{
+						id: 'shop',
+						name: '店の画面から送金',
+						input: { site: 'same', method: 'POST', top: 'yes', token: 'yes' }
+					},
+					{
+						id: 'trap',
+						name: '罠から送金',
+						input: { site: 'other', method: 'POST', top: 'yes', token: 'no' }
+					}
+				]
+			},
+			{ expect: { shop: 'pass', trap: 'stop' } },
+			[M('case:trap:pass')]
+		);
+		expect(judgeForm(p, { kind: 'fix', lines: {} }).mistake?.match).toBe('case:trap:pass');
+		expect(judgeForm(p, { kind: 'fix', lines: { c: 'lax' } }).passed).toBe(true);
+		expect(judgeForm(p, { kind: 'fix', lines: { t: 'look' } }).passed).toBe(true);
+	});
+});
+
+describe('fix の policy（権限の方針。最小権限）', () => {
+	it('止める行が 1 つでも当たれば止める。無ければ、許す行が当たれば許す。どれにも当たらなければ止める', () => {
+		const lines = [
+			'allow read /data/sales/*',
+			'allow write /reports/*',
+			'deny write /reports/secret/*'
+		];
+		expect(policy(lines, { action: 'read', target: '/data/sales/2026-11.csv' })).toBe('allow');
+		expect(policy(lines, { action: 'write', target: '/data/sales/2026-11.csv' })).toBe('deny');
+		expect(policy(lines, { action: 'write', target: '/reports/secret/a' })).toBe('deny');
+		expect(policy(lines, { action: 'delete', target: '/reports/a' })).toBe('deny');
+		expect(policy(['allow * *'], { action: 'delete', target: '/x' })).toBe('allow');
 	});
 });
