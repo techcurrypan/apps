@@ -4,6 +4,57 @@ import type { FormAnswer } from '../practice/forms.ts';
 
 /** レッスンごとの解き方（合格まで）と、間違いの手（mistakes の順に 1 つずつ） */
 export const SOLUTIONS: Record<string, { pass: string[]; wrong: string[][] }> = {
+	'net-002': {
+		pass: ['ping -c 1 192.0.2.80', 'ip neigh show 192.0.2.80'],
+		wrong: [
+			['ping -c 1 192.0.2.99'],
+			['ping -c 1 192.0.2.99', 'ip neigh show 192.0.2.99'],
+			['arp -n'],
+			['ping -c 1 192.0.2.256']
+		]
+	},
+	'net-003': {
+		pass: ['ip route get 198.51.100.7'],
+		wrong: [
+			['ip route get shop.example.com'],
+			['ip route get 198.51.10.7'],
+			['traceroute 198.51.100.7']
+		]
+	},
+	'net-004': {
+		pass: ['dig +short cdn.example.com'],
+		wrong: [['dig cdn.exmple.com'], ['ping -c 1 cdn.exmple.com'], ['nslookup cdn.example.com']]
+	},
+	'net-006': {
+		pass: ['ss -uln'],
+		wrong: [['ss -tuln'], ['ss -tln'], ['netstat -uln']]
+	},
+	'net-007': {
+		pass: ['curl -v http://shop.example.com/', 'echo yorozu-web/1.0 > server.txt'],
+		wrong: [['curl -v http://shop.exmple.com/'], ['curl -v http://shop.example.com:8080/']]
+	},
+	'net-008': {
+		pass: ['curl -L http://shop.example.com/old'],
+		wrong: [
+			['curl -iL http://shop.example.com/old'],
+			['curl http://shop.example.com/old'],
+			['curl -L http://shop.example.com/olds']
+		]
+	},
+	'net-013': {
+		pass: [
+			`curl -s -o /dev/null -w '%{http_code}\\n' -H 'If-None-Match: "v1"' http://shop.example.com/style.css`
+		],
+		wrong: [
+			[`curl -s -o /dev/null -w '%{http_code}\\n' http://shop.example.com/style.css`],
+			[
+				`curl -s -o /dev/null -w '%{http_code}\\n' -H 'If-None-Match: "v1"' http://shop.example.com/styles.css`
+			],
+			[
+				`curl -s -o /dev/null -w '%{http_code}\\n' -H 'If-None-Match: "v1"' http://shop.exmple.com/style.css`
+			]
+		]
+	},
 	'git-001': {
 		pass: ['git add hello.txt', 'git commit -m "first commit"'],
 		wrong: [
@@ -263,6 +314,86 @@ export const SOLUTIONS: Record<string, { pass: string[]; wrong: string[][] }> = 
 
 /** 形の実戦の解き方（合格する答え）と、間違いの答え（mistakes の順に 1 つずつ） */
 export const FORM_SOLUTIONS: Record<string, { pass: FormAnswer; wrong: FormAnswer[] }> = {
+	'net-009': {
+		pass: { kind: 'order', order: ['tcp', 'ch', 'sh', 'cert', 'verify', 'fin', 'data'] },
+		wrong: [
+			{ kind: 'order', order: ['tcp', 'ch', 'sh', 'cert', 'verify', 'data', 'fin'] },
+			{ kind: 'order', order: ['tcp', 'ch', 'sh', 'verify', 'cert', 'fin', 'data'] },
+			{ kind: 'order', order: ['tcp', 'sh', 'ch', 'cert', 'verify', 'fin', 'data'] },
+			{ kind: 'order', order: ['ch', 'tcp', 'sh', 'cert', 'verify', 'fin', 'data'] }
+		]
+	},
+	'net-010': {
+		pass: {
+			kind: 'calc',
+			values: [
+				'198.51.100.1:61000',
+				'198.51.100.1:61001',
+				'192.168.1.21:50000',
+				'172.31.255.255',
+				'0'
+			]
+		},
+		wrong: [
+			{
+				kind: 'calc',
+				values: [
+					'192.168.1.20:50000',
+					'198.51.100.1:61001',
+					'192.168.1.21:50000',
+					'172.31.255.255',
+					'0'
+				]
+			},
+			{
+				kind: 'calc',
+				values: [
+					'198.51.100.1:61000',
+					'198.51.100.1:61000',
+					'192.168.1.21:50000',
+					'172.31.255.255',
+					'0'
+				]
+			},
+			{
+				kind: 'calc',
+				values: [
+					'198.51.100.1:61000',
+					'198.51.100.1:61001',
+					'198.51.100.1:61001',
+					'172.31.255.255',
+					'0'
+				]
+			},
+			{
+				kind: 'calc',
+				values: [
+					'198.51.100.1:61000',
+					'198.51.100.1:61001',
+					'192.168.1.21:50000',
+					'172.16.255.255',
+					'0'
+				]
+			}
+		]
+	},
+	'net-011': {
+		pass: { kind: 'order', order: ['discover', 'offer', 'request', 'ack', 'use', 'renew'] },
+		wrong: [
+			{ kind: 'order', order: ['discover', 'request', 'offer', 'ack', 'use', 'renew'] },
+			{ kind: 'order', order: ['discover', 'offer', 'request', 'use', 'ack', 'renew'] },
+			{ kind: 'order', order: ['offer', 'discover', 'request', 'ack', 'use', 'renew'] }
+		]
+	},
+	'net-012': {
+		pass: { kind: 'calc', values: ['32', '8', '10.20.30.64', '10.20.30.95', '30', '26'] },
+		wrong: [
+			{ kind: 'calc', values: ['27', '8', '10.20.30.64', '10.20.30.95', '30', '26'] },
+			{ kind: 'calc', values: ['32', '8', '10.20.30.64', '10.20.30.96', '30', '26'] },
+			{ kind: 'calc', values: ['32', '8', '10.20.30.64', '10.20.30.95', '32', '26'] },
+			{ kind: 'calc', values: ['32', '8', '10.20.30.64', '10.20.30.95', '30', '27'] }
+		]
+	},
 	'prg-010': {
 		pass: { kind: 'calc', values: ['2000', '4000000', '11', '4'] },
 		wrong: [

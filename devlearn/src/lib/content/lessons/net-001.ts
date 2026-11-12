@@ -15,7 +15,7 @@ export const net001: Lesson = {
 	goal: 'IP アドレスとネットマスクから、ネットワーク部を求めることができる',
 	prereq: [],
 	related: [],
-	next: [],
+	next: ['net-002', 'net-012'],
 	explain: [
 		{
 			n: 1,

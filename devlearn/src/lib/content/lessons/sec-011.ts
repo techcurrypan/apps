@@ -15,7 +15,7 @@ export const sec011: Lesson = {
 	title: 'だます攻撃を見抜く',
 	goal: '届いたメールの差出人と URL から、だます攻撃を見抜くことができる',
 	prereq: [],
-	related: [],
+	related: ['net-004'],
 	next: ['sec-001'],
 	explain: [
 		{

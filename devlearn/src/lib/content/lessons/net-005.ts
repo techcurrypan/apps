@@ -12,9 +12,9 @@ export const net005: Lesson = {
 	level: 1,
 	title: 'TCP で接続する',
 	goal: '3 回のやり取りで TCP の接続ができる流れを並べることができる',
-	prereq: [],
+	prereq: ['net-003'],
 	related: [],
-	next: [],
+	next: ['net-006'],
 	explain: [
 		{
 			n: 1,

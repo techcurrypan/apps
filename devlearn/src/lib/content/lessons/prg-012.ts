@@ -14,7 +14,7 @@ export const prg012: Lesson = {
 	title: '文字とバイト',
 	goal: '文字が UTF-8 のバイト列になる様子を確かめることができる',
 	prereq: [],
-	related: ['prg-001'],
+	related: ['prg-001', 'net-007'],
 	next: [],
 	explain: [
 		{

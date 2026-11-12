@@ -25,7 +25,18 @@ import { lnx009 } from './lessons/lnx-009.ts';
 import { lnx010 } from './lessons/lnx-010.ts';
 import { lnx011 } from './lessons/lnx-011.ts';
 import { net001 } from './lessons/net-001.ts';
+import { net002 } from './lessons/net-002.ts';
+import { net003 } from './lessons/net-003.ts';
+import { net004 } from './lessons/net-004.ts';
 import { net005 } from './lessons/net-005.ts';
+import { net006 } from './lessons/net-006.ts';
+import { net007 } from './lessons/net-007.ts';
+import { net008 } from './lessons/net-008.ts';
+import { net009 } from './lessons/net-009.ts';
+import { net010 } from './lessons/net-010.ts';
+import { net011 } from './lessons/net-011.ts';
+import { net012 } from './lessons/net-012.ts';
+import { net013 } from './lessons/net-013.ts';
 import { sec001 } from './lessons/sec-001.ts';
 import { sec009 } from './lessons/sec-009.ts';
 import { sec011 } from './lessons/sec-011.ts';
@@ -58,7 +69,18 @@ export const lessons: readonly Lesson[] = [
 	lnx010,
 	lnx011,
 	net001,
+	net002,
+	net003,
+	net004,
 	net005,
+	net006,
+	net007,
+	net008,
+	net009,
+	net010,
+	net011,
+	net012,
+	net013,
 	sec001,
 	sec009,
 	sec011,

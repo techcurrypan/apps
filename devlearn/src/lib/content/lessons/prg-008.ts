@@ -15,7 +15,7 @@ export const prg008: Lesson = {
 	title: '非同期の順番',
 	goal: 'Promise と await で、処理が進む順番を追うことができる',
 	prereq: ['prg-007'],
-	related: [],
+	related: ['net-007'],
 	next: [],
 	explain: [
 		{
