@@ -32,4 +32,11 @@ describe('シェルの実戦', () => {
 		const bad = judgeShell(state, '', { absent: ['box'] });
 		expect(bad).toEqual([{ label: '無い物', want: 'box', got: 'box', ok: false }]);
 	});
+	it('合格の判定：/ で始まる場所は、作業場所の外のそのままの場所', () => {
+		let ses = start(shellPracticeTool(), shellInitial({}));
+		ses = typeLine(ses, 'echo hi > /tmp/a.txt');
+		const state = ses.entries.at(-1)?.state ?? ses.initial;
+		const items = judgeShell(state, '', { exists: ['/tmp/a.txt'], files: { '/tmp/a.txt': 'hi\n' } });
+		expect(items.map((i) => i.ok)).toEqual([true, true]);
+	});
 });

@@ -86,6 +86,19 @@ export const BUILTINS: ReadonlySet<string> = new Set([
 	'test',
 	'kill'
 ]);
+// 本物の Ubuntu の bash にはあるが、模擬が扱わない命令。command not found（本物は言わない）でなく、模擬だと分かる日本語で返す（D-13）
+export const NOT_MOCKED: ReadonlySet<string> = new Set([
+	'set',
+	'less',
+	'more',
+	'vi',
+	'vim',
+	'nano',
+	'top',
+	'htop',
+	'source',
+	'alias'
+]);
 // 組み込みにしか無い物（/usr/bin に同じ名前の物が無い）
 export const BUILTIN_ONLY: ReadonlySet<string> = new Set(['cd', 'export', 'unset', 'exit']);
 // 模擬の命令が置いてある場所（/bin は /usr/bin を指す）
@@ -396,7 +409,9 @@ function runCommand<X>(
 			res = withTemp((st) => cmd(st, args, { ...io, builtin: true }));
 		} else {
 			const [found] = lookPath(s, name, run.commands);
-			if (!found) res = fail(s, `${prefix}${name}: command not found\n`, 127);
+			if (!found && NOT_MOCKED.has(name))
+				res = fail(s, `（模擬の端末は ${name} を扱わない）\n`, 2);
+			else if (!found) res = fail(s, `${prefix}${name}: command not found\n`, 127);
 			else if (found.kind === 'system')
 				res = withTemp((st) => (run.commands[found.name] as Cmd<X>)(st, args, io));
 			else res = withTemp((st) => runFile(run, st, found.path, found.path, args, temp));

@@ -14,6 +14,16 @@ import { prg010 } from './lessons/prg-010.ts';
 import { prg011 } from './lessons/prg-011.ts';
 import { prg012 } from './lessons/prg-012.ts';
 import { lnx001 } from './lessons/lnx-001.ts';
+import { lnx002 } from './lessons/lnx-002.ts';
+import { lnx003 } from './lessons/lnx-003.ts';
+import { lnx004 } from './lessons/lnx-004.ts';
+import { lnx005 } from './lessons/lnx-005.ts';
+import { lnx006 } from './lessons/lnx-006.ts';
+import { lnx007 } from './lessons/lnx-007.ts';
+import { lnx008 } from './lessons/lnx-008.ts';
+import { lnx009 } from './lessons/lnx-009.ts';
+import { lnx010 } from './lessons/lnx-010.ts';
+import { lnx011 } from './lessons/lnx-011.ts';
 import { net001 } from './lessons/net-001.ts';
 import { net005 } from './lessons/net-005.ts';
 import { sec001 } from './lessons/sec-001.ts';
@@ -37,6 +47,16 @@ export const lessons: readonly Lesson[] = [
 	prg011,
 	prg012,
 	lnx001,
+	lnx002,
+	lnx003,
+	lnx004,
+	lnx005,
+	lnx006,
+	lnx007,
+	lnx008,
+	lnx009,
+	lnx010,
+	lnx011,
 	net001,
 	net005,
 	sec001,

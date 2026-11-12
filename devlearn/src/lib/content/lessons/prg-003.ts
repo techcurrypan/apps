@@ -13,7 +13,7 @@ export const prg003: Lesson = {
 	title: '繰り返す',
 	goal: 'for 文が回るごとの変数の値を追うことができる',
 	prereq: ['prg-002'],
-	related: [],
+	related: ['lnx-009'],
 	next: ['prg-004', 'prg-010'],
 	explain: [
 		{

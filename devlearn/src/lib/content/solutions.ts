@@ -182,6 +182,82 @@ export const SOLUTIONS: Record<string, { pass: string[]; wrong: string[][] }> = 
 	'lnx-001': {
 		pass: ['cd docs', 'cd notes', 'ls'],
 		wrong: [['cd note'], ['cd readme.txt']]
+	},
+	'lnx-002': {
+		pass: ['mkdir archive', 'cp menu.txt archive/menu-1110.txt', 'rm draft.txt'],
+		wrong: [
+			['cp menu.txt archive/menu-1110.txt'],
+			['cp menu.tx archive'],
+			['mkdir archive', 'rm archive']
+		]
+	},
+	'lnx-003': {
+		pass: ['tail -n 5 access.log'],
+		wrong: [['head -n 5 access.log'], ['tail -n five access.log'], ['tail -n 5 acess.log']]
+	},
+	'lnx-004': {
+		pass: ['chmod 755 backup.sh', 'chmod 600 pass.txt'],
+		wrong: [['./backup.sh'], ['chmod 799 backup.sh'], ['chmod 600 pas.txt']]
+	},
+	'lnx-005': {
+		pass: ['sort sales.txt | uniq -c | sort -rn > top.txt'],
+		wrong: [
+			['sort sales.txt | uniq -c | sort -rn | top.txt'],
+			['uniq -c sales.txt > top.txt', 'cat top.txt'],
+			['sort salse.txt | uniq -c | sort -rn > top.txt']
+		]
+	},
+	'lnx-006': {
+		pass: ['grep -ci error shop.log'],
+		wrong: [['grep -c error shop.log'], ['grep -i error shop.log'], ['grep -ci error shop.lg']]
+	},
+	'lnx-007': {
+		pass: ['sudo kill -KILL 21506', 'ps -u shop -o pid,ppid,stat,cmd'],
+		wrong: [['kill -KILL 21506'], ['sudo kill -KILL 21507'], ['sudo kill -KIL 21506']]
+	},
+	'lnx-008': {
+		pass: ['export PATH="$HOME/demo/tools:$PATH"', 'report'],
+		wrong: [
+			['PATH = "$HOME/demo/tools:$PATH"'],
+			['report'],
+			['export $PATH="$HOME/demo/tools:$PATH"']
+		]
+	},
+	'lnx-009': {
+		pass: [
+			"printf '%s\\n' '#!/bin/bash' 'echo \"hello, $1\"' > hello.sh",
+			'chmod +x hello.sh',
+			'./hello.sh minato'
+		],
+		wrong: [
+			["printf '%s\\n' '#!/bin/bash' 'echo \"hello, $1\"' > hello.sh", './hello.sh minato'],
+			[
+				"printf '%s\\n' '#!/bin/bash' 'echo \"hello, $1\"' > hello.sh",
+				'chmod +x hello.sh',
+				'hello.sh minato'
+			],
+			[
+				"printf '%s\\n' '#!/bin/bash' \"echo 'hello, $1'\" > hello.sh",
+				'chmod +x hello.sh',
+				'./hello.sh minato'
+			]
+		]
+	},
+	'lnx-010': {
+		pass: [
+			'sudo systemctl enable shop',
+			'sudo systemctl start shop',
+			'systemctl is-enabled shop; systemctl is-active shop'
+		],
+		wrong: [['systemctl start shop'], ['systemctl enable shop'], ['sudo systemctl start shp']]
+	},
+	'lnx-011': {
+		pass: ["echo 'sales: 150' | sudo tee /srv/shop/report.txt"],
+		wrong: [
+			["echo 'sales: 150' > /srv/shop/report.txt"],
+			['sudo cd /srv/shop'],
+			["echo 'sales: 150' | sudo tea /srv/shop/report.txt"]
+		]
 	}
 };
 
@@ -268,4 +344,11 @@ export const FORM_SOLUTIONS: Record<string, { pass: FormAnswer; wrong: FormAnswe
 			{ kind: 'pick', choice: 'look' }
 		]
 	}
+};
+
+/** 例（打った物と返った物）を流すときの初めの状態。無ければ実戦の初めの状態から流す */
+export const EXAMPLE_SETUP: Record<string, unknown> = {
+	'lnx-002': { files: { 'menu.txt': 'bread 120\n' } },
+	'lnx-004': { files: { 'hi.sh': '#!/bin/bash\necho hi\n', 'memo.txt': 'memo\n' } },
+	'lnx-005': { files: { 'orders.txt': 'bread\nmilk\nbread\njam\nbread\nmilk\n' } }
 };

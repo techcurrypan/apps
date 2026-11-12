@@ -16,7 +16,7 @@ export const lnx001: Lesson = {
 	goal: 'pwd・cd・ls で、今いる場所と中身を確かめることができる',
 	prereq: [],
 	related: ['git-001'],
-	next: [],
+	next: ['lnx-002'],
 	explain: [
 		{
 			n: 1,

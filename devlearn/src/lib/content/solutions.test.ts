@@ -4,10 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { lessons } from './lessons.ts';
 import { openRun, typeRun } from '../practice/run.ts';
 import { blankAnswer, judgeForm } from '../practice/forms.ts';
-import { FORM_SOLUTIONS, SOLUTIONS } from './solutions.ts';
-
-/** 例（打った物と返った物）を流すときの初めの状態。無ければ実戦の初めの状態から流す */
-const EXAMPLE_SETUP: Record<string, unknown> = {};
+import { EXAMPLE_SETUP, FORM_SOLUTIONS, SOLUTIONS } from './solutions.ts';
 
 const NL = String.fromCharCode(10);
 /** 出力を行に分ける（最後の改行の後の空の行は数えない） */

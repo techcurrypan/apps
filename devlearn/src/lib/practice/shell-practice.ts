@@ -29,7 +29,8 @@ export function shellPracticeTool(): Tool<ShellState<GitExt>> {
 	return shellTool<GitExt>(gitCommands());
 }
 
-const abs = (p: string) => `${WORK}/${p}`.replace(/\/+$/, '');
+// 作業場所から数えた場所。/ で始まる場所はそのまま（/srv/shop/report.txt など、世界が置いた物）
+const abs = (p: string) => (p.startsWith('/') ? p : `${WORK}/${p}`).replace(/\/+$/, '');
 
 function ensureDir(fs: Fs, path: string): Fs {
 	let out = fs;

@@ -137,3 +137,24 @@ describe('命令の置き換え $( )', () => {
 		expect(last(s)?.err).toContain("unexpected EOF while looking for matching `)'");
 	});
 });
+
+describe('本物にはあるが模擬が扱わない命令（D-13）', () => {
+	it('set・less などは command not found でなく、模擬だと分かる日本語で返す', () => {
+		for (const line of ['set -e', 'less app.log', 'vi a.txt', 'nano a.txt', 'top']) {
+			const e = last(run([line]));
+			const name = line.split(' ')[0];
+			expect(e?.err, line).toBe(`（模擬の端末は ${name} を扱わない）\n`);
+			expect(e?.code, line).toBe(2);
+		}
+	});
+	it('台本の中でも同じ', () => {
+		const s = run([
+			"printf '%s\\n' '#!/bin/bash' 'set -e' 'echo after' > e.sh",
+			'bash e.sh'
+		]);
+		expect(last(s)?.err).toBe('（模擬の端末は set を扱わない）\n');
+	});
+	it('本当に無い名前は、今まで通り command not found', () => {
+		expect(last(run(['nosuch']))?.err).toBe('bash: nosuch: command not found\n');
+	});
+});
