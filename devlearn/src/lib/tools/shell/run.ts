@@ -409,8 +409,7 @@ function runCommand<X>(
 			res = withTemp((st) => cmd(st, args, { ...io, builtin: true }));
 		} else {
 			const [found] = lookPath(s, name, run.commands);
-			if (!found && NOT_MOCKED.has(name))
-				res = fail(s, `（模擬の端末は ${name} を扱わない）\n`, 2);
+			if (!found && NOT_MOCKED.has(name)) res = fail(s, `（模擬の端末は ${name} を扱わない）\n`, 2);
 			else if (!found) res = fail(s, `${prefix}${name}: command not found\n`, 127);
 			else if (found.kind === 'system')
 				res = withTemp((st) => (run.commands[found.name] as Cmd<X>)(st, args, io));

@@ -36,7 +36,10 @@ describe('シェルの実戦', () => {
 		let ses = start(shellPracticeTool(), shellInitial({}));
 		ses = typeLine(ses, 'echo hi > /tmp/a.txt');
 		const state = ses.entries.at(-1)?.state ?? ses.initial;
-		const items = judgeShell(state, '', { exists: ['/tmp/a.txt'], files: { '/tmp/a.txt': 'hi\n' } });
+		const items = judgeShell(state, '', {
+			exists: ['/tmp/a.txt'],
+			files: { '/tmp/a.txt': 'hi\n' }
+		});
 		expect(items.map((i) => i.ok)).toEqual([true, true]);
 	});
 });

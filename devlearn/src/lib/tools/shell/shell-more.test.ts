@@ -148,10 +148,7 @@ describe('本物にはあるが模擬が扱わない命令（D-13）', () => {
 		}
 	});
 	it('台本の中でも同じ', () => {
-		const s = run([
-			"printf '%s\\n' '#!/bin/bash' 'set -e' 'echo after' > e.sh",
-			'bash e.sh'
-		]);
+		const s = run(["printf '%s\\n' '#!/bin/bash' 'set -e' 'echo after' > e.sh", 'bash e.sh']);
 		expect(last(s)?.err).toBe('（模擬の端末は set を扱わない）\n');
 	});
 	it('本当に無い名前は、今まで通り command not found', () => {
