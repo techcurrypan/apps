@@ -11,7 +11,7 @@
 |---|---|---|---|---|
 | `prg` | 12 | **12（済）** | 通る | prg-002・prg-008・prg-010（`840d4d3`、19 / 19。`shots/phase-10-prg-*`） |
 | `lnx` | 11 | **11（済）** | 通る | lnx-005・lnx-007・lnx-011（`4453a99`、18 / 18。`shots/phase-10-0-lnx-*`） |
-| `net` | 13 | 2（001・005） | 通る | — |
+| `net` | 13 | **13（済）** | 通る | net-004・net-008・net-009・net-010（`0268787`、26 / 26 と 6 / 6。`shots/phase-10-0-net-*`） |
 | `sec` | 13 | 3（001・009・011） | 通る | — |
 | `db` | 11 | 1（001） | 通る | — |
 | `git` | 10 | 1（001） | 通る | — |
@@ -20,7 +20,7 @@
 | `ci` | 8 | 0 | — | — |
 | `ai` | 37 | 0 | — | — |
 | `sta` | 29 | 0 | — | — |
-| 計 | 163 | 31 | | |
+| 計 | 163 | 42 | | |
 
 `docs/content-sources-log.md`：旧資料から取った問題は、ここまで無し。
 
@@ -118,3 +118,16 @@
 - 公開 URL（`4453a99`）で lnx-005（パイプ）・lnx-007（プロセス）・lnx-011（sudo）を `look-practice.ts` で通した：18 / 18
 - 撮った画面の名前は `phase-10-0-<レッスン>-*.png`（台本の名前の付け方のまま）と、解説の `phase-10-<レッスン>-explain3.png`
 - 例を道具の結果で書き込む `scripts/fill-example.ts` を足した（末尾の空白まで一字も違えないため）
+
+### `net`（済、2026-11-13）
+
+- net-002〜004・006〜013 を書いた（shell 模擬 7 本・order 2 本・calc 2 本）。shell の例は模擬に打って得た物で、`solutions.test.ts` が流し直して一字ずつ比べる。
+  模擬は段 7 で本物（Ubuntu 24.04 の iproute2・iputils・DiG・curl 8.5）の記録と比べてあるので、例は本物の出力と同じ
+- 見つけて直した物
+  - curl は端末に出すとき、見出しを太字にし Location を押せる印（OSC 8）で包む。画面の端末は、この印を字として出さず、太字と下線で描くようにした（`terminal.ts` の `terminalSpans`）。
+    例の行は「画面に見える形」（CR を解き、飾りを外す）で書き、比べる（`screenLines`）
+  - 公開 URL で net-008 を通すと、合格の項目の「今」に飾りの印がそのまま出ていた。シェルの合格の判定は、最後の出力を飾りを外した形で比べて見せるようにした（`shell-practice.test.ts`）
+  - 本物の Ubuntu にある網の命令（nslookup・host・tracepath・wget）に command not found と返していた。模擬だと分かる日本語で返す（D-13）
+- 公開 URL で net-004（shell）・net-008（shell）・net-009（order）・net-010（calc）を `look-practice.ts` で通した：`2c17485` で 26 / 26、直した後の `0268787` で net-008 を 6 / 6
+- 段 10-1 の次の分野（`sec`）のために、直す（fix）の仕組みに html（XSS）・cookie（SameSite と確かめの値）・policy（権限の方針）を足した（`forms.test.ts`）
+
