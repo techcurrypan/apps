@@ -19,7 +19,7 @@ import {
 	shellPracticeTool,
 	type ShellSuccess
 } from './shell-practice.ts';
-import { gitInitial, judgeGit, mistakeFor, type JudgeItem } from './tool-practice.ts';
+import { gitStart, judgeGit, mistakeFor, type JudgeItem } from './tool-practice.ts';
 
 const WORLDS = import.meta.glob<WorldSpec>('../../../tools-real/worlds/*.json', {
 	eager: true,
@@ -94,9 +94,10 @@ const gitKit = (): Kit => {
 		...k,
 		initial: (setup) => {
 			const s = rec(setup);
-			return gitInitial({
+			return gitStart({
 				initialized: s.initialized === true,
-				files: rec(s.files) as Record<string, string>
+				files: rec(s.files) as Record<string, string>,
+				prelude: strs(s.prelude)
 			});
 		},
 		judge: (state, _last, success) => {
@@ -104,7 +105,12 @@ const gitKit = (): Kit => {
 			return judgeGit(state as ShellState<GitExt>, {
 				commits: typeof w.commits === 'number' ? w.commits : 1,
 				tracked: strs(w.tracked),
-				statusShort: str(w.statusShort) ?? ''
+				statusShort: str(w.statusShort) ?? '',
+				branch: str(w.branch),
+				branches:
+					w.branches === undefined ? undefined : (rec(w.branches) as Record<string, number>),
+				files: w.files === undefined ? undefined : (rec(w.files) as Record<string, string>),
+				parents: typeof w.parents === 'number' ? w.parents : undefined
 			});
 		},
 		git: (state) => gitPicture(state as ShellState<GitExt>)

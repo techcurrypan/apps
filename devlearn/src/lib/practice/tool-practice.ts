@@ -1,18 +1,27 @@
 // 道具を使う実戦（docs/tools.md 4 章）。初めの状態を作り、1 行ずつ打ち、合格と間違いを判定する。
 // 巻き戻すと、その時点の状態・合格・間違いに戻る。
-import { writeFile } from '../tools/fs.ts';
+import { stat, writeFile } from '../tools/fs.ts';
 import { shortStatus } from '../tools/git/common.ts';
 import { gitCommands } from '../tools/git/git.ts';
 import { reachable } from '../tools/git/history.ts';
-import { emptyRepo, headCommit, type GitExt } from '../tools/git/repo.ts';
+import { branchName, emptyRepo, headCommit, type GitExt } from '../tools/git/repo.ts';
 import { rewind, start, typeLine, type Session } from '../tools/session.ts';
 import { mkdir } from '../tools/fs.ts';
 import { CLOCK_BASE, shellTool, type ShellState } from '../tools/shell/run.ts';
 import { baseFs, learnerWorld, WORK } from '../tools/shell/world.ts';
 import type { Mistake, Practice } from '../lesson/types.ts';
 
-export type GitSetup = { initialized: boolean; files: Record<string, string> };
-export type GitSuccess = { commits: number; tracked: string[]; statusShort: string };
+/** prelude：実戦の前に打っておく命令（記録や枝・遠くのリポジトリを作る）。打った物は実戦の記録に出ない */
+export type GitSetup = { initialized: boolean; files: Record<string, string>; prelude?: string[] };
+export type GitSuccess = {
+	commits: number;
+	tracked: string[];
+	statusShort: string;
+	branch?: string; // 今の枝
+	branches?: Record<string, number>; // 枝ごとに、辿れる commit の数
+	files?: Record<string, string>; // 作業場所のファイルの中身
+	parents?: number; // HEAD の commit の親の数（合流の記録なら 2）
+};
 
 export type JudgeItem = { label: string; want: string; got: string; ok: boolean };
 
@@ -93,8 +102,54 @@ export function judgeGit(state: ShellState<GitExt>, want: GitSuccess): JudgeItem
 			want: want.statusShort.trimEnd() || '（空）',
 			got: st.trimEnd() || '（空）',
 			ok: st === want.statusShort
-		}
+		},
+		...gitMore(state, want)
 	];
+}
+
+/** 枝・中身・親の数の判定（success に書いてある物だけ） */
+function gitMore(state: ShellState<GitExt>, want: GitSuccess): JudgeItem[] {
+	const repo = state.ext.repos[WORK];
+	const items: JudgeItem[] = [];
+	if (want.branch !== undefined) {
+		const got = repo ? branchName(repo.head) : '（無い）';
+		items.push({ label: '今の枝', want: want.branch, got, ok: got === want.branch });
+	}
+	for (const [b, n] of Object.entries(want.branches ?? {})) {
+		const tip = repo?.refs[`refs/heads/${b}`];
+		const got = repo && tip ? reachable(repo, [tip]).size : 0;
+		items.push({
+			label: `枝 ${b} の commit の数`,
+			want: String(n),
+			got: tip ? String(got) : '（枝が無い）',
+			ok: !!tip && got === n
+		});
+	}
+	for (const [p, data] of Object.entries(want.files ?? {})) {
+		const node = stat(state.fs, `${WORK}/${p}`);
+		const got = node?.kind === 'file' ? node.data : '（無い）';
+		items.push({ label: `${p} の中身`, want: data, got, ok: got === data });
+	}
+	if (want.parents !== undefined) {
+		const head = repo ? headCommit(repo) : null;
+		const o = repo && head ? repo.objects[head] : undefined;
+		const got = o?.type === 'commit' ? o.parents.length : 0;
+		items.push({
+			label: 'HEAD の親の数',
+			want: String(want.parents),
+			got: String(got),
+			ok: got === want.parents
+		});
+	}
+	return items;
+}
+
+/** 初めの状態に prelude の命令を打った状態（実戦はここから始まる。戻すとここに戻る） */
+export function gitStart(setup: GitSetup): ShellState<GitExt> {
+	const tool = shellTool<GitExt>(gitCommands());
+	let s = gitInitial(setup);
+	for (const line of setup.prelude ?? []) s = tool.run(s, line).state;
+	return { ...s, cwd: WORK, vars: { ...s.vars, PWD: WORK } };
 }
 
 export function mistakeFor(mistakes: Mistake[], out: string, err: string): Mistake | null {
