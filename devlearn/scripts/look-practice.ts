@@ -243,7 +243,7 @@ async function main() {
 			);
 			check(
 				`${label}：R で結果をもう一度流す`,
-				before !== after && after !== '',
+				before !== after && after !== '' && moving > 0,
 				`流した回 ${before} → ${after}・動き ${moving}`
 			);
 		}

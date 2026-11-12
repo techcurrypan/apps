@@ -83,7 +83,11 @@ export class Tab {
 	}
 	async scheme(dark: boolean) {
 		await this.send('Emulation.setEmulatedMedia', {
-			features: [{ name: 'prefers-color-scheme', value: dark ? 'dark' : 'light' }]
+			features: [
+				{ name: 'prefers-color-scheme', value: dark ? 'dark' : 'light' },
+				// 頭の無い Chrome は「動きを減らす」になっているので、使う人の既定（減らさない）に戻す
+				{ name: 'prefers-reduced-motion', value: 'no-preference' }
+			]
 		});
 	}
 	async go(url: string) {
