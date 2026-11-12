@@ -591,6 +591,12 @@
 		z-index: 6;
 	}
 	.pick {
+		/* 道具の帯の上、道具の案内のさらに上に重ねる（帯の幅を押し広げない） */
+		position: absolute;
+		bottom: calc(100% + 52px);
+		left: 50%;
+		transform: translateX(-50%);
+		width: max-content;
 		display: block;
 		max-width: min(520px, calc(100vw - 24px));
 		padding: 8px 12px;

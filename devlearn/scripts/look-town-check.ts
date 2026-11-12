@@ -144,8 +144,12 @@ async function main() {
 			await focusBtn('.tool', '住宅地');
 			await tab.key('Enter');
 			await sleep(200);
-			const pick = await tab.eval<{ n: number; title: string }>(
-				`({ n: document.querySelectorAll('.pick li').length, title: document.querySelector('.pick strong')?.textContent ?? '' })`
+			const pick = await tab.eval<{ n: number; title: string; fit: boolean }>(
+				`(() => { const t = document.querySelector('.tools'), p = document.querySelector('.pick'), h = document.querySelector('.hint');
+					const a = t.getBoundingClientRect(), b = p.getBoundingClientRect(), c = h ? h.getBoundingClientRect() : null;
+					const apart = (x, y) => x.right <= y.left || y.right <= x.left || x.bottom <= y.top || y.bottom <= x.top;
+					return { n: document.querySelectorAll('.pick li').length, title: document.querySelector('.pick strong')?.textContent ?? '',
+						fit: t.scrollWidth <= t.clientWidth && apart(a, b) && (!c || apart(b, c)) }; })()`
 			);
 			await tab.key('ArrowDown');
 			await tab.key('Enter');
@@ -154,8 +158,8 @@ async function main() {
 			await tab.shot(`${outDir}/${prefix}-kbd-zone.png`);
 			check(
 				'S-4 道具：住宅地を選ぶと空き区画の一覧が出て、↓ と Enter で指定できる',
-				pick.n > 0 && zoned,
-				`${pick.title} ・ 見えている行 ${pick.n} ・ 指定 ${zoned}`
+				pick.n > 0 && zoned && pick.fit,
+				`${pick.title} ・ 見えている行 ${pick.n} ・ 指定 ${zoned} ・ 帯と案内に重ならない ${pick.fit}`
 			);
 			// 道路：始まりの点を Enter、] で 10 m ずつ伸ばし、Enter で引く
 			await focusBtn('.tool', '道路');
