@@ -14,6 +14,25 @@ export const SOLUTIONS: Record<string, { pass: string[]; wrong: string[][] }> = 
 			['git add hello.txt', 'git commit -m a', 'git commit -m b']
 		]
 	},
+	'ctr-001': {
+		pass: ['docker run -d --name clock busybox:1.37 sleep 600'],
+		wrong: [
+			['docker run -d --name clock busybox:137 sleep 600'],
+			[
+				'docker run -d --name clock busybox:1.37 sleep 600',
+				'docker run -d --name clock busybox:1.37 sleep 600'
+			],
+			['docker run -d --name clock buzybox sleep 600']
+		]
+	},
+	'prg-001': {
+		pass: ['let stock = 12;\nstock = stock - 5;\nconsole.log(stock);\n'],
+		wrong: [['let stock = 12;\nstok = stock - 5;'], ['const stock = 12;\nstock = stock - 5;']]
+	},
+	'db-001': {
+		pass: ['SELECT name, stock FROM items;'],
+		wrong: [['SELECT name, stok FROM items;'], ['SELECT name, stock FROM item;']]
+	},
 	'lnx-001': {
 		pass: ['cd docs', 'cd notes', 'ls'],
 		wrong: [['cd note'], ['cd readme.txt']]
@@ -38,6 +57,14 @@ describe('書いたレッスンの例は、道具に打つと同じ物が返る'
 			let r = openRun({ ...l.practice, setup });
 			const want: string[] = [];
 			const got: string[] = [];
+			// js：▶ の行より前が書いた物、後が出力
+			if (l.practice.tool?.name === 'js') {
+				const k = l.example.lines.findIndex((x) => x.startsWith('▶'));
+				r = await typeRun(r, l.example.lines.slice(0, k).join(NL));
+				const st = r.steps.at(-1);
+				expect(splitOut(`${st?.out ?? ''}${st?.err ?? ''}`)).toEqual(l.example.lines.slice(k + 1));
+				return;
+			}
 			for (const line of l.example.lines) {
 				if (line.startsWith('$ ') || line.startsWith('sqlite> ')) {
 					const cmd = line.slice(line.indexOf(' ') + 1);
