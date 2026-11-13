@@ -98,6 +98,18 @@ import { ci005 } from './lessons/ci-005.ts';
 import { ci006 } from './lessons/ci-006.ts';
 import { ci007 } from './lessons/ci-007.ts';
 import { ci008 } from './lessons/ci-008.ts';
+import { ai001 } from './lessons/ai-001.ts';
+import { ai002 } from './lessons/ai-002.ts';
+import { ai003 } from './lessons/ai-003.ts';
+import { ai004 } from './lessons/ai-004.ts';
+import { ai005 } from './lessons/ai-005.ts';
+import { ai006 } from './lessons/ai-006.ts';
+import { ai007 } from './lessons/ai-007.ts';
+import { ai008 } from './lessons/ai-008.ts';
+import { ai009 } from './lessons/ai-009.ts';
+import { ai010 } from './lessons/ai-010.ts';
+import { ai011 } from './lessons/ai-011.ts';
+import { ai012 } from './lessons/ai-012.ts';
 
 export const lessons: readonly Lesson[] = [
 	prg001,
@@ -196,5 +208,17 @@ export const lessons: readonly Lesson[] = [
 	ci005,
 	ci006,
 	ci007,
-	ci008
+	ci008,
+	ai001,
+	ai002,
+	ai003,
+	ai004,
+	ai005,
+	ai006,
+	ai007,
+	ai008,
+	ai009,
+	ai010,
+	ai011,
+	ai012
 ];

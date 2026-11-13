@@ -12,7 +12,7 @@ export const prg011: Lesson = {
 	title: '再帰',
 	goal: '再帰の呼び出しが積み上がって戻るまでを追うことができる',
 	prereq: ['prg-004'],
-	related: [],
+	related: ['ai-003'],
 	next: [],
 	explain: [
 		{

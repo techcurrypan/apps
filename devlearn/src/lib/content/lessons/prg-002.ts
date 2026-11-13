@@ -13,7 +13,7 @@ export const prg002: Lesson = {
 	title: '条件で道を分ける',
 	goal: 'if 文で、入力ごとにどの道を通るかを辿ることができる',
 	prereq: ['prg-001'],
-	related: [],
+	related: ['ai-004'],
 	next: ['prg-003'],
 	explain: [
 		{

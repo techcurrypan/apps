@@ -1083,6 +1083,154 @@ export const FORM_SOLUTIONS: Record<string, { pass: FormAnswer; wrong: FormAnswe
 			{ kind: 'calc', values: ['15', '8', '12', '16'] }
 		]
 	},
+	'ai-001': {
+		pass: { kind: 'order', order: ['name', 'b1', 'w1', 'b2', 'w2', 'b3', 'now'] },
+		wrong: [
+			{ kind: 'order', order: ['name', 'b2', 'w1', 'b1', 'w2', 'b3', 'now'] },
+			{ kind: 'order', order: ['name', 'b1', 'w1', 'b2', 'b3', 'w2', 'now'] },
+			{ kind: 'order', order: ['name', 'w1', 'b1', 'b2', 'w2', 'b3', 'now'] }
+		]
+	},
+	'ai-002': {
+		pass: {
+			kind: 'sort',
+			bins: {
+				bomb: 'frame',
+				apple: 'ground',
+				door: 'frame',
+				hot: 'ground',
+				cup: 'frame',
+				dog: 'ground'
+			}
+		},
+		wrong: [
+			{
+				kind: 'sort',
+				bins: {
+					bomb: 'frame',
+					apple: 'frame',
+					door: 'frame',
+					hot: 'ground',
+					cup: 'frame',
+					dog: 'ground'
+				}
+			},
+			{
+				kind: 'sort',
+				bins: {
+					bomb: 'frame',
+					apple: 'ground',
+					door: 'ground',
+					hot: 'ground',
+					cup: 'frame',
+					dog: 'ground'
+				}
+			},
+			{
+				kind: 'sort',
+				bins: {
+					bomb: 'frame',
+					apple: 'ground',
+					door: 'frame',
+					hot: 'frame',
+					cup: 'frame',
+					dog: 'ground'
+				}
+			}
+		]
+	},
+	'ai-003': {
+		pass: { kind: 'order', order: ['S', 'A', 'B', 'C', 'D', 'E', 'F'] },
+		wrong: [
+			{ kind: 'order', order: ['S', 'A', 'C', 'B', 'D', 'E', 'F'] },
+			{ kind: 'order', order: ['S', 'A', 'B', 'C', 'F', 'D', 'E'] },
+			{ kind: 'order', order: ['S', 'A', 'B', 'D', 'C', 'E', 'F'] }
+		]
+	},
+	'ai-004': {
+		pass: { kind: 'order', order: ['facts', 'r1', 'r2', 'r3', 'stop'] },
+		wrong: [
+			{ kind: 'order', order: ['facts', 'r2', 'r1', 'r3', 'stop'] },
+			{ kind: 'order', order: ['facts', 'r1', 'r3', 'r2', 'stop'] },
+			{ kind: 'order', order: ['facts', 'r1', 'r2', 'stop', 'r3'] }
+		]
+	},
+	'ai-005': {
+		pass: {
+			kind: 'sort',
+			bins: { mail: 'sup', group: 'unsup', crane: 'rl', price: 'sup', odd: 'unsup', game: 'rl' }
+		},
+		wrong: [
+			{
+				kind: 'sort',
+				bins: { mail: 'sup', group: 'sup', crane: 'rl', price: 'sup', odd: 'unsup', game: 'rl' }
+			},
+			{
+				kind: 'sort',
+				bins: { mail: 'sup', group: 'unsup', crane: 'sup', price: 'sup', odd: 'unsup', game: 'rl' }
+			},
+			{
+				kind: 'sort',
+				bins: { mail: 'sup', group: 'unsup', crane: 'rl', price: 'unsup', odd: 'unsup', game: 'rl' }
+			}
+		]
+	},
+	'ai-006': {
+		pass: { kind: 'calc', values: ['41', '3', '0.50', '0.88'] },
+		wrong: [
+			{ kind: 'calc', values: ['41', '-3', '0.50', '0.88'] },
+			{ kind: 'calc', values: ['41', '3', '0.50', '2'] },
+			{ kind: 'calc', values: ['41', '3', '0', '0.88'] }
+		]
+	},
+	'ai-007': {
+		pass: { kind: 'calc', values: ['0.44', '0.22', '0.44', 'X', '借りない'] },
+		wrong: [
+			{ kind: 'calc', values: ['0.44', '0.22', '0.44', 'Y', '借りない'] },
+			{ kind: 'calc', values: ['0.44', '0.44', '0.44', 'X', '借りない'] },
+			{ kind: 'calc', values: ['0.44', '0.22', '0.44', 'X', '借りる'] }
+		]
+	},
+	'ai-008': {
+		pass: { kind: 'calc', values: ['2', '2.5', '9.75', '3.33', '11.33'] },
+		wrong: [
+			{ kind: 'calc', values: ['3', '3.33', '11.33', '3.33', '11.33'] },
+			{ kind: 'calc', values: ['2', '2.5', '9.75', '2.5', '9.75'] },
+			{ kind: 'calc', values: ['2', '2.5', '10.5', '3.33', '11.33'] }
+		]
+	},
+	'ai-009': {
+		pass: { kind: 'calc', values: ['8', '0.75', '2.6', '1.8'] },
+		wrong: [
+			{ kind: 'calc', values: ['8', '3', '2.6', '1.8'] },
+			{ kind: 'calc', values: ['8', '0.75', '3', '1.8'] },
+			{ kind: 'calc', values: ['8', '0.75', '2.6', '3'] }
+		]
+	},
+	'ai-010': {
+		pass: { kind: 'calc', values: ['0.85', '0.60', '0.75', '0.67'] },
+		wrong: [
+			{ kind: 'calc', values: ['0.85', '0.75', '0.60', '0.67'] },
+			{ kind: 'calc', values: ['0.85', '0.60', '0.75', '0.68'] },
+			{ kind: 'calc', values: ['0.15', '0.60', '0.75', '0.67'] }
+		]
+	},
+	'ai-011': {
+		pass: { kind: 'calc', values: ['4', '0.47', '0.45', 'はい'] },
+		wrong: [
+			{ kind: 'calc', values: ['7', '0.61', '0.45', 'はい'] },
+			{ kind: 'calc', values: ['4', '0.47', '0.45', 'いいえ'] },
+			{ kind: 'calc', values: ['4', '0.47', '-0.45', 'はい'] }
+		]
+	},
+	'ai-012': {
+		pass: { kind: 'calc', values: ['6', '5', '3.5', '右'] },
+		wrong: [
+			{ kind: 'calc', values: ['7', '6', '4', '右'] },
+			{ kind: 'calc', values: ['6', '5', '6', '右'] },
+			{ kind: 'calc', values: ['6', '5', '3.5', '左'] }
+		]
+	},
 	'git-010': {
 		pass: { kind: 'order', order: ['branch', 'push', 'request', 'fix', 'check', 'merge'] },
 		wrong: [
