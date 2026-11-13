@@ -162,6 +162,5 @@
 - 見つけて直した物
   - git-005 の間違い 1「feature に移って合わせた」は、出力に Fast-forward が出ない（main は feature の祖先なので Already up to date になる）ため、当たらなかった。
     feature へ移った時点（Switched to branch 'feature'）で知らせる形にした（`solutions.test.ts` の 1 件ずつの確かめで見つけた）
-  - 例の setup を shell の引数で JSON として渡すと `
-` が崩れたので、`fill-example.ts` に `@`（`solutions.ts` の `EXAMPLE_SETUP` を使う）を足した
+  - 例の setup を shell の引数で JSON として渡すと改行の印（バックスラッシュと n）が崩れたので、`fill-example.ts` に `@`（`solutions.ts` の `EXAMPLE_SETUP` を使う）を足した
 - 公開 URL（`167f322`）で git-005（merge）・git-007（遠く）・git-008（rebase）・git-010（order）を `look-practice.ts` で通した：25 / 25

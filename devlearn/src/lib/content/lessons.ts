@@ -72,6 +72,14 @@ import { git008 } from './lessons/git-008.ts';
 import { git009 } from './lessons/git-009.ts';
 import { git010 } from './lessons/git-010.ts';
 import { ctr001 } from './lessons/ctr-001.ts';
+import { ctr002 } from './lessons/ctr-002.ts';
+import { ctr003 } from './lessons/ctr-003.ts';
+import { ctr004 } from './lessons/ctr-004.ts';
+import { ctr005 } from './lessons/ctr-005.ts';
+import { ctr006 } from './lessons/ctr-006.ts';
+import { ctr007 } from './lessons/ctr-007.ts';
+import { ctr008 } from './lessons/ctr-008.ts';
+import { ctr009 } from './lessons/ctr-009.ts';
 
 export const lessons: readonly Lesson[] = [
 	prg001,
@@ -144,5 +152,13 @@ export const lessons: readonly Lesson[] = [
 	git008,
 	git009,
 	git010,
-	ctr001
+	ctr001,
+	ctr002,
+	ctr003,
+	ctr004,
+	ctr005,
+	ctr006,
+	ctr007,
+	ctr008,
+	ctr009
 ];

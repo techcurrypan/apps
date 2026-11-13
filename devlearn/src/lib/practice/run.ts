@@ -126,10 +126,13 @@ const dockerKit = (): Kit => {
 		initial: (setup) => {
 			const s = rec(setup);
 			const world = worldNamed(str(s.world));
-			return learnerWorld<DockerExt>(
+			let st = learnerWorld<DockerExt>(
 				emptyDocker(strs(s.images).length ? strs(s.images) : (world?.docker?.images ?? [])),
 				worldFs(world)
 			);
+			// prelude：実戦の前に打っておく命令（コンテナを動かしておく）。打った物は実戦の記録に出ない
+			for (const line of strs(s.prelude)) st = tool.run(st, line).state;
+			return st;
 		},
 		run: async (state, line) => tool.run(state as ShellState<DockerExt>, line),
 		judge: (state, last, success) => {
@@ -169,6 +172,18 @@ const dockerKit = (): Kit => {
 					ok: has
 				});
 			}
+			const has = (label: string, ok: boolean) =>
+				items.push({ label, want: 'ある', got: ok ? 'ある' : '（無い）', ok });
+			for (const v of strs(w.volumes))
+				has(
+					`ボリューム ${v}`,
+					d.volumes.some((x) => x.name === v)
+				);
+			for (const n of strs(w.networks))
+				has(
+					`網 ${n}`,
+					d.networks.some((x) => x.name === n)
+				);
 			return [...items, ...outputItem('最後の出力', str(w.output), last)];
 		},
 		board: (state) => dockerBoard(state as ShellState<DockerExt>)

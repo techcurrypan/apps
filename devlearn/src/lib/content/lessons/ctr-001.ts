@@ -16,7 +16,7 @@ export const ctr001: Lesson = {
 	goal: 'docker run で、イメージからコンテナを動かすことができる',
 	prereq: ['lnx-001'],
 	related: ['lnx-007'],
-	next: [],
+	next: ['ctr-002'],
 	explain: [
 		{
 			n: 1,

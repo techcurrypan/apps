@@ -16,7 +16,7 @@ export const lnx007: Lesson = {
 	title: 'プロセスを止める',
 	goal: 'ps でプロセスを見つけ、kill でシグナルを送ることができる',
 	prereq: ['lnx-001'],
-	related: [],
+	related: ['ctr-002'],
 	next: ['lnx-010'],
 	explain: [
 		{

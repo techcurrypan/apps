@@ -119,6 +119,13 @@ export function dockerBuild(s: S, args: string[], now: number): Res {
 			return fail(s, '（模擬の docker build は -t だけを扱う）\n', 1);
 		else ctxArg = args[i];
 	}
+	// 本物は大文字の名前を断る。その言い方は記録していないので、模擬だと分かる言い方で断る（D-13）
+	if (tag !== null && /[A-Z]/.test(tag.split(':')[0]))
+		return fail(
+			s,
+			`（模擬の docker build は、大文字を含む名前 ${tag} を扱わない。小文字で付ける）\n`,
+			1
+		);
 	if (ctxArg === undefined)
 		return fail(
 			s,

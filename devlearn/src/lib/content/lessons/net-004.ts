@@ -15,7 +15,7 @@ export const net004: Lesson = {
 	title: '名前から住所を引く',
 	goal: 'dig で、名前が IP アドレスに変わるまでを追うことができる',
 	prereq: ['net-001'],
-	related: [],
+	related: ['ctr-009'],
 	next: ['net-007'],
 	explain: [
 		{

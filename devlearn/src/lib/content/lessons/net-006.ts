@@ -15,7 +15,7 @@ export const net006: Lesson = {
 	title: 'ポートと UDP',
 	goal: 'ポート番号と TCP・UDP の違いから、待ち受けている口を確かめることができる',
 	prereq: ['net-005'],
-	related: ['sec-009'],
+	related: ['ctr-003', 'sec-009'],
 	next: ['net-007'],
 	explain: [
 		{

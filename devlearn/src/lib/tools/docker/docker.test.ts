@@ -19,6 +19,7 @@ const tool = shellTool<DockerExt>(dockerCommands());
 const begin = () => start(tool, learnerWorld<DockerExt>(emptyDocker(['busybox:1.37'])));
 const run = (lines: string[]): Session<S> => lines.reduce(typeLine, begin());
 const out = (s: Session<S>, k: number) => s.entries[k];
+const lines = run;
 
 describe('docker の形の部品', () => {
 	it('どれだけ前・大きさ・切り詰め・表', () => {
@@ -53,6 +54,19 @@ describe('docker の形の部品', () => {
 });
 
 describe('模擬の docker', () => {
+	it('大文字を含む名前は、本物の言い方を作らず、模擬だと分かる言い方で断る（D-13）', () => {
+		const s = lines([
+			'mkdir app',
+			"echo 'FROM busybox:1.37' > app/Dockerfile",
+			'docker build -t Shop-Web:1.1 app',
+			'docker images'
+		]);
+		expect(out(s, 2).err).toBe(
+			'（模擬の docker build は、大文字を含む名前 Shop-Web:1.1 を扱わない。小文字で付ける）\n'
+		);
+		expect(out(s, 2).code).toBe(1);
+		expect(out(s, 3).out).not.toContain('Shop-Web');
+	});
 	it('名前の重なり・中に無い命令・動いていない物への exec', () => {
 		const s = run([
 			'docker run -d --name web busybox:1.37 sleep 600',

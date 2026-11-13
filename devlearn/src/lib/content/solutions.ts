@@ -338,6 +338,98 @@ export const SOLUTIONS: Record<string, { pass: string[]; wrong: string[][] }> = 
 			['docker run -d --name clock buzybox sleep 600']
 		]
 	},
+	'ctr-002': {
+		pass: ['docker stop web', 'docker rm web once'],
+		wrong: [['docker rm web once'], ['docker stop wbe']]
+	},
+	'ctr-003': {
+		pass: [
+			'docker rm -f web',
+			'docker run -d --name web -p 8080:80 shop-web:1.0',
+			'curl http://localhost:8080/'
+		],
+		wrong: [
+			['curl http://localhost:8080/'],
+			['docker run -d --name web -p 8080:80 shop-web:1.0'],
+			[
+				'docker rm -f web',
+				'docker run -d --name web -p 8080:80 shop-web:1.0',
+				'docker run -d --name web2 -p 8080:80 shop-web:1.0'
+			]
+		]
+	},
+	'ctr-004': {
+		pass: [
+			'docker build -t shop-web:1.0 .',
+			'docker run -d --name web -p 8080:80 shop-web:1.0',
+			'curl http://localhost:8080/'
+		],
+		wrong: [
+			['docker build .', 'docker run -d --name web -p 8080:80 shop-web:1.0'],
+			['docker build -t shop-web:1.0'],
+			['docker build -t shop-web:1.0 demo']
+		]
+	},
+	'ctr-005': {
+		pass: [
+			'docker volume create shopdata',
+			"docker run --rm -v shopdata:/data busybox:1.37 sh -c 'echo 120 > /data/sales.txt'",
+			'docker run --rm -v shopdata:/data busybox:1.37 cat /data/sales.txt'
+		],
+		wrong: [
+			[
+				'docker volume create shopdata',
+				"docker run --rm -v shopdata:/data busybox:1.37 sh -c 'echo 120 > /data/sales.txt'",
+				'docker run --rm busybox:1.37 cat /data/sales.txt'
+			],
+			[
+				'docker volume create shopdata',
+				"docker run --rm -v shopdata:/data busybox:1.37 sh -c 'echo 120 > /data.txt'",
+				'docker run --rm -v shopdata:/data busybox:1.37 cat /data.txt'
+			]
+		]
+	},
+	'ctr-006': {
+		pass: [
+			'docker run -d --name app -e SHOP_MODE=live busybox:1.37 sleep 600',
+			'docker exec app printenv SHOP_MODE'
+		],
+		wrong: [
+			['docker run -d --name app busybox:1.37 -e SHOP_MODE=live sleep 600'],
+			[
+				'docker run -d --name app -e SHOP_MODE=live busybox:1.37 sleep 600',
+				'docker exec ap printenv SHOP_MODE'
+			],
+			['docker run --rm --env-file shop.en busybox:1.37 true']
+		]
+	},
+	'ctr-007': {
+		pass: ['docker compose up -d', 'curl http://localhost:8080/'],
+		wrong: [['docker compose up'], ['docker-compose up -d'], ['curl http://localhost:8080/']]
+	},
+	'ctr-008': {
+		pass: ["echo '<p>shop v2</p>' > index.html", 'docker build -t shop-web:1.1 .'],
+		wrong: [
+			['docker build -t Shop-Web:1.1 .'],
+			['docker build -t shop-web:1.1'],
+			['docker history shop-web:1.1']
+		]
+	},
+	'ctr-009': {
+		pass: [
+			'docker network create shopnet',
+			'docker run -d --name db --network shopnet busybox:1.37 sleep 600',
+			'docker run --rm --network shopnet busybox:1.37 ping -c 1 -W 1 db'
+		],
+		wrong: [
+			[
+				'docker network create shopnet',
+				'docker run -d --name db --network shopnet busybox:1.37 sleep 600',
+				'docker run --rm busybox:1.37 ping -c 1 -W 1 db'
+			],
+			['docker run -d --name db --network shopnt busybox:1.37 sleep 600']
+		]
+	},
 	'prg-001': {
 		pass: ['let stock = 12;\nstock = stock - 5;\nconsole.log(stock);\n'],
 		wrong: [['let stock = 12;\nstok = stock - 5;'], ['const stock = 12;\nstock = stock - 5;']]
@@ -858,5 +950,6 @@ export const EXAMPLE_SETUP: Record<string, unknown> = {
 		]
 	},
 	'git-007': { initialized: false, files: {} },
-	'git-009': { initialized: false, files: {} }
+	'git-009': { initialized: false, files: {} },
+	'ctr-008': { world: 'docker-cache' }
 };

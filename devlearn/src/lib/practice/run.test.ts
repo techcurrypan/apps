@@ -55,6 +55,43 @@ describe('道具を使う実戦（同じ形）', () => {
 		expect(names).toContain('busybox:1.37');
 	});
 
+	it('docker：prelude の命令を打った後から始める。打った物は記録に出ない', async () => {
+		const setup = {
+			world: 'docker',
+			prelude: [
+				'docker run -d --name web busybox:1.37 sleep 600',
+				'docker run --name once busybox:1.37 echo done'
+			]
+		};
+		const p = P('docker', 'mock', setup, { absent: ['web', 'once'] });
+		let r = openRun(p);
+		expect(r.steps).toHaveLength(0);
+		expect(r.passed).toBe(false);
+		r = await typeRun(r, 'docker ps -a');
+		expect(r.steps[0].out).toContain('web');
+		expect(r.steps[0].out).toContain('once');
+		r = await typeRun(r, 'docker rm -f web once');
+		expect(r.passed).toBe(true);
+		expect(rewindRun(r, 0).passed).toBe(false);
+	});
+
+	it('docker：ボリュームと網があるかを判定する', async () => {
+		const p = P(
+			'docker',
+			'mock',
+			{ world: 'docker' },
+			{ volumes: ['shopdata'], networks: ['shopnet'] }
+		);
+		let r = await play(p, ['docker volume create shopdata']);
+		expect(r.judge.map((j) => [j.label, j.got])).toEqual([
+			['ボリューム shopdata', 'ある'],
+			['網 shopnet', '（無い）']
+		]);
+		expect(r.passed).toBe(false);
+		r = await typeRun(r, 'docker network create shopnet');
+		expect(r.passed).toBe(true);
+	});
+
 	it('js：書いた物の出力が目標と同じなら合格。エラーは間違いの返事', async () => {
 		const p = P('js', 'real', { code: 'let a = 1;' }, { output: '3\n' });
 		let r = openRun(p);

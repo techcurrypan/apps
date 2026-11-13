@@ -13,7 +13,7 @@ export const lnx008: Lesson = {
 	title: '環境変数と PATH',
 	goal: '環境変数を設定し、PATH から命令が見つかる順を追うことができる',
 	prereq: ['lnx-001'],
-	related: ['sec-013'],
+	related: ['ctr-006', 'sec-013'],
 	next: ['lnx-009'],
 	explain: [
 		{
