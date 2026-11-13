@@ -14,13 +14,13 @@
 | `net` | 13 | **13（済）** | 通る | net-004・net-008・net-009・net-010（`0268787`、26 / 26 と 6 / 6。`shots/phase-10-0-net-*`） |
 | `sec` | 13 | **13（済）** | 通る | sec-005・sec-006・sec-008・sec-010（`4809f06`、26 / 26。`shots/phase-10-0-sec-*`） |
 | `db` | 11 | **11（済）** | 通る | db-004・db-005・db-007・db-010（`a30793d`、24 / 24。`shots/phase-10-0-db-*`） |
-| `git` | 10 | 1（001） | 通る | — |
+| `git` | 10 | **10（済）** | 通る | git-005・git-007・git-008・git-010（`167f322`、25 / 25。`shots/phase-10-0-git-*`） |
 | `ctr` | 9 | 1（001） | 通る | — |
 | `cld` | 10 | 0 | — | — |
 | `ci` | 8 | 0 | — | — |
 | `ai` | 37 | 0 | — | — |
 | `sta` | 29 | 0 | — | — |
-| 計 | 163 | 62 | | |
+| 計 | 163 | 71 | | |
 
 `docs/content-sources-log.md`：旧資料から取った問題は、ここまで無し。
 
@@ -151,3 +151,17 @@
 - 道具の判定は「最後に打った文の結果」と比べるので、行を変えるレッスン（db-006・007・008・010）は、実戦の最後に SELECT で確かめる形にした
 - 公開 URL（`a30793d`）で db-004（集計）・db-005（JOIN）・db-007（制約）・db-010（トランザクション）を `look-practice.ts` で通した：24 / 24
 
+
+### `git`（済、2026-11-13）
+
+- git-002〜010 を書いた（git 模擬 8 本・order 1 本）。例は模擬に打って得た物で、`solutions.test.ts` が打ち直して一字ずつ比べる。
+  模擬は段 7 で本物の git 2.56 の記録（`tools-real/recorded/git-00*.json`）と比べてあるので、例は本物の出力と同じ（commit の ID だけは時計が違うので別の値）
+- 実戦の前の状態は prelude（記録・枝・遠くのリポジトリを作っておく）で作る。git-007 は、同じ機械の中の作り物の遠く `../remote.git` と、もう 1 人の手元 `../hanako` を prelude で用意した
+- 合格の判定に「遠く origin の枝が手元の枝と同じ記録を指す」（`pushed`）を足した（`tool-practice.test.ts`）。送り忘れを合格にしないため
+- git-010（order）は特定の事業者の名前を使わず、「合わせる依頼（レビューの依頼）」の流れで教える（D-10）
+- 見つけて直した物
+  - git-005 の間違い 1「feature に移って合わせた」は、出力に Fast-forward が出ない（main は feature の祖先なので Already up to date になる）ため、当たらなかった。
+    feature へ移った時点（Switched to branch 'feature'）で知らせる形にした（`solutions.test.ts` の 1 件ずつの確かめで見つけた）
+  - 例の setup を shell の引数で JSON として渡すと `
+` が崩れたので、`fill-example.ts` に `@`（`solutions.ts` の `EXAMPLE_SETUP` を使う）を足した
+- 公開 URL（`167f322`）で git-005（merge）・git-007（遠く）・git-008（rebase）・git-010（order）を `look-practice.ts` で通した：25 / 25
