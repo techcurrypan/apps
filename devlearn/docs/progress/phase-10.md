@@ -15,12 +15,12 @@
 | `sec` | 13 | **13（済）** | 通る | sec-005・sec-006・sec-008・sec-010（`4809f06`、26 / 26。`shots/phase-10-0-sec-*`） |
 | `db` | 11 | **11（済）** | 通る | db-004・db-005・db-007・db-010（`a30793d`、24 / 24。`shots/phase-10-0-db-*`） |
 | `git` | 10 | **10（済）** | 通る | git-005・git-007・git-008・git-010（`167f322`、25 / 25。`shots/phase-10-0-git-*`） |
-| `ctr` | 9 | 1（001） | 通る | — |
+| `ctr` | 9 | **9（済）** | 通る | ctr-003・ctr-005・ctr-007・ctr-009（`7365977`、24 / 24。`shots/phase-10-0-ctr-*`） |
 | `cld` | 10 | 0 | — | — |
 | `ci` | 8 | 0 | — | — |
 | `ai` | 37 | 0 | — | — |
 | `sta` | 29 | 0 | — | — |
-| 計 | 163 | 71 | | |
+| 計 | 163 | 79 | | |
 
 `docs/content-sources-log.md`：旧資料から取った問題は、ここまで無し。
 
@@ -164,3 +164,14 @@
     feature へ移った時点（Switched to branch 'feature'）で知らせる形にした（`solutions.test.ts` の 1 件ずつの確かめで見つけた）
   - 例の setup を shell の引数で JSON として渡すと改行の印（バックスラッシュと n）が崩れたので、`fill-example.ts` に `@`（`solutions.ts` の `EXAMPLE_SETUP` を使う）を足した
 - 公開 URL（`167f322`）で git-005（merge）・git-007（遠く）・git-008（rebase）・git-010（order）を `look-practice.ts` で通した：25 / 25
+
+### `ctr`（済、2026-11-13）
+
+- ctr-002〜009 を書いた（docker 模擬 8 本）。例は模擬に打って得た物で、`solutions.test.ts` が打ち直して一字ずつ比べる。
+  模擬は段 7 で本物の docker 28.0.4・Compose v2.38.2 の記録（`tools-real/recorded/ctr-00*.json`）と比べてある（ID と「何分前」だけは模擬の値）
+- docker の実戦にも prelude（実戦の前に打っておく命令）を足した。ctr-002 は止まった物と動く物を残しておき、ctr-003 は口をつながずに動かした web から始める（`run.test.ts`）
+- 合格の判定に、ボリュームと網があるか（`volumes`・`networks`）を足した（`run.test.ts`）
+- 見つけて直した物
+  - 模擬の docker build が、大文字を含む名前（Shop-Web:1.1）でイメージを作っていた。本物は断るが、その言い方は記録していないので、
+    模擬だと分かる日本語で断るようにした（D-13。`docker.test.ts`）
+- 公開 URL（`7365977`）で ctr-003（口）・ctr-005（ボリューム）・ctr-007（compose）・ctr-009（網）を `look-practice.ts` で通した：24 / 24
