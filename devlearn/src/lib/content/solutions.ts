@@ -246,6 +246,87 @@ export const SOLUTIONS: Record<string, { pass: string[]; wrong: string[][] }> = 
 			['git add hello.txt', 'git commit -m a', 'git commit -m b']
 		]
 	},
+	'git-002': {
+		pass: ['git add fruits.txt', 'git commit -m "change fruits"'],
+		wrong: [
+			['git add .', 'git commit -m "change fruits"'],
+			['git commit -m "change fruits"'],
+			['git add fruit.txt']
+		]
+	},
+	'git-003': {
+		pass: ['git revert --no-edit HEAD'],
+		wrong: [['git revert HEAD'], ['git reset --hard HEAD~1'], ['git revert --no-edit HEAD~5']]
+	},
+	'git-004': {
+		pass: ['git switch -c feature', "printf 'milk\\n' >> menu.txt", 'git commit -am "add milk"'],
+		wrong: [
+			["printf 'milk\\n' >> menu.txt", 'git commit -am "add milk"'],
+			['git switch feature'],
+			['git branch feature', 'git branch feature']
+		]
+	},
+	'git-005': {
+		pass: ['git merge feature'],
+		wrong: [
+			['git switch feature'],
+			['git merge featur'],
+			['git merge feature', 'git merge feature']
+		]
+	},
+	'git-006': {
+		pass: [
+			'git merge price',
+			"printf 'bread 130\\n' > menu.txt",
+			'git add menu.txt',
+			'git commit -m "merge price"'
+		],
+		wrong: [['git merge price', 'git commit -m "merge price"'], ['git merge prise']]
+	},
+	'git-007': {
+		pass: [
+			'git pull',
+			"printf 'open 7:00\\n' > notes.txt",
+			'git add notes.txt',
+			'git commit -m "add notes"',
+			'git push'
+		],
+		wrong: [
+			[
+				"printf 'open 7:00\\n' > notes.txt",
+				'git add notes.txt',
+				'git commit -m "add notes"',
+				'git push'
+			],
+			[
+				"printf 'open 7:00\\n' > notes.txt",
+				'git add notes.txt',
+				'git commit -m "add notes"',
+				'git pull'
+			],
+			['git pull', 'git push origin mian']
+		]
+	},
+	'git-008': {
+		pass: ['git switch feature', 'git rebase main', 'git switch main', 'git merge feature'],
+		wrong: [
+			['git merge feature'],
+			['git rebase feature'],
+			['git switch feature', 'git rebase mian']
+		]
+	},
+	'git-009': {
+		pass: [
+			"printf '.env\\nlogs/\\n' > .gitignore",
+			'git rm --cached .env',
+			'git add .gitignore',
+			'git commit -m "ignore secrets"'
+		],
+		wrong: [
+			["printf '.env\\nlogs/\\n' > .gitignore", 'git rm --cached .env', 'git add .env'],
+			['git rm --cached env']
+		]
+	},
 	'ctr-001': {
 		pass: ['docker run -d --name clock busybox:1.37 sleep 600'],
 		wrong: [
@@ -741,6 +822,14 @@ export const FORM_SOLUTIONS: Record<string, { pass: FormAnswer; wrong: FormAnswe
 			{ kind: 'pick', choice: 'reply' },
 			{ kind: 'pick', choice: 'look' }
 		]
+	},
+	'git-010': {
+		pass: { kind: 'order', order: ['branch', 'push', 'request', 'fix', 'check', 'merge'] },
+		wrong: [
+			{ kind: 'order', order: ['branch', 'request', 'push', 'fix', 'check', 'merge'] },
+			{ kind: 'order', order: ['branch', 'push', 'request', 'fix', 'merge', 'check'] },
+			{ kind: 'order', order: ['branch', 'push', 'fix', 'request', 'check', 'merge'] }
+		]
 	}
 };
 
@@ -748,5 +837,26 @@ export const FORM_SOLUTIONS: Record<string, { pass: FormAnswer; wrong: FormAnswe
 export const EXAMPLE_SETUP: Record<string, unknown> = {
 	'lnx-002': { files: { 'menu.txt': 'bread 120\n' } },
 	'lnx-004': { files: { 'hi.sh': '#!/bin/bash\necho hi\n', 'memo.txt': 'memo\n' } },
-	'lnx-005': { files: { 'orders.txt': 'bread\nmilk\nbread\njam\nbread\nmilk\n' } }
+	'lnx-005': { files: { 'orders.txt': 'bread\nmilk\nbread\njam\nbread\nmilk\n' } },
+	'git-003': {
+		initialized: false,
+		files: {},
+		prelude: ['git init', "printf 'v1\\n' > app.txt", 'git add app.txt', 'git commit -m "v1"']
+	},
+	'git-005': {
+		initialized: false,
+		files: {},
+		prelude: [
+			'git init',
+			"printf 'bread\\n' > menu.txt",
+			'git add menu.txt',
+			'git commit -m "menu"',
+			'git switch -c feature',
+			"printf 'milk\\n' >> menu.txt",
+			'git commit -am "add milk"',
+			'git switch main'
+		]
+	},
+	'git-007': { initialized: false, files: {} },
+	'git-009': { initialized: false, files: {} }
 };

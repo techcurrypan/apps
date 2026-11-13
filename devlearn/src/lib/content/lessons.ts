@@ -62,6 +62,15 @@ import { db009 } from './lessons/db-009.ts';
 import { db010 } from './lessons/db-010.ts';
 import { db011 } from './lessons/db-011.ts';
 import { git001 } from './lessons/git-001.ts';
+import { git002 } from './lessons/git-002.ts';
+import { git003 } from './lessons/git-003.ts';
+import { git004 } from './lessons/git-004.ts';
+import { git005 } from './lessons/git-005.ts';
+import { git006 } from './lessons/git-006.ts';
+import { git007 } from './lessons/git-007.ts';
+import { git008 } from './lessons/git-008.ts';
+import { git009 } from './lessons/git-009.ts';
+import { git010 } from './lessons/git-010.ts';
 import { ctr001 } from './lessons/ctr-001.ts';
 
 export const lessons: readonly Lesson[] = [
@@ -126,5 +135,14 @@ export const lessons: readonly Lesson[] = [
 	db010,
 	db011,
 	git001,
+	git002,
+	git003,
+	git004,
+	git005,
+	git006,
+	git007,
+	git008,
+	git009,
+	git010,
 	ctr001
 ];

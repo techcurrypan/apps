@@ -1,6 +1,6 @@
 // 道具を使う実戦（docs/tools.md 4 章）。初めの状態を作り、1 行ずつ打ち、合格と間違いを判定する。
 // 巻き戻すと、その時点の状態・合格・間違いに戻る。
-import { stat, writeFile } from '../tools/fs.ts';
+import { resolvePath, stat, writeFile } from '../tools/fs.ts';
 import { shortStatus } from '../tools/git/common.ts';
 import { gitCommands } from '../tools/git/git.ts';
 import { reachable } from '../tools/git/history.ts';
@@ -21,6 +21,7 @@ export type GitSuccess = {
 	branches?: Record<string, number>; // 枝ごとに、辿れる commit の数
 	files?: Record<string, string>; // 作業場所のファイルの中身
 	parents?: number; // HEAD の commit の親の数（合流の記録なら 2）
+	pushed?: string[]; // 遠く origin の枝が、手元の同じ名前の枝と同じ記録を指す（送り終えた）
 };
 
 export type JudgeItem = { label: string; want: string; got: string; ok: boolean };
@@ -141,7 +142,24 @@ function gitMore(state: ShellState<GitExt>, want: GitSuccess): JudgeItem[] {
 			ok: got === want.parents
 		});
 	}
+	for (const b of want.pushed ?? []) items.push(pushedItem(state, b));
 	return items;
+}
+
+/** 遠く origin の枝 b が、手元の枝 b と同じ記録を指すか */
+function pushedItem(state: ShellState<GitExt>, b: string): JudgeItem {
+	const repo = state.ext.repos[WORK];
+	const label = `遠く origin の ${b}`;
+	const want = `手元の ${b} と同じ記録`;
+	const url = repo?.remotes.origin;
+	const remote = url ? state.ext.repos[resolvePath(WORK, url, state.home)] : undefined;
+	if (!repo || !remote) return { label, want, got: '遠くが登録されていない', ok: false };
+	const mine = repo.refs[`refs/heads/${b}`];
+	const theirs = remote.refs[`refs/heads/${b}`];
+	if (!theirs) return { label, want, got: 'まだ送っていない', ok: false };
+	if (theirs === mine) return { label, want, got: want, ok: true };
+	const behind = mine !== undefined && reachable(repo, [mine]).has(theirs);
+	return { label, want, got: behind ? '手元より遅れている' : '手元と食い違う', ok: false };
 }
 
 /** 初めの状態に prelude の命令を打った状態（実戦はここから始まる。戻すとここに戻る） */

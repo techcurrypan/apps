@@ -14,8 +14,8 @@ export const sec013: Lesson = {
 	level: 2,
 	title: '秘密情報を置かない',
 	goal: '鍵やトークンを、リポジトリと履歴に入れない手順を取ることができる',
-	prereq: ['lnx-008'],
-	related: [],
+	prereq: ['git-002', 'lnx-008'],
+	related: ['git-009'],
 	next: [],
 	explain: [
 		{

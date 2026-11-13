@@ -7,8 +7,12 @@ import {
 	openPractice,
 	rewindPractice,
 	typePractice,
+	type GitSetup,
 	type PracticeRun
 } from './tool-practice.ts';
+import { gitCommands } from '../tools/git/git.ts';
+import type { GitExt } from '../tools/git/repo.ts';
+import { shellTool } from '../tools/shell/run.ts';
 
 const typeAll = (lines: string[], run: PracticeRun = openPractice(git001.practice)) =>
 	lines.reduce(typePractice, run);
@@ -117,5 +121,35 @@ describe('git の実戦の前準備と、枝・中身の判定', () => {
 		]);
 		const bad = judgeGit(s, { commits: 1, tracked: ['a.txt'], statusShort: '', branch: 'feature' });
 		expect(bad.at(-1)).toEqual({ label: '今の枝', want: 'feature', got: 'main', ok: false });
+	});
+	it('送った枝（pushed）：遠くの枝が手元の枝と同じ記録を指すかを判定する', () => {
+		const REMOTE: GitSetup = {
+			initialized: false,
+			files: {},
+			prelude: [
+				'git init --bare ../remote.git',
+				'git init',
+				"printf 'a\\n' > a.txt",
+				'git add a.txt',
+				'git commit -m "first"',
+				'git remote add origin ../remote.git',
+				'git push -u origin main',
+				"printf 'b\\n' > b.txt",
+				'git add b.txt',
+				'git commit -m "add b"'
+			]
+		};
+		const s = gitStart(REMOTE);
+		const want = { commits: 2, tracked: ['a.txt', 'b.txt'], statusShort: '', pushed: ['main'] };
+		expect(judgeGit(s, want).at(-1)).toEqual({
+			label: '遠く origin の main',
+			want: '手元の main と同じ記録',
+			got: '手元より遅れている',
+			ok: false
+		});
+		const after = shellTool<GitExt>(gitCommands()).run(s, 'git push').state;
+		expect(judgeGit(after, want).at(-1)?.ok).toBe(true);
+		const none = judgeGit(gitStart(PRE), { ...want, pushed: ['main'] }).at(-1);
+		expect(none).toMatchObject({ got: '遠くが登録されていない', ok: false });
 	});
 });

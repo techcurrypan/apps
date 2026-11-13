@@ -110,7 +110,8 @@ const gitKit = (): Kit => {
 				branches:
 					w.branches === undefined ? undefined : (rec(w.branches) as Record<string, number>),
 				files: w.files === undefined ? undefined : (rec(w.files) as Record<string, string>),
-				parents: typeof w.parents === 'number' ? w.parents : undefined
+				parents: typeof w.parents === 'number' ? w.parents : undefined,
+				pushed: w.pushed === undefined ? undefined : strs(w.pushed)
 			});
 		},
 		git: (state) => gitPicture(state as ShellState<GitExt>)

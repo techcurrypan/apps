@@ -1,5 +1,5 @@
 // 例（打った物と返った物）を、道具に打った結果でレッスンのファイルに書き込む。手で写すと末尾の空白などを誤るため。
-//   npx tsx scripts/fill-example.ts <レッスン ID> '<setup の JSON。空なら実戦の setup>' '<命令>' '<命令>' …
+//   npx tsx scripts/fill-example.ts <レッスン ID> '<setup の JSON。空なら実戦の setup、@ なら solutions.ts の EXAMPLE_SETUP>' '<命令>' '<命令>' …
 // レッスンの example.lines を書き替え、使った setup が実戦と違えば src/lib/content/solutions.ts の EXAMPLE_SETUP に書くよう知らせる。
 import { readFileSync, writeFileSync } from 'node:fs';
 import { createServer } from 'vite';
@@ -21,7 +21,10 @@ const { lessons } = (await server.ssrLoadModule('/src/lib/content/lessons.ts')) 
 const lesson = lessons.find((l) => l.id === id);
 if (!lesson?.practice.tool)
 	throw new Error(`${id} は道具の実戦のレッスンでない（lessons.ts に載っているか）`);
-const setup = setupJson ? JSON.parse(setupJson) : lesson.practice.setup;
+type SolMod = typeof import('../src/lib/content/solutions.ts');
+const { EXAMPLE_SETUP } = (await server.ssrLoadModule('/src/lib/content/solutions.ts')) as SolMod;
+const setup =
+	setupJson === '@' ? EXAMPLE_SETUP[id] : setupJson ? JSON.parse(setupJson) : lesson.practice.setup;
 const name = lesson.practice.tool.name;
 let r = openRun({ ...lesson.practice, setup });
 const lines: string[] = [];
@@ -41,5 +44,6 @@ const close = src.lastIndexOf(']', b);
 const out = src.slice(0, a) + `lines: ${JSON.stringify(lines)}` + src.slice(close + 1);
 writeFileSync(path, out);
 console.log(lines.join(NL));
-if (setupJson) console.log(`\n※ EXAMPLE_SETUP に '${id}': ${setupJson} を書く`);
+if (setupJson && setupJson !== '@')
+	console.log(`\n※ EXAMPLE_SETUP に '${id}': ${setupJson} を書く`);
 await server.close();
