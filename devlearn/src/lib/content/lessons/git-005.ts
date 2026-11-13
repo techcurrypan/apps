@@ -32,7 +32,7 @@ export const git005: Lesson = {
 			],
 			scene: [
 				{ op: 'appear', id: 'c1', label: '記録 menu', sub: 'bread', at: [1, 1] },
-				{ op: 'appear', id: 'c2', label: '記録 add milk', sub: 'feature', at: [3, 2] },
+				{ op: 'appear', id: 'c2', label: '記録 add milk', sub: FEAT, at: [3, 2] },
 				{ op: 'appear', id: 'main', label: MAIN, sub: 'HEAD', at: [1, 0] },
 				{ op: 'move', from: 'main', to: 'c1', payload: '指す', kind: 'ref' }
 			],
