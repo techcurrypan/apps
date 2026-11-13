@@ -16,7 +16,7 @@ export const sec009: Lesson = {
 	title: 'ファイアウォールの規則',
 	goal: '規則の並びから、通る通信と止まる通信を決めることができる',
 	prereq: ['net-006'],
-	related: [],
+	related: ['cld-004'],
 	next: ['sec-012'],
 	explain: [
 		{

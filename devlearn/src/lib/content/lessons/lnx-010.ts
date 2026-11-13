@@ -14,7 +14,7 @@ export const lnx010: Lesson = {
 	title: 'サービスとログ',
 	goal: 'systemctl でサービスを動かし、journalctl でログを読むことができる',
 	prereq: ['lnx-007'],
-	related: [],
+	related: ['cld-010'],
 	next: [],
 	explain: [
 		{

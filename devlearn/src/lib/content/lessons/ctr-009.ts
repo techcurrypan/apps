@@ -15,7 +15,7 @@ export const ctr009: Lesson = {
 	goal: '名前でコンテナどうしがつながる仕組みを確かめることができる',
 	prereq: ['ctr-007', 'net-004'],
 	related: [],
-	next: [],
+	next: ['cld-002'],
 	explain: [
 		{
 			n: 1,

@@ -17,7 +17,7 @@ export const sec008: Lesson = {
 	title: 'SSH の鍵で入る',
 	goal: 'ssh-keygen で鍵を作り、公開鍵で SSH に入る流れを追うことができる',
 	prereq: ['sec-003', 'lnx-004'],
-	related: [],
+	related: ['cld-008'],
 	next: [],
 	explain: [
 		{

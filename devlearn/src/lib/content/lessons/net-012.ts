@@ -13,7 +13,7 @@ export const net012: Lesson = {
 	goal: 'CIDR で網を分け、各サブネットの範囲を求めることができる',
 	prereq: ['net-001'],
 	related: ['net-010'],
-	next: [],
+	next: ['cld-004'],
 	explain: [
 		{
 			n: 1,

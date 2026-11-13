@@ -16,7 +16,7 @@ export const net003: Lesson = {
 	title: '経路を選ぶ',
 	goal: '経路表から、宛先ごとの次の行き先を決めることができる',
 	prereq: ['net-002'],
-	related: [],
+	related: ['cld-004'],
 	next: ['net-010'],
 	explain: [
 		{

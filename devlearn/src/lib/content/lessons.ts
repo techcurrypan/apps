@@ -80,6 +80,16 @@ import { ctr006 } from './lessons/ctr-006.ts';
 import { ctr007 } from './lessons/ctr-007.ts';
 import { ctr008 } from './lessons/ctr-008.ts';
 import { ctr009 } from './lessons/ctr-009.ts';
+import { cld001 } from './lessons/cld-001.ts';
+import { cld002 } from './lessons/cld-002.ts';
+import { cld003 } from './lessons/cld-003.ts';
+import { cld004 } from './lessons/cld-004.ts';
+import { cld005 } from './lessons/cld-005.ts';
+import { cld006 } from './lessons/cld-006.ts';
+import { cld007 } from './lessons/cld-007.ts';
+import { cld008 } from './lessons/cld-008.ts';
+import { cld009 } from './lessons/cld-009.ts';
+import { cld010 } from './lessons/cld-010.ts';
 
 export const lessons: readonly Lesson[] = [
 	prg001,
@@ -160,5 +170,15 @@ export const lessons: readonly Lesson[] = [
 	ctr006,
 	ctr007,
 	ctr008,
-	ctr009
+	ctr009,
+	cld001,
+	cld002,
+	cld003,
+	cld004,
+	cld005,
+	cld006,
+	cld007,
+	cld008,
+	cld009,
+	cld010
 ];

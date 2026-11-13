@@ -1,7 +1,16 @@
 // 段 10-0：打つコマンドが無い題材の実戦の形 5 つ（explanation-standard.md 第 6 章・curriculum.md 3.2）
 import { describe, expect, it } from 'vitest';
 import type { Mistake, Practice } from '../lesson/types.ts';
-import { cookieSent, firewall, judgeForm, policy, renderHtml, type FormAnswer } from './forms.ts';
+import {
+	cookieSent,
+	firewall,
+	judgeForm,
+	pipeline,
+	policy,
+	renderHtml,
+	route,
+	type FormAnswer
+} from './forms.ts';
 
 const M = (match: string): Mistake => ({
 	when: match,
@@ -251,5 +260,62 @@ describe('fix の policy（権限の方針。最小権限）', () => {
 		expect(policy(lines, { action: 'write', target: '/reports/secret/a' })).toBe('deny');
 		expect(policy(lines, { action: 'delete', target: '/reports/a' })).toBe('deny');
 		expect(policy(['allow * *'], { action: 'delete', target: '/x' })).toBe('allow');
+	});
+});
+
+describe('fix の route（公開と非公開のサブネット）', () => {
+	const ok = ['place web public', 'place db private', 'route public igw', 'route private nat'];
+	it('外から届くのは、外への門（igw）の経路を持つサブネットだけ', () => {
+		expect(route(ok, { from: 'internet', to: 'web' })).toBe('reach');
+		expect(route(ok, { from: 'internet', to: 'db' })).toBe('blocked');
+	});
+	it('外への出口（nat）は、中から外へだけ通す。経路が無ければ外へ出られない', () => {
+		expect(route(ok, { from: 'db', to: 'internet' })).toBe('reach');
+		const none = ['place db private', 'route private none'];
+		expect(route(none, { from: 'db', to: 'internet' })).toBe('blocked');
+		expect(route(['place db private'], { from: 'db', to: 'internet' })).toBe('blocked');
+	});
+	it('同じ網の中どうしは届く。置き場の無い機械は届かない', () => {
+		expect(route(ok, { from: 'web', to: 'db' })).toBe('reach');
+		expect(route(ok, { from: 'internet', to: 'mail' })).toBe('blocked');
+	});
+});
+
+describe('fix の pipeline（検査と配信の設定）', () => {
+	const base = [
+		'on push',
+		'job lint run=npm run lint',
+		'job test after=lint run=npm test',
+		'job deploy after=test branch=main key=DEPLOY_TOKEN run=./deploy --token $DEPLOY_TOKEN'
+	];
+	it('走った段を順に返す。branch の合わない段は走らない', () => {
+		expect(pipeline(base, { event: 'push', branch: 'main' })).toBe('lint→test→deploy');
+		expect(pipeline(base, { event: 'push', branch: 'feature' })).toBe('lint→test');
+	});
+	it('落ちた段の後に依る段は走らない', () => {
+		expect(pipeline(base, { event: 'push', branch: 'main', fail: 'test' })).toBe(
+			'lint→test（失敗）'
+		);
+	});
+	it('どの on にも当たらなければ走らない。branch 付きの on は、その枝だけ', () => {
+		expect(pipeline(base, { event: 'pull', branch: 'feature' })).toBe('none');
+		const onMain = ['on push branch=main', 'job lint run=npm run lint'];
+		expect(pipeline(onMain, { event: 'push', branch: 'feature' })).toBe('none');
+	});
+	it('知らない言葉と、無い段への after は、設定の誤りで何も走らない', () => {
+		expect(pipeline(['on psuh', ...base.slice(1)], { event: 'push', branch: 'main' })).toBe('none');
+		expect(pipeline(['jb lint run=x', 'on push'], { event: 'push', branch: 'main' })).toBe('error');
+		const bad = ['on push', 'job lint run=x', 'job test after=lnt run=y'];
+		expect(pipeline(bad, { event: 'push', branch: 'main' })).toBe('error');
+	});
+	it('鍵：$名前 を使う段に key が無いと失敗。鍵をそのまま書くと記録に出る。pull の段に鍵を渡すと外に渡る', () => {
+		const noKey = ['on push', 'job deploy run=./deploy --token $DEPLOY_TOKEN'];
+		expect(pipeline(noKey, { event: 'push', branch: 'main' })).toBe('deploy（失敗）');
+		const raw = ['on push', 'job deploy run=./deploy --token s3cr3t'];
+		expect(pipeline(raw, { event: 'push', branch: 'main' })).toBe('deploy／鍵が記録に出る');
+		const pull = ['on pull', 'job test key=DEPLOY_TOKEN run=npm test'];
+		expect(pipeline(pull, { event: 'pull', branch: 'feature' })).toBe(
+			'test／鍵が外からの変更に渡る'
+		);
 	});
 });

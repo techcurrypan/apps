@@ -21,8 +21,8 @@ export type SortSuccess = { bins: Record<string, string> };
 export type PickSetup = { situation: string[]; choices: (Card & { result: string })[] };
 export type PickSuccess = { choice: string };
 export type Packet = { proto: string; port: number; from: string };
-/** 直した行を流す仕組み。firewall は規則、html は頁の型、cookie は Cookie と受け付け、policy は権限の方針 */
-export type FixEngine = 'firewall' | 'html' | 'cookie' | 'policy';
+/** 直した行を流す仕組み。firewall は規則、html は頁の型、cookie は Cookie と受け付け、policy は権限の方針、route は仮想の網、pipeline は検査と配信の設定 */
+export type FixEngine = 'firewall' | 'html' | 'cookie' | 'policy' | 'route' | 'pipeline';
 /** 流す 1 件。firewall は packet、ほかは input（仕組みごとの名前 → 値） */
 export type FixCase = {
 	id: string;
@@ -155,6 +155,76 @@ export function policy(lines: string[], req: { action: string; target: string })
 	return allowed ? 'allow' : 'deny';
 }
 
+// ---- fix の route：仮想の網。place 機械 サブネット と route サブネット igw|nat|none ----
+// 外（internet）から届くのは igw の経路を持つサブネットだけ。中から外へは igw か nat があれば出られる。網の中どうしは届く
+export function route(lines: string[], req: { from: string; to: string }): 'reach' | 'blocked' {
+	const place: Record<string, string> = {};
+	const gw: Record<string, string> = {};
+	for (const l of lines) {
+		const [w, a = '', b = ''] = l.trim().split(/\s+/);
+		if (w === 'place') place[a] = b;
+		if (w === 'route') gw[a] = b;
+	}
+	const net = (m: string) => (place[m] ? (gw[place[m]] ?? 'none') : null);
+	if (req.from === 'internet') return net(req.to) === 'igw' ? 'reach' : 'blocked';
+	const out = net(req.from);
+	if (out === null) return 'blocked';
+	if (req.to === 'internet') return out === 'igw' || out === 'nat' ? 'reach' : 'blocked';
+	return net(req.to) === null ? 'blocked' : 'reach';
+}
+
+// ---- fix の pipeline：検査と配信の設定。どの事業者の書式も写さず、どこにもある仕組みだけを 1 行ずつ書く ----
+//   on 出来事 [branch=枝]                                  … いつ動くか（push・pull）
+//   job 名前 [after=段] [branch=枝] [key=鍵の名前] run=命令  … 段。after の段が通った後に、branch の枝でだけ走る
+// 命令の $名前 は key で渡した鍵だけが読める。命令に鍵をそのまま書くと記録に出る。pull で走る段に鍵を渡すと外からの変更に渡る
+type Job = { name: string; after?: string; branch?: string; key?: string; run: string };
+export function pipeline(
+	lines: string[],
+	req: { event: string; branch: string; fail?: string }
+): string {
+	const ons: { event: string; branch?: string }[] = [];
+	const jobs: Job[] = [];
+	for (const l of lines) {
+		const [w, ...rest] = l.trim().split(/\s+/);
+		const runAt = l.indexOf('run=');
+		const opts: Record<string, string> = {};
+		for (const t of rest) {
+			if (t.startsWith('run=')) break;
+			const [k, v = ''] = t.split('=');
+			opts[k] = v;
+		}
+		if (w === 'on') ons.push({ event: rest[0] ?? '', branch: opts.branch });
+		else if (w === 'job')
+			jobs.push({
+				name: rest[0] ?? '',
+				after: opts.after,
+				branch: opts.branch,
+				key: opts.key,
+				run: runAt < 0 ? '' : l.slice(runAt + 4)
+			});
+		else return 'error';
+	}
+	const names = new Set(jobs.map((j) => j.name));
+	if (jobs.some((j) => j.after !== undefined && !names.has(j.after))) return 'error';
+	if (!ons.some((o) => o.event === req.event && (!o.branch || o.branch === req.branch)))
+		return 'none';
+	const done = new Set<string>();
+	const ran: string[] = [];
+	const flags = new Set<string>();
+	for (const j of jobs) {
+		if (j.after !== undefined && !done.has(j.after)) continue;
+		if (j.branch !== undefined && j.branch !== req.branch) continue;
+		const used = [...j.run.matchAll(/\$(\w+)/g)].map((m) => m[1]);
+		const ok = j.name !== req.fail && used.every((u) => u === j.key);
+		ran.push(ok ? j.name : `${j.name}（失敗）`);
+		if (ok) done.add(j.name);
+		if (/--token\s+(?!\$)\S+/.test(j.run)) flags.add('鍵が記録に出る');
+		if (req.event === 'pull' && j.key) flags.add('鍵が外からの変更に渡る');
+	}
+	if (ran.length === 0) return 'none';
+	return [ran.join('→'), ...flags].join('／');
+}
+
 /** 直した行の並びに 1 件を流した結果 */
 export function runFix(engine: FixEngine, lines: string[], c: FixCase): string {
 	const input = c.input ?? {};
@@ -167,6 +237,14 @@ export function runFix(engine: FixEngine, lines: string[], c: FixCase): string {
 			return cookieFlow(lines, input);
 		case 'policy':
 			return policy(lines, { action: input.action ?? '', target: input.target ?? '' });
+		case 'route':
+			return route(lines, { from: input.from ?? '', to: input.to ?? '' });
+		case 'pipeline':
+			return pipeline(lines, {
+				event: input.event ?? '',
+				branch: input.branch ?? '',
+				fail: input.fail
+			});
 	}
 }
 /** 結果の言い方（画面に出す） */
@@ -176,7 +254,11 @@ export const FIX_RESULTS: Record<string, string> = {
 	runs: 'スクリプトが動く',
 	text: '文字として出る',
 	pass: '通る',
-	stop: '止まる'
+	stop: '止まる',
+	reach: '届く',
+	blocked: '届かない',
+	none: '何も走らない',
+	error: '設定の誤り（何も走らない）'
 };
 
 const rec = (x: unknown) =>
@@ -301,5 +383,7 @@ export const FIX_CASE_NAMES: Record<FixEngine, string> = {
 	firewall: '通信',
 	html: '書き込み',
 	cookie: '要求',
-	policy: '操作'
+	policy: '操作',
+	route: '通り道',
+	pipeline: '出来事'
 };

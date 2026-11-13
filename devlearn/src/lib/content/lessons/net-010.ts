@@ -15,7 +15,7 @@ export const net010: Lesson = {
 	title: 'NAT とプライベートアドレス',
 	goal: 'NAT がアドレスとポートを書き換える様子を追うことができる',
 	prereq: ['net-003'],
-	related: [],
+	related: ['cld-004'],
 	next: ['net-011'],
 	explain: [
 		{

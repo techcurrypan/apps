@@ -915,6 +915,110 @@ export const FORM_SOLUTIONS: Record<string, { pass: FormAnswer; wrong: FormAnswe
 			{ kind: 'pick', choice: 'look' }
 		]
 	},
+	'cld-001': {
+		pass: {
+			kind: 'sort',
+			bins: { power: 'prov', os: 'user', disk: 'prov', port: 'user', data: 'user', cable: 'prov' }
+		},
+		wrong: [
+			{
+				kind: 'sort',
+				bins: { power: 'prov', os: 'prov', disk: 'prov', port: 'user', data: 'user', cable: 'prov' }
+			},
+			{
+				kind: 'sort',
+				bins: { power: 'prov', os: 'user', disk: 'prov', port: 'user', data: 'prov', cable: 'prov' }
+			},
+			{
+				kind: 'sort',
+				bins: { power: 'prov', os: 'user', disk: 'prov', port: 'prov', data: 'user', cable: 'prov' }
+			}
+		]
+	},
+	'cld-002': {
+		pass: {
+			kind: 'sort',
+			bins: { vm: 'iaas', app: 'paas', mail: 'saas', thumb: 'fn', sheet: 'saas', disk: 'iaas' }
+		},
+		wrong: [
+			{
+				kind: 'sort',
+				bins: { vm: 'iaas', app: 'iaas', mail: 'saas', thumb: 'fn', sheet: 'saas', disk: 'iaas' }
+			},
+			{
+				kind: 'sort',
+				bins: { vm: 'iaas', app: 'paas', mail: 'saas', thumb: 'paas', sheet: 'saas', disk: 'iaas' }
+			},
+			{
+				kind: 'sort',
+				bins: { vm: 'iaas', app: 'paas', mail: 'saas', thumb: 'fn', sheet: 'paas', disk: 'iaas' }
+			}
+		]
+	},
+	'cld-003': {
+		pass: { kind: 'pick', choice: 'zones' },
+		wrong: [
+			{ kind: 'pick', choice: 'same' },
+			{ kind: 'pick', choice: 'bigger' },
+			{ kind: 'pick', choice: 'regions' }
+		]
+	},
+	'cld-004': {
+		pass: { kind: 'fix', lines: { l2: 'dbpri', l4: 'nat' } },
+		wrong: [
+			{ kind: 'fix', lines: {} },
+			{ kind: 'fix', lines: { l2: 'dbpri', l4: 'none' } },
+			{ kind: 'fix', lines: { l1: 'webpri', l2: 'dbpri', l4: 'nat' } }
+		]
+	},
+	'cld-005': {
+		pass: { kind: 'pick', choice: 'menu' },
+		wrong: [
+			{ kind: 'pick', choice: 'all' },
+			{ kind: 'pick', choice: 'write' },
+			{ kind: 'pick', choice: 'none' }
+		]
+	},
+	'cld-006': {
+		pass: { kind: 'calc', values: ['140', '8', '9', '3'] },
+		wrong: [
+			{ kind: 'calc', values: ['200', '6', '7', '2'] },
+			{ kind: 'calc', values: ['140', '7', '8', '3'] },
+			{ kind: 'calc', values: ['140', '8', '8', '3'] }
+		]
+	},
+	'cld-007': {
+		pass: { kind: 'calc', values: ['4380', '105', '800', '5285', '715'] },
+		wrong: [
+			{ kind: 'calc', values: ['1460', '105', '800', '2365', '3635'] },
+			{ kind: 'calc', values: ['4380', '120', '800', '5300', '700'] },
+			{ kind: 'calc', values: ['4380', '105', '1800', '6285', '-285'] }
+		]
+	},
+	'cld-008': {
+		pass: { kind: 'fix', lines: { p1: 'nodelete', p3: 'web' } },
+		wrong: [
+			{ kind: 'fix', lines: { p3: 'web' } },
+			{ kind: 'fix', lines: { p1: 'putall', p3: 'web' } },
+			{ kind: 'fix', lines: { p1: 'nodelete', p3: 'allcompute' } }
+		]
+	},
+	'cld-009': {
+		pass: { kind: 'pick', choice: 'backup' },
+		wrong: [
+			{ kind: 'pick', choice: 'apply' },
+			{ kind: 'pick', choice: 'web' },
+			{ kind: 'pick', choice: 'logs' }
+		]
+	},
+	'cld-010': {
+		pass: { kind: 'calc', values: ['5', '3', '1', '25'] },
+		wrong: [
+			{ kind: 'calc', values: ['5', '5', '1', '25'] },
+			{ kind: 'calc', values: ['5', '3', '1', '15'] },
+			{ kind: 'calc', values: ['5', '3', '2', '25'] }
+		]
+	},
 	'git-010': {
 		pass: { kind: 'order', order: ['branch', 'push', 'request', 'fix', 'check', 'merge'] },
 		wrong: [

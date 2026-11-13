@@ -15,7 +15,7 @@ export const sec010: Lesson = {
 	goal: '要る権限だけを渡すように、権限の設定を直すことができる',
 	prereq: ['sec-001', 'lnx-004'],
 	related: [],
-	next: [],
+	next: ['cld-008'],
 	explain: [
 		{
 			n: 1,

@@ -16,7 +16,7 @@ export const net013: Lesson = {
 	title: 'HTTP のキャッシュ',
 	goal: 'キャッシュのヘッダから、応答を使い回せるかを判断することができる',
 	prereq: ['net-008'],
-	related: [],
+	related: ['cld-006'],
 	next: [],
 	explain: [
 		{
