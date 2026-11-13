@@ -1019,6 +1019,70 @@ export const FORM_SOLUTIONS: Record<string, { pass: FormAnswer; wrong: FormAnswe
 			{ kind: 'calc', values: ['5', '3', '2', '25'] }
 		]
 	},
+	'ci-001': {
+		pass: { kind: 'order', order: ['push', 'trigger', 'runner', 'fetch', 'run', 'result'] },
+		wrong: [
+			{ kind: 'order', order: ['trigger', 'push', 'runner', 'fetch', 'run', 'result'] },
+			{ kind: 'order', order: ['push', 'trigger', 'fetch', 'runner', 'run', 'result'] },
+			{ kind: 'order', order: ['push', 'trigger', 'runner', 'run', 'fetch', 'result'] }
+		]
+	},
+	'ci-002': {
+		pass: { kind: 'order', order: ['fmt', 'type', 'test', 'build', 'e2e'] },
+		wrong: [
+			{ kind: 'order', order: ['fmt', 'type', 'test', 'e2e', 'build'] },
+			{ kind: 'order', order: ['fmt', 'test', 'type', 'build', 'e2e'] },
+			{ kind: 'order', order: ['fmt', 'type', 'build', 'test', 'e2e'] }
+		]
+	},
+	'ci-003': {
+		pass: { kind: 'fix', lines: { c1: 'push', c3: 'lint' } },
+		wrong: [
+			{ kind: 'fix', lines: { c1: 'push' } },
+			{ kind: 'fix', lines: { c3: 'lint' } },
+			{ kind: 'fix', lines: { c1: 'push', c3: 'free' } }
+		]
+	},
+	'ci-004': {
+		pass: { kind: 'pick', choice: 'assert' },
+		wrong: [
+			{ kind: 'pick', choice: 'exit' },
+			{ kind: 'pick', choice: 'warn' },
+			{ kind: 'pick', choice: 'summary' }
+		]
+	},
+	'ci-005': {
+		pass: { kind: 'calc', values: ['240', '110', '130', '52'] },
+		wrong: [
+			{ kind: 'calc', values: ['240', '20', '220', '88'] },
+			{ kind: 'calc', values: ['240', '110', '150', '60'] },
+			{ kind: 'calc', values: ['240', '110', '130', '3120'] }
+		]
+	},
+	'ci-006': {
+		pass: { kind: 'fix', lines: { s3: 'nokey', s4: 'ref' } },
+		wrong: [
+			{ kind: 'fix', lines: { s3: 'nokey' } },
+			{ kind: 'fix', lines: { s3: 'nokey', s4: 'refnokey' } },
+			{ kind: 'fix', lines: { s4: 'ref' } }
+		]
+	},
+	'ci-007': {
+		pass: { kind: 'fix', lines: { d3: 'both' } },
+		wrong: [
+			{ kind: 'fix', lines: { d3: 'branch' } },
+			{ kind: 'fix', lines: { d3: 'after' } },
+			{ kind: 'fix', lines: { d1: 'main', d3: 'both' } }
+		]
+	},
+	'ci-008': {
+		pass: { kind: 'calc', values: ['15', '8', '12', '24'] },
+		wrong: [
+			{ kind: 'calc', values: ['15', '15', '12', '24'] },
+			{ kind: 'calc', values: ['15', '8', '7', '16'] },
+			{ kind: 'calc', values: ['15', '8', '12', '16'] }
+		]
+	},
 	'git-010': {
 		pass: { kind: 'order', order: ['branch', 'push', 'request', 'fix', 'check', 'merge'] },
 		wrong: [

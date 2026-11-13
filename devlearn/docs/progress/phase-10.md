@@ -16,11 +16,11 @@
 | `db` | 11 | **11（済）** | 通る | db-004・db-005・db-007・db-010（`a30793d`、24 / 24。`shots/phase-10-0-db-*`） |
 | `git` | 10 | **10（済）** | 通る | git-005・git-007・git-008・git-010（`167f322`、25 / 25。`shots/phase-10-0-git-*`） |
 | `ctr` | 9 | **9（済）** | 通る | ctr-003・ctr-005・ctr-007・ctr-009（`7365977`、24 / 24。`shots/phase-10-0-ctr-*`） |
-| `cld` | 10 | 0 | — | — |
+| `cld` | 10 | **10（済）** | 通る | cld-001・cld-004・cld-007・cld-008（`fd6f19b`、28 / 28。`shots/phase-10-0-cld-*`） |
 | `ci` | 8 | 0 | — | — |
 | `ai` | 37 | 0 | — | — |
 | `sta` | 29 | 0 | — | — |
-| 計 | 163 | 79 | | |
+| 計 | 163 | 89 | | |
 
 `docs/content-sources-log.md`：旧資料から取った問題は、ここまで無し。
 
@@ -175,3 +175,11 @@
   - 模擬の docker build が、大文字を含む名前（Shop-Web:1.1）でイメージを作っていた。本物は断るが、その言い方は記録していないので、
     模擬だと分かる日本語で断るようにした（D-13。`docker.test.ts`）
 - 公開 URL（`7365977`）で ctr-003（口）・ctr-005（ボリューム）・ctr-007（compose）・ctr-009（網）を `look-practice.ts` で通した：24 / 24
+
+### `cld`（済、2026-11-13）
+
+- cld-001〜010 を書いた（sort 2・pick 3・fix 2・calc 3）。特定の事業者の名前・書式・単価は使わず、どの事業者にもある仕組みだけで教える（D-10）。数と単価は作り物
+- 直す（fix）の仕組みに route を足した（`forms.ts`・`forms.test.ts`）。1 行は `place 機械 サブネット` か `route サブネット igw|nat|none`。
+  外から届くのは igw の経路を持つサブネットだけ、中から外へは igw か nat で出られ、網の中どうしは届く（cld-004）
+- cld-008 は sec-010 と同じ policy の仕組みで、自動で配る係の権限を絞る
+- 公開 URL（`fd6f19b`）で cld-001（sort）・cld-004（fix route）・cld-007（calc）・cld-008（fix policy）を `look-practice.ts` で通した：28 / 28

@@ -15,7 +15,7 @@ export const lnx009: Lesson = {
 	title: 'シェルスクリプト',
 	goal: '引数と終了コードを使うシェルスクリプトを書くことができる',
 	prereq: ['lnx-005', 'lnx-008'],
-	related: ['prg-003'],
+	related: ['prg-003', 'ci-002'],
 	next: [],
 	explain: [
 		{

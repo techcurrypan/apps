@@ -16,8 +16,8 @@ export const git010: Lesson = {
 	title: 'レビューを経て合わせる',
 	goal: '変更を出してレビューを受け、合わせるまでの流れを並べることができる',
 	prereq: ['git-006', 'git-007'],
-	related: [],
-	next: [],
+	related: ['ci-001'],
+	next: ['ci-007'],
 	explain: [
 		{
 			n: 1,

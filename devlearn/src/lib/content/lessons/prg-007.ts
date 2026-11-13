@@ -14,7 +14,7 @@ export const prg007: Lesson = {
 	title: '例外を受け止める',
 	goal: '投げられたエラーが受け止められるまでの流れを追うことができる',
 	prereq: ['prg-004'],
-	related: [],
+	related: ['ci-004'],
 	next: ['prg-008'],
 	explain: [
 		{

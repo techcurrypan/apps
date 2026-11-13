@@ -15,8 +15,8 @@ export const prg009: Lesson = {
 	title: 'テストを書く',
 	goal: '関数の期待する結果をテストに書き、失敗から成功へ直すことができる',
 	prereq: ['prg-004'],
-	related: [],
-	next: [],
+	related: ['ci-002'],
+	next: ['ci-001'],
 	explain: [
 		{
 			n: 1,

@@ -14,7 +14,7 @@ export const cld009: Lesson = {
 	goal: '構成の定義の差分から、作り直される物を予想することができる',
 	prereq: ['cld-008'],
 	related: ['git-002'],
-	next: [],
+	next: ['ci-007'],
 	explain: [
 		{
 			n: 1,

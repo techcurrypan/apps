@@ -15,7 +15,7 @@ export const ctr008: Lesson = {
 	title: '層とキャッシュ',
 	goal: '層とキャッシュの仕組みで、build を速くし、イメージを小さくすることができる',
 	prereq: ['ctr-004'],
-	related: [],
+	related: ['ci-005'],
 	next: [],
 	explain: [
 		{

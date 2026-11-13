@@ -16,7 +16,7 @@ export const sec013: Lesson = {
 	goal: '鍵やトークンを、リポジトリと履歴に入れない手順を取ることができる',
 	prereq: ['git-002', 'lnx-008'],
 	related: ['git-009'],
-	next: [],
+	next: ['ci-006'],
 	explain: [
 		{
 			n: 1,

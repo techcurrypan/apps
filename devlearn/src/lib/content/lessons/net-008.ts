@@ -15,7 +15,7 @@ export const net008: Lesson = {
 	title: '状態コードとヘッダ',
 	goal: '状態コードとヘッダから、応答に何が起きたかを判断することができる',
 	prereq: ['net-007'],
-	related: [],
+	related: ['ci-004'],
 	next: ['net-013'],
 	explain: [
 		{

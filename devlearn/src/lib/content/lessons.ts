@@ -90,6 +90,14 @@ import { cld007 } from './lessons/cld-007.ts';
 import { cld008 } from './lessons/cld-008.ts';
 import { cld009 } from './lessons/cld-009.ts';
 import { cld010 } from './lessons/cld-010.ts';
+import { ci001 } from './lessons/ci-001.ts';
+import { ci002 } from './lessons/ci-002.ts';
+import { ci003 } from './lessons/ci-003.ts';
+import { ci004 } from './lessons/ci-004.ts';
+import { ci005 } from './lessons/ci-005.ts';
+import { ci006 } from './lessons/ci-006.ts';
+import { ci007 } from './lessons/ci-007.ts';
+import { ci008 } from './lessons/ci-008.ts';
 
 export const lessons: readonly Lesson[] = [
 	prg001,
@@ -180,5 +188,13 @@ export const lessons: readonly Lesson[] = [
 	cld007,
 	cld008,
 	cld009,
-	cld010
+	cld010,
+	ci001,
+	ci002,
+	ci003,
+	ci004,
+	ci005,
+	ci006,
+	ci007,
+	ci008
 ];

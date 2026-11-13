@@ -16,7 +16,7 @@ export const git007: Lesson = {
 	title: '遠くのリポジトリ',
 	goal: 'push・fetch・pull で、遠くのリポジトリと記録を合わせることができる',
 	prereq: ['git-005'],
-	related: [],
+	related: ['ci-001'],
 	next: ['git-008'],
 	explain: [
 		{
