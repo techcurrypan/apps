@@ -14,7 +14,7 @@ export const ai011: Lesson = {
 	goal: '訓練と検証の誤差から、過学習かどうかを判断することができる',
 	prereq: ['ai-010'],
 	related: [],
-	next: [],
+	next: ['ai-037'],
 	explain: [
 		{
 			n: 1,

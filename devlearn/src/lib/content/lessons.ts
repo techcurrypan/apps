@@ -110,6 +110,15 @@ import { ai009 } from './lessons/ai-009.ts';
 import { ai010 } from './lessons/ai-010.ts';
 import { ai011 } from './lessons/ai-011.ts';
 import { ai012 } from './lessons/ai-012.ts';
+import { ai013 } from './lessons/ai-013.ts';
+import { ai014 } from './lessons/ai-014.ts';
+import { ai015 } from './lessons/ai-015.ts';
+import { ai016 } from './lessons/ai-016.ts';
+import { ai017 } from './lessons/ai-017.ts';
+import { ai018 } from './lessons/ai-018.ts';
+import { ai019 } from './lessons/ai-019.ts';
+import { ai020 } from './lessons/ai-020.ts';
+import { ai037 } from './lessons/ai-037.ts';
 
 export const lessons: readonly Lesson[] = [
 	prg001,
@@ -220,5 +229,14 @@ export const lessons: readonly Lesson[] = [
 	ai009,
 	ai010,
 	ai011,
-	ai012
+	ai012,
+	ai013,
+	ai014,
+	ai015,
+	ai016,
+	ai017,
+	ai018,
+	ai019,
+	ai020,
+	ai037
 ];

@@ -1231,6 +1231,78 @@ export const FORM_SOLUTIONS: Record<string, { pass: FormAnswer; wrong: FormAnswe
 			{ kind: 'calc', values: ['6', '5', '3.5', '左'] }
 		]
 	},
+	'ai-013': {
+		pass: { kind: 'calc', values: ['1', '1', '-1.5', '0', '2.5'] },
+		wrong: [
+			{ kind: 'calc', values: ['2', '1', '-1.5', '0', '2.5'] },
+			{ kind: 'calc', values: ['1', '1', '-1.5', '-1.5', '2.5'] },
+			{ kind: 'calc', values: ['1', '1', '-1.5', '0', '-2'] }
+		]
+	},
+	'ai-014': {
+		pass: { kind: 'calc', values: ['3', '9', '-18', '1.9', '0.09'] },
+		wrong: [
+			{ kind: 'calc', values: ['3', '9', '-18', '0.1', '0.09'] },
+			{ kind: 'calc', values: ['3', '9', '-6', '1.9', '0.09'] },
+			{ kind: 'calc', values: ['3', '-3', '-18', '1.9', '0.09'] }
+		]
+	},
+	'ai-015': {
+		pass: { kind: 'calc', values: ['6', '1', '3', '4', '1.1'] },
+		wrong: [
+			{ kind: 'calc', values: ['6', '1', '3', '2', '1.1'] },
+			{ kind: 'calc', values: ['6', '1', '2', '4', '1.1'] },
+			{ kind: 'calc', values: ['6', '1', '3', '4', '1.9'] }
+		]
+	},
+	'ai-016': {
+		pass: { kind: 'calc', values: ['0.5', '9.5', '0.95', '0.002', '0.1'] },
+		wrong: [
+			{ kind: 'calc', values: ['0.5', '5', '0.95', '0.002', '0.1'] },
+			{ kind: 'calc', values: ['0.5', '9.5', '0.95', '0.002', '0.002'] },
+			{ kind: 'calc', values: ['0.5', '9.5', '9.5', '0.002', '0.1'] }
+		]
+	},
+	'ai-037': {
+		pass: { kind: 'calc', values: ['1', '2.5', '-3.8', '8'] },
+		wrong: [
+			{ kind: 'calc', values: ['-0.1', '2.5', '-3.8', '8'] },
+			{ kind: 'calc', values: ['1', '2.5', '-4.2', '8'] },
+			{ kind: 'calc', values: ['1', '2.5', '-3.8', '6'] }
+		]
+	},
+	'ai-017': {
+		pass: { kind: 'calc', values: ['4', '2', '0', '6', '6'] },
+		wrong: [
+			{ kind: 'calc', values: ['6', '2', '0', '6', '6'] },
+			{ kind: 'calc', values: ['4', '0', '0', '6', '6'] },
+			{ kind: 'calc', values: ['4', '2', '0', '6', '3'] }
+		]
+	},
+	'ai-018': {
+		pass: { kind: 'calc', values: ['12', '2', '1', '4', '5.2', '0.001'] },
+		wrong: [
+			{ kind: 'calc', values: ['12', '2', '0.5', '4', '5.2', '0.001'] },
+			{ kind: 'calc', values: ['12', '2', '1', '4', '0.2', '0.001'] },
+			{ kind: 'calc', values: ['12', '2', '1', '4', '5.2', '0.3'] }
+		]
+	},
+	'ai-019': {
+		pass: { kind: 'calc', values: ['5', '3', '2.8', '1.8'] },
+		wrong: [
+			{ kind: 'calc', values: ['5', '0', '2.8', '1.8'] },
+			{ kind: 'calc', values: ['5', '3', '2.8', '3'] },
+			{ kind: 'calc', values: ['5', '3', '1.8', '1.8'] }
+		]
+	},
+	'ai-020': {
+		pass: { kind: 'calc', values: ['2', '0.79', '0.11', '7.4', '港'] },
+		wrong: [
+			{ kind: 'calc', values: ['2', '2', '0.11', '7.4', '港'] },
+			{ kind: 'calc', values: ['2', '0.79', '0.11', '6', '港'] },
+			{ kind: 'calc', values: ['2', '0.79', '0.11', '7.4', '船'] }
+		]
+	},
 	'git-010': {
 		pass: { kind: 'order', order: ['branch', 'push', 'request', 'fix', 'check', 'merge'] },
 		wrong: [

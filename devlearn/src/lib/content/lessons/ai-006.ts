@@ -14,7 +14,7 @@ export const ai006: Lesson = {
 	goal: '線形回帰とロジスティック回帰で、入力から予測を計算することができる',
 	prereq: ['ai-005'],
 	related: [],
-	next: ['ai-007', 'ai-010'],
+	next: ['ai-007', 'ai-010', 'ai-013'],
 	explain: [
 		{
 			n: 1,
