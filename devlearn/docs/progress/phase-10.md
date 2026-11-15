@@ -32,11 +32,11 @@
 
 | 手順 | 状態 | コミット |
 |---|---|---|
-| 1 比べる道具 `look-learn.ts` | 未 | |
+| 1 比べる道具 `look-learn.ts` | 途中（C-1〜C-4・C-11・C-13・C-14 の台本と、A4〜A8・D5・D6・X1・X2 の測り方。ほかの場面は 3 の見本ができてから足す） | |
 | 2 型と検査 16〜25 | 済（`types.ts` に town・work・ask・inside・map・calc・commands。検査は `inside-check.ts`、荷物は `packet.ts`・`bytes.ts`、式は `calc.ts`、ログの書式は `logformat.ts`。テスト `inside-check.test.ts` 27 件） | （この後のコミット） |
-| 3 見本の中身（比べる場面のレッスン） | 未 | |
-| 4 画面の骨組み | 未 | |
-| 5 中身の板 | 未 | |
+| 3 見本の中身（比べる場面のレッスン） | 途中（net-007 に map・town・work・ask・inside・commands。荷物は本物のバイト列で、検査 21 を通る） | |
+| 4 画面の骨組み | 途中（`src/lib/ui/learn/`：上の帯・レッスンの帯・流れ・図・一行の説明・時間の帯・台本・記録・予想の問い・自動・知らせ。状態は `src/lib/learn/model.ts` の純粋な関数） | |
+| 5 中身の板 | 途中（`InsideBoard.svelte`。荷物の層の帯・欄・16 進の光・OS の差の印・ログ。差の計算 `diffHosts` は単体テスト） | |
 | 6 やってみる・コマンドの参考 | 未 | |
 | 7 思い出す・手帳 | 未 | |
 | 8 学びと街のつなぎ | 未 | |

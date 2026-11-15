@@ -1,5 +1,5 @@
 <script lang="ts">
-	import LessonView from '#lib/ui/LessonView.svelte';
+	import LearnView from '#lib/ui/learn/LearnView.svelte';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
@@ -9,4 +9,4 @@
 	<title>{data.lesson.title} | devlearn</title>
 </svelte:head>
 
-<LessonView lesson={data.lesson} known={data.known} />
+<LearnView lesson={data.lesson} known={data.known} />

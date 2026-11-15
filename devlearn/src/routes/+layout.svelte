@@ -61,8 +61,9 @@
 
 <svelte:window {onkeydown} />
 
-<!-- 街 /town は画面いっぱいの 3D の街に板を重ねる（screen-design.md 第 10 章）。帯と配信の版は街の中に出す -->
-{#if page.route.id === '/town'}
+<!-- 街 /town は画面いっぱいの 3D の街に板を重ねる（screen-design.md 第 10 章）。帯と配信の版は街の中に出す。
+     レッスン /lesson/<id> は自分の上の帯を持つ（screen-design.md 11.2） -->
+{#if page.route.id === '/town' || page.route.id === '/lesson/[id]'}
 	{@render children()}
 {:else}
 	<div class="page">

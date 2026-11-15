@@ -53,6 +53,7 @@ import { fieldName } from '../content/fields.ts';
 import { loadProgress } from '../progress.ts';
 import { frameSeconds } from './time.ts';
 import { gainedLessons, gainNotices, KNOWN_KEY, parseKnown } from '../game/learn.ts';
+import { SUMMARY_KEY } from '../learn/prefs.ts';
 import {
 	BOX_ID,
 	BOX_SPOT,
@@ -389,6 +390,11 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 		if (still) return;
 		try {
 			localStorage.setItem(TOWN_KEY, JSON.stringify(save()));
+			// 学習画面の上の帯に出す数（LS-A1）
+			localStorage.setItem(
+				SUMMARY_KEY,
+				JSON.stringify({ money: ts.build.money, happy: Math.round(avgHappyOf(ts, MAP)) })
+			);
 		} catch {
 			/* 置けなくても遊べる */
 		}
