@@ -654,8 +654,7 @@
 					<span class="role">あなたの役目：{lesson.practice.goal}</span>
 				</div>
 				{#if doneModes[lesson.id]?.try}
-					<button type="button" class="btn pri" onclick={() => setMode('recall')}
-						>思い出す ▶</button
+					<button type="button" class="btn pri" onclick={() => setMode('recall')}>思い出す ▶</button
 					>
 				{/if}
 			</div>
