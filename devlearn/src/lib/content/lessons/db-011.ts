@@ -180,6 +180,7 @@ export const db011: Lesson = {
 	practice: {
 		goal: '星の付いていない口コミの id と item を出す',
 		tool: { name: 'sql', mode: 'real' },
+		commands: ['SELECT'],
 		setup: { sql: REVIEWS },
 		success: {
 			output:

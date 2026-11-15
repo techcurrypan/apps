@@ -189,6 +189,7 @@ export const db010: Lesson = {
 	practice: {
 		goal: 'BEGIN と COMMIT の間で、hanako から taro に 300 ポイントを振り替え、SELECT * FROM accounts; で確かめる',
 		tool: { name: 'sql', mode: 'real' },
+		commands: ['BEGIN', 'UPDATE', 'COMMIT', 'SELECT'],
 		setup: { sql: ACCOUNTS },
 		success: {
 			output:

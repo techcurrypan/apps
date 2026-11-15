@@ -165,6 +165,7 @@ export const ctr002: Lesson = {
 	practice: {
 		goal: '動いている web を止め、止まっている once と一緒に消す',
 		tool: { name: 'docker', mode: 'mock' },
+		commands: ['docker stop', 'docker rm'],
 		setup: {
 			world: 'docker',
 			prelude: [

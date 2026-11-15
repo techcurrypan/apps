@@ -166,6 +166,7 @@ export const ctr009: Lesson = {
 	practice: {
 		goal: '網 shopnet を作って db を裏で動かし、同じ網の別のコンテナから ping -c 1 -W 1 db で届くことを確かめる',
 		tool: { name: 'docker', mode: 'mock' },
+		commands: ['docker network', 'docker run'],
 		setup: { world: 'docker' },
 		success: {
 			running: ['db'],

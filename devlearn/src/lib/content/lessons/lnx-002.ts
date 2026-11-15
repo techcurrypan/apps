@@ -220,6 +220,7 @@ export const lnx002: Lesson = {
 	practice: {
 		goal: 'archive を作って品書きの写しを menu-1110.txt としてしまい、下書き draft.txt を消す',
 		tool: { name: 'shell', mode: 'mock' },
+		commands: ['mkdir', 'cp', 'rm'],
 		setup: {
 			files: { 'menu.txt': 'bread 120\n', 'draft.txt': 'memo\n' }
 		},

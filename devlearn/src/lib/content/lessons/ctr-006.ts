@@ -152,6 +152,7 @@ export const ctr006: Lesson = {
 	practice: {
 		goal: 'app を SHOP_MODE=live で裏で動かし、docker exec app printenv SHOP_MODE で live を確かめる',
 		tool: { name: 'docker', mode: 'mock' },
+		commands: ['docker run', 'docker exec'],
 		setup: { world: 'docker-env' },
 		success: { running: ['app'], output: 'live\n' },
 		mistakes: [

@@ -165,6 +165,7 @@ export const lnx003: Lesson = {
 	practice: {
 		goal: 'access.log の最後の 5 行を出して、直近の要求を確かめる',
 		tool: { name: 'shell', mode: 'mock' },
+		commands: ['tail'],
 		setup: { files: { 'access.log': ACCESS } },
 		success: {
 			output: '09:11 POST /order\n09:12 GET /\n09:14 GET /menu\n09:15 GET /\n09:17 POST /order\n'

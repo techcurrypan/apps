@@ -190,6 +190,7 @@ export const git003: Lesson = {
 	practice: {
 		goal: 'バグのある v2 の記録を、履歴を消さずに打ち消し、app.txt を v1 に戻す',
 		tool: { name: 'git', mode: 'mock' },
+		commands: ['git revert'],
 		setup: {
 			initialized: false,
 			files: {},

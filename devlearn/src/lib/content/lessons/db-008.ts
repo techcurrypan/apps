@@ -173,6 +173,7 @@ export const db008: Lesson = {
 	practice: {
 		goal: '客の表 customers (name が主キー, phone) を作って orders_flat から客を重ねずに写し、SELECT * FROM customers; で確かめる',
 		tool: { name: 'sql', mode: 'real' },
+		commands: ['CREATE', 'INSERT', 'SELECT'],
 		setup: { sql: FLAT },
 		success: {
 			output:

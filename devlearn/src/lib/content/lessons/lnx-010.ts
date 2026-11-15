@@ -204,6 +204,7 @@ export const lnx010: Lesson = {
 	practice: {
 		goal: 'shop を起動時に動くようにし、今も動かす。最後に systemctl is-enabled shop; systemctl is-active shop で確かめる',
 		tool: { name: 'shell', mode: 'mock' },
+		commands: ['systemctl'],
 		setup: { world: 'service' },
 		success: { output: 'enabled\nactive\n' },
 		mistakes: [

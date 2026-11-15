@@ -180,6 +180,7 @@ export const lnx011: Lesson = {
 	practice: {
 		goal: '売上の紙 /srv/shop/report.txt の中身を sales: 150 に書き替える',
 		tool: { name: 'shell', mode: 'mock' },
+		commands: ['echo', 'tee'],
 		setup: { world: 'shop' },
 		success: { files: { [REPORT]: 'sales: 150\n' } },
 		mistakes: [

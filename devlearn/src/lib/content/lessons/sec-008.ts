@@ -189,6 +189,7 @@ export const sec008: Lesson = {
 	practice: {
 		goal: '鍵の組を作って公開鍵を置き、ssh.example.com で hostname -I を動かして 192.0.2.22 を出す',
 		tool: { name: 'shell', mode: 'mock' },
+		commands: ['ssh-keygen', 'cat', 'ssh'],
 		setup: { world: 'ssh' },
 		success: { output: '192.0.2.22 \n' },
 		mistakes: [

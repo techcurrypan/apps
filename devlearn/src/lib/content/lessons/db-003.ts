@@ -187,6 +187,7 @@ export const db003: Lesson = {
 	practice: {
 		goal: '在庫の多い順に、上位 3 つの商品の name と stock を取り出す',
 		tool: { name: 'sql', mode: 'real' },
+		commands: ['SELECT'],
 		setup: { sql: ITEMS },
 		success: {
 			output:

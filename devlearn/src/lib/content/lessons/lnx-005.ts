@@ -196,6 +196,7 @@ export const lnx005: Lesson = {
 	practice: {
 		goal: 'sales.txt の品ごとの数を多い順に並べ、top.txt に書く',
 		tool: { name: 'shell', mode: 'mock' },
+		commands: ['sort', 'uniq'],
 		setup: { files: { 'sales.txt': 'an\nan\nmelon\nan\ncroissant\nmelon\nan\n' } },
 		success: { files: { 'top.txt': '      4 an\n      2 melon\n      1 croissant\n' } },
 		mistakes: [

@@ -179,6 +179,7 @@ export const db007: Lesson = {
 	practice: {
 		goal: "code が重ならず name が空にならない表 staff (code, name) を作り、('S1','hanako')・('S1','taro')・('S2',NULL)・('S2','jiro') を順に入れ、SELECT * FROM staff; で確かめる",
 		tool: { name: 'sql', mode: 'real' },
+		commands: ['CREATE', 'INSERT', 'SELECT'],
 		setup: { sql: '' },
 		success: {
 			output:

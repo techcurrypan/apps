@@ -182,6 +182,7 @@ export const db004: Lesson = {
 	practice: {
 		goal: 'sales から、商品（item_id）ごとに売れた数の合計を total として出し、合計 4 以上の組だけを残す',
 		tool: { name: 'sql', mode: 'real' },
+		commands: ['SELECT'],
 		setup: { sql: `${ITEMS}\n${SALES}` },
 		success: {
 			output:

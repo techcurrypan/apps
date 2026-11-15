@@ -182,6 +182,7 @@ export const sec013: Lesson = {
 	practice: {
 		goal: 'app.py を初めての commit にする。.env は記録に入れず、.gitignore で外す',
 		tool: { name: 'git', mode: 'mock' },
+		commands: ['printf', 'git add', 'git commit'],
 		setup: {
 			cwd: '/home/learner/demo',
 			initialized: true,

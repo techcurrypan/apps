@@ -238,6 +238,7 @@ export const git005: Lesson = {
 	practice: {
 		goal: 'main にいる。feature の add milk を main に合わせる（両方が進んでいるので、合流の記録になる）',
 		tool: { name: 'git', mode: 'mock' },
+		commands: ['git merge'],
 		setup: {
 			initialized: false,
 			files: {},

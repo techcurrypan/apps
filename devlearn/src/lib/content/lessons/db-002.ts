@@ -181,6 +181,7 @@ export const db002: Lesson = {
 	practice: {
 		goal: '惣菜パンと、在庫が 0 の商品の、name と kind を取り出す',
 		tool: { name: 'sql', mode: 'real' },
+		commands: ['SELECT'],
 		setup: { sql: ITEMS },
 		success: {
 			output:

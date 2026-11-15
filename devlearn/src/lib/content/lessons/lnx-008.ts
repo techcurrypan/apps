@@ -182,6 +182,7 @@ export const lnx008: Lesson = {
 	practice: {
 		goal: '作業場所の tools にある report を、PATH に足して名前だけで動かす',
 		tool: { name: 'shell', mode: 'mock' },
+		commands: ['export'],
 		setup: {
 			files: { 'tools/report': '#!/bin/bash\necho "report ok"\n' },
 			modes: { 'tools/report': '775' }

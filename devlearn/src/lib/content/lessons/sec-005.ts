@@ -176,6 +176,7 @@ export const sec005: Lesson = {
 	practice: {
 		goal: "会員 O'Hara の名前とメールを、' を正しく包んで 1 行だけ出す",
 		tool: { name: 'sql', mode: 'real' },
+		commands: ['SELECT'],
 		setup: { sql: SETUP },
 		success: {
 			output:

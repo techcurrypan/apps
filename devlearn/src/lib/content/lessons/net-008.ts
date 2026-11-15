@@ -191,6 +191,7 @@ export const net008: Lesson = {
 	practice: {
 		goal: '古い場所 /old が移った先の頁を、curl で 1 回で取る（本体だけを出す）',
 		tool: { name: 'shell', mode: 'mock' },
+		commands: ['curl'],
 		setup: { world: 'net' },
 		success: { output: '<!doctype html>\n<title>new</title>\n<p>moved here</p>\n' },
 		mistakes: [

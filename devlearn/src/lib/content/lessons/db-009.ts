@@ -174,6 +174,7 @@ export const db009: Lesson = {
 	practice: {
 		goal: "日付で探す WHERE day = '11-05' が索引を使うように索引 idx_day を作り、EXPLAIN QUERY PLAN SELECT * FROM receipts WHERE day = '11-05'; で確かめる",
 		tool: { name: 'sql', mode: 'real' },
+		commands: ['CREATE', 'EXPLAIN'],
 		setup: { sql: RECEIPTS },
 		success: { output: 'QUERY PLAN\n`--SEARCH receipts USING INDEX idx_day (day=?)\n' },
 		mistakes: [

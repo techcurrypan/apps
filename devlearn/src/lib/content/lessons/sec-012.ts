@@ -196,6 +196,7 @@ export const sec012: Lesson = {
 	practice: {
 		goal: '合言葉の誤り（401）を最も多く出した送り元を、回数とともに 1 行だけ出す',
 		tool: { name: 'shell', mode: 'mock' },
+		commands: ['grep', 'cut', 'sort', 'uniq', 'head'],
 		setup: { files: { 'access.log': ACCESS_LOG } },
 		success: { output: '      3 198.51.100.7\n' },
 		mistakes: [

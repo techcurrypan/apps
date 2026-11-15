@@ -282,6 +282,7 @@ export const ctr008: Lesson = {
 	practice: {
 		goal: 'index.html を <p>shop v2</p> に直し、shop-web:1.1 を作る。RUN の層が CACHED になることを見る',
 		tool: { name: 'docker', mode: 'mock' },
+		commands: ['echo', 'docker build'],
 		setup: { world: 'docker-cache', prelude: ['docker build -t shop-web:1.0 .'] },
 		success: { images: ['shop-web:1.0', 'shop-web:1.1'] },
 		mistakes: [

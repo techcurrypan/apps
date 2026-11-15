@@ -168,6 +168,7 @@ export const db005: Lesson = {
 	practice: {
 		goal: '11-11 に売れた記録を、商品の名前 name と売れた数 qty で出す（sales の並びのまま）',
 		tool: { name: 'sql', mode: 'real' },
+		commands: ['SELECT'],
 		setup: { sql: `${ITEMS}\n${SALES}` },
 		success: {
 			output:

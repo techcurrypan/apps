@@ -203,6 +203,7 @@ export const git008: Lesson = {
 	practice: {
 		goal: 'feature の 2 件を main の上に積み直し、main を早送りで合わせる。合流の記録は作らない',
 		tool: { name: 'git', mode: 'mock' },
+		commands: ['git switch', 'git rebase', 'git merge'],
 		setup: {
 			initialized: false,
 			files: {},

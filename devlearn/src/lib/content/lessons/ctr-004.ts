@@ -186,6 +186,7 @@ export const ctr004: Lesson = {
 	practice: {
 		goal: 'Dockerfile から shop-web:1.0 を作り、web として手元の 8080 で動かし、curl で <p>shop</p> を確かめる',
 		tool: { name: 'docker', mode: 'mock' },
+		commands: ['docker build', 'docker run', 'curl'],
 		setup: { world: 'docker-build' },
 		success: { images: ['shop-web:1.0'], running: ['web'], output: '<p>shop</p>\n' },
 		mistakes: [

@@ -188,6 +188,7 @@ export const db001: Lesson = {
 	practice: {
 		goal: 'items から、name と stock の 2 列を、この順で取り出す',
 		tool: { name: 'sql', mode: 'real' },
+		commands: ['SELECT'],
 		setup: { sql: SETUP },
 		success: {
 			output:

@@ -189,6 +189,7 @@ export const net013: Lesson = {
 	practice: {
 		goal: '覚えた style.css（ETag "v1"）がまだ使えるかを Web に確かめ、状態コードだけを出す（-s -o /dev/null -w \'%{http_code}\\n\'）',
 		tool: { name: 'shell', mode: 'mock' },
+		commands: ['curl'],
 		setup: { world: 'net' },
 		success: { output: '304\n' },
 		mistakes: [

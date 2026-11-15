@@ -191,6 +191,7 @@ export const lnx007: Lesson = {
 	practice: {
 		goal: 'TERM を無視する report.py を止め、最後に ps -u shop -o pid,ppid,stat,cmd で消えたことを確かめる',
 		tool: { name: 'shell', mode: 'mock' },
+		commands: ['kill', 'ps'],
 		setup: { world: 'procs' },
 		success: { output: `${PS_HEAD}\n${WEB}\n${WORKER}\n` },
 		mistakes: [

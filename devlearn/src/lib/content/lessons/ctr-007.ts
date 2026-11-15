@@ -193,6 +193,7 @@ export const ctr007: Lesson = {
 	practice: {
 		goal: 'compose.yaml の web と db をまとめて裏で動かし、curl http://localhost:8080/ で <p>shop</p> を確かめる',
 		tool: { name: 'docker', mode: 'mock' },
+		commands: ['docker compose up', 'curl'],
 		setup: { world: 'docker-compose' },
 		success: { running: ['demo-web-1', 'demo-db-1'], output: '<p>shop</p>\n' },
 		mistakes: [

@@ -201,6 +201,7 @@ export const net003: Lesson = {
 	practice: {
 		goal: '198.51.100.7 へ送るとき最初に渡す機械を、ip route get で確かめる',
 		tool: { name: 'shell', mode: 'mock' },
+		commands: ['ip'],
 		setup: { world: 'net' },
 		success: {
 			output: '198.51.100.7 via 192.0.2.2 dev eth0 src 192.0.2.10 uid 1000 \n    cache \n'

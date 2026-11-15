@@ -164,6 +164,7 @@ export const ctr003: Lesson = {
 	practice: {
 		goal: 'web を作り直して手元の 8080 を中の 80 につなぎ、curl http://localhost:8080/ で <p>shop</p> を確かめる',
 		tool: { name: 'docker', mode: 'mock' },
+		commands: ['docker rm', 'docker run', 'curl'],
 		setup: {
 			world: 'docker-build',
 			prelude: ['docker build -t shop-web:1.0 .', 'docker run -d --name web shop-web:1.0']

@@ -175,6 +175,7 @@ export const sec004: Lesson = {
 	practice: {
 		goal: 'server.pem を、中間 inter-ca.pem を添えて根 root-ca.pem まで辿り、OK を出す',
 		tool: { name: 'shell', mode: 'mock' },
+		commands: ['openssl'],
 		setup: { world: 'certs' },
 		success: { output: 'server.pem: OK\n' },
 		mistakes: [

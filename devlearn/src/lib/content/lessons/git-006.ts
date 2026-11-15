@@ -193,6 +193,7 @@ export const git006: Lesson = {
 	practice: {
 		goal: 'main にいる。枝 price を合わせ、衝突した食パンの値段は 130 に決めて記録する',
 		tool: { name: 'git', mode: 'mock' },
+		commands: ['git merge', 'printf', 'git add', 'git commit'],
 		setup: {
 			initialized: false,
 			files: {},

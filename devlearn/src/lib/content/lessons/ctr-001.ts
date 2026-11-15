@@ -247,6 +247,7 @@ export const ctr001: Lesson = {
 	practice: {
 		goal: 'busybox:1.37 から clock という名前のコンテナを裏で動かす',
 		tool: { name: 'docker', mode: 'mock' },
+		commands: ['docker run'],
 		setup: { images: [] },
 		success: { running: ['clock'] },
 		mistakes: [

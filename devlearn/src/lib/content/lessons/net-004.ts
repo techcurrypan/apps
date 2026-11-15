@@ -213,6 +213,7 @@ export const net004: Lesson = {
 	practice: {
 		goal: 'cdn.example.com の IPv4 の住所を、dig +short で引く',
 		tool: { name: 'shell', mode: 'mock' },
+		commands: ['dig'],
 		setup: { world: 'net' },
 		success: { output: '203.0.113.5\n' },
 		mistakes: [

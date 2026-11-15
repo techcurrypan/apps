@@ -198,6 +198,7 @@ export const lnx009: Lesson = {
 	practice: {
 		goal: '「hello, 引数」を出す 2 行の台本 hello.sh を書き、実行できるようにして ./hello.sh minato と動かす',
 		tool: { name: 'shell', mode: 'mock' },
+		commands: ['printf', 'chmod'],
 		setup: {},
 		success: { output: 'hello, minato\n', modes: { 'hello.sh': '775' } },
 		mistakes: [

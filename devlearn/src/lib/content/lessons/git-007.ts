@@ -237,6 +237,7 @@ export const git007: Lesson = {
 	practice: {
 		goal: 'hanako が送った add milk を取り込み、notes.txt を "add notes" として記録して、遠くへ送る',
 		tool: { name: 'git', mode: 'mock' },
+		commands: ['git pull', 'printf', 'git add', 'git commit', 'git push'],
 		setup: {
 			initialized: false,
 			files: {},

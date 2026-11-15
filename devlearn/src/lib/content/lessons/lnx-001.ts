@@ -226,6 +226,7 @@ export const lnx001: Lesson = {
 	practice: {
 		goal: 'notes の中に移り、ls で todo.txt があることを確かめる',
 		tool: { name: 'shell', mode: 'mock' },
+		commands: ['cd', 'ls'],
 		setup: {
 			dirs: ['docs/notes', 'src'],
 			files: { 'docs/notes/todo.txt': 'memo\n', 'readme.txt': 'a\n' }

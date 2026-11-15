@@ -184,6 +184,7 @@ export const git009: Lesson = {
 	practice: {
 		goal: '誤って記録した .env を、手元に残したまま記録から外す。.env と logs/ を .gitignore に書き、"ignore secrets" として記録する',
 		tool: { name: 'git', mode: 'mock' },
+		commands: ['printf', 'git rm', 'git add', 'git commit'],
 		setup: {
 			initialized: false,
 			files: {},

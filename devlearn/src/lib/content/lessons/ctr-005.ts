@@ -163,6 +163,7 @@ export const ctr005: Lesson = {
 	practice: {
 		goal: 'ボリューム shopdata の /data/sales.txt に 120 を書き、別のコンテナで cat して 120 を確かめる',
 		tool: { name: 'docker', mode: 'mock' },
+		commands: ['docker volume', 'docker run'],
 		setup: { world: 'docker' },
 		success: { volumes: ['shopdata'], output: '120\n' },
 		mistakes: [

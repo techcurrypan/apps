@@ -173,6 +173,7 @@ export const sec002: Lesson = {
 	practice: {
 		goal: 'hanako の合言葉 password123 に、ソルト salt1: を前に付けたハッシュを sha256sum で出す',
 		tool: { name: 'shell', mode: 'mock' },
+		commands: ['printf', 'sha256sum'],
 		setup: {},
 		success: {
 			output: '08104983926495c68a57058bf5b2195f03d68d3417e8cae6b528c2ec70e66fff  -\n'

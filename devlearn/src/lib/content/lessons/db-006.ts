@@ -164,6 +164,7 @@ export const db006: Lesson = {
 	practice: {
 		goal: 'メロンパンの在庫だけを 20 にし、最後に SELECT name, stock FROM items; で全ての行を確かめる',
 		tool: { name: 'sql', mode: 'real' },
+		commands: ['UPDATE', 'SELECT'],
 		setup: { sql: ITEMS },
 		success: {
 			output:

@@ -175,6 +175,7 @@ export const net006: Lesson = {
 	practice: {
 		goal: 'UDP で受けている口だけを、ss で並べる',
 		tool: { name: 'shell', mode: 'mock' },
+		commands: ['ss'],
 		setup: { world: 'net' },
 		success: {
 			output:

@@ -202,6 +202,7 @@ export const net002: Lesson = {
 	practice: {
 		goal: 'Web の機械 192.0.2.80 の MAC を近くの表に載せ、ip neigh show 192.0.2.80 で見せる',
 		tool: { name: 'shell', mode: 'mock' },
+		commands: ['ping', 'ip'],
 		setup: { world: 'net' },
 		success: { output: '192.0.2.80 dev eth0 lladdr 02:00:00:00:00:50 REACHABLE \n' },
 		mistakes: [

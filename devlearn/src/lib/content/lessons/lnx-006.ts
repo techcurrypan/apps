@@ -163,6 +163,7 @@ export const lnx006: Lesson = {
 	practice: {
 		goal: '店の記録 shop.log で、大小を問わず error を含む行の数を出す',
 		tool: { name: 'shell', mode: 'mock' },
+		commands: ['grep'],
 		setup: {
 			files: {
 				'shop.log':

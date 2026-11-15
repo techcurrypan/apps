@@ -201,6 +201,7 @@ export const git002: Lesson = {
 	practice: {
 		goal: 'fruits.txt の変更だけを "change fruits" として記録する。memo.txt は記録に入れない',
 		tool: { name: 'git', mode: 'mock' },
+		commands: ['git add', 'git commit'],
 		setup: {
 			initialized: false,
 			files: {},

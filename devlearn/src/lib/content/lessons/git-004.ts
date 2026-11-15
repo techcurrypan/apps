@@ -179,6 +179,7 @@ export const git004: Lesson = {
 	practice: {
 		goal: '枝 feature を作って移り、menu.txt に milk の行を足して記録する。main は元のままにする',
 		tool: { name: 'git', mode: 'mock' },
+		commands: ['git switch', 'printf', 'git commit'],
 		setup: {
 			initialized: false,
 			files: {},

@@ -178,6 +178,7 @@ export const lnx004: Lesson = {
 	practice: {
 		goal: 'backup.sh を誰でも実行できる 755 に、合言葉の pass.txt を持ち主だけが読み書きできる 600 にする',
 		tool: { name: 'shell', mode: 'mock' },
+		commands: ['chmod'],
 		setup: {
 			files: { 'backup.sh': '#!/bin/bash\necho done\n', 'pass.txt': 'secret\n' }
 		},
