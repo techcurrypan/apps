@@ -648,6 +648,17 @@
 
 	{#if mode === 'try' && !trying}
 		<div class="practice" role="tabpanel" aria-label="やってみる">
+			<div class="formreq">
+				<div>
+					{#if request}<b>{request.who}から</b>「{request.text}」{/if}
+					<span class="role">あなたの役目：{lesson.practice.goal}</span>
+				</div>
+				{#if doneModes[lesson.id]?.try}
+					<button type="button" class="btn pri" onclick={() => setMode('recall')}
+						>思い出す ▶</button
+					>
+				{/if}
+			</div>
 			{#if lesson.practice.form}
 				<FormPractice practice={lesson.practice} {replay} {onpass} />
 			{:else}
@@ -1895,6 +1906,25 @@
 	}
 	.practice {
 		margin-top: 4px;
+	}
+	.formreq {
+		display: flex;
+		gap: 12px;
+		align-items: center;
+		justify-content: space-between;
+		flex-wrap: wrap;
+		padding: 10px 12px;
+		margin-bottom: 10px;
+		border: 1px solid var(--dl-warn);
+		border-radius: 6px;
+		background: color-mix(in srgb, var(--dl-warn) 8%, transparent);
+		font-size: 13.5px;
+		line-height: 1.75;
+	}
+	.formreq .role {
+		display: block;
+		color: var(--dl-text-muted);
+		font-size: 12.5px;
 	}
 	.notes {
 		margin-top: 8px;
