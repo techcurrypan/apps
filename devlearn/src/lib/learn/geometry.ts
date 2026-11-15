@@ -196,13 +196,32 @@ export function geometryOf(lesson: Lesson, withTown = true): Geometry {
 		if (!n) continue;
 		const b = n.boxes.all;
 		const others = nodes.filter((x) => x !== n).map((x) => grow(x.boxes.all, 6));
+		// 線で結ばれる機械どうしの間（線が通る所）にも置かない
+		const paths = [...(map?.links ?? [])].flatMap((l) => {
+			const A = byId.get(l.a);
+			const B = byId.get(l.b);
+			return A && B ? [[A.c, B.c] as const] : [];
+		});
+		const crosses = (r: Rect) =>
+			paths.some(([a, c]) =>
+				Array.from({ length: 41 }, (_, i) => i / 40).some((t) => {
+					const x = a.x + (c.x - a.x) * t;
+					const y = a.y + (c.y - a.y) * t;
+					return x > r.x - 8 && x < r.x + r.w + 8 && y > r.y - 8 && y < r.y + r.h + 8;
+				})
+			);
 		const cands: Rect[] = [
 			{ x: b.x + b.w / 2 - z.w / 2, y: b.y + b.h + 14, ...z },
 			{ x: b.x, y: b.y + b.h + 14, ...z },
 			{ x: b.x + b.w - z.w, y: b.y + b.h + 14, ...z },
-			{ x: b.x + b.w + 18, y: n.c.y - z.h / 2, ...z }
+			{ x: b.x + b.w + 18, y: n.c.y - z.h / 2, ...z },
+			{ x: b.x - z.w - 18, y: n.c.y - z.h / 2, ...z },
+			{ x: b.x + b.w / 2 - z.w / 2, y: b.y - z.h - 14, ...z }
 		];
-		const r = cands.find((c) => !others.some((o) => overlaps(c, o))) ?? cands[0];
+		const r =
+			cands.find((c) => !others.some((o) => overlaps(c, o)) && !crosses(c)) ??
+			cands.find((c) => !others.some((o) => overlaps(c, o))) ??
+			cands[0];
 		worlds.set(id, r);
 	}
 
@@ -215,9 +234,12 @@ export function geometryOf(lesson: Lesson, withTown = true): Geometry {
 		const A = byId.get(l.a);
 		const B = byId.get(l.b);
 		if (!A || !B) continue;
-		const others = nodes
-			.filter((n) => n !== A && n !== B)
-			.flatMap((n) => [grow(n.boxes.icon, 6), grow(n.boxes.text, 6)]);
+		const others = [
+			...nodes
+				.filter((n) => n !== A && n !== B)
+				.flatMap((n) => [grow(n.boxes.icon, 6), grow(n.boxes.text, 6)]),
+			...[...worlds.values()].map((w) => grow(w, 4))
+		];
 		const ang = Math.atan2(B.c.y - A.c.y, B.c.x - A.c.x);
 		const nx = -Math.sin(ang);
 		const ny = Math.cos(ang);

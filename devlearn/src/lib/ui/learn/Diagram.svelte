@@ -606,6 +606,12 @@
 								y2={plot.py(world.line[0] * plot.x1 + world.line[1])}
 							/>
 						{/if}
+						{#if !world.line && world.points.length > 1}
+							<polyline
+								class="wcurve"
+								points={world.points.map((p) => `${plot.px(p[0])},${plot.py(p[1])}`).join(' ')}
+							/>
+						{/if}
 						{#each world.points as p, i (i)}
 							<circle
 								class="wp"
@@ -915,6 +921,12 @@
 	}
 	.world .wax {
 		stroke: var(--dl-text-muted);
+	}
+	.world .wcurve {
+		fill: none;
+		stroke: var(--dl-now);
+		stroke-width: 1.5;
+		stroke-dasharray: 5 3;
 	}
 	.world .wline {
 		stroke: var(--dl-now);

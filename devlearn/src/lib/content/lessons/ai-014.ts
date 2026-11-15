@@ -1,10 +1,32 @@
 // ai-014 誤差を下げる（calc）。
 // 場面：重み 1 つだけのモデル（予測 = w × x）を、1 件のデータで学ばせ、誤差が下がる様子を手で追う。数は作り物。
 // 経過時刻 t は更新の回数。G 検定のシラバス「誤差関数・勾配降下法・学習率」に対応する。
-import type { Lesson } from '../../lesson/types.ts';
+import type { Host, HostRow, Lesson } from '../../lesson/types.ts';
 
 const W = '重み w';
 const L = '誤差 L';
+
+// 中身の板：学習を動かしている計算機の中（プロセスと、持っている値・書き出すファイル）
+const box = (...rows: HostRow[]): Host => ({
+	name: '学習の計算機',
+	town: '予測の部屋',
+	addr: 'ml-01',
+	rows: [{ id: 'py', depth: 0, what: 'python3 train.py', state: 'pid 4120 ・ 学習中' }, ...rows]
+});
+const row = (id: string, what: string, state: string, tone?: HostRow['tone']): HostRow => ({
+	id,
+	depth: 1,
+	what,
+	state,
+	...(tone ? { tone } : {})
+});
+// 繰り返すと誤差は 0 に近づく（w ← 0.2 w + 2.4。example の表と同じ式）
+const CURVE: [number, number][] = [
+	[0, 16],
+	[1, 0.64],
+	[2, 0.0256],
+	[3, 0.001]
+];
 
 export const ai014: Lesson = {
 	id: 'ai-014',
@@ -20,6 +42,11 @@ export const ai014: Lesson = {
 			n: 1,
 			title: '予測と正解',
 			lead: 'モデルは 予測 = w × x。今の重みで予測し、正解と比べる',
+			town: '予測の部屋で、今の目盛り w を使って客の数を見積もる。',
+			work: 'model(x) で、今の重みでの予測を出す',
+			inside: {
+				hosts: [box(row('w', W, '1'), row('pred', '予測', '2'), row('ckpt', 'model.json', 'w = 1'))]
+			},
 			body: [
 				'入力 x = 2、正解 t = 6、今の重み w = 1 だ。',
 				'予測は 1 × 2 = 2。正解の 6 より 4 小さい。'
@@ -39,6 +66,26 @@ export const ai014: Lesson = {
 			n: 2,
 			title: '誤差関数',
 			lead: '誤差関数は、予測の外れ具合を 1 つの数にする',
+			town: '見積もりと実際の差を、1 つの外れ点にまとめる。',
+			work: '学習の記録で loss の値を毎回見る',
+			ask: {
+				q: '予測 2・正解 6。2 乗誤差はいくつ？',
+				opts: ['4', '16', '−4'],
+				a: 1,
+				why: '(2 − 6)² = 16。2 乗するので、外れの向きに関わらず正の数になる'
+			},
+			inside: {
+				hosts: [
+					box(
+						row('w', W, '1'),
+						row('pred', '予測', '2'),
+						row('loss', L, '16', 'warn'),
+						row('ckpt', 'model.json', 'w = 1')
+					)
+				],
+				logs: [{ t: '0', src: 'stdout', text: 'step 0  w=1.0000  pred=2.0000  loss=16.0000' }]
+			},
+			world: { kind: 'plot', near: 'l', points: [CURVE[0]], x: '更新の回数', y: '誤差' },
 			body: [
 				'2 乗誤差 L = (予測 − 正解)² を使う。(2 − 6)² = 16 だ。',
 				'分類では、確率の外れ具合を測る交差エントロピーをよく使う。'
@@ -57,13 +104,26 @@ export const ai014: Lesson = {
 			n: 3,
 			title: '勾配',
 			lead: '勾配は、重みを少し増やした時に、誤差がどれだけ増えるかの割合だ',
+			town: '目盛りを少し回すと、外れ点がどう変わるかを調べる。',
+			work: '勾配はライブラリが自動で計算する（自動微分）',
+			inside: {
+				hosts: [
+					box(
+						row('w', W, '1'),
+						row('pred', '予測', '2'),
+						row('loss', L, '16', 'warn'),
+						row('grad', '勾配', '−16'),
+						row('ckpt', 'model.json', 'w = 1')
+					)
+				]
+			},
 			body: [
 				'L = (w x − t)² を w で微分すると、2 (w x − t) x になる。',
 				'2 × (2 − 6) × 2 = −16。負なので、w を増やすと誤差は減る。'
 			],
 			facts: [
 				{ k: '勾配の式', v: '2 (w x − t) x' },
-				{ k: '勾配', v: '−16' }
+				{ k: '勾配', v: '−16', calc: '2 * (1 * 2 - 6) * 2' }
 			],
 			scene: [
 				{ op: 'appear', id: 'g', label: '勾配', sub: '−16', at: [6, 2] },
@@ -76,13 +136,15 @@ export const ai014: Lesson = {
 			n: 4,
 			title: '学習率',
 			lead: '学習率は、勾配の何倍だけ重みを動かすかを決める',
+			town: '一度に回す量を決める。回しすぎると行き過ぎる。',
+			work: '学習率は 0.1・0.01 などを試して決める',
 			body: [
 				'学習率を 0.1 にした。大きすぎると谷を飛び越え、小さすぎると進みが遅い。',
 				'動かす量は 学習率 × 勾配 = 0.1 × (−16) = −1.6 だ。'
 			],
 			facts: [
 				{ k: '学習率', v: '0.1' },
-				{ k: '学習率 × 勾配', v: '−1.6' }
+				{ k: '学習率 × 勾配', v: '−1.6', calc: '0.1 * (-16)' }
 			],
 			scene: [{ op: 'change', id: 'g', k: '× 学習率', v: '−1.6' }],
 			log: { t: '0', from: '勾配', to: '学習率', kind: 'lr', info: '動かす量 −1.6' }
@@ -91,13 +153,29 @@ export const ai014: Lesson = {
 			n: 5,
 			title: '重みを動かす',
 			lead: '新しい重み = 今の重み − 学習率 × 勾配',
+			town: '外れ点が減る向きへ、決めた量だけ目盛りを回す。',
+			work: 'optimizer.step() が、この更新を全ての重みに行う',
+			inside: {
+				hosts: [
+					box(
+						row('w', W, '2.6', 'ok'),
+						row('pred', '予測', '2'),
+						row('loss', L, '16', 'warn'),
+						row('grad', '勾配', '−16'),
+						row('ckpt', 'model.json', 'w = 2.6')
+					)
+				],
+				logs: [
+					{ t: '1', src: 'stdout', text: 'update w: 1.0000 -> 2.6000  (lr=0.1, grad=-16.0000)' }
+				]
+			},
 			body: [
 				'w = 1 − (−1.6) = 2.6。勾配の逆向きへ動かした（勾配降下法）。',
 				'新しい予測は 2.6 × 2 = 5.2 だ。'
 			],
 			facts: [
 				{ k: '新しい w', v: '1 − 0.1 × (−16) = 2.6' },
-				{ k: '新しい予測', v: '5.2' }
+				{ k: '新しい予測', v: '5.2', calc: '(1 - 0.1 * (-16)) * 2' }
 			],
 			scene: [
 				{ op: 'move', from: 'g', to: 'w', payload: '−(−1.6)', kind: 'update' },
@@ -109,10 +187,31 @@ export const ai014: Lesson = {
 			n: 6,
 			title: '誤差が減る',
 			lead: '更新の後、誤差は 16 から 0.64 に減った',
+			town: '回した後は、外れ点が 16 から 0.64 に減った。',
+			work: '損失の曲線が下がり続けるかを見る。上がれば学習率を下げる',
+			inside: {
+				hosts: [
+					box(
+						row('w', W, '2.6', 'ok'),
+						row('pred', '予測', '5.2'),
+						row('loss', L, '0.64', 'ok'),
+						row('ckpt', 'model.json', 'w = 2.6')
+					)
+				],
+				logs: [{ t: '1', src: 'stdout', text: 'step 1  w=2.6000  pred=5.2000  loss=0.6400' }]
+			},
+			world: {
+				kind: 'plot',
+				near: 'l',
+				points: CURVE,
+				x: '更新の回数',
+				y: '誤差',
+				note: '繰り返すと 0.0256、0.001 と 0 に近づく'
+			},
 			body: ['(5.2 − 6)² = 0.64。同じ手順を繰り返すと、w は 3 に近づき、誤差は 0 に近づく。'],
 			facts: [
 				{ k: '更新の前', v: '16' },
-				{ k: '更新の後', v: '0.64' }
+				{ k: '更新の後', v: '0.64', calc: '(2.6 * 2 - 6) ^ 2' }
 			],
 			scene: [{ op: 'change', id: 'l', k: '値', v: '16 → 0.64' }],
 			log: { t: '1', from: W, to: L, kind: 'loss', info: '誤差 0.64 に減った' }
@@ -171,5 +270,20 @@ export const ai014: Lesson = {
 		{ ask: '勾配', how: '重みを少し増やした時の、誤差の増え方の割合' },
 		{ ask: '更新の式', how: '新しい重み = 今の重み − 学習率 × 勾配' },
 		{ ask: '学習率が大きすぎると', how: '谷を飛び越え、誤差が下がらない' }
-	]
+	],
+	map: {
+		nodes: {
+			w: { icon: 'gear', town: '目盛り' },
+			pred: { icon: 'chart', town: '見積もり' },
+			l: { icon: 'book', town: '外れ点' },
+			g: { icon: 'brain', town: '回す向き' }
+		},
+		zones: [{ label: '学習の計算機の中', note: 'ml-01', members: ['w', 'pred', 'l', 'g'] }],
+		links: [
+			{ a: 'w', b: 'pred', label: '掛けて見積もる', dir: 'ab' },
+			{ a: 'pred', b: 'l', label: '正解と比べる', dir: 'ab' },
+			{ a: 'l', b: 'g', label: '微分する', dir: 'ab' },
+			{ a: 'g', b: 'w', label: '逆向きへ動かす', dir: 'ab' }
+		]
+	}
 };
