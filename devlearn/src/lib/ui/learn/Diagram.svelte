@@ -528,7 +528,7 @@
 								<rect {x} {y} width={CHAIN.w} height={CHAIN.h} rx="5" />
 								<text class="wid" x={x + CHAIN.w / 2} {y} dy="18">{it.id}</text>
 								<text class="wt" x={x + CHAIN.w / 2} {y} dy="36"
-									>{short(it.text, CHAIN.w - 10, 12)}</text
+									>{short(it.text, CHAIN.w - 10, 12.5)}</text
 								>
 								{#if i > 0}
 									<line
@@ -546,7 +546,7 @@
 									/>
 								{/if}
 								{#if it.tag}
-									{@const tw = textW(it.tag, 12) + 16}
+									{@const tw = textW(it.tag, 12.5) + 16}
 									<g class="wtag" transform="translate({x + CHAIN.w / 2 - tw / 2} 4)">
 										<rect width={tw} height="20" rx="10" />
 										<text x={tw / 2} y="14.5">{it.tag}</text>
@@ -576,7 +576,7 @@
 										rx="4"
 									/>
 									<text x={x + 16} y={SLOTS.head + 4 + j * SLOTS.row + 15}
-										>{short(it.text, SLOTS.w - 32, 11.5)}</text
+										>{short(it.text, SLOTS.w - 32, 12.5)}</text
 									>
 								</g>
 							{/each}
@@ -871,7 +871,7 @@
 		text-anchor: middle;
 	}
 	.world .wt {
-		font: 500 12px var(--dl-font);
+		font: 500 12.5px var(--dl-font);
 		fill: var(--dl-text-muted);
 		text-anchor: middle;
 	}
@@ -886,7 +886,7 @@
 		fill: var(--dl-now);
 	}
 	.world .wtag text {
-		font: 700 12px var(--dl-font-code);
+		font: 700 12.5px var(--dl-font-code);
 		fill: var(--dl-surface);
 		text-anchor: middle;
 	}
@@ -899,7 +899,7 @@
 		fill: var(--dl-text);
 	}
 	.world .ws text {
-		font: 500 11.5px var(--dl-font-code);
+		font: 500 12.5px var(--dl-font-code);
 		fill: var(--dl-text);
 	}
 	.world .ws.ok rect {
@@ -916,7 +916,7 @@
 		text-decoration: line-through;
 	}
 	.world .wn {
-		font: 500 11.5px var(--dl-font);
+		font: 500 12.5px var(--dl-font);
 		fill: var(--dl-text-muted);
 	}
 	.world .wax {

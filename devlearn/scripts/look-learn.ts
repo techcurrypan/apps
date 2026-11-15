@@ -54,6 +54,30 @@ async function protoTo(tab: Tab, n: number) {
 		await sleep(2400);
 	}
 }
+/** 試作：名前の出来事へ飛ぶ（試作の全体の関数 animateTo・BEATS・L を使う） */
+async function protoEv(tab: Tab, label: string) {
+	await tab.eval(
+		`(() => { const X = window.__l; const i = X.L.EV.findIndex((e) => e.label === ${JSON.stringify(label)}); X.animateTo(window.__beats().findIndex((b) => b.p === i), { instant: true }); })()`
+	);
+	await sleep(900);
+}
+/** 学び方を替える（見る・やってみる・思い出す） */
+async function mode(tab: Tab, side: Side, label: string) {
+	await tab.eval(
+		side === 'prod'
+			? `[...document.querySelectorAll('.modes button')].find(b => b.textContent.includes(${JSON.stringify(label)}))?.click()`
+			: `window.__l.setMode(${JSON.stringify({ やってみる: 'try', 思い出す: 'recall', 見る: 'watch' }[label] ?? 'watch')})`
+	);
+	await sleep(500);
+}
+/** やってみるで 1 行打つ */
+async function type(tab: Tab, side: Side, line: string) {
+	const sel = side === 'prod' ? '#try-line' : '#tin';
+	await tab.eval(
+		`(() => { const i = document.querySelector(${JSON.stringify(sel)}); if (!i) return; i.focus(); const set = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(i), 'value').set; set.call(i, ${JSON.stringify(line)}); i.dispatchEvent(new Event('input', { bubbles: true })); (i.form ?? document.querySelector('#tf'))?.requestSubmit(); })()`
+	);
+	await sleep(2600);
+}
 async function setDepth(tab: Tab, side: Side, label: string) {
 	await tab.eval(
 		side === 'prod'
@@ -120,6 +144,85 @@ const SCENES: Scene[] = [
 				`[...document.querySelectorAll('button')].find(b => b.textContent.includes('時系列'))?.click()`
 			);
 			await sleep(500);
+		}
+	},
+	{
+		id: 'C-5',
+		name: '実戦で返事が無い・断られる',
+		lesson: 'net-007',
+		hash: '#net',
+		run: async (tab, side) => {
+			await mode(tab, side, 'やってみる');
+			if (side === 'prod') await type(tab, side, 'curl -v http://shop.example.com:8080/');
+			else {
+				await type(tab, side, 'dig shop.minato.example');
+				await type(tab, side, 'curl -v http://shop.minato.example/');
+			}
+		}
+	},
+	{
+		id: 'C-6',
+		name: '記録の箱（commit の直後）',
+		lesson: 'git-001',
+		hash: '#git',
+		run: async (tab, side) => {
+			if (side === 'prod') await prodTo(tab, 4);
+			else await protoEv(tab, 'commit を作る');
+		}
+	},
+	{
+		id: 'C-7',
+		name: '部屋が落ちた（1 台に集まって遅い）',
+		lesson: 'cld-006',
+		hash: '#k8s',
+		run: async (tab, side) => {
+			if (side === 'prod') await prodTo(tab, 2);
+			else await protoEv(tab, '部屋が落ちた');
+		}
+	},
+	{
+		id: 'C-8',
+		name: '自己修復（最後）',
+		lesson: 'cld-006',
+		hash: '#k8s',
+		run: async (tab, side) => {
+			await tab.key('End');
+			await sleep(1200);
+		}
+	},
+	{
+		id: 'C-9',
+		name: '実戦（台数を変える）',
+		lesson: 'cld-006',
+		hash: '#k8s',
+		run: async (tab, side) => {
+			await mode(tab, side, 'やってみる');
+			if (side === 'proto') {
+				await type(tab, side, 'kubectl get pods');
+				await type(tab, side, 'kubectl scale deployment shop --replicas=5');
+				await type(tab, side, 'kubectl get pods');
+			}
+		}
+	},
+	{
+		id: 'C-10',
+		name: '学習の繰り返し',
+		lesson: 'ai-014',
+		hash: '#ai',
+		run: async (tab, side) => {
+			if (side === 'prod') {
+				await tab.key('End');
+				await sleep(1200);
+			} else await protoEv(tab, '繰り返す ×10');
+		}
+	},
+	{
+		id: 'C-12',
+		name: '思い出す（並べる）',
+		lesson: 'cld-006',
+		hash: '#k8s',
+		run: async (tab, side) => {
+			await mode(tab, side, '思い出す');
 		}
 	},
 	{
@@ -202,27 +305,29 @@ async function main() {
 	try {
 		for (const s of SCENES) {
 			if (only && !only.has(s.id)) continue;
-			for (const side of ['proto', 'prod'] as Side[]) {
-				const phone = s.phone ?? false;
-				await tab.size(phone ? 390 : 1440, phone ? 844 : 960, phone);
-				await tab.scheme(s.dark ?? true);
-				const url = side === 'proto' ? PROTO + s.hash : `${base}/lesson/${s.lesson}`;
-				await tab.go(url);
-				// 前の場面の好み（詳しさ・表し方）を消してから始める
-				await tab.eval('localStorage.clear()');
-				await tab.go(url);
-				if (side === 'prod' && s.dark !== false)
-					await tab.eval(`document.documentElement.dataset.theme = 'dark'`);
-				if (side === 'prod' && s.dark === false)
-					await tab.eval(`document.documentElement.dataset.theme = 'light'`);
-				await sleep(400);
-				await s.run(tab, side);
-				const file = join(outDir, `${s.id}-${side}.png`);
-				await tab.shot(file);
-				const m = await tab.eval<Record<string, unknown>>(MEASURE);
-				out[`${s.id}-${side}`] = m;
-				console.log(s.id, side, JSON.stringify(m));
-			}
+			// PHONE=1 のときは、全ての場面を 390×844 でも撮る（learn-standard.md 第 0 章）
+			const sizes = s.phone ? [true] : process.env.PHONE ? [false, true] : [false];
+			for (const phone of sizes)
+				for (const side of ['proto', 'prod'] as Side[]) {
+					await tab.size(phone ? 390 : 1440, phone ? 844 : 960, phone);
+					await tab.scheme(s.dark ?? true);
+					const url = side === 'proto' ? PROTO + s.hash : `${base}/lesson/${s.lesson}`;
+					await tab.go(url);
+					// 前の場面の好み（詳しさ・表し方）を消してから始める
+					await tab.eval('localStorage.clear()');
+					await tab.go(url);
+					if (side === 'prod' && s.dark !== false)
+						await tab.eval(`document.documentElement.dataset.theme = 'dark'`);
+					if (side === 'prod' && s.dark === false)
+						await tab.eval(`document.documentElement.dataset.theme = 'light'`);
+					await sleep(400);
+					await s.run(tab, side);
+					const name = `${s.id}${phone && !s.phone ? '-phone' : ''}-${side}`;
+					await tab.shot(join(outDir, `${name}.png`));
+					const m = await tab.eval<Record<string, unknown>>(MEASURE);
+					out[name] = m;
+					console.log(name, JSON.stringify(m));
+				}
 		}
 	} finally {
 		writeFileSync(join(outDir, 'measure.json'), JSON.stringify(out, null, 1));
