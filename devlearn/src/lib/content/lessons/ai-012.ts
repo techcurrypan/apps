@@ -14,7 +14,7 @@ export const ai012: Lesson = {
 	goal: '報酬から Q 値を更新し、次の手を選ぶことができる',
 	prereq: ['ai-005', 'ai-003'],
 	related: [],
-	next: [],
+	next: ['ai-025'],
 	explain: [
 		{
 			n: 1,

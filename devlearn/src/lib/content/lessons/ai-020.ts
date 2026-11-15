@@ -13,7 +13,7 @@ export const ai020: Lesson = {
 	goal: 'Attention の重みを計算し、どの語に注目したかを確かめることができる',
 	prereq: ['ai-019', 'ai-018'],
 	related: [],
-	next: [],
+	next: ['ai-023'],
 	explain: [
 		{
 			n: 1,

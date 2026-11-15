@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { Mistake, Practice } from '../lesson/types.ts';
 import {
 	cookieSent,
+	dataset,
 	firewall,
 	judgeForm,
 	pipeline,
@@ -317,5 +318,24 @@ describe('fix の pipeline（検査と配信の設定）', () => {
 		expect(pipeline(pull, { event: 'pull', branch: 'feature' })).toBe(
 			'test／鍵が外からの変更に渡る'
 		);
+	});
+});
+
+describe('fix の dataset（学習用データの欠け・偏り・漏れ・分け方）', () => {
+	const ok = ['missing fill', 'balance weight', 'column returned drop', 'split time'];
+	it('全て直すと、どの確かめも ok', () => {
+		for (const check of ['missing', 'balance', 'leak', 'split'])
+			expect(dataset(ok, check)).toBe('ok');
+	});
+	it('行ごとの誤りを、確かめごとの言葉で返す', () => {
+		expect(dataset(['missing drop'], 'missing')).toBe('行の 4 割を捨てる');
+		expect(dataset(['missing keep'], 'missing')).toBe('欠けたまま学べない');
+		expect(dataset(['balance none'], 'balance')).toBe('少ない方を見逃す');
+		expect(dataset(['column returned keep'], 'leak')).toBe('答えが漏れる');
+		expect(dataset(['split random'], 'split')).toBe('未来が漏れる');
+	});
+	it('行が無ければ、何もしていないのと同じに扱う', () => {
+		expect(dataset([], 'missing')).toBe('欠けたまま学べない');
+		expect(dataset([], 'leak')).toBe('ok');
 	});
 });

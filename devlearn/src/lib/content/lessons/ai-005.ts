@@ -13,7 +13,7 @@ export const ai005: Lesson = {
 	goal: '教師あり・教師なし・強化学習を、課題ごとに見分けることができる',
 	prereq: ['ai-001'],
 	related: [],
-	next: ['ai-006', 'ai-008', 'ai-012'],
+	next: ['ai-006', 'ai-008', 'ai-012', 'ai-030'],
 	explain: [
 		{
 			n: 1,

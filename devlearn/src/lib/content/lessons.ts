@@ -118,6 +118,20 @@ import { ai017 } from './lessons/ai-017.ts';
 import { ai018 } from './lessons/ai-018.ts';
 import { ai019 } from './lessons/ai-019.ts';
 import { ai020 } from './lessons/ai-020.ts';
+import { ai021 } from './lessons/ai-021.ts';
+import { ai022 } from './lessons/ai-022.ts';
+import { ai023 } from './lessons/ai-023.ts';
+import { ai024 } from './lessons/ai-024.ts';
+import { ai025 } from './lessons/ai-025.ts';
+import { ai026 } from './lessons/ai-026.ts';
+import { ai027 } from './lessons/ai-027.ts';
+import { ai028 } from './lessons/ai-028.ts';
+import { ai029 } from './lessons/ai-029.ts';
+import { ai030 } from './lessons/ai-030.ts';
+import { ai031 } from './lessons/ai-031.ts';
+import { ai032 } from './lessons/ai-032.ts';
+import { ai033 } from './lessons/ai-033.ts';
+import { ai034 } from './lessons/ai-034.ts';
 import { ai037 } from './lessons/ai-037.ts';
 
 export const lessons: readonly Lesson[] = [
@@ -238,5 +252,19 @@ export const lessons: readonly Lesson[] = [
 	ai018,
 	ai019,
 	ai020,
+	ai021,
+	ai022,
+	ai023,
+	ai024,
+	ai025,
+	ai026,
+	ai027,
+	ai028,
+	ai029,
+	ai030,
+	ai031,
+	ai032,
+	ai033,
+	ai034,
 	ai037
 ];

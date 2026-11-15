@@ -16,7 +16,7 @@ export const ai013: Lesson = {
 	goal: '重みと活性化関数で、ニューラルネットの出力を計算することができる',
 	prereq: ['ai-006'],
 	related: ['prg-004'],
-	next: ['ai-014', 'ai-017', 'ai-019'],
+	next: ['ai-014', 'ai-017', 'ai-019', 'ai-029'],
 	explain: [
 		{
 			n: 1,

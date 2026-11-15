@@ -15,7 +15,7 @@ export const ai017: Lesson = {
 	goal: '画像に畳み込みとプーリングを当てた結果を計算することができる',
 	prereq: ['ai-013'],
 	related: [],
-	next: [],
+	next: ['ai-022'],
 	explain: [
 		{
 			n: 1,

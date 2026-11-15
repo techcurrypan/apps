@@ -22,7 +22,8 @@ export type PickSetup = { situation: string[]; choices: (Card & { result: string
 export type PickSuccess = { choice: string };
 export type Packet = { proto: string; port: number; from: string };
 /** 直した行を流す仕組み。firewall は規則、html は頁の型、cookie は Cookie と受け付け、policy は権限の方針、route は仮想の網、pipeline は検査と配信の設定 */
-export type FixEngine = 'firewall' | 'html' | 'cookie' | 'policy' | 'route' | 'pipeline';
+export type FixEngine =
+	'firewall' | 'html' | 'cookie' | 'policy' | 'route' | 'pipeline' | 'dataset';
 /** 流す 1 件。firewall は packet、ほかは input（仕組みごとの名前 → 値） */
 export type FixCase = {
 	id: string;
@@ -225,6 +226,36 @@ export function pipeline(
 	return [ran.join('→'), ...flags].join('／');
 }
 
+// ---- fix の dataset：学習用データの整え方。1 行は「項目 やり方」----
+//   missing drop|fill|keep    欠けた値（drop は行を捨てる・fill は中央値で埋める・keep はそのまま）
+//   balance none|weight       少ない方の答えの重みを上げるか
+//   column 名前 keep|drop      答えから作られた列（漏れ）を残すか
+//   split random|time          検証の分け方（時の流れのあるデータは時で分ける）
+// 確かめ（check）ごとに、ok か、困る事を返す。行が無い項目は、何もしていない時と同じに扱う
+export function dataset(lines: string[], check: string): string {
+	const opt: Record<string, string> = {};
+	for (const l of lines) {
+		const t = l.trim().split(/\s+/);
+		if (t[0] === 'column') opt.column = t[2] ?? '';
+		else if (t[0]) opt[t[0]] = t[1] ?? '';
+	}
+	switch (check) {
+		case 'missing':
+			return opt.missing === 'fill'
+				? 'ok'
+				: opt.missing === 'drop'
+					? '行の 4 割を捨てる'
+					: '欠けたまま学べない';
+		case 'balance':
+			return opt.balance === 'weight' ? 'ok' : '少ない方を見逃す';
+		case 'leak':
+			return opt.column === 'keep' ? '答えが漏れる' : 'ok';
+		case 'split':
+			return opt.split === 'time' ? 'ok' : '未来が漏れる';
+	}
+	return 'ok';
+}
+
 /** 直した行の並びに 1 件を流した結果 */
 export function runFix(engine: FixEngine, lines: string[], c: FixCase): string {
 	const input = c.input ?? {};
@@ -239,6 +270,8 @@ export function runFix(engine: FixEngine, lines: string[], c: FixCase): string {
 			return policy(lines, { action: input.action ?? '', target: input.target ?? '' });
 		case 'route':
 			return route(lines, { from: input.from ?? '', to: input.to ?? '' });
+		case 'dataset':
+			return dataset(lines, input.check ?? '');
 		case 'pipeline':
 			return pipeline(lines, {
 				event: input.event ?? '',
@@ -258,7 +291,8 @@ export const FIX_RESULTS: Record<string, string> = {
 	reach: '届く',
 	blocked: '届かない',
 	none: '何も走らない',
-	error: '設定の誤り（何も走らない）'
+	error: '設定の誤り（何も走らない）',
+	ok: '問題なし'
 };
 
 const rec = (x: unknown) =>
@@ -385,5 +419,6 @@ export const FIX_CASE_NAMES: Record<FixEngine, string> = {
 	cookie: '要求',
 	policy: '操作',
 	route: '通り道',
-	pipeline: '出来事'
+	pipeline: '出来事',
+	dataset: '確かめ'
 };

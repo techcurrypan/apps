@@ -13,7 +13,7 @@ export const ai007: Lesson = {
 	goal: '決定木の分かれ目を選び、多数決で予測をまとめることができる',
 	prereq: ['ai-006'],
 	related: [],
-	next: [],
+	next: ['ai-028'],
 	explain: [
 		{
 			n: 1,

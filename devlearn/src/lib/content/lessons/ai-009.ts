@@ -14,7 +14,7 @@ export const ai009: Lesson = {
 	goal: '主成分分析で、データを少ない軸にまとめることができる',
 	prereq: ['ai-008'],
 	related: [],
-	next: [],
+	next: ['ai-021'],
 	explain: [
 		{
 			n: 1,

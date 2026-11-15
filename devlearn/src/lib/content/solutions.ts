@@ -1303,6 +1303,228 @@ export const FORM_SOLUTIONS: Record<string, { pass: FormAnswer; wrong: FormAnswe
 			{ kind: 'calc', values: ['2', '0.79', '0.11', '7.4', '船'] }
 		]
 	},
+	'ai-021': {
+		pass: { kind: 'pick', choice: 'ae' },
+		wrong: [
+			{ kind: 'pick', choice: 'cls' },
+			{ kind: 'pick', choice: 'aug69' },
+			{ kind: 'pick', choice: 'ae-all' }
+		]
+	},
+	'ai-022': {
+		pass: {
+			kind: 'sort',
+			bins: { fish: 'cls', cars: 'det', oil: 'seg', weather: 'cls', people: 'det', road: 'seg' }
+		},
+		wrong: [
+			{
+				kind: 'sort',
+				bins: { fish: 'cls', cars: 'cls', oil: 'seg', weather: 'cls', people: 'det', road: 'seg' }
+			},
+			{
+				kind: 'sort',
+				bins: { fish: 'cls', cars: 'det', oil: 'det', weather: 'cls', people: 'det', road: 'seg' }
+			},
+			{
+				kind: 'sort',
+				bins: { fish: 'cls', cars: 'det', oil: 'seg', weather: 'det', people: 'det', road: 'seg' }
+			}
+		]
+	},
+	'ai-023': {
+		pass: { kind: 'calc', values: ['0.67', '0.09', '0.51', '着く'] },
+		wrong: [
+			{ kind: 'calc', values: ['2', '0.09', '0.51', '着く'] },
+			{ kind: 'calc', values: ['0.67', '0.09', '0.67', '着く'] },
+			{ kind: 'calc', values: ['0.67', '0.09', '0.51', 'ある'] }
+		]
+	},
+	'ai-024': {
+		pass: {
+			kind: 'sort',
+			bins: {
+				minutes: 'asr',
+				announce: 'tts',
+				caption: 'mm',
+				call: 'asr',
+				reader: 'tts',
+				vqa: 'mm'
+			}
+		},
+		wrong: [
+			{
+				kind: 'sort',
+				bins: {
+					minutes: 'asr',
+					announce: 'tts',
+					caption: 'mm',
+					call: 'asr',
+					reader: 'asr',
+					vqa: 'mm'
+				}
+			},
+			{
+				kind: 'sort',
+				bins: {
+					minutes: 'asr',
+					announce: 'tts',
+					caption: 'tts',
+					call: 'asr',
+					reader: 'tts',
+					vqa: 'mm'
+				}
+			},
+			{
+				kind: 'sort',
+				bins: {
+					minutes: 'mm',
+					announce: 'tts',
+					caption: 'mm',
+					call: 'asr',
+					reader: 'tts',
+					vqa: 'mm'
+				}
+			}
+		]
+	},
+	'ai-025': {
+		pass: { kind: 'pick', choice: 'dqn' },
+		wrong: [
+			{ kind: 'pick', choice: 'table' },
+			{ kind: 'pick', choice: 'real' },
+			{ kind: 'pick', choice: 'seq' }
+		]
+	},
+	'ai-026': {
+		pass: { kind: 'order', order: ['seed', 'remove', 'shape', 'detail', 'label'] },
+		wrong: [
+			{ kind: 'order', order: ['seed', 'remove', 'detail', 'shape', 'label'] },
+			{ kind: 'order', order: ['remove', 'seed', 'shape', 'detail', 'label'] },
+			{ kind: 'order', order: ['seed', 'remove', 'shape', 'label', 'detail'] }
+		]
+	},
+	'ai-027': {
+		pass: { kind: 'pick', choice: 'head' },
+		wrong: [
+			{ kind: 'pick', choice: 'scratch' },
+			{ kind: 'pick', choice: 'all-big' },
+			{ kind: 'pick', choice: 'as-is' }
+		]
+	},
+	'ai-028': {
+		pass: { kind: 'calc', values: ['0.3', '0.05', '-0.15', '気温'] },
+		wrong: [
+			{ kind: 'calc', values: ['-0.3', '0.05', '-0.15', '気温'] },
+			{ kind: 'calc', values: ['0.3', '0.05', '0.15', '気温'] },
+			{ kind: 'calc', values: ['0.3', '0.05', '-0.15', '雨の予報'] }
+		]
+	},
+	'ai-029': {
+		pass: { kind: 'calc', values: ['100', '25', '5', '20'] },
+		wrong: [
+			{ kind: 'calc', values: ['100', '200', '5', '20'] },
+			{ kind: 'calc', values: ['100', '25', '20', '20'] },
+			{ kind: 'calc', values: ['100', '25', '5', '5'] }
+		]
+	},
+	'ai-030': {
+		pass: { kind: 'order', order: ['goal', 'poc', 'data', 'train', 'deploy', 'monitor'] },
+		wrong: [
+			{ kind: 'order', order: ['goal', 'data', 'poc', 'train', 'deploy', 'monitor'] },
+			{ kind: 'order', order: ['goal', 'poc', 'data', 'deploy', 'train', 'monitor'] },
+			{ kind: 'order', order: ['goal', 'poc', 'data', 'train', 'monitor', 'deploy'] }
+		]
+	},
+	'ai-031': {
+		pass: { kind: 'fix', lines: { d1: 'fill', d2: 'weight', d3: 'drop', d4: 'time' } },
+		wrong: [
+			{ kind: 'fix', lines: { d1: 'fill', d2: 'weight', d4: 'time' } },
+			{ kind: 'fix', lines: { d2: 'weight', d3: 'drop', d4: 'time' } },
+			{ kind: 'fix', lines: { d1: 'fill', d2: 'weight', d3: 'drop' } },
+			{ kind: 'fix', lines: { d1: 'fill', d3: 'drop', d4: 'time' } }
+		]
+	},
+	'ai-032': {
+		pass: {
+			kind: 'sort',
+			bins: { name: 'pi', disease: 'sens', anon: 'anon', card: 'pi', record: 'sens', face: 'pi' }
+		},
+		wrong: [
+			{
+				kind: 'sort',
+				bins: { name: 'pi', disease: 'pi', anon: 'anon', card: 'pi', record: 'sens', face: 'pi' }
+			},
+			{
+				kind: 'sort',
+				bins: {
+					name: 'pi',
+					disease: 'sens',
+					anon: 'anon',
+					card: 'anon',
+					record: 'sens',
+					face: 'pi'
+				}
+			},
+			{
+				kind: 'sort',
+				bins: { name: 'pi', disease: 'sens', anon: 'pi', card: 'pi', record: 'sens', face: 'pi' }
+			}
+		]
+	},
+	'ai-033': {
+		pass: {
+			kind: 'sort',
+			bins: { logo: 'cr', method: 'pat', weights: 'ts', code: 'cr', list: 'ts', device: 'pat' }
+		},
+		wrong: [
+			{
+				kind: 'sort',
+				bins: { logo: 'cr', method: 'cr', weights: 'ts', code: 'cr', list: 'ts', device: 'pat' }
+			},
+			{
+				kind: 'sort',
+				bins: { logo: 'cr', method: 'pat', weights: 'pat', code: 'cr', list: 'ts', device: 'pat' }
+			},
+			{
+				kind: 'sort',
+				bins: { logo: 'cr', method: 'pat', weights: 'ts', code: 'ts', list: 'ts', device: 'pat' }
+			}
+		]
+	},
+	'ai-034': {
+		pass: {
+			kind: 'sort',
+			bins: { weights: 'dev', userdata: 'svc', tie: 'fair', poc: 'dev', liab: 'svc', lock: 'fair' }
+		},
+		wrong: [
+			{
+				kind: 'sort',
+				bins: {
+					weights: 'svc',
+					userdata: 'svc',
+					tie: 'fair',
+					poc: 'dev',
+					liab: 'svc',
+					lock: 'fair'
+				}
+			},
+			{
+				kind: 'sort',
+				bins: { weights: 'dev', userdata: 'svc', tie: 'svc', poc: 'dev', liab: 'svc', lock: 'fair' }
+			},
+			{
+				kind: 'sort',
+				bins: {
+					weights: 'dev',
+					userdata: 'dev',
+					tie: 'fair',
+					poc: 'dev',
+					liab: 'svc',
+					lock: 'fair'
+				}
+			}
+		]
+	},
 	'git-010': {
 		pass: { kind: 'order', order: ['branch', 'push', 'request', 'fix', 'check', 'merge'] },
 		wrong: [

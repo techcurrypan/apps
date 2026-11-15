@@ -18,7 +18,7 @@ export const db011: Lesson = {
 	title: 'NULL の扱い',
 	goal: 'NULL を含む比較と集計の結果を予想することができる',
 	prereq: ['db-002'],
-	related: [],
+	related: ['ai-031'],
 	next: ['db-004'],
 	explain: [
 		{
