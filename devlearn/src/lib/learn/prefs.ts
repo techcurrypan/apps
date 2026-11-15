@@ -42,7 +42,14 @@ export function parseSummary(text: string | null): TownSummary | null {
 }
 
 /** 手帳の 1 枚（思い出すを終えると残る。LS-R4・R5） */
-export type Note = { id: string; title: string; point: string; town: string; score: string };
+export type Note = {
+	id: string;
+	title: string;
+	point: string;
+	town: string;
+	score: string;
+	again?: string; // 次の見返し（確認の 1 つ目）
+};
 export function parseNotes(text: string | null): Note[] {
 	try {
 		const x = JSON.parse(text ?? '[]') as unknown;

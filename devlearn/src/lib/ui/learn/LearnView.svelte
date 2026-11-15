@@ -38,6 +38,8 @@
 	import Diagram from './Diagram.svelte';
 	import InsideBoard from './InsideBoard.svelte';
 	import TryPanel from './TryPanel.svelte';
+	import RecallPanel from './RecallPanel.svelte';
+	import { addNote, noteOf } from '../../learn/recall.ts';
 
 	type Props = { lesson: Lesson; known: ReadonlyMap<string, string> };
 	let { lesson, known }: Props = $props();
@@ -442,8 +444,19 @@
 		);
 	}
 
-	// ---- 思い出す（仮。10-R の 7 で作り直す） ----
-	let checked = $derived(lesson.check.map(() => false));
+	// ---- 思い出す（LS-R） ----
+	let recallPanel = $state<ReturnType<typeof RecallPanel>>();
+	function finishRecall(ok: number, n: number) {
+		const list = addNote(parseNotes(read(NOTES_KEY)), noteOf(lesson, ok, n));
+		write(NOTES_KEY, list);
+		notes = list.length;
+		markMode('recall');
+		toast(`思い出すを終えた（${ok} / ${n}）。手帳に 1 枚残した`);
+	}
+	function openNotes() {
+		showNotes = true;
+		queueMicrotask(() => window.scrollTo({ top: 0 }));
+	}
 
 	// ---- キー（LS-X3） ----
 	function onkeydown(e: KeyboardEvent) {
@@ -454,7 +467,13 @@
 			e.preventDefault();
 			return;
 		}
-		if (mode === 'recall') return;
+		if (mode === 'recall') {
+			if (/^[1-9]$/.test(e.key)) {
+				recallPanel?.key(Number(e.key) - 1);
+				e.preventDefault();
+			}
+			return;
+		}
 		if (mode === 'try' && !trying) {
 			if (e.key === 'r' || e.key === 'R') {
 				replay++;
@@ -714,6 +733,7 @@
 				{reduced}
 				{reach}
 				recall={mode === 'recall'}
+				onnode={mode === 'recall' ? (id) => recallPanel?.hit(id) : undefined}
 				{alt}
 				ongo={(n) => {
 					fb = null;
@@ -944,28 +964,16 @@
 			{:else if mode === 'recall'}
 				<div class="ph">
 					<h2>思い出す</h2>
-					<small>{checked.filter(Boolean).length} / {lesson.check.length}</small>
+					<small>流れ・中身・記録を隠し、図だけ残した</small>
 				</div>
 				<div class="bd">
-					<p class="tx">流れ・中身・記録を隠した。図だけを見て、答えを思い出す。</p>
-					<ul class="checks">
-						{#each lesson.check as c, i (c.ask)}
-							<li>
-								<label
-									><input
-										type="checkbox"
-										checked={checked[i]}
-										onchange={(e) => {
-											const on = e.currentTarget.checked;
-											checked = checked.map((v, j) => (j === i ? on : v));
-										}}
-									/>
-									{c.ask}</label
-								>
-								<span class="how">確かめ方：{c.how}</span>
-							</li>
-						{/each}
-					</ul>
+					<RecallPanel
+						bind:this={recallPanel}
+						{lesson}
+						{title}
+						onfinish={finishRecall}
+						onnotes={openNotes}
+					/>
 				</div>
 			{/if}
 		</aside>
@@ -1852,27 +1860,6 @@
 	.empty {
 		color: var(--dl-text-muted);
 		font-family: var(--dl-font);
-	}
-	.checks {
-		list-style: none;
-		padding: 0;
-		margin: 0;
-	}
-	.checks li {
-		padding: 8px 0;
-		border-bottom: 1px solid var(--dl-border);
-	}
-	.checks label {
-		display: flex;
-		gap: 8px;
-		align-items: center;
-		min-height: 36px;
-	}
-	.how {
-		display: block;
-		color: var(--dl-text-muted);
-		font-size: 12.5px;
-		padding-left: 1.6rem;
 	}
 	.practice {
 		margin-top: 4px;
