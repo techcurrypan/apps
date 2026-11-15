@@ -34,12 +34,12 @@
 |---|---|---|
 | 1 比べる道具 `look-learn.ts` | 途中（C-1〜C-4・C-11・C-13・C-14 の台本と、A4〜A8・D5・D6・X1・X2 の測り方。ほかの場面は 3 の見本ができてから足す） | |
 | 2 型と検査 16〜25 | 済（`types.ts` に town・work・ask・inside・map・calc・commands。検査は `inside-check.ts`、荷物は `packet.ts`・`bytes.ts`、式は `calc.ts`、ログの書式は `logformat.ts`。テスト `inside-check.test.ts` 27 件） | （この後のコミット） |
-| 3 見本の中身（比べる場面のレッスン） | 途中（net-007 に map・town・work・ask・inside・commands。荷物は本物のバイト列で、検査 21 を通る） | |
-| 4 画面の骨組み | 途中（`src/lib/ui/learn/`：上の帯・レッスンの帯・流れ・図・一行の説明・時間の帯・台本・記録・予想の問い・自動・知らせ。状態は `src/lib/learn/model.ts` の純粋な関数） | |
+| 3 見本の中身（比べる場面のレッスン） | 済（net-007・git-001（本物の blob・tree・commit と記録の箱）・cld-006（区画ごとの部屋）・ai-014（誤差の曲線）に map・town・work・ask・inside・world） | `11c56ab`・`8bd6305`・`c92619a` |
+| 4 画面の骨組み | 途中（`src/lib/ui/learn/`：上の帯・レッスンの帯・流れ・図・一行の説明・時間の帯・台本・記録・予想の問い・自動・知らせ。状態は `src/lib/learn/model.ts` の純粋な関数。図の上の世界の状態 `Step.world`（記録の箱・区画ごとの部屋・点と線）`learn/world.ts`。概要の図に全ての機械） | `a6073cf` |
 | 5 中身の板 | 途中（`InsideBoard.svelte`。荷物の層の帯・欄・16 進の光・OS の差の印・ログ。差の計算 `diffHosts` は単体テスト） | |
 | 6 やってみる・コマンドの参考 | 済（道具を使う実戦は見ると同じ図・中身の板・記録で描く `learn/try.ts`・`TryPanel.svelte`。コマンドの参考 55 件 `practice/refs.ts`。形の実戦（calc・order・sort・pick・fix）はまだ古い部品） | `58e87e5`・`247e348` |
 | 7 思い出す・手帳 | 済（4 種の問い `learn/recall.ts`・`RecallPanel.svelte`。手帳の 1 枚） | `6f93040` |
-| 8 学びと街のつなぎ | 未 | |
+| 8 学びと街のつなぎ | 途中（育つ物に「次にやると育つ物」、上の帯に学んだ手の数（合格で ＋1。LS-P10 の読み）、町の呼び名が 1 対 1 のテスト `town-names.test.ts`。資金・満足度が実際に動くのは 9-2 の街の上の板） | `881afb5` |
 | 9 試作を上回る所 | 未 | |
 | 10 判定（全項目 ≥） | 未 | |
 | 11 既存の全レッスンに `town`・`inside` | 未（検査 16・20 を当てる分野：無し。表は `src/lib/lesson/inside-fields.ts`） | |
@@ -53,14 +53,14 @@
 | C-2 | `#net` 見る、GET / を再生中 | net-007（HTTP のやり取り。試作の net の HTTP の所。DNS と TCP の所は net-004・net-005 に当たる） | `shots/phase-10-R/C-2-proto.png`・`-prod.png` |
 | C-3 | `#net` 見る、届いた直後・中身まで | net-007（HTTP のやり取り。試作の net の HTTP の所。DNS と TCP の所は net-004・net-005 に当たる） | `shots/phase-10-R/C-3-proto.png`・`-prod.png` |
 | C-4 | `#net` 見る、最後・時系列 | net-007（HTTP のやり取り。試作の net の HTTP の所。DNS と TCP の所は net-004・net-005 に当たる） | `shots/phase-10-R/C-4-proto.png`・`-prod.png` |
-| C-5 | | | |
-| C-6 | | | |
-| C-7 | | | |
-| C-8 | | | |
-| C-9 | | | |
-| C-10 | | | |
+| C-5 | `#net` やってみる、`dig` と `curl -v` の後（門番が捨てて Timeout） | net-007 やってみる、`curl -v http://shop.example.com:8080/`（口の誤りで断られる。間違いのなぜ・次の一手） | `shots/phase-10-R/C-5-proto.png`・`-prod.png` |
+| C-6 | `#git` 見る、commit の直後 | git-001 出来事 4（commit で記録を作る。記録の箱と HEAD → main の札） | `shots/phase-10-R/C-6-*.png` |
+| C-7 | `#k8s` 見る、部屋が落ちた直後 | cld-006 出来事 2（1 台に集まって遅い。本番に Kubernetes の題が無いので、最も近い「負荷を分けて増やす」） | `shots/phase-10-R/C-7-*.png` |
+| C-8 | `#k8s` 見る、最後 | cld-006 最後（3 台に減らす。区画ごとの部屋） | `shots/phase-10-R/C-8-*.png` |
+| C-9 | `#k8s` やってみる、scale の後 | cld-006 やってみる（calc の形。台数を求める） | `shots/phase-10-R/C-9-*.png` |
+| C-10 | `#ai` 見る、繰り返し ×10 の直後 | ai-014 最後（誤差の曲線。16 → 0.64 → 0.0256 → 0.001） | `shots/phase-10-R/C-10-*.png` |
 | C-11 | `#net` 見る、問いが出た所 | net-007（HTTP のやり取り。試作の net の HTTP の所。DNS と TCP の所は net-004・net-005 に当たる） | `shots/phase-10-R/C-11-proto.png`・`-prod.png` |
-| C-12 | | | |
+| C-12 | `#k8s` 思い出す、並べる問い | cld-006 思い出す（並べる問い） | `shots/phase-10-R/C-12-*.png` |
 | C-13 | C-2 を 390×844 | net-007（HTTP のやり取り。試作の net の HTTP の所。DNS と TCP の所は net-004・net-005 に当たる） | `shots/phase-10-R/C-13-proto.png`・`-prod.png` |
 | C-14 | C-3 を明 | net-007（HTTP のやり取り。試作の net の HTTP の所。DNS と TCP の所は net-004・net-005 に当たる） | `shots/phase-10-R/C-14-proto.png`・`-prod.png` |
 

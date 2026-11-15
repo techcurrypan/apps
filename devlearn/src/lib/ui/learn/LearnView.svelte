@@ -431,7 +431,7 @@
 			k = watchAt.k;
 			reach = watchAt.reach;
 		} else if (m === 'try') {
-			k = run?.steps.length ?? 0;
+			k = run ? run.steps.length : beatsOf(lesson).length - 1;
 			reach = k;
 		} else {
 			k = 0;
@@ -646,27 +646,7 @@
 		</div>
 	</section>
 
-	{#if mode === 'try' && !trying}
-		<div class="practice" role="tabpanel" aria-label="やってみる">
-			<div class="formreq">
-				<div>
-					{#if request}<b>{request.who}から</b>「{request.text}」{/if}
-					<span class="role">あなたの役目：{lesson.practice.goal}</span>
-				</div>
-				{#if doneModes[lesson.id]?.try}
-					<button type="button" class="btn pri" onclick={() => setMode('recall')}>思い出す ▶</button
-					>
-				{/if}
-			</div>
-			{#if lesson.practice.form}
-				<FormPractice practice={lesson.practice} {replay} {onpass} />
-			{:else}
-				<p>この実戦の道具は準備中。</p>
-			{/if}
-		</div>
-	{/if}
-
-	<div class="grid" class:hidden={mode === 'try' && !trying}>
+	<div class="grid">
 		{#if trying && run}
 			<aside class="panel rail" aria-label="やること">
 				<div class="ph">
@@ -707,7 +687,25 @@
 				{/if}
 			</aside>
 		{/if}
-		<aside class="panel rail" aria-label="流れ" hidden={mode === 'recall' || trying}>
+		{#if mode === 'try' && !trying}
+			<aside class="panel rail" aria-label="やること">
+				<div class="ph">
+					<h2>やること</h2>
+					<small>{doneModes[lesson.id]?.try ? '済' : '1 / 1'}</small>
+				</div>
+				<ol class="goals">
+					<li class={doneModes[lesson.id]?.try ? 'ok' : 'cur'}>
+						<span class="m">{doneModes[lesson.id]?.try ? '✓' : 1}</span>
+						<span
+							><b>{lesson.practice.goal}</b><small
+								>図で仕組みを確かめ、下の欄に答えを入れて「確かめる」</small
+							></span
+						>
+					</li>
+				</ol>
+			</aside>
+		{/if}
+		<aside class="panel rail" aria-label="流れ" hidden={mode !== 'watch'}>
 			<div class="ph">
 				<h2>流れ</h2>
 				<small>{chapters.length} 章 ・ {beats.length - 1} 出来事</small>
@@ -975,6 +973,27 @@
 						{/if}
 					{/if}
 				</div>
+			{:else if mode === 'try' && !trying}
+				<div class="ph">
+					<h2>やってみる</h2>
+					<small>{doneModes[lesson.id]?.try ? '✓ 合格' : '答えは図の下'}</small>
+				</div>
+				<div class="bd">
+					<div class="formreq">
+						<div>
+							{#if request}<b>{request.who}から</b>「{request.text}」{/if}
+							<span class="role">あなたの役目：{lesson.practice.goal}</span>
+						</div>
+					</div>
+					<p class="tx">
+						図は、解説の最後の状態。仕組みを見ながら、下の欄で答えを作る。間違えると、なぜ駄目かと次の一手が出る。
+					</p>
+					{#if doneModes[lesson.id]?.try}
+						<button type="button" class="btn pri" onclick={() => setMode('recall')}
+							>思い出す ▶</button
+						>
+					{/if}
+				</div>
 			{:else if trying && run}
 				<div class="ph">
 					<h2>やってみる</h2>
@@ -1011,6 +1030,15 @@
 			{/if}
 		</aside>
 
+		{#if mode === 'try' && !trying}
+			<div class="practice insidewrap" role="tabpanel" aria-label="答えの欄">
+				{#if lesson.practice.form}
+					<FormPractice practice={lesson.practice} {replay} {onpass} />
+				{:else}
+					<p>この実戦の道具は準備中。</p>
+				{/if}
+			</div>
+		{/if}
 		{#if mode === 'watch' || trying}
 			<div class="insidewrap">
 				<InsideBoard
@@ -1316,9 +1344,6 @@
 		grid-template-rows: auto 1fr;
 		gap: 10px;
 		align-items: start;
-	}
-	.grid.hidden {
-		display: none;
 	}
 	.panel {
 		background: var(--dl-surface);
