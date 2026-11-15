@@ -162,6 +162,19 @@ export function checkInside(lesson: Lesson, add: Add, opt: InsideOptions = {}): 
 		for (const c of opt.used?.get(lesson.id) ?? [])
 			if (!cmds.includes(c)) add(20, 'practice.commands', `解き方で使う「${c}」が commands に無い`);
 	}
+	// 16（世界の状態は図の機械の下に描く。LS-D8）
+	const ids = new Set(
+		steps.flatMap((x) => x.scene.flatMap((o) => (o.op === 'appear' ? [o.id] : [])))
+	);
+	steps.forEach((st, i) => {
+		const w = st.world;
+		if (!w) return;
+		if (!ids.has(w.near)) add(16, `explain[${i}].world`, `near「${w.near}」が図の機械に無い`);
+		if (w.kind === 'plot' && w.points.some((p) => !p.every((x) => Number.isFinite(x))))
+			add(16, `explain[${i}].world`, '点の座標が数でない');
+		if (w.kind === 'chain' && w.items.length === 0)
+			add(16, `explain[${i}].world`, '記録の箱が 1 つも無い');
+	});
 	// 20（やってみるの命令が動く線。LS-P9）
 	for (const f of lesson.practice?.flow ?? []) {
 		try {

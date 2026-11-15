@@ -294,6 +294,13 @@ describe('検査 16〜25', () => {
 			expect(run(l, opt)).toContain(20);
 		}
 	});
+	it('16：世界の状態の near が図の機械に無ければ落ちる（LS-D8）', () => {
+		const l = insideLesson();
+		l.explain[1].world = { kind: 'chain', near: 'a', items: [{ id: 'abc1234', text: 'x' }] };
+		expect(run(l)).not.toContain(16);
+		l.explain[1].world = { kind: 'chain', near: 'zz', items: [{ id: 'abc1234', text: 'x' }] };
+		expect(run(l)).toContain(16);
+	});
 	it('17：同じステップで id が重なる・別の機械へ移ると落ちる', () => {
 		const l = insideLesson();
 		l.explain[2].inside!.hosts![0].rows[1].id = 'nginx';

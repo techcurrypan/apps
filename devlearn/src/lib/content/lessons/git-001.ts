@@ -198,6 +198,11 @@ export const git001: Lesson = {
 			title: 'commit で記録を作る',
 			lead: 'ステージの一覧が、そのまま 1 件の記録になる',
 			town: '控えの一覧を清書し、日付と書いた人を添えて綴じる。',
+			world: {
+				kind: 'chain',
+				near: 'repo',
+				items: [{ id: C1.id.slice(0, 7), text: 'first commit', tag: 'HEAD → main' }]
+			},
 			work: 'git log --stat で、記録ごとに変えたファイルを確かめる',
 			inside: {
 				packet: T1.packet,
@@ -337,6 +342,14 @@ export const git001: Lesson = {
 			title: '2 件目は前の記録を指す',
 			lead: '新しい commit は、親として前の ID を持つ',
 			town: '新しい写しを箱に入れ、前の記録を指す 2 冊目を綴じる。',
+			world: {
+				kind: 'chain',
+				near: 'repo',
+				items: [
+					{ id: C1.id.slice(0, 7), text: 'first commit' },
+					{ id: C2.id.slice(0, 7), text: 'add second line', tag: 'HEAD → main' }
+				]
+			},
 			work: 'git log --oneline --graph で、記録が親をたどってつながるのを見る',
 			inside: {
 				packet: B2.packet,

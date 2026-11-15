@@ -1,5 +1,6 @@
 // 図の置き方（LS-D1〜D6）。機械の位置・区画の枠・線の道筋・線の名前・番号の丸を、レッスンだけから決める。
 // 線の名前と番号の丸は、機械の文字・名札・ほかの名前と重ならない所を探して置く（LS-D5・LS-D6。試作を上回る所）。
+import { worldSize } from './world.ts';
 import type { Lesson, Link } from '../lesson/types.ts';
 import { allNodes, beatsOf, beatTarget } from './model.ts';
 
@@ -121,6 +122,7 @@ export type MarkG = {
 
 export type Geometry = {
 	nodes: MapNodeG[];
+	worlds: Map<string, Rect>; // 世界の状態の箱（near の機械ごと。LS-D8）
 	links: LinkG[];
 	zones: ZoneG[];
 	marks: MarkG[]; // 出来事の番号の丸（全ての出来事の分。描くのは済んだ物だけ）
@@ -180,7 +182,34 @@ export function geometryOf(lesson: Lesson, withTown = true): Geometry {
 				links.push({ a: o.from, b: o.to, label: o.payload, dir: back ? 'both' : 'ab' });
 			}
 
-	const blocks: Rect[] = nodes.flatMap((n) => [grow(n.boxes.icon, 4), grow(n.boxes.text, 2)]);
+	// 世界の状態の箱：near の機械の下（中央・左寄せ・右寄せ・右の順に、ほかの機械に重ならない所）
+	const worlds = new Map<string, Rect>();
+	const sizes = new Map<string, { w: number; h: number }>();
+	for (const st of lesson.explain)
+		if (st.world) {
+			const z = worldSize(st.world);
+			const o = sizes.get(st.world.near);
+			sizes.set(st.world.near, { w: Math.max(z.w, o?.w ?? 0), h: Math.max(z.h, o?.h ?? 0) });
+		}
+	for (const [id, z] of sizes) {
+		const n = byId.get(id);
+		if (!n) continue;
+		const b = n.boxes.all;
+		const others = nodes.filter((x) => x !== n).map((x) => grow(x.boxes.all, 6));
+		const cands: Rect[] = [
+			{ x: b.x + b.w / 2 - z.w / 2, y: b.y + b.h + 14, ...z },
+			{ x: b.x, y: b.y + b.h + 14, ...z },
+			{ x: b.x + b.w - z.w, y: b.y + b.h + 14, ...z },
+			{ x: b.x + b.w + 18, y: n.c.y - z.h / 2, ...z }
+		];
+		const r = cands.find((c) => !others.some((o) => overlaps(c, o))) ?? cands[0];
+		worlds.set(id, r);
+	}
+
+	const blocks: Rect[] = [
+		...nodes.flatMap((n) => [grow(n.boxes.icon, 4), grow(n.boxes.text, 2)]),
+		...worlds.values()
+	];
 	const linksG: LinkG[] = [];
 	for (const l of links) {
 		const A = byId.get(l.a);
@@ -319,8 +348,9 @@ export function geometryOf(lesson: Lesson, withTown = true): Geometry {
 	for (const z of zones) bounds = union(bounds, z.r);
 	for (const m of marks) bounds = union(bounds, circ(m));
 	for (const p of placed) bounds = union(bounds, p);
+	for (const w of worlds.values()) bounds = union(bounds, w);
 	bounds = grow(bounds, 24);
-	return { nodes, links: linksG, zones, marks, bounds };
+	return { nodes, worlds, links: linksG, zones, marks, bounds };
 }
 
 /** 重なりの数（LS-D5・LS-D6 の測り方）。文字の箱どうし・線と文字の箱・番号の丸どうし */

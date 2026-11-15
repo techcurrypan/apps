@@ -59,7 +59,30 @@ export type Step = {
 	work?: string; // 仕事では（確かめるコマンドなど）。1 文 60 字以内
 	ask?: Ask; // 予想の問い。このステップの動きの前に出す（LS-M5）
 	inside?: Inside; // 中身の板の材料（2.1）
+	world?: World; // このステップの後の世界の状態を図の上に描く（LS-D8）。全体を書く
 };
+
+/**
+ * 図の上に描く世界の状態（LS-D8）。near の機械の下に描く。
+ * chain：記録の箱の列（左が古い。tag は「main」などの札）。slots：棟ごとの部屋（状態つき）。plot：点と線（line は [傾き, 切片]）
+ */
+export type World =
+	| { kind: 'chain'; near: string; items: { id: string; text: string; tag?: string }[] }
+	| {
+			kind: 'slots';
+			near: string;
+			groups: { name: string; items: { text: string; state: 'ok' | 'wait' | 'bad' }[] }[];
+			note?: string;
+	  }
+	| {
+			kind: 'plot';
+			near: string;
+			points: [number, number][];
+			line?: [number, number];
+			x: string;
+			y: string;
+			note?: string;
+	  };
 
 /** 予想の問い。a は opts の正しい番号（0 から） */
 export type Ask = { q: string; opts: string[]; a: number; why: string };

@@ -13,6 +13,7 @@
 	} from '../../learn/geometry.ts';
 	import { iconOf } from '../../learn/icons.ts';
 	import { beatsOf, beatTarget, nodesAt, type Phase } from '../../learn/model.ts';
+	import { CHAIN, PLOT, SLOTS, freshOf, keyOfSlot, worldAt } from '../../learn/world.ts';
 
 	type Props = {
 		lesson: Lesson;
@@ -60,6 +61,40 @@
 
 	const beats = $derived(beatsOf(lesson));
 	const beat = $derived(beats[k] ?? beats[0]);
+
+	// ---- 世界の状態（LS-D8）：届いた後に変わる（LS-M2） ----
+	const worldStep = $derived(
+		k === 0 ? 0 : phase === 'after' && beat.last ? beat.step : beat.step - 1
+	);
+	const world = $derived(worldAt(lesson, worldStep));
+	const wrect = $derived(world ? (geo.worlds.get(world.near) ?? null) : null);
+	const wfresh = $derived(
+		worldStep > 0 && worldStep === beat.step && lesson.explain[worldStep - 1]?.world
+			? freshOf(worldAt(lesson, worldStep - 1), world)
+			: new Set<string>()
+	);
+	const short = (t: string, px: number, size: number) => {
+		let x = t;
+		while (x.length > 1 && textW(x, size) > px) x = x.slice(0, -1);
+		return x === t ? t : x.slice(0, -1) + '…';
+	};
+	const plot = $derived.by(() => {
+		if (world?.kind !== 'plot') return null;
+		const xs = [0, ...world.points.map((p) => p[0])];
+		const ys = [0, ...world.points.map((p) => p[1])];
+		if (world.line) for (const x of xs) ys.push(world.line[0] * x + world.line[1]);
+		const x0 = Math.min(...xs);
+		const x1 = Math.max(...xs, x0 + 1);
+		const y0 = Math.min(...ys);
+		const y1 = Math.max(...ys, y0 + 1);
+		const L = 34;
+		const T = 12;
+		const W = PLOT.w - L - 12;
+		const H = PLOT.h - T - 34;
+		const px = (x: number) => L + ((x - x0) / (x1 - x0)) * W;
+		const py = (y: number) => T + H - ((y - y0) / (y1 - y0)) * H;
+		return { px, py, x0, x1, y0, y1, L, T, W, H };
+	});
 	const nodes = $derived(nodesAt(lesson, k, phase));
 	const live = $derived(new Map(nodes.map((n) => [n.id, n])));
 	const visibleLinks = $derived(geo.links.filter((l) => live.has(l.a) && live.has(l.b)));
@@ -131,7 +166,18 @@
 			const main = beat.move?.to ?? beatTarget(beat);
 			if (main) ids = [main];
 		}
-		const r = boundsOf(geo, ids);
+		let r = boundsOf(geo, ids);
+		// 世界の状態の箱も入れる（LS-D8。その機械が関わるとき）
+		if (world && wrect && ids.includes(world.near)) {
+			const x = Math.min(r.x, wrect.x - 20);
+			const y = Math.min(r.y, wrect.y - 20);
+			r = {
+				x,
+				y,
+				w: Math.max(r.x + r.w, wrect.x + wrect.w + 20) - x,
+				h: Math.max(r.y + r.h, wrect.y + wrect.h + 20) - y
+			};
+		}
 		const target = fit(r, aspect);
 		// 全体より大きくはしない・細かく寄りすぎない
 		const sized =
@@ -470,6 +516,111 @@
 					</g>
 				{/if}
 			{/each}
+			<!-- 世界の状態（LS-D8） -->
+			{#if world && wrect}
+				<g class="world" transform="translate({wrect.x} {wrect.y})" aria-hidden="true">
+					<rect class="wbg" width={wrect.w} height={wrect.h} rx="8" />
+					{#if world.kind === 'chain'}
+						{#each world.items as it, i (it.id)}
+							{@const x = 8 + i * (CHAIN.w + CHAIN.gap)}
+							{@const y = CHAIN.head + 8}
+							<g class="wi" class:fresh={wfresh.has(it.id)}>
+								<rect {x} {y} width={CHAIN.w} height={CHAIN.h} rx="5" />
+								<text class="wid" x={x + CHAIN.w / 2} {y} dy="18">{it.id}</text>
+								<text class="wt" x={x + CHAIN.w / 2} {y} dy="36"
+									>{short(it.text, CHAIN.w - 10, 12)}</text
+								>
+								{#if i > 0}
+									<line
+										class="wl"
+										x1={x}
+										y1={y + CHAIN.h / 2}
+										x2={x - CHAIN.gap + 4}
+										y2={y + CHAIN.h / 2}
+									/>
+									<polygon
+										class="wa"
+										points="{x - CHAIN.gap + 2},{y + CHAIN.h / 2} {x - CHAIN.gap + 10},{y +
+											CHAIN.h / 2 -
+											4} {x - CHAIN.gap + 10},{y + CHAIN.h / 2 + 4}"
+									/>
+								{/if}
+								{#if it.tag}
+									{@const tw = textW(it.tag, 12) + 16}
+									<g class="wtag" transform="translate({x + CHAIN.w / 2 - tw / 2} 4)">
+										<rect width={tw} height="20" rx="10" />
+										<text x={tw / 2} y="14.5">{it.tag}</text>
+									</g>
+								{/if}
+							</g>
+						{/each}
+					{:else if world.kind === 'slots'}
+						{#each world.groups as g, i (g.name)}
+							{@const x = 8 + i * (SLOTS.w + SLOTS.gap)}
+							<rect
+								class="wg"
+								{x}
+								y="8"
+								width={SLOTS.w}
+								height={wrect.h - 16 - (world.note ? 22 : 0)}
+								rx="6"
+							/>
+							<text class="wgn" x={x + 10} y="26">{short(g.name, SLOTS.w - 16, 12.5)}</text>
+							{#each g.items as it, j (j)}
+								<g class="ws {it.state}" class:fresh={wfresh.has(keyOfSlot(g.name, it))}>
+									<rect
+										x={x + 8}
+										y={SLOTS.head + 4 + j * SLOTS.row}
+										width={SLOTS.w - 16}
+										height={SLOTS.row - 5}
+										rx="4"
+									/>
+									<text x={x + 16} y={SLOTS.head + 4 + j * SLOTS.row + 15}
+										>{short(it.text, SLOTS.w - 32, 11.5)}</text
+									>
+								</g>
+							{/each}
+						{/each}
+						{#if world.note}
+							<text class="wn" x="10" y={wrect.h - 9}>{world.note}</text>
+						{/if}
+					{:else if plot}
+						<line
+							class="wax"
+							x1={plot.L}
+							y1={plot.T + plot.H}
+							x2={plot.L + plot.W}
+							y2={plot.T + plot.H}
+						/>
+						<line class="wax" x1={plot.L} y1={plot.T} x2={plot.L} y2={plot.T + plot.H} />
+						<text class="wn" x={plot.L + plot.W} y={plot.T + plot.H + 18} text-anchor="end"
+							>{world.x}</text
+						>
+						<text class="wn" x="4" y={plot.T + 10}>{world.y}</text>
+						{#if world.line}
+							<line
+								class="wline"
+								x1={plot.px(plot.x0)}
+								y1={plot.py(world.line[0] * plot.x0 + world.line[1])}
+								x2={plot.px(plot.x1)}
+								y2={plot.py(world.line[0] * plot.x1 + world.line[1])}
+							/>
+						{/if}
+						{#each world.points as p, i (i)}
+							<circle
+								class="wp"
+								class:fresh={wfresh.has(p.join(','))}
+								cx={plot.px(p[0])}
+								cy={plot.py(p[1])}
+								r="5"
+							/>
+						{/each}
+						{#if world.note}
+							<text class="wn" x={plot.L} y={PLOT.h + 14}>{world.note}</text>
+						{/if}
+					{/if}
+				</g>
+			{/if}
 			<!-- 起きたことの番号（LS-D6・D7） -->
 			{#if !recall}
 				{#each doneMarks as m (m.k)}
@@ -691,6 +842,87 @@
 	.ll rect {
 		fill: var(--dl-surface);
 		stroke: var(--dl-border);
+	}
+	.world .wbg {
+		fill: color-mix(in srgb, var(--dl-surface) 92%, transparent);
+		stroke: var(--dl-border);
+		stroke-dasharray: 4 3;
+	}
+	.world .wi rect,
+	.world .ws rect {
+		fill: var(--dl-surface-raised);
+		stroke: var(--dl-border-strong);
+	}
+	.world .wi.fresh rect,
+	.world .ws.fresh rect,
+	.world .wp.fresh {
+		stroke: var(--dl-now);
+		stroke-width: 2.5;
+	}
+	.world .wid {
+		font: 700 12.5px var(--dl-font-code);
+		fill: var(--dl-text);
+		text-anchor: middle;
+	}
+	.world .wt {
+		font: 500 12px var(--dl-font);
+		fill: var(--dl-text-muted);
+		text-anchor: middle;
+	}
+	.world .wl {
+		stroke: var(--dl-text-muted);
+		stroke-width: 1.5;
+	}
+	.world .wa {
+		fill: var(--dl-text-muted);
+	}
+	.world .wtag rect {
+		fill: var(--dl-now);
+	}
+	.world .wtag text {
+		font: 700 12px var(--dl-font-code);
+		fill: var(--dl-surface);
+		text-anchor: middle;
+	}
+	.world .wg {
+		fill: none;
+		stroke: var(--dl-border-strong);
+	}
+	.world .wgn {
+		font: 700 12.5px var(--dl-font);
+		fill: var(--dl-text);
+	}
+	.world .ws text {
+		font: 500 11.5px var(--dl-font-code);
+		fill: var(--dl-text);
+	}
+	.world .ws.ok rect {
+		stroke: var(--dl-done);
+	}
+	.world .ws.wait rect {
+		stroke: var(--dl-warn);
+		stroke-dasharray: 3 2;
+	}
+	.world .ws.bad rect {
+		stroke: var(--dl-wrong);
+	}
+	.world .ws.bad text {
+		text-decoration: line-through;
+	}
+	.world .wn {
+		font: 500 11.5px var(--dl-font);
+		fill: var(--dl-text-muted);
+	}
+	.world .wax {
+		stroke: var(--dl-text-muted);
+	}
+	.world .wline {
+		stroke: var(--dl-now);
+		stroke-width: 2;
+	}
+	.world .wp {
+		fill: var(--dl-text);
+		stroke: var(--dl-surface);
 	}
 	.ll text {
 		font: 500 12.5px var(--dl-font);
