@@ -14,7 +14,37 @@ export type Lesson = {
 	example: Example;
 	practice: Practice;
 	check: CheckItem[]; // 3〜5
+	map?: LessonMap; // 図の絵・町の呼び名・区画・線の名前（D-21。explanation-standard.md 2.2）
 };
+
+/** 図の材料。位置は appear の at から決め、ここは絵と名前だけを持つ（2.2） */
+export type LessonMap = {
+	nodes: Record<string, MapNode>; // appear の id ごとに 1 つ
+	zones?: Zone[]; // 点線の枠で囲む区画
+	links: Link[]; // move の組（向きを問わない 1 組）ごとに 1 本
+};
+export type Icon =
+	| 'pc'
+	| 'laptop'
+	| 'phone'
+	| 'router'
+	| 'cloud'
+	| 'server'
+	| 'db'
+	| 'file'
+	| 'folder'
+	| 'wall'
+	| 'node'
+	| 'box'
+	| 'gear'
+	| 'person'
+	| 'book'
+	| 'chart'
+	| 'brain';
+export type MapNode = { icon: Icon; town: string; addr?: string }; // town は町での呼び名（名札）
+export type Zone = { label: string; note: string; members: string[] };
+/** 線。a と b は appear の id。dir は矢印の向き（ab は a → b、both は両向き）。label は線の名前 */
+export type Link = { a: string; b: string; label: string; dir: 'ab' | 'ba' | 'both' };
 
 export type Step = {
 	n: number; // 1 から連番
@@ -25,9 +55,45 @@ export type Step = {
 	scene: SceneOp[]; // 1 件以上。図の変化
 	log: LogRow; // 必須。1 行
 	why?: string; // 「なぜそうなっているか」。1 レッスンに 1 回以上
+	town?: string; // 町での言い方。1 文 60 字以内（右の欄の「町では」）
+	work?: string; // 仕事では（確かめるコマンドなど）。1 文 60 字以内
+	ask?: Ask; // 予想の問い。このステップの動きの前に出す（LS-M5）
+	inside?: Inside; // 中身の板の材料（2.1）
 };
 
-export type Fact = { k: string; v: string }; // v は等幅で出す
+/** 予想の問い。a は opts の正しい番号（0 から） */
+export type Ask = { q: string; opts: string[]; a: number; why: string };
+
+export type Inside = {
+	packet?: Packet; // このステップで流れる物の中身（move の payload の中身）
+	hosts?: Host[]; // このステップの後の OS の中。全体を書く
+	logs?: LogLine[]; // このステップで増えるログ。1〜4 行
+};
+export type Packet = {
+	name: string; // "TCP SYN" "HTTP GET /" など
+	size: string; // "66 B" など
+	parts: PacketPart[]; // 層・節。外側から順
+	hex?: string; // 本物のバイト列（16 進）
+};
+export type PacketField = {
+	k: string;
+	v: string; // at があるときは、at のバイトの読み方（10 進・0x・IP・MAC・文字・16 進）で始める
+	level: 1 | 2 | 3; // 詳しさ
+	at?: [number, number]; // hex の [始まり, 長さ]
+};
+export type PacketPart = { name: string; fields: PacketField[] };
+export type Host = { name: string; town: string; addr: string; rows: HostRow[] };
+export type HostRow = {
+	id: string; // ステップをまたいで同じ物は同じ id
+	depth: 0 | 1 | 2;
+	what: string;
+	state: string;
+	tone?: 'ok' | 'warn' | 'bad';
+};
+export type LogLine = { t: string; src: string; text: string };
+
+// v は等幅で出す。calc は v の数を計算し直す式（検査 25。+ - * / ^ ( ) と exp ln sqrt abs）
+export type Fact = { k: string; v: string; calc?: string };
 
 export type SceneOp =
 	| { op: 'appear'; id: string; label: string; sub?: string; at: [number, number] }
@@ -54,6 +120,7 @@ export type Practice = {
 	setup: unknown; // 初期状態
 	success: unknown; // 合格の判定
 	mistakes: Mistake[]; // 2〜4 件
+	commands?: string[]; // 道具の実戦で使うコマンド（"git add" "curl"）。コマンドの参考を出す（検査 20）
 };
 
 export type Mistake = {

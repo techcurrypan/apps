@@ -1,10 +1,11 @@
-// 説明の中身の検査。docs/explanation-standard.md 第 3 章の 15 項目。
+// 説明の中身の検査。docs/explanation-standard.md 第 3 章の 25 項目（16〜25 は inside-check.ts）。
 // 1 件でも Problem を返したら、content:check は失敗で終わる。
+import { checkInside, type InsideOptions } from './inside-check.ts';
 import type { Lesson, SceneOp, Step } from './types.ts';
 
 export type Problem = {
 	lessonId: string;
-	check: number; // 第 3 章の番号 1〜15
+	check: number; // 第 3 章の番号 1〜25
 	where: string; // どこで落ちたか（「ステップ 2」など）
 	message: string; // 何が駄目か
 };
@@ -89,7 +90,11 @@ function opIds(op: SceneOp): string[] {
 
 const stepWhere = (s: Step, i: number) => `ステップ ${Number.isInteger(s.n) ? s.n : i + 1}`;
 
-export function checkLesson(lesson: Lesson, known: ReadonlySet<string>): Problem[] {
+export function checkLesson(
+	lesson: Lesson,
+	known: ReadonlySet<string>,
+	opt: InsideOptions = {}
+): Problem[] {
 	const problems: Problem[] = [];
 	const add = (check: number, where: string, message: string) =>
 		problems.push({ lessonId: lesson.id, check, where, message });
@@ -199,11 +204,14 @@ export function checkLesson(lesson: Lesson, known: ReadonlySet<string>): Problem
 			if (prev.has(`${f.k}\u0000${f.v}`))
 				add(15, stepWhere(steps[i], i), `前のステップと同じ facts「${f.k}: ${f.v}」がある`);
 	}
+	// 16〜25
+	if (steps.length > 0 && steps.every((s) => Array.isArray(s.scene) && s.log))
+		checkInside(lesson, add, opt);
 
 	return problems;
 }
 
-export function checkAll(lessons: readonly Lesson[]): Problem[] {
+export function checkAll(lessons: readonly Lesson[], opt: InsideOptions = {}): Problem[] {
 	const known = new Set(lessons.map((l) => l.id));
 	const problems: Problem[] = [];
 	const seen = new Set<string>();
@@ -211,7 +219,7 @@ export function checkAll(lessons: readonly Lesson[]): Problem[] {
 		if (seen.has(l.id))
 			problems.push({ lessonId: l.id, check: 13, where: 'id', message: 'ID が重複している' });
 		seen.add(l.id);
-		problems.push(...checkLesson(l, known));
+		problems.push(...checkLesson(l, known, opt));
 	}
 	return problems;
 }

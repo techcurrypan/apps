@@ -163,6 +163,23 @@ export type HostRow = {
 export type LogLine = { t: string; src: string; text: string };  // src は書いた物（"nginx access.log" "kernel node-1" "kube-scheduler"）
 ```
 
+```ts
+// 2026-11-15 に 10-R の 2 で足した欄（D-21。型は src/lib/lesson/types.ts）
+export type Step = {
+  // …
+  work?: string;              // 仕事では（確かめるコマンドなど）。1 文 60 字以内
+  ask?: Ask;                  // 予想の問い。このステップの動きの前に出す（LS-M5）
+};
+export type Ask = { q: string; opts: string[]; a: number; why: string };  // a は opts の正しい番号（0 から）
+export type Fact = { k: string; v: string; calc?: string };  // calc は v の数を計算し直す式（検査 25）
+export type Practice = { /* … */ commands?: string[] };       // 道具の実戦で使うコマンド（"git add" "curl"。検査 20）
+```
+
+- 欄の `v` は、`at` があるとき、そのバイトの読み方（10 進・`0x` の 16 進・IP・MAC・文字・DNS の名前・16 進の並び）で**始める**。
+  後ろに括弧で意味を足してよい（`0x02（SYN）`）。検査 21 はこの決まりで読み直す
+- 荷物は `src/lib/lesson/packet.ts` の組み立て（`tcpPacket`・`udpPacket`・`dnsPart`・`textPart`・`assemble`）で作ってよい。
+  長さとチェックサムは組み立てが計算し、検査 21 が別の道筋（`bytes.ts`）で読み直す
+
 **どの分野で要るか**
 
 | 分野 | `packet` | `hosts` | `logs` |
@@ -179,6 +196,24 @@ export type LogLine = { t: string; src: string; text: string };  // src は書�
 - 値はステップの `facts` と合わせる（IP・ポート・pid・ID・時刻）。同じ物はレッスンの中で同じ値
 - `hosts` の `id` はステップをまたいで変えない。消えた物は書かない（画面が「消えた」と出す）
 - コンテナは「棟の中の部屋」であり、OS から見ると**ただのプロセス**だと分かる形に書く（containerd-shim → アプリのプロセス）
+
+### 2.2 図の材料（`Lesson.map`。D-21 で足した）
+
+図の機械を線画の絵と町での呼び名で描き、線に名前と向きを付けるための材料。位置は `appear` の `at` から画面が決める。
+
+```ts
+export type Lesson = { /* … */ map?: LessonMap };
+export type LessonMap = {
+  nodes: Record<string, { icon: Icon; town: string; addr?: string }>;  // appear の id ごと。town は名札の町での呼び名
+  zones?: { label: string; note: string; members: string[] }[];       // 点線の枠の区画（家の中・ノードなど）
+  links: { a: string; b: string; label: string; dir: 'ab' | 'ba' | 'both' }[];  // move のある組ごとに 1 本。名前と向き
+};
+type Icon = 'pc' | 'laptop' | 'phone' | 'router' | 'cloud' | 'server' | 'db' | 'file' | 'folder' | 'wall'
+          | 'node' | 'box' | 'gear' | 'person' | 'book' | 'chart' | 'brain';
+```
+
+- `move` のある組（向きを問わない）には必ず線を 1 本置き、名前を付ける。両向きの動きがあれば `both`（検査 16）
+- 番地（`addr`）は、`appear` の `sub` と、中身の板の `hosts` の `addr` と同じ値（検査 24）
 
 ---
 
@@ -203,11 +238,11 @@ export type LogLine = { t: string; src: string; text: string };  // src は書�
 | 13 | `prereq` / `related` / `next` の ID が実在する |
 | 14 | 各ステップの `scene` に、状態を変える操作（`appear` / `move` / `change` / `vanish`）が 1 件以上ある。`highlight` だけのステップは不可 |
 | 15 | 同じ `facts` の組が、隣り合うステップで重複していない |
-| 16 | 2.1 の表で要る分野のレッスンに、`inside` の `packet`・`hosts`・`logs` が決まった回数ある（D-21） |
+| 16 | 2.1 の表で要る分野のレッスンに、`inside` の `packet`・`hosts`・`logs` が決まった回数ある。`map` があり、全ステップに `town` がある（D-21）。`map` を持つ全レッスンで、機械・線・区画が 2.2 に合い、予想の問いの答えが選択肢の中にある。**当てる分野は `src/lib/lesson/inside-fields.ts` の表**（書き終えた分野から足す） |
 | 17 | `inside.hosts` の `id` が、同じ物で同じ・1 つのステップの中で重複しない |
 | 18 | `inside.packet.parts` の `at` が `hex` の長さを超えない。`hex` がある時は `at` が 1 つ以上ある |
 | 19 | `inside.logs` が 1 ステップ 1〜4 行、1 行 120 字以内 |
-| 20 | 実戦の `tool` で使うコマンドに、公式の説明のリンクがある（`src/lib/practice` の参考の表。D-21） |
+| 20 | 実戦の `tool` で使うコマンド（`practice.commands`）に、公式の説明のリンクがある（`src/lib/practice/refs.ts`）。解き方で使うコマンドに漏れが無い。当てる分野は検査 16 と同じ表 |
 | 21 | `inside.packet.hex` があるとき、長さが `size` と合い、IP・TCP・UDP のチェックサムが計算し直した値と一致し、全ての欄の `v` が `at` のバイトから読める値と一致する（LS-Q1） |
 | 22 | Git の blob・tree・commit の ID が、中身から計算した SHA-1 と一致する（LS-Q2） |
 | 23 | `inside.logs` の各行が、`src` ごとの本物の書式の型（`tools.md` 第 2 章の記録から作る）に当たる。型の無い `src` は使えない（LS-Q4） |
