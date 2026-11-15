@@ -208,6 +208,11 @@ export type LogLine = { t: string; src: string; text: string };  // src は書�
 | 18 | `inside.packet.parts` の `at` が `hex` の長さを超えない。`hex` がある時は `at` が 1 つ以上ある |
 | 19 | `inside.logs` が 1 ステップ 1〜4 行、1 行 120 字以内 |
 | 20 | 実戦の `tool` で使うコマンドに、公式の説明のリンクがある（`src/lib/practice` の参考の表。D-21） |
+| 21 | `inside.packet.hex` があるとき、長さが `size` と合い、IP・TCP・UDP のチェックサムが計算し直した値と一致し、全ての欄の `v` が `at` のバイトから読める値と一致する（LS-Q1） |
+| 22 | Git の blob・tree・commit の ID が、中身から計算した SHA-1 と一致する（LS-Q2） |
+| 23 | `inside.logs` の各行が、`src` ごとの本物の書式の型（`tools.md` 第 2 章の記録から作る）に当たる。型の無い `src` は使えない（LS-Q4） |
+| 24 | 同じ物の値（IP・ポート・pid・ID・大きさ）が、そのレッスンの `facts`・`scene`・`log`・`inside` で食い違わない。時刻は進むだけ（LS-Q5・LS-Q6） |
+| 25 | 計算する題材の数（損失・確率など）を、検査が同じ式で計算し直して一致する（LS-Q3） |
 
 ---
 
