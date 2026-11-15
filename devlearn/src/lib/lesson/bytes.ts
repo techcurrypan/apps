@@ -121,7 +121,7 @@ export function verifyPacket(p: Packet): string[] {
 	return out;
 }
 
-/** 検査 22：Git の物の荷物は、ID の欄（7〜40 字）が中身の SHA-1 と一致する */
+/** 検査 22：Git の物の荷物は、ID の欄（名前が「ID」で始まる欄。7〜40 字）が中身の SHA-1 と一致する。中の物を指す「〜の中身の ID」は比べない */
 export function verifyGitId(p: Packet): string[] {
 	if (p.hex === undefined) return [];
 	const b = hexBytes(p.hex);
@@ -129,7 +129,7 @@ export function verifyGitId(p: Packet): string[] {
 	const id = gitObjectId(b);
 	if (!id) return [];
 	const fields = p.parts.flatMap((x) => x.fields);
-	const named = fields.filter((x) => /ID/.test(x.k));
+	const named = fields.filter((x) => /^ID/.test(x.k));
 	if (named.length === 0) return [`Git の物（${id.slice(0, 7)}）に ID の欄が無い`];
 	const bad = named.filter((x) => {
 		const m = /^[0-9a-f]{7,40}/.exec(x.v);

@@ -77,7 +77,7 @@ export const LOG_FORMATS: LogFormat[] = [
 	},
 	{
 		src: /^git$/,
-		line: /^(\[\S+( \(root-commit\))? [0-9a-f]{7}\] .+| \d+ files? changed.*|To \S+| {3}[0-9a-f]{7}\.\.[0-9a-f]{7} {2}\S+ -> \S+| \* \[new branch\] +\S+ -> \S+|Switched to( a new)? branch '\S+'|Fast-forward|Merge made by the '\S+' strategy\.|CONFLICT \(content\): Merge conflict in \S+|Auto-merging \S+)$/,
+		line: /^(\[\S+( \(root-commit\))? [0-9a-f]{7}\] .+| \d+ files? changed.*|To \S+| {3}[0-9a-f]{7}\.\.[0-9a-f]{7} {2}\S+ -> \S+| \* \[new branch\] +\S+ -> \S+|Switched to( a new)? branch '\S+'|Fast-forward|Merge made by the '\S+' strategy\.|CONFLICT \(content\): Merge conflict in \S+|Auto-merging \S+|Initialized empty Git repository in \S+| create mode \d{6} \S+| \d+ insertions?\(\+\).*)$/,
 		from: 'git commit・push・switch・merge の出力'
 	},
 	{

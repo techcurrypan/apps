@@ -172,6 +172,15 @@ describe('Git の ID（LS-Q2）', () => {
 	it('ID がちがえば落ちる', () => {
 		expect(verifyGitId(pk('0123456')).length).toBe(1);
 	});
+	it('中の物を指す ID（tree の行の「〜の中身の ID」）は、その物自身の ID として比べない', () => {
+		const p = pk(id);
+		p.parts[0].fields.push({
+			k: 'hello.txt の中身の ID',
+			v: '0123456789abcdef0123456789abcdef01234567',
+			level: 1
+		});
+		expect(verifyGitId(p)).toEqual([]);
+	});
 	it('頭の大きさが中身と合わなければ落ちる', () => {
 		const bad = assemble('blob', [
 			{

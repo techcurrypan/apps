@@ -3,7 +3,49 @@
 //   GIT_AUTHOR_NAME=learner GIT_AUTHOR_EMAIL=learner@example.com
 //   GIT_AUTHOR_DATE / GIT_COMMITTER_DATE = 2026-11-10T09:00:00+09:00（2 件目は 09:05:00）
 // 経過時刻 t は git init を 0s とした。1 件目の commit が 35s、2 件目が 5m35s。
-import type { Lesson } from '../../lesson/types.ts';
+import type { Host, HostRow, Lesson } from '../../lesson/types.ts';
+import { blob, commit, tree } from '../inside/git.ts';
+
+// 中身の板：本物の Git の物（ID は中身の SHA-1。facts の ID と同じ値になる）
+const B1 = blob('hello world\n');
+const T1 = tree([{ mode: '100644', name: 'hello.txt', id: B1.id }]);
+const WHO = 'learner <learner@example.com>';
+const C1 = commit({
+	tree: T1.id,
+	who: WHO,
+	time: 1794268800,
+	zone: '+0900',
+	message: 'first commit'
+});
+const B2 = blob('hello world\nhello git\n');
+const T2 = tree([{ mode: '100644', name: 'hello.txt', id: B2.id }]);
+const C2 = commit({
+	tree: T2.id,
+	parent: C1.id,
+	who: WHO,
+	time: 1794269100,
+	zone: '+0900',
+	message: 'add second line'
+});
+const obj = (id: string, what: string, state: string): HostRow => ({
+	id: `o-${id.slice(0, 7)}`,
+	depth: 1,
+	what: `.git/objects/${id.slice(0, 2)}/${id.slice(2, 9)}…`,
+	state: `${what} ・ ${state}`
+});
+const demo = (...rows: HostRow[]): Host => ({
+	name: 'devbox',
+	town: '町長の机',
+	addr: '~/demo',
+	rows
+});
+const headRow: HostRow = { id: 'head', depth: 0, what: '.git/HEAD', state: 'ref: refs/heads/main' };
+const objs = (n: number): HostRow => ({
+	id: 'objs',
+	depth: 0,
+	what: '.git/objects/',
+	state: `${n} 件`
+});
 
 const WT = '作業ツリー';
 const IDX = 'ステージ';
@@ -24,6 +66,18 @@ export const git001: Lesson = {
 			n: 1,
 			title: '記録の置き場を作る',
 			lead: 'git init で .git という置き場ができる',
+			town: '役場に記録庫を作る。中はまだ空っぽ。',
+			work: 'git status で、今どこに何があるかを毎回確かめる',
+			inside: {
+				hosts: [demo(headRow, objs(0))],
+				logs: [
+					{
+						t: '0s',
+						src: 'git',
+						text: 'Initialized empty Git repository in /home/learner/demo/.git/'
+					}
+				]
+			},
 			body: [
 				'git init を打つと、今のフォルダに .git という隠しフォルダができる。',
 				'これをリポジトリと呼び、変更の記録は全てこの中に貯まる。',
@@ -46,6 +100,23 @@ export const git001: Lesson = {
 			n: 2,
 			title: 'ファイルを作る',
 			lead: '作業ツリーに置いても、まだ記録の外にある',
+			town: '作業机に、新しい書類 hello.txt を置く。',
+			work: 'git status --short の ?? は、まだ見張っていないファイル',
+			inside: {
+				hosts: [
+					demo(
+						{
+							id: 'f-hello',
+							depth: 0,
+							what: 'hello.txt',
+							state: '12 B ・ まだ記録していない',
+							tone: 'warn'
+						},
+						headRow,
+						objs(0)
+					)
+				]
+			},
 			body: [
 				'hello.txt に hello world と 1 行書く。中身は改行を含めて 12 バイトだ。',
 				'git status --short は、このファイルを ?? と示す。追跡していない、という印だ。'
@@ -70,6 +141,31 @@ export const git001: Lesson = {
 			n: 3,
 			title: 'add で中身を保存する',
 			lead: 'git add で、中身が名前の付いた物になる',
+			town: '書類の写しを箱に詰め、番号札 3b18e51 を付けて記録庫へ入れる。',
+			work: 'git cat-file -p 3b18e51 で、箱の中身を取り出して読める',
+			inside: {
+				packet: B1.packet,
+				hosts: [
+					demo(
+						{
+							id: 'f-hello',
+							depth: 0,
+							what: 'hello.txt',
+							state: '12 B ・ ステージに載った',
+							tone: 'ok'
+						},
+						headRow,
+						{
+							id: 'index',
+							depth: 0,
+							what: '.git/index',
+							state: `hello.txt → ${B1.id.slice(0, 7)}`
+						},
+						objs(1),
+						obj(B1.id, 'blob', '20 B')
+					)
+				]
+			},
 			body: [
 				'git add hello.txt で、中身がリポジトリに blob（中身の塊）として保存される。',
 				'blob の名前は中身から計算した ID で、先頭 7 桁は 3b18e51 だ。',
@@ -93,7 +189,7 @@ export const git001: Lesson = {
 				to: REPO,
 				kind: 'add',
 				info: 'blob 3b18e51 を保存し、ステージに載せた',
-				size: '12 B'
+				size: '20 B'
 			},
 			why: '中身から ID を作ると、同じ中身は同じ ID になる。二度保存せずに済み、中身が壊れれば ID と合わなくなって気付ける'
 		},
@@ -101,6 +197,32 @@ export const git001: Lesson = {
 			n: 4,
 			title: 'commit で記録を作る',
 			lead: 'ステージの一覧が、そのまま 1 件の記録になる',
+			town: '控えの一覧を清書し、日付と書いた人を添えて綴じる。',
+			work: 'git log --stat で、記録ごとに変えたファイルを確かめる',
+			inside: {
+				packet: T1.packet,
+				hosts: [
+					demo(
+						{ id: 'f-hello', depth: 0, what: 'hello.txt', state: '12 B ・ 記録と同じ', tone: 'ok' },
+						headRow,
+						{
+							id: 'index',
+							depth: 0,
+							what: '.git/index',
+							state: `hello.txt → ${B1.id.slice(0, 7)}`
+						},
+						objs(3),
+						obj(B1.id, 'blob', '20 B'),
+						obj(T1.id, 'tree', '45 B'),
+						obj(C1.id, 'commit', '記録 1 件目')
+					)
+				],
+				logs: [
+					{ t: '35s', src: 'git', text: `[main (root-commit) ${C1.id.slice(0, 7)}] first commit` },
+					{ t: '35s', src: 'git', text: ' 1 file changed, 1 insertion(+)' },
+					{ t: '35s', src: 'git', text: ' create mode 100644 hello.txt' }
+				]
+			},
 			body: [
 				'git commit を打つと、ステージの一覧から tree（フォルダの目録）が作られる。',
 				'その tree と、書いた人・日時・説明文をまとめた物が commit（記録 1 件）だ。',
@@ -129,6 +251,25 @@ export const git001: Lesson = {
 			n: 5,
 			title: '枝の名札が記録を指す',
 			lead: 'main は、最新の commit の ID を書いた名札だ',
+			town: '「最新はこれ」の名札 main を、綴じた記録に掛ける。',
+			work: 'cat .git/refs/heads/main で、名札がただの 41 バイトの文字だと分かる',
+			inside: {
+				hosts: [
+					demo(
+						{ id: 'f-hello', depth: 0, what: 'hello.txt', state: '12 B ・ 記録と同じ', tone: 'ok' },
+						headRow,
+						{ id: 'main', depth: 0, what: '.git/refs/heads/main', state: C1.id.slice(0, 7) },
+						objs(3)
+					)
+				],
+				logs: [
+					{
+						t: '35s',
+						src: 'git reflog',
+						text: `${C1.id.slice(0, 7)} HEAD@{0}: commit (initial): first commit`
+					}
+				]
+			},
 			body: [
 				'commit を作ると、枝 main が新しい commit を指す。',
 				'main の正体は .git/refs/heads/main にある 1 行の ID だ。',
@@ -149,6 +290,24 @@ export const git001: Lesson = {
 			n: 6,
 			title: '編集するとずれが出る',
 			lead: '作業ツリーとステージの中身が食い違う',
+			town: '机の書類に 1 行書き足す。記録庫の写しとはずれる。',
+			work: 'git diff で、まだステージに載せていない違いを見る',
+			inside: {
+				hosts: [
+					demo(
+						{
+							id: 'f-hello',
+							depth: 0,
+							what: 'hello.txt',
+							state: '22 B ・ 記録とずれた',
+							tone: 'warn'
+						},
+						headRow,
+						{ id: 'main', depth: 0, what: '.git/refs/heads/main', state: C1.id.slice(0, 7) },
+						objs(3)
+					)
+				]
+			},
 			body: [
 				'hello.txt に hello git と 1 行足す。大きさは 22 バイトになる。',
 				'作業ツリーは新しい中身、ステージは古い 3b18e51 のままだ。',
@@ -177,6 +336,31 @@ export const git001: Lesson = {
 			n: 7,
 			title: '2 件目は前の記録を指す',
 			lead: '新しい commit は、親として前の ID を持つ',
+			town: '新しい写しを箱に入れ、前の記録を指す 2 冊目を綴じる。',
+			work: 'git log --oneline --graph で、記録が親をたどってつながるのを見る',
+			inside: {
+				packet: B2.packet,
+				hosts: [
+					demo(
+						{ id: 'f-hello', depth: 0, what: 'hello.txt', state: '22 B ・ 記録と同じ', tone: 'ok' },
+						headRow,
+						{
+							id: 'main',
+							depth: 0,
+							what: '.git/refs/heads/main',
+							state: `${C2.id.slice(0, 7)}（前は ${C1.id.slice(0, 7)}）`
+						},
+						objs(6),
+						obj(B2.id, 'blob', '30 B'),
+						obj(T2.id, 'tree', '45 B'),
+						obj(C2.id, 'commit', `記録 2 件目 ・ 親 ${C1.id.slice(0, 7)}`)
+					)
+				],
+				logs: [
+					{ t: '5m35s', src: 'git', text: `[main ${C2.id.slice(0, 7)}] add second line` },
+					{ t: '5m35s', src: 'git', text: ' 1 file changed, 1 insertion(+)' }
+				]
+			},
 			body: [
 				'もう一度 add と commit を打つと、blob c940fc8 と commit 3e0fe7b ができる。',
 				'3e0fe7b は parent（親）として 84eecf4 を持つ。親を辿ると履歴になる。',
@@ -227,6 +411,7 @@ export const git001: Lesson = {
 	practice: {
 		goal: '新しいファイルを、1 件の commit として記録する',
 		tool: { name: 'git', mode: 'mock' },
+		commands: ['git add', 'git commit', 'git status', 'git log'],
 		setup: {
 			cwd: '/home/learner/demo',
 			initialized: true,
@@ -267,5 +452,20 @@ export const git001: Lesson = {
 			ask: '記録が指す中身',
 			how: 'git cat-file -p HEAD^{tree} に blob 3b18e51 と hello.txt が出る'
 		}
-	]
+	],
+	map: {
+		nodes: {
+			wt: { icon: 'folder', town: '作業机', addr: '~/demo' },
+			idx: { icon: 'file', town: '出す前の控え', addr: '.git/index' },
+			repo: { icon: 'db', town: '記録庫', addr: '.git/objects' },
+			main: { icon: 'book', town: '最新の名札', addr: '.git/refs/heads/main' }
+		},
+		zones: [
+			{ label: '.git の中', note: '/home/learner/demo/.git', members: ['idx', 'repo', 'main'] }
+		],
+		links: [
+			{ a: 'wt', b: 'repo', label: '中身を箱に入れる', dir: 'ab' },
+			{ a: 'idx', b: 'repo', label: '一覧を記録にする', dir: 'ab' }
+		]
+	}
 };

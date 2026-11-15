@@ -49,20 +49,49 @@
 
 | 場面 | 試作 | 本番のレッスン | 撮った画面 |
 |---|---|---|---|
-| C-1 | | | |
-| C-2 | | | |
-| C-3 | | | |
-| C-4 | | | |
+| C-1 | `#net` 見る、最初 | net-007（HTTP のやり取り。試作の net の HTTP の所。DNS と TCP の所は net-004・net-005 に当たる） | `shots/phase-10-R/C-1-proto.png`・`-prod.png` |
+| C-2 | `#net` 見る、GET / を再生中 | net-007（HTTP のやり取り。試作の net の HTTP の所。DNS と TCP の所は net-004・net-005 に当たる） | `shots/phase-10-R/C-2-proto.png`・`-prod.png` |
+| C-3 | `#net` 見る、届いた直後・中身まで | net-007（HTTP のやり取り。試作の net の HTTP の所。DNS と TCP の所は net-004・net-005 に当たる） | `shots/phase-10-R/C-3-proto.png`・`-prod.png` |
+| C-4 | `#net` 見る、最後・時系列 | net-007（HTTP のやり取り。試作の net の HTTP の所。DNS と TCP の所は net-004・net-005 に当たる） | `shots/phase-10-R/C-4-proto.png`・`-prod.png` |
 | C-5 | | | |
 | C-6 | | | |
 | C-7 | | | |
 | C-8 | | | |
 | C-9 | | | |
 | C-10 | | | |
-| C-11 | | | |
+| C-11 | `#net` 見る、問いが出た所 | net-007（HTTP のやり取り。試作の net の HTTP の所。DNS と TCP の所は net-004・net-005 に当たる） | `shots/phase-10-R/C-11-proto.png`・`-prod.png` |
 | C-12 | | | |
-| C-13 | | | |
-| C-14 | | | |
+| C-13 | C-2 を 390×844 | net-007（HTTP のやり取り。試作の net の HTTP の所。DNS と TCP の所は net-004・net-005 に当たる） | `shots/phase-10-R/C-13-proto.png`・`-prod.png` |
+| C-14 | C-3 を明 | net-007（HTTP のやり取り。試作の net の HTTP の所。DNS と TCP の所は net-004・net-005 に当たる） | `shots/phase-10-R/C-14-proto.png`・`-prod.png` |
+
+### 10-R の記録（2026-11-15 の実行）
+
+**作った物**
+- 型と検査 16〜25（`src/lib/lesson/`：`types.ts`・`inside-check.ts`・`packet.ts`・`bytes.ts`・`calc.ts`・`logformat.ts`・`inside-fields.ts`）。テスト `inside-check.test.ts`
+- 学習画面の状態（`src/lib/learn/`）：出来事と図と中身の板 `model.ts`、図の置き方 `geometry.ts`（線の名前・番号の丸を重ならない所に置く）、視点 `camera.ts`、自作の線画 `icons.ts`、育つ物 `grow.ts`、好み `prefs.ts`。テスト 4 本
+- 学習画面（`src/lib/ui/learn/`）：`LearnView.svelte`（上の帯・レッスンの帯・流れ・時間の帯・台本・予想の問い・記録・知らせ・キー）、`Diagram.svelte`（図・時系列・拡大縮小・移動・動きに寄る）、`InsideBoard.svelte`（荷物の中身・OS の中・ログ）。`/lesson/<id>` はこれに替えた
+- 見本の中身：net-007 に map・town・work・ask・inside・commands。荷物 3 つ（SYN 54 B・GET 133 B・200 OK 270 B）は本物の決まりで組み、検査 21 で読み直して通る
+- 比べる道具 `scripts/look-learn.ts`（試作と本番を同じ場面で撮り、数を JSON に出す）
+- 街の画面が保存のたびに、上の帯の数（資金・満足度）を `devlearn.town.summary` に書く
+
+**どう確かめたか**
+- `npm run check`・`lint`・`test`（2609 件）・`content:check`（25 項目）・`secrets` が通る。`npm run build` が通る
+- 手元（vite dev）と公開 URL で `look-learn.ts` を流し、試作と並べて撮った（下の表）
+
+**まだの物（次の実行で続ける）**
+- やってみる（LS-P）・思い出す（LS-R）は、まだ古い部品（`ToolPractice`・`FormPractice`・確認の一覧）を新しい画面に載せただけ。10-R の 6・7 で作り直す
+- 見本の中身は net-007 だけ。git（C-6）・k8s に当たる ctr / cld（C-7〜C-9・C-12）・ai（C-10）の見本がまだ
+- 見た目の判定（別のエージェント）は、全場面がそろってから行う（10-R の 10）
+- LS-Q8 は「試作の 1 本の題が本番の数本に分かれるときは、その数本を合わせて比べる」と読む（試作の net は DNS・TCP・HTTP を 1 本で教え、本番は net-004・005・007 の 3 本）
+
+**数で測った値（手元、1440×960 と 390×844）**
+
+| 場面 | 図の高さ | 一番小さい字 | 内側のスクロール | 文字の重なり | 番号の丸の重なり | 図・説明・時間の帯・中身の見出しが見える |
+|---|---|---|---|---|---|---|
+| C-3 試作 | 384 | 6.4px | 無し | 0 | 0 | 全て |
+| C-3 本番 | 384 | 10px | 無し | 0 | 0 | 全て |
+| C-13 試作（390） | 338 | 3.4px | 無し | 0 | 0 | 説明が出ない |
+| C-13 本番（390） | 321 | 10px | 無し | 0 | 0 | 図・説明・時間の帯（中身は下） |
 
 ### 10-R 水準の表
 
