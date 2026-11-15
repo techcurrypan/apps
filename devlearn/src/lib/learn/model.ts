@@ -127,6 +127,13 @@ export type Phase = 'before' | 'moving' | 'after';
 export function nodesAt(lesson: Lesson, k: number, phase: Phase): NodeState[] {
 	const beats = beatsOf(lesson);
 	const nodes: Nodes = new Map();
+	if (k === 0) {
+		// 概要：始める前に、出てくる機械の全体を見せる（値はまだ無い）
+		for (const s of lesson.explain)
+			for (const op of s.scene)
+				if (op.op === 'appear' && !nodes.has(op.id)) apply(nodes, op, false);
+		return [...nodes.values()];
+	}
 	for (let i = 1; i < k && i < beats.length; i++) {
 		const b = beats[i];
 		for (const op of b.pre) apply(nodes, op, false);
@@ -207,13 +214,13 @@ export function diffHosts(before: readonly Host[] | null, after: readonly Host[]
 	return [...views.filter((v) => v.changed), ...views.filter((v) => !v.changed)];
 }
 
-/** ステップ n の後の OS の中（書いていないステップは前のまま）。n = 0 は始まりの前 */
-export function hostsAfter(lesson: Lesson, n: number): Host[] | null {
+/** ステップ n の後の OS の中（書いていないステップは前のまま）。n = 0 は始まりの前（start。見るでは無い） */
+export function hostsAfter(lesson: Lesson, n: number, start: Host[] | null = null): Host[] | null {
 	for (let i = Math.min(n, lesson.explain.length); i >= 1; i--) {
 		const h = lesson.explain[i - 1].inside?.hosts;
 		if (h) return h;
 	}
-	return null;
+	return start;
 }
 
 export type LogView = LogLine & { step: number; k: number; fresh: boolean };
@@ -228,14 +235,19 @@ export type InsideView = {
 };
 
 /** 出来事 k・段階 phase のときの中身の板（LS-I）。届く前は前の状態のまま、届いた後に変わる */
-export function insideAt(lesson: Lesson, k: number, phase: Phase): InsideView {
+export function insideAt(
+	lesson: Lesson,
+	k: number,
+	phase: Phase,
+	start: Host[] | null = null
+): InsideView {
 	const beats = beatsOf(lesson);
 	const b = beats[k] ?? beats[0];
 	const step: Step | null = b.step > 0 ? lesson.explain[b.step - 1] : null;
 	const lastOfStep = b.last;
 	const done = phase === 'after' && lastOfStep ? b.step : b.step - 1;
-	const before = hostsAfter(lesson, done - (done === b.step ? 1 : 0));
-	const after = hostsAfter(lesson, done);
+	const before = hostsAfter(lesson, done - (done === b.step ? 1 : 0), start);
+	const after = hostsAfter(lesson, done, start);
 	const changedNow = done === b.step && step?.inside?.hosts !== undefined;
 	const hosts = after ? diffHosts(changedNow ? before : null, after) : [];
 	if (!changedNow) for (const h of hosts) for (const r of h.rows) r.mark = 'same';

@@ -327,6 +327,7 @@ export const net007: Lesson = {
 		goal: 'curl -v で shop.example.com の応答を読み、Web の名乗り（Server の値）を server.txt に書く',
 		tool: { name: 'shell', mode: 'mock' },
 		commands: ['curl', 'echo'],
+		flow: [{ match: '^curl ', from: 'me', to: 'web' }],
 		setup: { world: 'net' },
 		success: { files: { 'server.txt': 'yorozu-web/1.0\n' } },
 		mistakes: [

@@ -412,6 +412,10 @@ export const git001: Lesson = {
 		goal: '新しいファイルを、1 件の commit として記録する',
 		tool: { name: 'git', mode: 'mock' },
 		commands: ['git add', 'git commit', 'git status', 'git log'],
+		flow: [
+			{ match: '^git add ', from: 'wt', to: 'repo' },
+			{ match: '^git commit', from: 'idx', to: 'repo' }
+		],
 		setup: {
 			cwd: '/home/learner/demo',
 			initialized: true,

@@ -172,7 +172,8 @@ export type Step = {
 };
 export type Ask = { q: string; opts: string[]; a: number; why: string };  // a は opts の正しい番号（0 から）
 export type Fact = { k: string; v: string; calc?: string };  // calc は v の数を計算し直す式（検査 25）
-export type Practice = { /* … */ commands?: string[] };       // 道具の実戦で使うコマンド（"git add" "curl"。検査 20）
+export type Practice = { /* … */ commands?: string[]; flow?: Flow[] }; // 道具の実戦で使うコマンド（"git add" "curl"。検査 20）
+export type Flow = { match: string; from: string; to: string }; // やってみるで、打った 1 行が match に当たれば from → to の線を動く（LS-P9）
 ```
 
 - 欄の `v` は、`at` があるとき、そのバイトの読み方（10 進・`0x` の 16 進・IP・MAC・文字・DNS の名前・16 進の並び）で**始める**。
@@ -242,7 +243,7 @@ type Icon = 'pc' | 'laptop' | 'phone' | 'router' | 'cloud' | 'server' | 'db' | '
 | 17 | `inside.hosts` の `id` が、同じ物で同じ・1 つのステップの中で重複しない |
 | 18 | `inside.packet.parts` の `at` が `hex` の長さを超えない。`hex` がある時は `at` が 1 つ以上ある |
 | 19 | `inside.logs` が 1 ステップ 1〜4 行、1 行 120 字以内 |
-| 20 | 実戦の `tool` で使うコマンド（`practice.commands`）に、公式の説明のリンクがある（`src/lib/practice/refs.ts`）。解き方で使うコマンドに漏れが無い。当てる分野は検査 16 と同じ表 |
+| 20 | 実戦の `tool` で使うコマンド（`practice.commands`）に、公式の説明のリンクがある（`src/lib/practice/refs.ts`）。解き方で使うコマンドに漏れが無い。当てる分野は検査 16 と同じ表。`practice.flow`（やってみるで命令が動く線）は全レッスンで、機械が `map.nodes` にあり、2 つの機械を結ぶ線が `map.links` にある |
 | 21 | `inside.packet.hex` があるとき、長さが `size` と合い、IP・TCP・UDP のチェックサムが計算し直した値と一致し、全ての欄の `v` が `at` のバイトから読める値と一致する（LS-Q1） |
 | 22 | Git の blob・tree・commit の ID が、中身から計算した SHA-1 と一致する（LS-Q2） |
 | 23 | `inside.logs` の各行が、`src` ごとの本物の書式の型（`tools.md` 第 2 章の記録から作る）に当たる。型の無い `src` は使えない（LS-Q4） |

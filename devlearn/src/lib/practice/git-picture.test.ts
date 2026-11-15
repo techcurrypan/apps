@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { git001 } from '../content/lessons/git-001.ts';
-import { changedKeys, gitPicture } from './git-picture.ts';
+import { changedKeys, gitBoard, gitPicture } from './git-picture.ts';
 import { openPractice, typePractice } from './tool-practice.ts';
 
 const stateAfter = (lines: string[]) => {
@@ -42,5 +42,25 @@ describe('git の絵', () => {
 			openPractice({ ...git001.practice, setup: { initialized: false, files: {} } }).session.initial
 		);
 		expect(p.repo).toBe(false);
+	});
+});
+
+describe('git の絵を OS の中の行にする（LS-I9）', () => {
+	it('作業ツリー・ステージ・記録の 3 列。記録には ID と説明、枝の名札', () => {
+		const b = gitBoard({
+			repo: true,
+			branch: 'main',
+			worktree: [{ key: 'wt:a.txt', name: 'a.txt', mark: 'A ' }],
+			index: [{ key: 'ix:a.txt', name: 'a.txt', id: '3b18e51' }],
+			commits: [{ key: 'c:84eecf4', id: '84eecf4', subject: 'first', refs: ['HEAD -> main'] }]
+		});
+		expect(b.cols.map((c) => c.title)).toEqual(['作業ツリー', 'ステージ', '記録']);
+		expect(b.cols[2].rows[0].text).toBe('84eecf4 first');
+		expect(b.cols[2].rows[0].tag).toBe('HEAD -> main');
+		expect(b.cols[0].rows[0].tag).toBe('A ');
+	});
+	it('リポジトリが無ければ、作業ツリーだけ', () => {
+		const b = gitBoard({ repo: false, branch: '', worktree: [], index: [], commits: [] });
+		expect(b.cols.map((c) => c.key)).toEqual(['wt']);
 	});
 });

@@ -20,13 +20,24 @@
 		type Prefs
 	} from '../../learn/prefs.ts';
 	import { kindSlots } from '../../player/kinds.ts';
-	import { runTools } from '../../practice/run.ts';
+	import sqlWasm from 'sql.js/dist/sql-wasm-browser.wasm?url';
+	import { gitBoard } from '../../practice/git-picture.ts';
+	import {
+		boardAt,
+		openRun,
+		rewindRun,
+		runTools,
+		typeRun,
+		useSqlWasm,
+		type Run
+	} from '../../practice/run.ts';
+	import { goalsOf, hostOf, tryLesson } from '../../learn/try.ts';
 	import { loadProgress, markDone, saveProgress } from '../../progress.ts';
 	import { inField, prefersReducedMotion } from '../dom.ts';
 	import FormPractice from '../FormPractice.svelte';
-	import ToolPractice from '../ToolPractice.svelte';
 	import Diagram from './Diagram.svelte';
 	import InsideBoard from './InsideBoard.svelte';
+	import TryPanel from './TryPanel.svelte';
 
 	type Props = { lesson: Lesson; known: ReadonlyMap<string, string> };
 	let { lesson, known }: Props = $props();
@@ -68,11 +79,41 @@
 		write(DONE_KEY, doneModes);
 	}
 
-	const beats = $derived(beatsOf(lesson));
-	const geo = $derived(geometryOf(lesson, prefs.town));
-	const slots = $derived(kindSlots(lesson));
+	// ---- やってみる（道具を使う実戦）：打った命令の並びから「やってみるのレッスン」を作り、見ると同じ図で描く ----
+	useSqlWasm(sqlWasm);
+	const hasTool = $derived(runTools.includes(lesson.practice.tool?.name ?? ''));
+	let run = $state.raw<Run | null>(null);
+	let busy = $state(false);
+	$effect.pre(() => {
+		run = hasTool ? openRun(lesson.practice) : null;
+	});
+	const addr = $derived(run ? run.kit.prompt.replace(/\s*\$$/, '') : '');
+	const boardOf = (r: Run, i: number) => {
+		const b = boardAt(r, i);
+		return b.git ? gitBoard(b.git) : b.board;
+	};
+	const tryL = $derived(
+		run
+			? tryLesson(
+					lesson,
+					run.steps,
+					Array.from({ length: run.steps.length + 1 }, (_, i) => boardOf(run as Run, i)),
+					addr
+				)
+			: lesson
+	);
+	const startHosts = $derived(run ? [hostOf(lesson, boardOf(run, 0), addr)] : null);
+	const trying = $derived(mode === 'try' && run !== null);
+	/** 描くレッスン：やってみるでは打った命令の並び、ほかは元のレッスン */
+	const drawn = $derived(trying ? tryL : lesson);
+	const goals = $derived(run ? goalsOf(run.judge) : []);
+
+	const beats = $derived(beatsOf(drawn));
+	const watchBeats = $derived(beatsOf(lesson));
+	const geo = $derived(geometryOf(drawn, prefs.town));
+	const slots = $derived(kindSlots(drawn));
 	const kindOf = (kind: string) => slots.get(kind) ?? 5;
-	const slotOfStep = (step: number) => kindOf(lesson.explain[step - 1]?.log.kind ?? '');
+	const slotOfStep = (step: number) => kindOf(drawn.explain[step - 1]?.log.kind ?? '');
 	const grows = $derived(growsOf(lesson.id, lesson.field));
 	const nodeOf = (id: string) => geo.nodes.find((n) => n.id === id);
 	const townOfLabel = (label: string) => geo.nodes.find((n) => n.label === label)?.town ?? '';
@@ -118,7 +159,7 @@
 	}
 	const askOf = (n: number) => {
 		const b = beats[n];
-		return b && b.first && b.step > 0 ? (lesson.explain[b.step - 1].ask ?? null) : null;
+		return b && b.first && b.step > 0 ? (drawn.explain[b.step - 1]?.ask ?? null) : null;
 	};
 	function animate(to: number) {
 		cancel();
@@ -223,9 +264,9 @@
 
 	// ---- 今の出来事 ----
 	const beat = $derived(beats[k] ?? beats[0]);
-	const step = $derived(beat.step > 0 ? lesson.explain[beat.step - 1] : null);
-	const inside = $derived(insideAt(lesson, k, phase));
-	const changes = $derived(phase === 'after' ? changesAt(lesson, k) : []);
+	const step = $derived(beat.step > 0 ? (drawn.explain[beat.step - 1] ?? null) : null);
+	const inside = $derived(insideAt(drawn, k, phase, trying ? startHosts : null));
+	const changes = $derived(phase === 'after' ? changesAt(drawn, k) : []);
 	const head = $derived(
 		beat.move
 			? {
@@ -240,7 +281,7 @@
 	const lastPacket = $derived.by(() => {
 		for (let i = k; i >= 1; i--) {
 			const b = beats[i];
-			const p = b.first && b.move ? lesson.explain[b.step - 1].inside?.packet : undefined;
+			const p = b.first && b.move ? drawn.explain[b.step - 1]?.inside?.packet : undefined;
 			if (p && b.move && (i < k || phase === 'after'))
 				return {
 					packet: p,
@@ -255,7 +296,7 @@
 	});
 	const rowOf = (n: number) => {
 		const b = beats[n];
-		const st = lesson.explain[b.step - 1];
+		const st = drawn.explain[b.step - 1];
 		if (b.last || !b.move) return { ...st.log, k: n, slot: kindOf(st.log.kind) };
 		return {
 			t: st.log.t,
@@ -307,7 +348,7 @@
 			n: i + 1,
 			title: s.title,
 			lead: s.lead,
-			beats: beats.filter((b) => b.step === i + 1)
+			beats: watchBeats.filter((b) => b.step === i + 1)
 		}))
 	);
 	const words = $derived(
@@ -331,8 +372,66 @@
 	);
 
 	// ---- やってみる ----
-	const hasTool = $derived(runTools.includes(lesson.practice.tool?.name ?? ''));
 	let replay = $state(0);
+	async function send(text: string) {
+		if (!run || busy) return;
+		busy = true;
+		const was = run.passed;
+		try {
+			run = await typeRun(run, run.editor === null ? text.trim() : text);
+		} finally {
+			busy = false;
+		}
+		const n = run.steps.length;
+		reach = n;
+		fb = null;
+		animate(n);
+		if (run.passed && !was) onpass();
+	}
+	function resetTry() {
+		cancel();
+		run = openRun(lesson.practice);
+		k = 0;
+		reach = 0;
+		phase = 'after';
+		t = 1;
+	}
+	function rewindTry(n: number) {
+		if (!run) return;
+		cancel();
+		run = rewindRun(run, n);
+		k = Math.min(n, run.steps.length);
+		reach = k;
+		phase = 'after';
+		t = 1;
+	}
+	const request = $derived(
+		grows.requests[0] ? { who: grows.requests[0].client, text: grows.requests[0].symptom } : null
+	);
+
+	// ---- 学び方の切り替え（見るの位置は覚えておき、戻ると続きから） ----
+	let watchAt = { k: 0, reach: 0 };
+	function setMode(m: Mode) {
+		if (m === mode) return;
+		cancel();
+		playing = false;
+		ask = null;
+		fb = null;
+		if (mode === 'watch') watchAt = { k, reach };
+		mode = m;
+		phase = 'after';
+		t = 1;
+		if (m === 'watch') {
+			k = watchAt.k;
+			reach = watchAt.reach;
+		} else if (m === 'try') {
+			k = run?.steps.length ?? 0;
+			reach = k;
+		} else {
+			k = 0;
+			reach = 0;
+		}
+	}
 	function onpass() {
 		saveProgress(markDone(loadProgress(), lesson.id));
 		markMode('try');
@@ -351,17 +450,20 @@
 		if (inField(e.target) || e.ctrlKey || e.altKey || e.metaKey) return;
 		if (e.shiftKey && (e.key === 'ArrowRight' || e.key === 'ArrowLeft')) {
 			const i = MODES.findIndex((m) => m.id === mode);
-			mode = MODES[(i + (e.key === 'ArrowRight' ? 1 : MODES.length - 1)) % MODES.length].id;
+			setMode(MODES[(i + (e.key === 'ArrowRight' ? 1 : MODES.length - 1)) % MODES.length].id);
 			e.preventDefault();
 			return;
 		}
-		if (mode !== 'watch') {
-			if ((e.key === 'r' || e.key === 'R') && mode === 'try') {
+		if (mode === 'recall') return;
+		if (mode === 'try' && !trying) {
+			if (e.key === 'r' || e.key === 'R') {
 				replay++;
 				e.preventDefault();
 			}
 			return;
 		}
+		if (mode === 'try' && (e.key === ' ' || e.key === '-' || e.key === '+' || e.key === '='))
+			return;
 		if (ask !== null && /^[1-9]$/.test(e.key)) {
 			const i = Number(e.key) - 1;
 			if (i < (askOf(ask)?.opts.length ?? 0)) answer(i);
@@ -494,7 +596,7 @@
 					class:done={doneModes[lesson.id]?.[m.id]}
 					aria-selected={mode === m.id}
 					aria-current={mode === m.id ? 'page' : undefined}
-					onclick={() => (mode = m.id)}
+					onclick={() => setMode(m.id)}
 				>
 					<i>{doneModes[lesson.id]?.[m.id] ? '✓' : i + 1}</i>{m.label}
 				</button>
@@ -502,11 +604,9 @@
 		</div>
 	</section>
 
-	{#if mode === 'try'}
+	{#if mode === 'try' && !trying}
 		<div class="practice" role="tabpanel" aria-label="やってみる">
-			{#if hasTool}
-				<ToolPractice practice={lesson.practice} {replay} {onpass} />
-			{:else if lesson.practice.form}
+			{#if lesson.practice.form}
 				<FormPractice practice={lesson.practice} {replay} {onpass} />
 			{:else}
 				<p>この実戦の道具は準備中。</p>
@@ -514,8 +614,48 @@
 		</div>
 	{/if}
 
-	<div class="grid" class:hidden={mode === 'try'}>
-		<aside class="panel rail" aria-label="流れ" hidden={mode === 'recall'}>
+	<div class="grid" class:hidden={mode === 'try' && !trying}>
+		{#if trying && run}
+			<aside class="panel rail" aria-label="やること">
+				<div class="ph">
+					<h2>やること</h2>
+					<small>{goals.filter((g) => g.state === 'ok').length} / {goals.length}</small>
+				</div>
+				<ol class="goals">
+					{#each goals as g, i (g.label)}
+						<li class={g.state}>
+							<span class="m">{g.state === 'ok' ? '✓' : i + 1}</span>
+							<span
+								><b>{g.label}</b>{#if prefs.depth === 1 || g.state === 'ok'}<small
+										>目標 {g.want}{g.state === 'ok'
+											? ''
+											: ` ・ 今 ${g.got || '（まだ無い）'}`}</small
+									>{/if}</span
+							>
+						</li>
+					{/each}
+				</ol>
+				{#if run.steps.length > 0}
+					<div class="ph">
+						<h2>打った命令</h2>
+						<small>{run.steps.length} 件</small>
+					</div>
+					<div class="evs">
+						{#each run.steps as s, i (i)}
+							<button
+								type="button"
+								class="ev kind-{kindOf(s.code === 0 ? '命令' : 'エラー')}"
+								class:on={i + 1 === k}
+								onclick={() => jump(i + 1)}
+							>
+								<span class="n">{i + 1}</span><span>{s.line.split('\n')[0]}</span>
+							</button>
+						{/each}
+					</div>
+				{/if}
+			</aside>
+		{/if}
+		<aside class="panel rail" aria-label="流れ" hidden={mode === 'recall' || trying}>
 			<div class="ph">
 				<h2>流れ</h2>
 				<small>{chapters.length} 章 ・ {beats.length - 1} 出来事</small>
@@ -562,7 +702,7 @@
 
 		<section class="panel stage" aria-label="図">
 			<Diagram
-				{lesson}
+				lesson={drawn}
 				{geo}
 				{k}
 				{phase}
@@ -583,6 +723,21 @@
 				ontown={(on) => setPrefs({ town: on })}
 				onfollow={(on) => setPrefs({ follow: on })}
 			/>
+			{#if trying && run}
+				{@const s = k > 0 ? run.steps[k - 1] : null}
+				<div class="cap" aria-live="polite">
+					<span class="no kind-{s ? kindOf(s.code === 0 ? '命令' : 'エラー') : 1}"
+						>{s ? k : '◇'}</span
+					>
+					<div>
+						<b>{s ? `$ ${s.line.split('\n')[0]}` : '町の困りごとを、学んだ命令で直す'}</b><small
+							>{s
+								? (s.err || s.out).split('\n').find((x) => x.trim()) || '何も出ない（成功）'
+								: '打った命令で起きたことが、図に番号つきで残る。中身の板と記録も一緒に変わる'}</small
+						>
+					</div>
+				</div>
+			{/if}
 			{#if mode === 'watch'}
 				<div class="cap" aria-live="polite">
 					<span class="no kind-{cap.slot}">{cap.n === 0 ? '◇' : cap.n}</span>
@@ -767,6 +922,25 @@
 						{/if}
 					{/if}
 				</div>
+			{:else if trying && run}
+				<div class="ph">
+					<h2>やってみる</h2>
+					<small>打った回数 {run.steps.length}{run.passed ? ' ・ ✓ 合格' : ''}</small>
+				</div>
+				<div class="bd">
+					<TryPanel
+						{lesson}
+						{run}
+						sel={k}
+						depth={prefs.depth}
+						{request}
+						{busy}
+						onsend={(x) => void send(x)}
+						onreset={resetTry}
+						onrewind={rewindTry}
+						onrecall={() => setMode('recall')}
+					/>
+				</div>
 			{:else if mode === 'recall'}
 				<div class="ph">
 					<h2>思い出す</h2>
@@ -796,7 +970,7 @@
 			{/if}
 		</aside>
 
-		{#if mode === 'watch'}
+		{#if mode === 'watch' || trying}
 			<div class="insidewrap">
 				<InsideBoard
 					{inside}
@@ -814,10 +988,10 @@
 		{/if}
 	</div>
 
-	{#if mode === 'watch'}
+	{#if mode === 'watch' || trying}
 		<section class="panel rec" aria-label="記録">
 			<div class="ph">
-				<h2>記録</h2>
+				<h2>{trying ? 'あなたの操作の記録' : '記録'}</h2>
 				<div class="legend">
 					{#each [...slots] as [kind, slot] (kind)}
 						<span><i class="kind-{slot}"></i>{kind}</span>
@@ -845,7 +1019,13 @@
 						</tr>
 					{/each}
 					{#if rows.length === 0}
-						<tr><td colspan="7" class="empty">まだ何も起きていない。→ で 1 つ進める。</td></tr>
+						<tr
+							><td colspan="7" class="empty"
+								>{trying
+									? '命令を打つと、ここに並ぶ。'
+									: 'まだ何も起きていない。→ で 1 つ進める。'}</td
+							></tr
+						>
 					{/if}
 				</tbody>
 			</table>
@@ -1531,6 +1711,57 @@
 		border: 0;
 		cursor: pointer;
 		min-height: 32px;
+	}
+	.goals {
+		list-style: none;
+		margin: 0;
+		padding: 6px 10px 10px;
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+	}
+	.goals li {
+		display: flex;
+		gap: 8px;
+		align-items: flex-start;
+		font-size: 13px;
+		line-height: 1.5;
+		color: var(--dl-text-muted);
+	}
+	.goals li b {
+		display: block;
+		font-weight: 600;
+	}
+	.goals li small {
+		display: block;
+		font-size: 12px;
+		font-family: var(--dl-font-code);
+		word-break: break-all;
+	}
+	.goals .m {
+		flex: none;
+		width: 22px;
+		height: 22px;
+		border-radius: 50%;
+		border: 1px solid var(--dl-border-strong);
+		display: grid;
+		place-items: center;
+		font-size: 12px;
+	}
+	.goals li.ok {
+		color: var(--dl-text);
+	}
+	.goals li.ok .m {
+		border-color: var(--dl-done);
+		color: var(--dl-done);
+	}
+	.goals li.cur {
+		color: var(--dl-text);
+	}
+	.goals li.cur .m {
+		border: 2px solid var(--dl-now);
+		color: var(--dl-now);
+		font-weight: 700;
 	}
 	.fb {
 		margin-bottom: 12px;

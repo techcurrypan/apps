@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { net007 } from '../content/lessons/net-007.ts';
 import { clone, validLesson } from '../lesson/testing/fixture.ts';
 import type { Host } from '../lesson/types.ts';
-import { beatsOf, changesAt, diffHosts, insideAt, nodesAt } from './model.ts';
+import { allNodes, beatsOf, changesAt, diffHosts, insideAt, nodesAt } from './model.ts';
 
 describe('出来事の並び', () => {
 	it('概要の後に、move ごとに 1 つ。move の無いステップは 1 つ', () => {
@@ -114,5 +114,17 @@ describe('中身の板（LS-I）', () => {
 		const v = insideAt(net007, k5, 'after');
 		expect(v.logs.filter((l) => l.fresh).length).toBe(4);
 		expect(v.logs.at(-1)?.fresh).toBe(false);
+	});
+});
+
+describe('概要（出来事 0）の図', () => {
+	it('レッスンに出る全ての機械を、値の行なしで出す（試作の概要と同じく、始める前に全体が見える）', () => {
+		const ns = nodesAt(net007, 0, 'after');
+		expect(ns.map((n) => n.id).sort()).toEqual(
+			allNodes(net007)
+				.map((n) => n.id)
+				.sort()
+		);
+		expect(ns.every((n) => n.props.length === 0 && !n.hot && !n.fresh)).toBe(true);
 	});
 });

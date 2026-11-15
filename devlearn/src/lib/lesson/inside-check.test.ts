@@ -275,6 +275,25 @@ describe('検査 16〜25', () => {
 		l.explain[1].ask.a = 0;
 		expect(run(l)).not.toContain(16);
 	});
+	it('20：flow の機械が図に無い・線の無い組・読めない型なら落ちる（LS-P9）', () => {
+		const ok = insideLesson();
+		ok.practice.commands = ['show'];
+		ok.practice.flow = [
+			{ match: '^show ', from: 'a', to: 'b' },
+			{ match: '^ls', from: 'a', to: 'a' }
+		];
+		const opt = { ...NET, refs: { show: 'https://example.org/show' } };
+		expect(checkLesson(ok, new Set(['tst-001']), opt)).toEqual([]);
+		for (const f of [
+			{ match: '^show ', from: 'a', to: 'zz' },
+			{ match: '^show ', from: 'b', to: 'b2' },
+			{ match: '(', from: 'a', to: 'b' }
+		]) {
+			const l = clone(ok);
+			l.practice.flow = [f];
+			expect(run(l, opt)).toContain(20);
+		}
+	});
 	it('17：同じステップで id が重なる・別の機械へ移ると落ちる', () => {
 		const l = insideLesson();
 		l.explain[2].inside!.hosts![0].rows[1].id = 'nginx';

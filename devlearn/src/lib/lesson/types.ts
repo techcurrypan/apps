@@ -121,7 +121,11 @@ export type Practice = {
 	success: unknown; // 合格の判定
 	mistakes: Mistake[]; // 2〜4 件
 	commands?: string[]; // 道具の実戦で使うコマンド（"git add" "curl"）。コマンドの参考を出す（検査 20）
+	flow?: Flow[]; // やってみるで、打った命令が図のどの線を動くか（LS-P9）。当たらない命令は自分の機械の中の出来事
 };
+
+/** 打った 1 行が match（正規表現の文字）に当たれば、from → to の線を動く。from・to は map.nodes の鍵 */
+export type Flow = { match: string; from: string; to: string };
 
 export type Mistake = {
 	when: string; // どういう操作をしたとき

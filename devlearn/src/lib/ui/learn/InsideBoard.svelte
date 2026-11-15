@@ -38,8 +38,12 @@
 		for (let i = 0; i + 1 < h.length; i += 2) out.push(parseInt(h.slice(i, i + 2), 16));
 		return out;
 	});
+	// バイト列の無い荷物（やってみるの命令など）は、欄の文字の UTF-8 の長さで数える
+	const enc = new TextEncoder();
 	const partBytes = (p: Packet['parts'][number]) =>
-		p.fields.reduce((a, f) => a + (f.at?.[1] ?? 0), 0);
+		p.fields.some((f) => f.at)
+			? p.fields.reduce((a, f) => a + (f.at?.[1] ?? 0), 0)
+			: p.fields.reduce((a, f) => a + enc.encode(f.v).length, 0);
 	const totalBytes = $derived(shown ? shown.packet.parts.reduce((a, p) => a + partBytes(p), 0) : 0);
 	const PART_COLORS = [
 		'var(--dl-kind-5-fg)',

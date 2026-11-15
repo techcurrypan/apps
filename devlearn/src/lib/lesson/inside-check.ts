@@ -162,6 +162,22 @@ export function checkInside(lesson: Lesson, add: Add, opt: InsideOptions = {}): 
 		for (const c of opt.used?.get(lesson.id) ?? [])
 			if (!cmds.includes(c)) add(20, 'practice.commands', `解き方で使う「${c}」が commands に無い`);
 	}
+	// 20（やってみるの命令が動く線。LS-P9）
+	for (const f of lesson.practice?.flow ?? []) {
+		try {
+			new RegExp(f.match);
+		} catch {
+			add(20, 'practice.flow', `「${f.match}」が正規表現として読めない`);
+		}
+		const nodes = lesson.map?.nodes ?? {};
+		for (const id of [f.from, f.to])
+			if (!(id in nodes)) add(20, 'practice.flow', `「${id}」が図の機械（map.nodes）に無い`);
+		const linked = (lesson.map?.links ?? []).some(
+			(l) => (l.a === f.from && l.b === f.to) || (l.a === f.to && l.b === f.from)
+		);
+		if (f.from !== f.to && !linked)
+			add(20, 'practice.flow', `${f.from} と ${f.to} を結ぶ線が map.links に無い`);
+	}
 
 	const hasInside = steps.some((s) => s.inside);
 	if (!hasInside) return;
