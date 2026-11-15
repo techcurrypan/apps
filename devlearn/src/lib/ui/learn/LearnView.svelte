@@ -57,12 +57,16 @@
 	let doneModes = $state<Record<string, Partial<Record<Mode, boolean>>>>({});
 	let summary = $state<{ money: number; happy: number } | null>(null);
 	let notes = $state(0);
+	/** 学んだ手の数（やってみるに合格したレッスン。街の「学んだ手」と同じ集まり。LS-P10） */
+	let hands = $state(0);
+	let handsUp = $state(false);
 	let showNotes = $state(false);
 	let reduced = $state(false);
 	$effect(() => {
 		prefs = parsePrefs(read(PREFS_KEY));
 		summary = parseSummary(read(SUMMARY_KEY));
 		notes = parseNotes(read(NOTES_KEY)).length;
+		hands = loadProgress().done.length;
 		try {
 			doneModes = JSON.parse(read(DONE_KEY) ?? '{}') as typeof doneModes;
 		} catch {
@@ -435,7 +439,14 @@
 		}
 	}
 	function onpass() {
-		saveProgress(markDone(loadProgress(), lesson.id));
+		const before = loadProgress();
+		const after = markDone(before, lesson.id);
+		saveProgress(after);
+		if (after.done.length > before.done.length) {
+			hands = after.done.length;
+			handsUp = true;
+			setTimeout(() => (handsUp = false), 2400);
+		}
 		markMode('try');
 		toast(
 			grows.moves.length > 0
@@ -555,6 +566,9 @@
 				>{summary ? `${summary.money.toLocaleString('ja-JP')} 円` : '—'}</span
 			>
 			<span class="k">満足度</span><span class="v">{summary ? `${summary.happy}` : '—'}</span>
+			<span class="k">学んだ手</span><span class="v" class:up={handsUp} aria-live="polite"
+				>{hands}{handsUp ? ' ＋1' : ''}</span
+			>
 		</div>
 		<button
 			type="button"
@@ -600,8 +614,17 @@
 					効く要望：{grows.requests
 						.map((r) => `${r.client}「${r.symptom}」`)
 						.join('・')}{grows.more > 0 ? ` ほか ${grows.more} 件` : ''}
+				{/if}
+			</small>
+			<small class="nx">
+				{#if !doneModes[lesson.id]?.watch}
+					次：見るを最後まで ── 仕組みが分かる
+				{:else if !doneModes[lesson.id]?.try}
+					次：やってみるで合格 ── 街の手「{grows.moves[0] ?? lesson.title}」が使える
+				{:else if !doneModes[lesson.id]?.recall}
+					次：思い出す ── 手帳に 1 枚
 				{:else}
-					次：見る → やってみるで手が増える
+					3 つとも済んだ ── 街で要望に応える
 				{/if}
 			</small>
 			<span class="go">街で見る →</span>
@@ -1164,6 +1187,12 @@
 	.meter .v {
 		font: 700 13px var(--dl-font-code);
 	}
+	.meter .v.up {
+		color: var(--dl-done);
+		outline: 2px solid var(--dl-done);
+		outline-offset: 2px;
+		border-radius: 4px;
+	}
 	.lbar {
 		display: flex;
 		flex-wrap: wrap;
@@ -1217,6 +1246,9 @@
 		grid-column: 1;
 		font-size: 11.5px;
 		color: var(--dl-text-muted);
+	}
+	.grow small.nx {
+		color: var(--dl-text);
 	}
 	.grow .go {
 		grid-row: 2;
