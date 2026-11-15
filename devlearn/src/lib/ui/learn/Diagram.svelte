@@ -125,7 +125,12 @@
 			return;
 		}
 		if (!follow) return;
-		const ids = focusIds();
+		let ids = focusIds();
+		// 字を読める広さに収まらないときは、行き先（または主な機械）に寄せる（携帯の幅）
+		if (fit(boundsOf(geo, ids), aspect).w > pw / MIN_SCALE && beat) {
+			const main = beat.move?.to ?? beatTarget(beat);
+			if (main) ids = [main];
+		}
 		const r = boundsOf(geo, ids);
 		const target = fit(r, aspect);
 		// 全体より大きくはしない・細かく寄りすぎない
@@ -326,7 +331,8 @@
 		>
 	</div>
 	<label class="chk"
-		><input type="checkbox" checked={town} onchange={(e) => ontown(e.currentTarget.checked)} /> 名札（町）</label
+		><input type="checkbox" checked={town} onchange={(e) => ontown(e.currentTarget.checked)} />
+		名札<span class="wide">（町）</span></label
 	>
 	<span class="sp"></span>
 	{#if view === 'map'}
@@ -344,7 +350,7 @@
 				type="checkbox"
 				checked={follow}
 				onchange={(e) => onfollow(e.currentTarget.checked)}
-			/> 動きに寄る</label
+			/> <span class="wide">動きに</span>寄る</label
 		>
 	{/if}
 </div>
@@ -428,7 +434,7 @@
 						{/if}
 						{#each n.props.slice(-2) as p, i (p.k)}
 							{@const py =
-								g.boxes.text.y + 22 + (g.addr ? 16 : 0) + (town && g.town ? 24 : 0) + i * 16 + 10}
+								g.boxes.text.y + 24 + (g.addr ? 17 : 0) + (town && g.town ? 30 : 0) + i * 17 + 14}
 							<text class="np" class:chg={p.old !== null} x={g.c.x} y={py}>
 								{p.k}：{#if p.old !== null}<tspan class="old">{p.old}</tspan> →
 								{/if}{p.v.length > 20 ? p.v.slice(0, 19) + '…' : p.v}
@@ -881,6 +887,17 @@
 		}
 	}
 	@media (max-width: 860px) {
+		.wide {
+			display: none;
+		}
+		.tools {
+			gap: 4px;
+			padding: 4px 6px;
+		}
+		.seg button,
+		.tools > button {
+			padding: 0 8px;
+		}
 		.dia:not(.seq) {
 			height: 38vh;
 			min-height: 230px;

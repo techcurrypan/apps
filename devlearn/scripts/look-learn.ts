@@ -158,6 +158,7 @@ const SCENES: Scene[] = [
 
 /** 数で測る項目（LS-A4〜A8・LS-D5・D6・LS-X1・X2） */
 const MEASURE = `(() => {
+	if (innerWidth < 860) document.querySelector('.stage')?.scrollIntoView();
 	const vw = innerWidth, vh = innerHeight;
 	const q = (s) => document.querySelector(s);
 	const inView = (el) => { if (!el) return false; const r = el.getBoundingClientRect(); return r.top >= 0 && r.bottom <= vh + 1 && r.height > 0; };

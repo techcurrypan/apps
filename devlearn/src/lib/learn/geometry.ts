@@ -47,7 +47,7 @@ export function nodeBoxes(
 			town ? textW('町：' + town, 12) + 20 : 0,
 			props > 0 ? PROP_MAX_W : 0
 		) + 8;
-	const h = 24 + (addr ? 17 : 0) + (town ? 26 : 0) + props * 17;
+	const h = 24 + (addr ? 17 : 0) + (town ? 30 : 0) + props * 17 + (props > 0 ? 4 : 0);
 	const text = { x: c.x - w / 2, y: c.y + ICON_R + 4, w, h };
 	return { icon, text, all: union(icon, text) };
 }

@@ -287,14 +287,20 @@
 			return [step.town ? `町でいうと、${step.town}` : step.lead, step.body[0]];
 		if (prefs.depth === 2) return step.body;
 		const p = step.inside?.packet;
-		const deep = p
-			? p.parts
-					.flatMap((x) =>
-						x.fields.filter((f) => f.level === 3).map((f) => `${x.name} の「${f.k}」は ${f.v}`)
-					)
-					.slice(0, 3)
-			: [];
-		return [...step.body, ...deep.map((d) => d + '。')];
+		if (!p) return [...step.body, ...(step.why ? [`なぜ：${step.why}`] : [])];
+		const sizes = p.parts.map(
+			(x) => `${x.name} ${x.fields.reduce((a, f) => a + (f.at?.[1] ?? 0), 0)} B`
+		);
+		const sum = p.parts.flatMap((x) =>
+			x.fields.filter((f) => f.k === 'チェックサム').map((f) => `${x.name} のチェックサム ${f.v}`)
+		);
+		return [
+			...step.body,
+			`荷物 ${p.size} の内訳は ${sizes.join(' ＋ ')}。外側の層ほど先に読まれる。`,
+			...(sum.length > 0
+				? [`${sum.join('、')} は、受け手が計算し直して壊れていないかを確かめる。`]
+				: [])
+		];
 	});
 	const chapters = $derived(
 		lesson.explain.map((s, i) => ({
@@ -1723,6 +1729,13 @@
 			order: 4;
 		}
 		.cap {
+			padding: 6px 10px;
+			min-height: 0;
+		}
+		.cap b {
+			font-size: 13px;
+		}
+		.cap small {
 			display: none;
 		}
 		.transport {
