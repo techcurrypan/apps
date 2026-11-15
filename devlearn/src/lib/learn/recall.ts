@@ -131,7 +131,7 @@ export function recallOf(l: Lesson): Recall[] {
 	return out;
 }
 
-const norm = (s: string) => s.replace(/s+/g, ' ').trim().toLowerCase();
+const norm = (s: string) => s.replace(/\s+/g, ' ').trim().toLowerCase();
 
 /** 答えを確かめる。order は並べた題、hit は機械の id、type は打った文字、pick は選んだ番号 */
 export function judgeRecall(

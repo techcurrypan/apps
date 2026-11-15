@@ -70,3 +70,11 @@ describe('手帳（LS-R4・R5）', () => {
 		expect(notes[0].score).toBe('4 / 4');
 	});
 });
+
+describe('打つ答えの空白', () => {
+	it('間の空白（全角を含む）は 1 つとして読む。s の字は消さない', () => {
+		const q = { kind: 'type' as const, q: '', label: '', ans: 'git status', why: 'x' };
+		expect(judgeRecall(q, 'git\u3000 status').ok).toBe(true);
+		expect(judgeRecall(q, 'git tatu').ok).toBe(false);
+	});
+});
