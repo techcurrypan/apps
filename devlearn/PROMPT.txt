@@ -22,6 +22,9 @@ CI の設定はリポジトリの根の `.github/workflows/` に置く（ここ�
                      docs/prototype/README.md       試作の手本と、その使い方（土台にする。D-16）
                      docs/game-design.md            段 4 の設計と第 15 章「街」
   段 9 接続        : docs/screen-design.md          第 3 章と第 10 章（画面の行き来）
+  段 10-R 学習画面 : docs/screen-design.md          第 11 章（レッスン画面。D-21）
+                     docs/prototype/learn/README.md 学習画面の試作の手本と、本番へ移すときに直す物
+                     docs/explanation-standard.md   2.1（中身の板の材料 Step.inside）
   段 10 本文       : docs/curriculum.md             レッスンの一覧と、各レッスンの実戦の形
                      docs/tools.md                  道具と、本物の出力の取り方
   段 11 MCP        : docs/free-services.md          Worker を通る要求の無料枠

@@ -86,6 +86,8 @@
 - 知識グラフ（推奨前提・関連・次に学ぶとよい）を持つ
 - **説明の中身は `docs/explanation-standard.md` に従う。**
   `npm run content:check` を必ず通す
+- **レッスン画面は学習画面の試作 `docs/prototype/learn/learn10.html` を手本にする（D-21）。** 主役は図。3D の街は学習画面に出さない。
+  荷物の中身・OS の中・ログはタブにせず 1 画面に並べ、出来事ごとに一緒に動かす。内側のスクロールを作らない（`docs/screen-design.md` 第 11 章）
 
 ## 10. ゲーム
 

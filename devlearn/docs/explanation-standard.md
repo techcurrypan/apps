@@ -119,6 +119,67 @@ export type Mistake = {
 export type CheckItem = { ask: string; how: string };  // 何を / どう確かめるか
 ```
 
+
+### 2.1 中身の板の材料（`Step.inside`。D-21 で足した）
+
+レッスン画面の図の下に、**荷物の中身・OS の中・ログ**を並べて出す（`screen-design.md` 第 11 章）。その材料をステップに持たせる。
+
+```ts
+export type Step = {
+  // …上の欄はそのまま
+  town?: string;              // 町での言い方。1 文 60 字以内（右の欄の「町では」）
+  inside?: Inside;
+};
+
+export type Inside = {
+  packet?: Packet;            // このステップで流れる物の中身（move の payload の中身）
+  hosts?: Host[];             // このステップの**後**の OS の中。全体を書く（差は画面が前のステップと比べて出す）
+  logs?: LogLine[];           // このステップで増えるログ。1〜4 行
+};
+
+export type Packet = {
+  name: string;               // "TCP SYN" "HTTP GET /" "Pod の PATCH" など
+  size: string;               // "66 B" など
+  parts: Part[];              // 層・節。外側から順
+  hex?: string;               // 本物のバイト列（16 進）。あれば欄と 16 進を結んで光らせる
+};
+export type Part = {
+  name: string;               // "Ethernet II" "IPv4" "TCP" "HTTP" "metadata" "spec" など
+  fields: { k: string; v: string; level: 1 | 2 | 3; at?: [number, number] }[];  // level は詳しさ。at は hex の [始まり, 長さ]
+};
+export type Host = {
+  name: string;               // "Web サーバ" "node-1"
+  town: string;               // 町での呼び名 "みなと商店" "1 号棟"
+  addr: string;               // "203.0.113.80" "10.0.1.11" "~/shop-site"
+  rows: HostRow[];
+};
+export type HostRow = {
+  id: string;                 // ステップをまたいで同じ物は同じ id（増えた・変わった・消えたを画面が出すため）
+  depth: 0 | 1 | 2;           // 木の深さ（親プロセス → 子 → つながり）
+  what: string;               // "nginx: master" "TCP 192.168.1.10:52814 → 203.0.113.80:80" ".git/objects/41/c40f8…"
+  state: string;              // "pid 901 ・ LISTEN 0.0.0.0:80" "ESTABLISHED" "強制終了（SIGKILL・137）"
+  tone?: 'ok' | 'warn' | 'bad';
+};
+export type LogLine = { t: string; src: string; text: string };  // src は書いた物（"nginx access.log" "kernel node-1" "kube-scheduler"）
+```
+
+**どの分野で要るか**
+
+| 分野 | `packet` | `hosts` | `logs` |
+|---|---|---|---|
+| `net`・`sec` | `move` のある全ステップ | 1 レッスンに 2 回以上 | 1 レッスンに 3 回以上 |
+| `lnx`・`ctr`・`cld`・`ci` | 物が流れるステップ | 1 レッスンに 2 回以上 | 1 レッスンに 3 回以上 |
+| `db`・`git` | 任意 | ファイル・プロセスが変わるステップ | 1 レッスンに 2 回以上 |
+| `prg`・`ai`・`sta` | 任意 | 任意（実行中のプロセス・読み書きするファイル） | 任意（実行の出力） |
+
+**書き方の決まり**
+
+- ログの書式は、その道具の**本物の書式**（nginx の access.log、`journalctl`、`kubectl get events`、カーネルの OOM など）。
+  記録の無い書式は、先に本物の出力を記録してから写す（`tools.md` 第 2 章）。作った書式にしない
+- 値はステップの `facts` と合わせる（IP・ポート・pid・ID・時刻）。同じ物はレッスンの中で同じ値
+- `hosts` の `id` はステップをまたいで変えない。消えた物は書かない（画面が「消えた」と出す）
+- コンテナは「棟の中の部屋」であり、OS から見ると**ただのプロセス**だと分かる形に書く（containerd-shim → アプリのプロセス）
+
 ---
 
 ## 3. 検査（`npm run content:check`）
@@ -142,6 +203,11 @@ export type CheckItem = { ask: string; how: string };  // 何を / どう確か�
 | 13 | `prereq` / `related` / `next` の ID が実在する |
 | 14 | 各ステップの `scene` に、状態を変える操作（`appear` / `move` / `change` / `vanish`）が 1 件以上ある。`highlight` だけのステップは不可 |
 | 15 | 同じ `facts` の組が、隣り合うステップで重複していない |
+| 16 | 2.1 の表で要る分野のレッスンに、`inside` の `packet`・`hosts`・`logs` が決まった回数ある（D-21） |
+| 17 | `inside.hosts` の `id` が、同じ物で同じ・1 つのステップの中で重複しない |
+| 18 | `inside.packet.parts` の `at` が `hex` の長さを超えない。`hex` がある時は `at` が 1 つ以上ある |
+| 19 | `inside.logs` が 1 ステップ 1〜4 行、1 行 120 字以内 |
+| 20 | 実戦の `tool` で使うコマンドに、公式の説明のリンクがある（`src/lib/practice` の参考の表。D-21） |
 
 ---
 
