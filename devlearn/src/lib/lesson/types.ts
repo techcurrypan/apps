@@ -178,7 +178,22 @@ export type Icon =
 	| 'person'
 	| 'book'
 	| 'chart'
-	| 'brain';
+	| 'brain'
+	// 第 2 版で足した絵（learn-standard.md LS-L8。src/lib/learn2/iso.ts）
+	| 'switch'
+	| 'nic'
+	| 'etcd'
+	| 'disk'
+	| 'lock'
+	| 'pod'
+	| 'api'
+	| 'scheduler'
+	| 'kubelet'
+	| 'lb'
+	| 'queue'
+	| 'cpu'
+	| 'wire'
+	| 'tag';
 export type MapNode = { icon: Icon; town: string; addr?: string }; // town は町での呼び名（名札）
 export type Zone = { label: string; note: string; members: string[] };
 /** 線。a と b は appear の id。dir は矢印の向き（ab は a → b、both は両向き）。label は線の名前 */

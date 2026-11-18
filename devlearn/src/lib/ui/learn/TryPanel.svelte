@@ -20,9 +20,22 @@
 		onreset: () => void;
 		onrewind: (n: number) => void;
 		onrecall: () => void;
+		/** 第 2 版の大きな端末（LS-P1〜P3）：全ての出力を端末の中で遡れ、履歴・補完・Ctrl+L・Ctrl+C */
+		big?: boolean;
 	};
-	let { lesson, run, sel, depth, request, busy, onsend, onreset, onrewind, onrecall }: Props =
-		$props();
+	let {
+		lesson,
+		run,
+		sel,
+		depth,
+		request,
+		busy,
+		onsend,
+		onreset,
+		onrewind,
+		onrecall,
+		big = false
+	}: Props = $props();
 
 	const TAIL = 22;
 	let line = $state('');
@@ -53,7 +66,46 @@
 		});
 		return out;
 	});
-	const cut = $derived(all ? 0 : Math.max(0, tlines.length - TAIL));
+	// Ctrl+L で消した所（それより前の行を出さない）
+	let clearAt = $state(0);
+	let hist = $state(-1);
+	let termEl = $state<HTMLElement>();
+	const cut = $derived(big ? clearAt : all ? 0 : Math.max(0, tlines.length - TAIL));
+	$effect(() => {
+		void tlines.length;
+		if (big && termEl) termEl.scrollTop = termEl.scrollHeight;
+	});
+	/** ↑ ↓ 履歴・Tab 補完・Ctrl+L・Ctrl+C（LS-P3） */
+	function onLineKey(e: KeyboardEvent) {
+		const past = run.steps.map((x) => x.line);
+		if (e.key === 'ArrowUp' && past.length) {
+			hist = hist < 0 ? past.length - 1 : Math.max(0, hist - 1);
+			line = past[hist];
+			e.preventDefault();
+		} else if (e.key === 'ArrowDown' && hist >= 0) {
+			hist = hist + 1 >= past.length ? -1 : hist + 1;
+			line = hist < 0 ? '' : past[hist];
+			e.preventDefault();
+		} else if (e.key === 'Tab' && line.trim()) {
+			const words = [...(lesson.practice.commands ?? []), ...samples];
+			const m = words.find((w) => w.startsWith(line) && w !== line);
+			if (m) {
+				line = m.includes(' ') && !line.includes(' ') ? m.split(' ')[0] + ' ' : m;
+				e.preventDefault();
+			}
+		} else if (e.ctrlKey && (e.key === 'l' || e.key === 'L')) {
+			clearAt = tlines.length;
+			e.preventDefault();
+		} else if (
+			e.ctrlKey &&
+			(e.key === 'c' || e.key === 'C') &&
+			!window.getSelection()?.toString()
+		) {
+			line = '';
+			hist = -1;
+			e.preventDefault();
+		}
+	}
 	const last = $derived(run.steps.at(-1) ?? null);
 	const mistake = $derived(last?.mistake ?? null);
 	const hint = $derived(hints > 0 ? hintOf(lesson, run.judge, mistake, hints) : null);
@@ -101,12 +153,19 @@
 			: '模擬。本物と同じ出力・同じエラーを返す'}）
 	</div>
 
-	{#if cut > 0}
+	{#if cut > 0 && !big}
 		<button type="button" class="more" onclick={() => (all = true)}
 			>▲ 前の出力を表示（{cut} 件）</button
 		>
 	{/if}
-	<div class="term" role="log" aria-label="端末" aria-live="polite">
+	<div
+		class="term"
+		class:l2-term-out={big}
+		bind:this={termEl}
+		role="log"
+		aria-label="端末"
+		aria-live="polite"
+	>
 		{#each tlines.slice(cut) as l, i (i)}
 			{#if l.k === 'cmd'}
 				<div class="cmd" class:sel={l.n === sel}>
@@ -131,6 +190,7 @@
 				autocapitalize="off"
 				spellcheck="false"
 				aria-label="命令"
+				onkeydown={onLineKey}
 			/>
 		{:else}
 			<label for="try-line" class="pr">{run.kit.prompt}（Ctrl + Enter で走らせる）</label>
@@ -259,6 +319,12 @@
 		font-size: 12px;
 		padding: 4px;
 		cursor: pointer;
+	}
+	.term.l2-term-out {
+		font-size: 14px;
+		line-height: 1.4;
+		height: max(540px, calc(100vh - 360px));
+		overflow-y: auto;
 	}
 	.term {
 		border: 1px solid var(--dl-border-strong);

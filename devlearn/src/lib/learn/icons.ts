@@ -11,7 +11,8 @@ const c = (x: number, y: number, rad: number) =>
 const l = (...p: number[]) =>
 	'M' + p.reduce<string[]>((a, v, i) => (i % 2 ? a : [...a, `${v} ${p[i + 1]}`]), []).join('L');
 
-export const ICONS: Record<Icon, Stroke[]> = {
+// 第 2 版で足した絵（learn2/iso.ts）は第 1 版の図では箱の絵で描く
+export const ICONS: Partial<Record<Icon, Stroke[]>> & Record<'box', Stroke[]> = {
 	pc: [
 		{ d: r(-32, -30, 64, 44, 4), soft: true },
 		{ d: r(-27, -25, 54, 34, 2) },

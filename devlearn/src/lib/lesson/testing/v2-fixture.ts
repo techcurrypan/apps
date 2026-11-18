@@ -69,8 +69,8 @@ function step(n: number, kind: StepKind): Step {
 	};
 	if (n === 1) {
 		s.scene = [
-			{ op: 'appear', id: 'a', label: '送る PC', at: [100, 100] },
-			{ op: 'appear', id: 'b', label: '受ける PC', at: [500, 100] },
+			{ op: 'appear', id: 'a', label: '送る PC', at: [0, 0] },
+			{ op: 'appear', id: 'b', label: '受ける PC', at: [2, 0] },
 			...s.scene
 		];
 		s.why = '箱を残さないと、落ちたときに送り直せないため';

@@ -184,7 +184,12 @@
 				<div class="host" class:changed={h.changed}>
 					<div class="hn"><b>{h.name}（{h.town}）</b><span>{h.addr}</span></div>
 					{#each h.rows as r (r.id + r.mark)}
-						<div class="row {r.mark} {r.tone ?? ''}" class:anim={!reduced} style:--d={r.depth}>
+						<div
+							class="row {r.mark} {r.tone ?? ''}"
+							class:anim={!reduced}
+							style:--d={r.depth}
+							data-row
+						>
 							<span class="pt">{r.depth > 0 ? '└ ' : ''}{r.what}</span>
 							<span class="ps"
 								>{#if r.was}<s>{r.was}</s> →
@@ -217,6 +222,7 @@
 					class:new={l.fresh}
 					class:anim={!reduced}
 					onclick={() => ongo(l.k)}
+					data-row
 				>
 					<span class="n">{l.k}</span>
 					<span class="tm">{l.t}</span>
