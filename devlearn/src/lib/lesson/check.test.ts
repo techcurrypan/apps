@@ -391,3 +391,21 @@ describe('checkAll', () => {
 		expect(p.message.length).toBeGreaterThan(0);
 	});
 });
+
+describe('第 2 版を当てるレッスン（v2-scope.ts）', () => {
+	it('12 ステップでも検査 1・5・11・12 で落ちず、検査 26〜38 が当たる', async () => {
+		const { validV2 } = await import('./testing/v2-fixture.ts');
+		const l = validV2();
+		const r = failed(checkLesson(l, new Set([l.id]), { v2: () => true }));
+		expect(r).not.toContain(1);
+		expect(r).not.toContain(5);
+		expect(r).toContain(38); // 査読の記録を渡していない
+	});
+	it('表に無いレッスンは第 1 版の検査のまま（12 ステップは検査 1 で落ちる）', async () => {
+		const { validV2 } = await import('./testing/v2-fixture.ts');
+		const l = validV2();
+		const r = failed(checkLesson(l, new Set([l.id]), { v2: () => false }));
+		expect(r).toContain(1);
+		expect(r).not.toContain(38);
+	});
+});

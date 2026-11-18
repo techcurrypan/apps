@@ -1,11 +1,19 @@
 // 説明の中身の検査。docs/explanation-standard.md 第 3 章の 25 項目（16〜25 は inside-check.ts）。
 // 1 件でも Problem を返したら、content:check は失敗で終わる。
+import { checkV2, type V2Options } from './check-v2.ts';
 import { checkInside, type InsideOptions } from './inside-check.ts';
 import type { Lesson, SceneOp, Step } from './types.ts';
+import { inV2Scope } from './v2-scope.ts';
+
+export type CheckOptions = InsideOptions &
+	V2Options & {
+		/** 検査 26〜40 を当てるか（既定は v2-scope.ts の表） */
+		v2?: (l: Lesson) => boolean;
+	};
 
 export type Problem = {
 	lessonId: string;
-	check: number; // 第 3 章の番号 1〜25
+	check: number; // 第 3 章の番号 1〜40
 	where: string; // どこで落ちたか（「ステップ 2」など）
 	message: string; // 何が駄目か
 };
@@ -93,15 +101,17 @@ const stepWhere = (s: Step, i: number) => `ステップ ${Number.isInteger(s.n) 
 export function checkLesson(
 	lesson: Lesson,
 	known: ReadonlySet<string>,
-	opt: InsideOptions = {}
+	opt: CheckOptions = {}
 ): Problem[] {
 	const problems: Problem[] = [];
 	const add = (check: number, where: string, message: string) =>
 		problems.push({ lessonId: lesson.id, check, where, message });
 	const steps: Step[] = Array.isArray(lesson.explain) ? lesson.explain : [];
+	// 第 2 版を当てるレッスンは、検査 1・5・11・12 の数を検査 26・27・36・37 に替える
+	const v2 = (opt.v2 ?? inV2Scope)(lesson);
 
 	// 1
-	if (steps.length < 5 || steps.length > 9)
+	if (!v2 && (steps.length < 5 || steps.length > 9))
 		add(1, 'explain', `解説が ${steps.length} ステップ。5〜9 にする`);
 	steps.forEach((s, i) => {
 		if (s.n !== i + 1) add(1, `ステップ ${i + 1}`, `n が ${s.n}。1 からの連番にする`);
@@ -129,10 +139,12 @@ export function checkLesson(
 		}
 		// 5
 		const ss = sentences(Array.isArray(s.body) ? s.body : []);
-		if (ss.length < 2 || ss.length > 4) add(5, w, `body が ${ss.length} 文。2〜4 文にする`);
-		for (const x of ss)
-			if (charCount(x) > LIMIT.sentence)
-				add(5, w, `${charCount(x)} 字の文がある。${LIMIT.sentence} 字以内にする：${x}`);
+		if (!v2 && (ss.length < 2 || ss.length > 4))
+			add(5, w, `body が ${ss.length} 文。2〜4 文にする`);
+		if (!v2)
+			for (const x of ss)
+				if (charCount(x) > LIMIT.sentence)
+					add(5, w, `${charCount(x)} 字の文がある。${LIMIT.sentence} 字以内にする：${x}`);
 		// 6
 		if (charCount(s.title ?? '') > LIMIT.stepTitle)
 			add(6, w, `title が ${charCount(s.title)} 字。${LIMIT.stepTitle} 字以内にする`);
@@ -177,7 +189,7 @@ export function checkLesson(
 	});
 	// 11
 	const mistakes = Array.isArray(lesson.practice?.mistakes) ? lesson.practice.mistakes : [];
-	if (mistakes.length < 2 || mistakes.length > 4)
+	if (!v2 && (mistakes.length < 2 || mistakes.length > 4))
 		add(11, 'practice.mistakes', `${mistakes.length} 件。2〜4 件にする`);
 	mistakes.forEach((m, i) => {
 		if (blank(m.when) || blank(m.why) || blank(m.next))
@@ -185,7 +197,7 @@ export function checkLesson(
 	});
 	// 12
 	const checks = Array.isArray(lesson.check) ? lesson.check : [];
-	if (checks.length < 3 || checks.length > 5)
+	if (!v2 && (checks.length < 3 || checks.length > 5))
 		add(12, 'check', `${checks.length} 件。3〜5 件にする`);
 	checks.forEach((c, i) => {
 		if (blank(c.ask) || blank(c.how)) add(12, `check ${i + 1}`, 'ask / how を埋める');
@@ -207,11 +219,13 @@ export function checkLesson(
 	// 16〜25
 	if (steps.length > 0 && steps.every((s) => Array.isArray(s.scene) && s.log))
 		checkInside(lesson, add, opt);
+	// 26〜39
+	if (v2) checkV2(lesson, add, opt);
 
 	return problems;
 }
 
-export function checkAll(lessons: readonly Lesson[], opt: InsideOptions = {}): Problem[] {
+export function checkAll(lessons: readonly Lesson[], opt: CheckOptions = {}): Problem[] {
 	const known = new Set(lessons.map((l) => l.id));
 	const problems: Problem[] = [];
 	const seen = new Set<string>();

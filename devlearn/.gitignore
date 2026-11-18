@@ -24,3 +24,6 @@ vite.config.ts.timestamp-*
 
 # 参考サイトの撮影（判定にだけ使う。他者の画面なのでリポジトリに入れない。D-23）
 /.ref/
+
+# impl:verify が取ったソース（版の tag の写し。検査 39）
+/.cache/

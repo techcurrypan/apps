@@ -47,6 +47,9 @@ jobs:
       - name: 説明の中身の検査
         run: npm run content:check
 
+      - name: 実装の名前を版を決めたソースで確かめる（検査 39）
+        run: npm run impl:verify
+
       - name: 秘密情報の検査
         run: npm run secrets
 

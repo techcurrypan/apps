@@ -18,6 +18,7 @@
 		"test": "vitest --run",
 		"test:watch": "vitest",
 		"content:check": "tsx scripts/content-check.ts",
+		"impl:verify": "tsx scripts/impl-verify.ts",
 		"secrets": "tsx scripts/secrets.ts",
 		"build": "wrangler types --check && vite build",
 		"preview": "wrangler dev .svelte-kit/cloudflare/_worker.js --port 4173",

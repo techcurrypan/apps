@@ -21,3 +21,16 @@ describe('content:check の報告', () => {
 		expect(report([]).ok).toBe(false);
 	});
 });
+
+describe('第 2 版の材料（検査 34・38）', () => {
+	it('一次情報の表は「## 6.」の節の URL だけを読む', async () => {
+		const { primarySources } = await import('./content-report.ts');
+		const md =
+			'## 5. x\n| a | https://a.example/x |\n## 6. 一次情報\n| r | https://www.rfc-editor.org/rfc/rfc9293 |\n## 7. y\n| https://b.example |';
+		expect([...primarySources(md)]).toEqual(['https://www.rfc-editor.org/rfc/rfc9293']);
+	});
+	it('査読の置き場が無ければ空', async () => {
+		const { reviewsOf } = await import('./content-report.ts');
+		expect(reviewsOf('/no/such/dir')).toEqual({});
+	});
+});

@@ -3,7 +3,8 @@
 import type { FormAnswer } from '../practice/forms.ts';
 
 /** レッスンごとの解き方（合格まで）と、間違いの手（mistakes の順に 1 つずつ） */
-export const SOLUTIONS: Record<string, { pass: string[]; wrong: string[][] }> = {
+/** alt はもう 1 つの正しい道（第 2 版の検査 36） */
+export const SOLUTIONS: Record<string, { pass: string[]; wrong: string[][]; alt?: string[] }> = {
 	'db-002': {
 		pass: ["SELECT name, kind FROM items WHERE kind = '惣菜' OR stock = 0;"],
 		wrong: [

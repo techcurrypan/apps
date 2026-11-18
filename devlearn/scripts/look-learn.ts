@@ -2,14 +2,21 @@
 // 試作 docs/prototype/learn/learn10.html（手元の Chrome で file://）と本番（URL）を、同じ場面で撮り、数で測れる項目を測る。
 //   npx tsx scripts/look-learn.ts <本番の URL の根> [場面 C-1,C-2…] [置き場]
 // 撮った画面：<置き場>/<場面>-proto.png・-prod.png（携帯は -phone を付ける）。測った値：<置き場>/measure.json
+// 第 2 版（plan.md 10-R 手順 1）：
+//   npx tsx scripts/look-learn.ts --motion <URL の根> <レッスン ID,…>   全ステップの動き（LS-M1・M4・M8・M9）→ <置き場>/motion.json
+//   npx tsx scripts/look-learn.ts --layout <URL の根> <レッスン ID,…>   1440×900・1920×1080・390×844 の配置（LS-A・D1・D6・P1・P2・X1・X2）→ layout.json
+//   npx tsx scripts/look-learn.ts --ref                                 参考サイトの場面 R-1〜R-6 を .ref/ に撮る（リポジトリに入れない）
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join, resolve as res } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { openChrome, sleep, type Tab } from './lib/cdp.ts';
+import { LAYOUT, judgeLayout, motionOf, shootRef, type Layout } from './lib/learn-measure.ts';
 
-const base = (process.argv[2] ?? 'https://devlearn.techcurrybread.workers.dev').replace(/\/$/, '');
-const only = process.argv[3] ? new Set(process.argv[3].split(',')) : null;
-const outDir = process.argv[4] ?? 'docs/progress/shots/phase-10-R';
+const FLAG = ['--motion', '--layout', '--ref'].find((f) => process.argv[2] === f) ?? null;
+const argv = FLAG ? process.argv.slice(1) : process.argv;
+const base = (argv[2] ?? 'https://devlearn.techcurrybread.workers.dev').replace(/\/$/, '');
+const only = !FLAG && argv[3] ? new Set(argv[3].split(',')) : null;
+const outDir = argv[4] ?? 'docs/progress/shots/phase-10-R';
 const PROTO = pathToFileURL(res('docs/prototype/learn/learn10.html')).href;
 mkdirSync(outDir, { recursive: true });
 
@@ -185,7 +192,7 @@ const SCENES: Scene[] = [
 		name: '自己修復（最後）',
 		lesson: 'cld-006',
 		hash: '#k8s',
-		run: async (tab, side) => {
+		run: async (tab) => {
 			await tab.key('End');
 			await sleep(1200);
 		}
@@ -335,4 +342,78 @@ async function main() {
 	}
 }
 
-void main();
+/** 第 2 版の測り（--motion・--layout・--ref） */
+async function measure2(flag: string) {
+	const { tab, chrome } = await openChrome(9342);
+	const ids = (argv[3] ?? '').split(',').filter(Boolean);
+	const out: Record<string, unknown> = {};
+	let bad = 0;
+	try {
+		await tab.scheme(true);
+		if (flag === '--ref') {
+			await tab.size(1440, 900, false);
+			await shootRef(tab, '.ref');
+			return;
+		}
+		for (const id of ids) {
+			const url = `${base}/lesson/${id}`;
+			if (flag === '--motion') {
+				await tab.size(1440, 900, false);
+				const steps = await motionOf(tab, url);
+				out[id] = steps;
+				for (const s of steps) {
+					const ok = s.m1 && s.m4;
+					if (!ok) bad++;
+					console.log(
+						`${id} ${String(s.step).padStart(2)} M1 ${s.m1 ? 'o' : 'x'} M4 ${s.m4 ? 'o' : 'x'} 早 ${s.early.join(' ')} 遅 ${s.late.join(' ')} 荷物 ${JSON.stringify(s.packet)} 数 ${JSON.stringify(s.counts)}`
+					);
+				}
+				continue;
+			}
+			for (const [w, h, phone] of [
+				[1440, 900, false],
+				[1920, 1080, false],
+				[390, 844, true]
+			] as const) {
+				await tab.size(w, h, phone);
+				await tab.go(url);
+				await tab.eval('localStorage.clear()');
+				await tab.go(url);
+				await tab.eval('window.__learn2?.go(3)');
+				await sleep(2500);
+				const m = await tab.eval<Layout>(LAYOUT);
+				const r = judgeLayout(m, 'watch');
+				out[`${id}-${w}`] = { m, r };
+				// やってみる
+				const tried = await tab.eval<boolean>(
+					`(() => { const b = [...document.querySelectorAll('.modes button, .l2-modes button')].find((b) => b.textContent.includes('やってみる')); b?.click(); return !!b; })()`
+				);
+				if (tried) {
+					await sleep(1200);
+					const mt = await tab.eval<Layout>(LAYOUT);
+					const rt = judgeLayout(mt, 'try');
+					out[`${id}-${w}-try`] = { m: mt, r: rt };
+					for (const [k, v] of Object.entries(rt))
+						if (v !== true) {
+							bad++;
+							console.log(`${id} ${w} やってみる ${k} × ${v}`);
+						}
+				}
+				for (const [k, v] of Object.entries(r)) {
+					if (v !== true) bad++;
+					console.log(`${id} ${w} ${k} ${v === true ? 'o' : '× ' + v}`);
+				}
+			}
+		}
+	} finally {
+		if (flag !== '--ref') {
+			mkdirSync(outDir, { recursive: true });
+			writeFileSync(join(outDir, `${flag.slice(2)}.json`), JSON.stringify(out, null, 1));
+			console.log(bad === 0 ? '全て満たす' : `満たさない ${bad} 件`);
+		}
+		chrome.kill();
+	}
+}
+
+if (FLAG) void measure2(FLAG);
+else void main();

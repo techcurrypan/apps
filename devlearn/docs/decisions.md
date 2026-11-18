@@ -319,6 +319,15 @@
 - 2026-11-15　比べる場面の K8s の題（C-7〜C-9・C-12）は、本番のカリキュラムに Kubernetes のレッスンが無いので、最も近い cld-006（負荷を分けて増やす。区画ごとに web を置き、台数を自動で変える）に当てた（learn-standard.md 第 11 章「無い題は最も近いレッスン」）
 - 2026-11-15　LS-P10「合格で上の帯の数が変わる」は、学習画面では上の帯に「学んだ手」（やってみるに合格したレッスンの数。街の学んだ手と同じ集まり）を出し、合格で ＋1 と光らせる、と読んだ。資金と満足度は街の状態で、街が修了の記録を読むだけ（段 9）の決まりを守るため、学習画面からは書き換えない。要望に応えて資金と満足度が実際に動くのは、段 9-2 の街の上の板
 
+- 2026-11-18　10-R（第 2 版）の測りは `scripts/lib/learn-measure.ts` に置き、`look-learn.ts --motion/--layout/--ref` から呼ぶ。画素の差は外の部品を足さずに PNG を自分で読む（`scripts/lib/png.ts`。8 ビット RGB・RGBA だけ）。色の差 8 以下は数えない（字の滑らかさの揺れを動きと数えないため）。画面は `window.__learn2.go(n)` と `.l2-*`・`[data-fit]`・`[data-label]`・`[data-packet]`・`[data-metric]` の印で測る（learn-standard.md 第 0 章「数で測れる物は look-learn.ts で」）
+- 2026-11-18　検査 38 の「本文の最後の変更より後」は、日付ではなく、査読した時のレッスンの指紋（FNV-1a 64 ビット。`src/lib/lesson/hash.ts`）を記録に残して今の指紋と比べる、と読んだ。日付は手で書き換えられ、本文が変わったことを確かめられないため
+- 2026-11-18　検査 32 の「合計 ＝ 和」は、Lesson.metrics に key `total` があるとき、`sum: true` の指標の和と一致すること、と決めた。数え上げ（`count`）の行き先はそのステップの `metrics` の値と一致すること
+- 2026-11-18　`Cue.para` は詳しさ「現場」（`depth.work`）の段落の番号とした（検査 29 も work の段落で数える）。はじめて・中身までは段落の数が違うので、画面は割合で近い段落を強調する
+- 2026-11-18　検査 37 の場面の問い・数の問いは `CheckItem.kind`（'scene'・'number'）で印を付け、選ぶ問いの選択肢を `CheckItem.opts` に置く。検査 36 の「正しい道 2 つ」は `SOLUTIONS[id].alt`（もう 1 つの合格の道）で書く。どれも 2.3 の型に無い印で、検査が機械で数えるのに要る最小の欄
+- 2026-11-18　検査 34 の「content-sources.md の表」は、`docs/content-sources.md` の「6. 一次情報」の節の URL とした。content:check がその節を読む
+- 2026-11-18　`impl:verify` は GitHub の公式リポジトリの版の tag の生のファイル（`raw.githubusercontent.com/<repo>/<tag>/<道>`）を取る（explanation-standard.md 検査 39「kernel.org または GitHub の torvalds/linux の tag」）。設定（`/proc/sys/...`）は、その設定を説明するソースの中の文書（`Documentation/networking/ip-sysctl.rst`）を `where` に書いて確かめる
+- 2026-11-18　分野 `k8s`・`sys` は `fields.ts` に、curriculum-standard.md 第 3 章の並び（ctr の次に k8s、cld の次に sys）で足した
+
 ## 未決
 
 （CLAUDE.md 第 2 章の 3 つの場合だけ、ここに「問題 → 影響 → 変更案」を書き、
