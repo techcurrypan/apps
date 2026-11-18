@@ -102,3 +102,57 @@
 | `openssl` | https://docs.openssl.org/3.0/man1/openssl/ | openssl - OpenSSL Documentation |
 | `ssh-keygen` | https://man.openbsd.org/ssh-keygen | ssh-keygen(1) - OpenBSD manual pages |
 | `ssh` | https://man.openbsd.org/ssh | ssh(1) - OpenBSD manual pages |
+| `tc` | https://man7.org/linux/man-pages/man8/tc.8.html | tc(8) - Linux manual page（2026-11-19） |
+| `sysctl` | https://man7.org/linux/man-pages/man8/sysctl.8.html | sysctl(8) - Linux manual page（2026-11-19） |
+| `nstat` | https://man7.org/linux/man-pages/man8/nstat.8.html | nstat(8) - Linux manual page（2026-11-19） |
+| `ethtool` | https://man7.org/linux/man-pages/man8/ethtool.8.html | ethtool(8) - Linux manual page（2026-11-19） |
+
+## 6. 一次情報（第 2 版の出典。検査 34）
+
+第 2 版のレッスンの `sources` は、この表の URL だけを使う。足すときは URL を開いて（HTTP 200）、数と仕様の文がその頁にあることを確かめ、確かめた日を書く。
+Linux のソースは版の tag（`/v6.12/`）の頁で、関数名は `npm run impl:verify` が同じ tag の生のファイルで確かめる。
+ACM Queue の頁は自動の取得を断る（403）ため、BBR は Google の論文の頁（research.google）を出典にし、本文の数（YouTube・B4 の結果）は使わない（2026-11-19）。
+
+| レッスン | id | 種類 | 題 | URL | 確かめた日 |
+|---|---|---|---|---|---|
+| net-101 | rfc9293 | rfc | RFC 9293 Transmission Control Protocol (TCP) | https://www.rfc-editor.org/rfc/rfc9293 | 2026-11-19 |
+| net-101 | rfc5681 | rfc | RFC 5681 TCP Congestion Control | https://www.rfc-editor.org/rfc/rfc5681 | 2026-11-19 |
+| net-101 | rfc6928 | rfc | RFC 6928 Increasing TCP's Initial Window | https://www.rfc-editor.org/rfc/rfc6928 | 2026-11-19 |
+| net-101 | rfc6298 | rfc | RFC 6298 Computing TCP's Retransmission Timer | https://www.rfc-editor.org/rfc/rfc6298 | 2026-11-19 |
+| net-101 | rfc8985 | rfc | RFC 8985 The RACK-TLP Loss Detection Algorithm for TCP | https://www.rfc-editor.org/rfc/rfc8985 | 2026-11-19 |
+| net-101 | rfc9438 | rfc | RFC 9438 CUBIC for Fast and Long-Distance Networks | https://www.rfc-editor.org/rfc/rfc9438 | 2026-11-19 |
+| net-101 | rfc8290 | rfc | RFC 8290 The Flow Queue CoDel Packet Scheduler and AQM Algorithm | https://www.rfc-editor.org/rfc/rfc8290 | 2026-11-19 |
+| net-101 | rfc7323 | rfc | RFC 7323 TCP Extensions for High Performance | https://www.rfc-editor.org/rfc/rfc7323 | 2026-11-19 |
+| net-101 | bbr | paper | Cardwell ほか「BBR: Congestion-Based Congestion Control」ACM Queue 14(5), 2016 | https://research.google/pubs/bbr-congestion-based-congestion-control-2/ | 2026-11-19 |
+| net-101 | man-ss | man | ss(8) | https://man7.org/linux/man-pages/man8/ss.8.html | 2026-11-19 |
+| net-101 | man-tc-fq | man | tc-fq(8) | https://man7.org/linux/man-pages/man8/tc-fq.8.html | 2026-11-19 |
+| net-101 | man-ethtool | man | ethtool(8) | https://man7.org/linux/man-pages/man8/ethtool.8.html | 2026-11-19 |
+| net-101 | man-tcp | man | tcp(7) | https://man7.org/linux/man-pages/man7/tcp.7.html | 2026-11-19 |
+| net-101 | nginx-core | doc | nginx ngx_http_core_module（tcp_nodelay・tcp_nopush） | https://nginx.org/en/docs/http/ngx_http_core_module.html | 2026-11-19 |
+| net-101 | systemd-sysctl | source | systemd sysctl.d/50-default.conf | https://github.com/systemd/systemd/blob/main/sysctl.d/50-default.conf | 2026-11-19 |
+| net-101 | linux-socket | source | Linux v6.12 net/socket.c | https://github.com/torvalds/linux/blob/v6.12/net/socket.c | 2026-11-19 |
+| net-101 | linux-tcp | source | Linux v6.12 net/ipv4/tcp.c | https://github.com/torvalds/linux/blob/v6.12/net/ipv4/tcp.c | 2026-11-19 |
+| net-101 | linux-tcp-output | source | Linux v6.12 net/ipv4/tcp_output.c | https://github.com/torvalds/linux/blob/v6.12/net/ipv4/tcp_output.c | 2026-11-19 |
+| net-101 | linux-tcp-input | source | Linux v6.12 net/ipv4/tcp_input.c | https://github.com/torvalds/linux/blob/v6.12/net/ipv4/tcp_input.c | 2026-11-19 |
+| net-101 | linux-tcp-ipv4 | source | Linux v6.12 net/ipv4/tcp_ipv4.c | https://github.com/torvalds/linux/blob/v6.12/net/ipv4/tcp_ipv4.c | 2026-11-19 |
+| net-101 | linux-tcp-timer | source | Linux v6.12 net/ipv4/tcp_timer.c | https://github.com/torvalds/linux/blob/v6.12/net/ipv4/tcp_timer.c | 2026-11-19 |
+| net-101 | linux-tcp-offload | source | Linux v6.12 net/ipv4/tcp_offload.c | https://github.com/torvalds/linux/blob/v6.12/net/ipv4/tcp_offload.c | 2026-11-19 |
+| net-101 | linux-tcp-cubic | source | Linux v6.12 net/ipv4/tcp_cubic.c | https://github.com/torvalds/linux/blob/v6.12/net/ipv4/tcp_cubic.c | 2026-11-19 |
+| net-101 | linux-tcp-cong | source | Linux v6.12 net/ipv4/tcp_cong.c | https://github.com/torvalds/linux/blob/v6.12/net/ipv4/tcp_cong.c | 2026-11-19 |
+| net-101 | linux-tcp-bbr | source | Linux v6.12 net/ipv4/tcp_bbr.c | https://github.com/torvalds/linux/blob/v6.12/net/ipv4/tcp_bbr.c | 2026-11-19 |
+| net-101 | linux-ip-output | source | Linux v6.12 net/ipv4/ip_output.c | https://github.com/torvalds/linux/blob/v6.12/net/ipv4/ip_output.c | 2026-11-19 |
+| net-101 | linux-ip-input | source | Linux v6.12 net/ipv4/ip_input.c | https://github.com/torvalds/linux/blob/v6.12/net/ipv4/ip_input.c | 2026-11-19 |
+| net-101 | linux-neigh | source | Linux v6.12 include/net/neighbour.h | https://github.com/torvalds/linux/blob/v6.12/include/net/neighbour.h | 2026-11-19 |
+| net-101 | linux-dev | source | Linux v6.12 net/core/dev.c | https://github.com/torvalds/linux/blob/v6.12/net/core/dev.c | 2026-11-19 |
+| net-101 | linux-gro | source | Linux v6.12 net/core/gro.c | https://github.com/torvalds/linux/blob/v6.12/net/core/gro.c | 2026-11-19 |
+| net-101 | linux-skbuff-c | source | Linux v6.12 net/core/skbuff.c | https://github.com/torvalds/linux/blob/v6.12/net/core/skbuff.c | 2026-11-19 |
+| net-101 | linux-sock | source | Linux v6.12 net/core/sock.c | https://github.com/torvalds/linux/blob/v6.12/net/core/sock.c | 2026-11-19 |
+| net-101 | linux-skbuff | source | Linux v6.12 include/linux/skbuff.h | https://github.com/torvalds/linux/blob/v6.12/include/linux/skbuff.h | 2026-11-19 |
+| net-101 | linux-tcp-h | source | Linux v6.12 include/linux/tcp.h | https://github.com/torvalds/linux/blob/v6.12/include/linux/tcp.h | 2026-11-19 |
+| net-101 | linux-sock-h | source | Linux v6.12 include/net/sock.h | https://github.com/torvalds/linux/blob/v6.12/include/net/sock.h | 2026-11-19 |
+| net-101 | linux-net-tcp-h | source | Linux v6.12 include/net/tcp.h | https://github.com/torvalds/linux/blob/v6.12/include/net/tcp.h | 2026-11-19 |
+| net-101 | linux-sch-generic | source | Linux v6.12 net/sched/sch_generic.c | https://github.com/torvalds/linux/blob/v6.12/net/sched/sch_generic.c | 2026-11-19 |
+| net-101 | linux-fq | source | Linux v6.12 net/sched/sch_fq.c | https://github.com/torvalds/linux/blob/v6.12/net/sched/sch_fq.c | 2026-11-19 |
+| net-101 | linux-fq-codel | source | Linux v6.12 net/sched/sch_fq_codel.c | https://github.com/torvalds/linux/blob/v6.12/net/sched/sch_fq_codel.c | 2026-11-19 |
+| net-101 | linux-ixgbe | source | Linux v6.12 drivers/net/ethernet/intel/ixgbe/ixgbe_main.c | https://github.com/torvalds/linux/blob/v6.12/drivers/net/ethernet/intel/ixgbe/ixgbe_main.c | 2026-11-19 |
+| net-101 | linux-sysctl | source | Linux v6.12 Documentation/networking/ip-sysctl.rst | https://github.com/torvalds/linux/blob/v6.12/Documentation/networking/ip-sysctl.rst | 2026-11-19 |

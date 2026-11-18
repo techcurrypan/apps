@@ -5,6 +5,30 @@ import type { FormAnswer } from '../practice/forms.ts';
 /** レッスンごとの解き方（合格まで）と、間違いの手（mistakes の順に 1 つずつ） */
 /** alt はもう 1 つの正しい道（第 2 版の検査 36） */
 export const SOLUTIONS: Record<string, { pass: string[]; wrong: string[][]; alt?: string[] }> = {
+	'net-101': {
+		pass: [
+			'ss -tim dst 10.0.0.9',
+			'tc -s qdisc show dev eth0',
+			'sysctl net.ipv4.tcp_limit_output_bytes',
+			'sudo sysctl -w net.ipv4.tcp_limit_output_bytes=1048576',
+			'sudo tc qdisc replace dev eth0 root fq',
+			'ss -tim dst 10.0.0.9'
+		],
+		alt: [
+			'nstat -az TcpRetransSegs TcpExtTCPTimeouts',
+			'tc -s qdisc show dev eth0',
+			'sudo sysctl -w net.ipv4.tcp_limit_output_bytes=1048576',
+			'sudo tc qdisc replace dev eth0 root fq_codel',
+			'tc -s qdisc show dev eth0',
+			'ss -tim dst 10.0.0.9'
+		],
+		wrong: [
+			['tc qdisc replace dev eth0 root fq'],
+			['sysctl -w net.ipv4.tcp_limit_output_bytes=1048576'],
+			['sudo tc qdisc replace dev eth0 root fqq'],
+			['tc -s qdisc show dev eth1']
+		]
+	},
 	'db-002': {
 		pass: ["SELECT name, kind FROM items WHERE kind = '惣菜' OR stock = 0;"],
 		wrong: [

@@ -1,0 +1,22 @@
+{
+	"tcp": {
+		"dev": "eth0",
+		"qdisc": "pfifo",
+		"pfifoLimit": 100000,
+		"sysctl": {
+			"net.ipv4.tcp_limit_output_bytes": "268435456",
+			"net.core.default_qdisc": "fq_codel",
+			"net.ipv4.tcp_congestion_control": "cubic"
+		},
+		"offload": { "tso": true, "gro": true },
+		"conn": {
+			"local": "10.0.0.5:43210",
+			"peer": "10.0.0.9:9000",
+			"minrtt": 0.5,
+			"cwnd": 430,
+			"ssthresh": 280,
+			"retrans": 1
+		},
+		"ssh": { "local": "10.0.0.5:22", "peer": "10.0.0.77:51022" }
+	}
+}

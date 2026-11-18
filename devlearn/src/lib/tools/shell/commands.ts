@@ -10,6 +10,7 @@ import { sshCommands } from './ssh.ts';
 import { systemdCommands } from './systemd.ts';
 import { textCommands } from './text.ts';
 import { userCommands } from './users.ts';
+import { tcpCommands } from './tcpstack.ts';
 
 export function shellCommands<X>(): Commands<X> {
 	const all = {
@@ -22,7 +23,8 @@ export function shellCommands<X>(): Commands<X> {
 		...netCommands,
 		...sshCommands,
 		...procCommands,
-		...systemdCommands
+		...systemdCommands,
+		...tcpCommands
 	};
 	return all as Commands<unknown> as unknown as Commands<X>;
 }

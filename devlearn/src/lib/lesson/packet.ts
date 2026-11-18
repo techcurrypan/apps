@@ -61,6 +61,7 @@ export type TcpSpec = {
 	ipId: number;
 	ttl?: number;
 	app?: RawPart; // TCP の上に載る物
+	options?: RawField[]; // TCP の選択肢（tcpOptions で作る）。頭の長さに入る
 };
 const FLAG_BITS: Record<string, number> = { FIN: 1, SYN: 2, RST: 4, PSH: 8, ACK: 16 };
 
@@ -97,19 +98,66 @@ function pseudo(src: Ends, dst: Ends, proto: number, len: number): number[] {
 	return [...ipBytes(src.ip), ...ipBytes(dst.ip), 0, proto, ...u16(len)];
 }
 
+/** TCP の選択肢（RFC 9293 3.2・RFC 7323）。並びは Linux の tcp_options_write() と同じ */
+export function tcpOptions(o: {
+	mss?: number;
+	sack?: boolean;
+	ts?: [number, number];
+	ws?: number;
+}): RawField[] {
+	const out: RawField[] = [];
+	if (o.mss !== undefined)
+		out.push(
+			f('選択肢 MSS', `0x0204${o.mss.toString(16).padStart(4, '0')}（MSS ${o.mss}）`, 3, [
+				2,
+				4,
+				...u16(o.mss)
+			])
+		);
+	if (o.sack && o.ts) out.push(f('選択肢 SACK 可', '0x0402（SACK を使える）', 3, [4, 2]));
+	if (o.ts) {
+		if (!o.sack || o.mss === undefined)
+			out.push(f('選択肢 NOP', '0x0101（詰め物 2 つ）', 3, [1, 1]));
+		const [v, e] = o.ts;
+		out.push(
+			f(
+				'選択肢 時刻の印',
+				`080a${[...u32(v), ...u32(e)].map((x) => x.toString(16).padStart(2, '0')).join('')}（TSval ${v}・TSecr ${e}）`,
+				3,
+				[8, 10, ...u32(v), ...u32(e)]
+			)
+		);
+	}
+	if (o.ws !== undefined)
+		out.push(
+			f(
+				'選択肢 窓の倍率',
+				`0x010303${o.ws.toString(16).padStart(2, '0')}（NOP と 2^${o.ws} 倍）`,
+				3,
+				[1, 3, 3, o.ws]
+			)
+		);
+	return out;
+}
+
 export function tcpPacket(s: TcpSpec): Packet {
 	const app = s.app ? sum(s.app.fields) : [];
+	const opts = s.options ?? [];
+	const optLen = sum(opts).length;
+	if (optLen % 4 !== 0) throw new Error(`TCP の選択肢が 4 バイトの倍数でない：${optLen}`);
+	const hlen = 20 + optLen;
 	const bits = s.flags.reduce((a, x) => a | (FLAG_BITS[x] ?? 0), 0);
 	const head = (ck: number) => [
 		f('送り元ポート', `${s.src.port}`, 1, u16(s.src.port)),
 		f('宛先ポート', `${s.dst.port}`, 1, u16(s.dst.port)),
 		f('順番の番号（seq）', `${s.seq}`, 2, u32(s.seq)),
 		f('受け取った番号（ack）', `${s.ack}`, 2, u32(s.ack)),
-		f('頭の長さ', '0x50（20 バイト）', 3, u8(0x50)),
+		f('頭の長さ', `${hex2((hlen / 4) << 4, 2)}（${hlen} バイト）`, 3, u8((hlen / 4) << 4)),
 		f('印', `${hex2(bits, 2)}（${s.flags.join('・')}）`, 1, u8(bits)),
 		f('受け取れる量（窓）', `${s.window}`, 2, u16(s.window)),
 		f('チェックサム', hex2(ck, 4), 3, u16(ck)),
-		f('急ぎの位置', '0', 3, u16(0))
+		f('急ぎの位置', '0', 3, u16(0)),
+		...opts
 	];
 	const seg0 = [...sum(head(0)), ...app];
 	const ck = checksum([...pseudo(s.src, s.dst, 6, seg0.length), ...seg0]);

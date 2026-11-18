@@ -79,7 +79,14 @@ export function k8sBackoff(v: Record<string, number>): KnobOut {
 	};
 }
 
-export const KNOB_CALC: Record<string, KnobCalc> = {};
+export const KNOB_CALC: Record<string, KnobCalc> = {
+	'net-101': {
+		ask: 'RTT 0.5 ms・cwnd 430 で、喪失を 0% から 1% にすると速さはどうなる？',
+		opts: ['ほぼ同じ', '30 分の 1 ほどに落ちる', '倍になる'],
+		a: 1,
+		run: tcpWindow
+	}
+};
 
 /** 続く流れを、つまみの結果で作り直す（最初の packet の合図を count 個ずらして流す） */
 export function knobLoop(s: Step, out: KnobOut): Step {

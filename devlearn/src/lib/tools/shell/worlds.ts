@@ -6,6 +6,7 @@ import type { NetState, NetWorld } from './networld.ts';
 import { initialSys, type ProcSpec, type SysState, type SysUser } from './procs.ts';
 import type { UnitMock } from './systemd.ts';
 import { baseFs } from './world.ts';
+import { initialTcp, type TcpState, type TcpWorld } from './tcpstack.ts';
 
 export type WorldSpec = {
 	dirs?: { path: string; mode: string; owner: string }[];
@@ -16,6 +17,7 @@ export type WorldSpec = {
 	units?: string[];
 	unitMock?: Record<string, UnitMock>;
 	docker?: { images: string[] };
+	tcp?: TcpWorld; // TCP の出口（net-101）。模擬だけが使う（本物の記録の機械には置かない）
 };
 
 const LEARNER_HOME = '/home/learner';
@@ -78,4 +80,9 @@ export function worldNet(w: WorldSpec | null): NetState | undefined {
 export function worldSys(w: WorldSpec | null): SysState | undefined {
 	if (!w?.users && !w?.procs && !w?.units) return undefined;
 	return initialSys(w.users ?? [], w.procs ?? [], w.unitMock);
+}
+
+// TCP の出口（qdisc・設定・流れ）の初めの状態。無ければ置かない
+export function worldTcp(w: WorldSpec | null): TcpState | undefined {
+	return w?.tcp ? initialTcp(w.tcp) : undefined;
 }

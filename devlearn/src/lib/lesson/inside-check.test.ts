@@ -326,6 +326,18 @@ describe('検査 16〜25', () => {
 		m.explain[3].inside!.logs![0].text += 'x'.repeat(120);
 		expect(run(m)).toContain(19);
 	});
+	it('19：tcpdump の行は TCP の選択肢を含む本物の 1 行のため 180 字まで。超えると落ちる', () => {
+		const ok = insideLesson();
+		const line = (n: number) =>
+			'10:15:01.000100 IP 10.0.0.5.43210 > 10.0.0.9.9000: Flags [S], seq 1, win 64240, options [' +
+			'x'.repeat(n) +
+			'], length 0';
+		ok.explain[3].inside!.logs = [{ t: '10:15:01.000100', src: 'tcpdump', text: line(60) }];
+		expect(run(ok)).not.toContain(19);
+		const ng = insideLesson();
+		ng.explain[3].inside!.logs = [{ t: '10:15:01.000100', src: 'tcpdump', text: line(120) }];
+		expect(run(ng)).toContain(19);
+	});
 	it('20：書き終えた分野の道具の実戦は、全てのコマンドに参考のリンクが要る', () => {
 		const l = insideLesson();
 		expect(run(l, NET)).toContain(20);

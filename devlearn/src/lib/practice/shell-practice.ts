@@ -5,7 +5,8 @@ import { gitCommands } from '../tools/git/git.ts';
 import type { Tool } from '../tools/session.ts';
 import { CLOCK_BASE, shellTool, type ShellState } from '../tools/shell/run.ts';
 import { learnerWorld, WORK } from '../tools/shell/world.ts';
-import { worldFs, worldNet, worldSys, type WorldSpec } from '../tools/shell/worlds.ts';
+import { worldFs, worldNet, worldSys, worldTcp, type WorldSpec } from '../tools/shell/worlds.ts';
+import { rttOf } from '../tools/shell/tcpstack.ts';
 import { plainText } from './terminal.ts';
 import type { JudgeItem } from './tool-practice.ts';
 
@@ -23,6 +24,8 @@ export type ShellSuccess = {
 	files?: Record<string, string>;
 	modes?: Record<string, string>;
 	output?: string;
+	/** TCP の出口（net-101）：qdisc の種類（どれか）・設定の値・この流れの RTT の上限（ms） */
+	tcp?: { qdisc?: string[]; sysctl?: Record<string, string>; rttBelow?: number };
 };
 
 // 本物の機械と同じく、シェルの実戦にも git がある
@@ -65,7 +68,8 @@ export function shellInitial(
 		cwd,
 		vars: { ...base.vars, PWD: cwd },
 		net: worldNet(world),
-		sys: worldSys(world)
+		sys: worldSys(world),
+		tcp: worldTcp(world)
 	};
 }
 
@@ -94,6 +98,27 @@ export function judgeShell(
 	}
 	for (const [p, m] of Object.entries(want.modes ?? {}))
 		items.push({ label: `${p} の権限`, want: m, got: modeOf(s, p), ok: modeOf(s, p) === m });
+	if (want.tcp) {
+		const t = s.tcp;
+		if (want.tcp.qdisc)
+			items.push({
+				label: 'eth0 の qdisc',
+				want: want.tcp.qdisc.join(' か '),
+				got: t?.qdisc ?? '（無い）',
+				ok: !!t && want.tcp.qdisc.includes(t.qdisc)
+			});
+		for (const [k, v] of Object.entries(want.tcp.sysctl ?? {}))
+			items.push({ label: k, want: v, got: t?.sysctl[k] ?? '（無い）', ok: t?.sysctl[k] === v });
+		if (want.tcp.rttBelow !== undefined) {
+			const r = t ? Math.round(rttOf(t) * 1000) / 1000 : null;
+			items.push({
+				label: '写しの流れの RTT',
+				want: `${want.tcp.rttBelow} ms 未満`,
+				got: r === null ? '（無い）' : `${r} ms`,
+				ok: r !== null && r < want.tcp.rttBelow
+			});
+		}
+	}
 	// 最後の出力は、字の飾り（curl の太字・押せる印）を外した、端末に見える字で比べて見せる
 	const seen = plainText(lastOut);
 	if (want.output !== undefined)

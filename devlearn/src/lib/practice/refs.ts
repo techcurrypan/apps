@@ -135,6 +135,10 @@ export const COMMAND_REFS: Readonly<Record<string, CommandRef>> = {
 	ping: { url: 'https://man7.org/linux/man-pages/man8/ping.8.html', site: 'man7.org' },
 	ip: { url: 'https://man7.org/linux/man-pages/man8/ip.8.html', site: 'man7.org' },
 	ss: { url: 'https://man7.org/linux/man-pages/man8/ss.8.html', site: 'man7.org' },
+	tc: { url: 'https://man7.org/linux/man-pages/man8/tc.8.html', site: 'man7.org' },
+	sysctl: { url: 'https://man7.org/linux/man-pages/man8/sysctl.8.html', site: 'man7.org' },
+	nstat: { url: 'https://man7.org/linux/man-pages/man8/nstat.8.html', site: 'man7.org' },
+	ethtool: { url: 'https://man7.org/linux/man-pages/man8/ethtool.8.html', site: 'man7.org' },
 	dig: {
 		url: 'https://bind9.readthedocs.io/en/latest/manpages.html#dig-dns-lookup-utility',
 		site: 'BIND 9'

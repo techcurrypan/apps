@@ -13,6 +13,7 @@ import {
 	type NetWorld
 } from './networld.ts';
 import { fail, ok, type Cmd, type ShellState } from './run.ts';
+import { ssTcp } from './tcpstack.ts';
 import { USERS } from './users.ts';
 
 const NO_NET = '（この実戦の模擬には網が無い）\n';
@@ -289,7 +290,9 @@ function render(columns: Col[], width = 80): string {
 	return out;
 }
 
-const ss: Cmd<unknown> = (s, args) => {
+const ss: Cmd<unknown> = (s, args, io) => {
+	// -i（流れの中の数）は TCP の出口の模擬が受け持つ（net-101。tcpstack.ts）
+	if (s.tcp && args.some((a) => a.startsWith('-') && a.includes('i'))) return ssTcp(s, args, io);
 	const n = s.net;
 	if (!n) return fail(s, NO_NET);
 	const flags = args.filter((a) => a.startsWith('-')).join('');

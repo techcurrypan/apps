@@ -271,7 +271,10 @@ export function checkInside(lesson: Lesson, add: Add, opt: InsideOptions = {}): 
 			for (const l of logs) {
 				if (blank(l.t) || blank(l.src) || blank(l.text))
 					add(19, w, 'logs の t / src / text を埋める');
-				if (len(l.text) > 120) add(19, w, `logs の 1 行が ${len(l.text)} 字。120 字以内にする`);
+				// tcpdump の行は TCP の選択肢（options […]）を含む本物の 1 行で、130〜170 字になる。
+				// 切ると本物でなくなる（検査 23・LS-Q9）ため 180 字まで認める（decisions.md 2026-11-19）
+				const max = l.src === 'tcpdump' ? 180 : 120;
+				if (len(l.text) > max) add(19, w, `logs の 1 行が ${len(l.text)} 字。${max} 字以内にする`);
 				const fmt = formatOf(l.src);
 				if (!fmt) add(23, w, `ログの書き手「${l.src}」の書式が表に無い`);
 				else if (!fmt.line.test(l.text))

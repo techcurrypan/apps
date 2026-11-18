@@ -5,6 +5,7 @@
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { parseCurriculum } from '../src/lib/content/curriculum-parse.ts';
 import { FIELDS } from '../src/lib/content/fields.ts';
+import { SAMPLES } from '../src/lib/lesson/v2-scope.ts';
 
 const dir = 'src/lib/content/lessons';
 const rows = parseCurriculum(readFileSync('docs/curriculum.md', 'utf8'));
@@ -20,6 +21,7 @@ let changed = 0;
 for (const f of files) {
 	const id = f.replace(/\.ts$/, '');
 	const r = rows.find((x) => x.id === id);
+	if (!r && SAMPLES.has(id)) continue; // 10-R の見本。知識グラフは手で書く（10-C で表に入れる）
 	if (!r) throw new Error(`表に無いレッスン: ${id}`);
 	const path = `${dir}/${f}`;
 	const src = readFileSync(path, 'utf8');

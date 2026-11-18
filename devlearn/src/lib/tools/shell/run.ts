@@ -13,6 +13,7 @@ import {
 } from '../fs.ts';
 import type { Result, Tool } from '../session.ts';
 import type { Command, ListItem, Word } from './parse.ts';
+import type { TcpState } from './tcpstack.ts';
 import type { SysState } from './procs.ts';
 import type { NetState } from './networld.ts';
 import { parseScript, type Node } from './script.ts';
@@ -33,6 +34,7 @@ export type ShellState<X> = {
 	ext: X; // 道具ごとの状態（git のリポジトリなど）
 	net?: NetState; // 作り物の網（網の実戦だけ。tools-real/worlds/net.json）
 	sys?: SysState; // 動いているプロセス・世界の利用者・サービス（tools-real/worlds/procs.json・service.json）
+	tcp?: TcpState; // TCP の出口（qdisc・設定・流れ。tools-real/worlds/tcp.json。net-101）
 };
 
 export type Io<X = unknown> = {
