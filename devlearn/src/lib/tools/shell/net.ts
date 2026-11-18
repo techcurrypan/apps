@@ -291,8 +291,8 @@ function render(columns: Col[], width = 80): string {
 }
 
 const ss: Cmd<unknown> = (s, args, io) => {
-	// -i（流れの中の数）は TCP の出口の模擬が受け持つ（net-101。tcpstack.ts）
-	if (s.tcp && args.some((a) => a.startsWith('-') && a.includes('i'))) return ssTcp(s, args, io);
+	// TCP の出口の模擬（net-101。tcpstack.ts）がある世界では、ss はそちらが受け持つ
+	if (s.tcp) return ssTcp(s, args, io);
 	const n = s.net;
 	if (!n) return fail(s, NO_NET);
 	const flags = args.filter((a) => a.startsWith('-')).join('');

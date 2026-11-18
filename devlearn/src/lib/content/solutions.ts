@@ -7,24 +7,23 @@ import type { FormAnswer } from '../practice/forms.ts';
 export const SOLUTIONS: Record<string, { pass: string[]; wrong: string[][]; alt?: string[] }> = {
 	'net-101': {
 		pass: [
-			'ss -tim dst 10.0.0.9',
+			'ss -tim dst 10.0.0.77',
 			'tc -s qdisc show dev eth0',
-			'sysctl net.ipv4.tcp_limit_output_bytes',
-			'sudo sysctl -w net.ipv4.tcp_limit_output_bytes=1048576',
-			'sudo tc qdisc replace dev eth0 root fq',
-			'ss -tim dst 10.0.0.9'
+			'ss -tn dst 10.0.0.9 | wc -l',
+			'sudo tc qdisc replace dev eth0 root fq_codel',
+			'tc -s qdisc show dev eth0',
+			'ss -tim dst 10.0.0.77'
 		],
 		alt: [
 			'nstat -az TcpRetransSegs TcpExtTCPTimeouts',
 			'tc -s qdisc show dev eth0',
-			'sudo sysctl -w net.ipv4.tcp_limit_output_bytes=1048576',
-			'sudo tc qdisc replace dev eth0 root fq_codel',
-			'tc -s qdisc show dev eth0',
-			'ss -tim dst 10.0.0.9'
+			'sysctl net.ipv4.tcp_limit_output_bytes',
+			'sudo tc qdisc replace dev eth0 root fq',
+			'ss -tim dst 10.0.0.77'
 		],
 		wrong: [
 			['tc qdisc replace dev eth0 root fq'],
-			['sysctl -w net.ipv4.tcp_limit_output_bytes=1048576'],
+			['sysctl -w net.ipv4.tcp_limit_output_bytes=262144'],
 			['sudo tc qdisc replace dev eth0 root fqq'],
 			['tc -s qdisc show dev eth1']
 		]

@@ -20,10 +20,10 @@ export const net101: Lesson = {
 	minutes: 60,
 	learn: [
 		'skb と送信キュー・再送キューの役目',
-		'tcp_write_xmit() が送るか待つかを決める 5 つの関所',
+		'tcp_write_xmit() が送るか待つかを決める 6 つの関所',
 		'IP・近隣・qdisc・ドライバ・TSO を通る下り道',
 		'ACK が NAPI と GRO を通って送りを続けさせる道',
-		'hardirq・softirq・tasklet・プロセスの文脈の違い',
+		'プロセス・hardirq・softirq（tasklet を含む）の文脈の違い',
 		'喪失と溜まりすぎの症状・原因・直し方',
 		'ss・nstat・tc・ethtool で数を読む'
 	],
@@ -71,12 +71,12 @@ export const net101: Lesson = {
 	explain: [s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12, s13, s14, s15, s16],
 	example: {
 		intro:
-			'夜の写しが遅いときに最初に打つ 2 つ。rtt 24.5 ms が minrtt 0.5 ms の 49 倍なら、どこかの行列で待っている。backlog 30 MB は 10 GbE で 24 ms 分だ',
+			'ssh の rtt 24.5 ms が minrtt 0.5 ms の 49 倍なら、どこかの行列で待っている。tc の backlog 30 MB は 10 GbE で 24 ms 分だ',
 		lines: [
-			'$ ss -tim dst 10.0.0.9',
+			'$ ss -tim dst 10.0.0.77',
 			'State Recv-Q Send-Q     Local Address:Port  Peer Address:Port Process',
-			'ESTAB 0      2100000        10.0.0.5:43210      10.0.0.9:9000 ',
-			'	 skmem:(r0,rb131072,t30000000,tb4194304,f0,w4194304,o0,bl0,d0) cubic wscale:7,7 rto:225 rtt:24.5/0.398 ato:40 mss:1448 pmtu:1500 rcvmss:536 advmss:1448 cwnd:430 ssthresh:280 send 0.2Gbps pacing_rate 0.2Gbps delivery_rate 9.3Gbps busy:9000ms unacked:430 retrans:0/1 rcv_space:14480 rcv_ssthresh:64088 notsent:2100000 minrtt:0.5',
+			'ESTAB 0      0                 10.0.0.5:22    10.0.0.77:51022 ',
+			'\t skmem:(r0,rb131072,t0,tb87040,f0,w0,o0,bl0,d0) ts sack cubic wscale:7,7 rto:224.5 rtt:24.5/0.31 ato:40 mss:1448 pmtu:1500 rcvmss:536 advmss:1448 cwnd:10 bytes_sent:184320 bytes_acked:184320 bytes_received:36864 segs_out:2210 segs_in:1630 data_segs_out:1180 data_segs_in:640 send 4.73Mbps lastsnd:12 lastrcv:12 lastack:12 pacing_rate 9.46Mbps delivery_rate 1.2Mbps delivered:1181 app_limited busy:1200ms rcv_space:14480 rcv_ssthresh:64088 minrtt:0.5',
 			'$ tc -s qdisc show dev eth0',
 			'qdisc pfifo 8001: root refcnt 2 limit 100000p',
 			' Sent 81234567890 bytes 1239500 pkt (dropped 0, overlimits 0 requeues 0) ',
@@ -84,14 +84,13 @@ export const net101: Lesson = {
 		]
 	},
 	practice: {
-		goal: '夜の写しが遅く ssh も重い。数を読んで原因を絞り、手元の設定と qdisc を直す',
+		goal: '夜の写しの間、ssh が 25 ms 待たされる。数を読んで原因を絞り、出口の qdisc を直す',
 		tool: { name: 'shell', mode: 'mock' },
 		commands: ['ss', 'tc', 'sysctl', 'nstat', 'ethtool'],
 		setup: { world: 'tcp' },
 		success: {
 			tcp: {
 				qdisc: ['fq', 'fq_codel'],
-				sysctl: { 'net.ipv4.tcp_limit_output_bytes': '1048576' },
 				rttBelow: 2
 			}
 		},
@@ -105,13 +104,13 @@ export const net101: Lesson = {
 			{
 				when: 'sudo を付けずに sysctl -w した',
 				why: '/proc/sys の設定を書けるのは root だけ',
-				next: 'sudo sysctl -w net.ipv4.tcp_limit_output_bytes=1048576 と打つ',
+				next: 'sudo を付ける。ただしこの溜まりは本数で積もるので、上限を下げても減らない。qdisc を見る',
 				match: 'permission denied on key'
 			},
 			{
 				when: 'qdisc の名前を打ち間違えた',
 				why: 'カーネルに無い種類の qdisc は作れない',
-				next: 'fq か fq_codel と打つ（tc qdisc replace dev eth0 root fq）',
+				next: 'fq か fq_codel と打つ（sudo tc qdisc replace dev eth0 root fq_codel）',
 				match: 'qdisc kind is unknown'
 			},
 			{
@@ -124,16 +123,16 @@ export const net101: Lesson = {
 	},
 	check: [
 		{
-			ask: 'ss -tim で rtt:24.5・minrtt:0.5・retrans:0/1。まず何を見るか',
+			ask: 'ssh の ss -tim で rtt:24.5・minrtt:0.5・再送なし。まず何を見るか',
 			how: 'tc -s qdisc の backlog',
 			kind: 'scene',
 			opts: ['tc -s qdisc の backlog', '相手の受信窓だけ', 'NIC の故障の記録']
 		},
 		{
-			ask: 'RTT 0.5 ms の網で、ときどき 200 ms 止まる。まず疑う物は',
-			how: '最後の区切りの喪失と RTO',
+			ask: 'RTT 0.5 ms の網で、短い応答がときどき 200 ms 止まる。まず疑う物は',
+			how: '1 個だけ飛んでいる時の喪失と RTO',
 			kind: 'scene',
-			opts: ['最後の区切りの喪失と RTO', 'Nagle の待ち', 'GRO のまとめ']
+			opts: ['1 個だけ飛んでいる時の喪失と RTO', 'Nagle の待ち', 'GRO のまとめ']
 		},
 		{
 			ask: 'cwnd 10・MSS 1,448 B。最初の往復で送れるのは何 B か',
@@ -152,6 +151,12 @@ export const net101: Lesson = {
 		{
 			ask: 'qdisc を pfifo から fq に替えると、ssh の区切りはどうなるか',
 			how: '別の列に入り、大きな流れの後ろで待たない'
+		},
+		{
+			ask: '256 本の写しで 30 MB 溜まる。tcp_limit_output_bytes を下げても減らないのはなぜか',
+			how: '1 本が置くのは 2 × truesize の約 130 KB で、上限より下。溜まりは本数で決まる',
+			kind: 'scene',
+			opts: ['1 本 130 KB で上限が効いていない', '設定が再起動まで効かない', 'fq の時しか効かない']
 		},
 		{
 			ask: '10 GbE で qdisc の backlog が 30 MB。待ちは何 ms か',
@@ -183,12 +188,12 @@ export const net101: Lesson = {
 			{
 				wrong: '再送はタイマー（RTO）が切れて起きる',
 				right:
-					'大半は SACK と RACK で 1 往復のうちに直る。RTO は最後の区切りが落ちた時の最後の手段で、RTT の 400 倍かかる'
+					'途中の喪失は SACK と RACK で 1 往復のうちに直り、最後の喪失も TLP が約 3 ms で気づく。200 ms の RTO は、1 個だけ飛んでいる時か確かめも落ちた時'
 			},
 			{
 				wrong: '手元の待ち行列を大きくすれば速くなる',
 				right:
-					'線を使い切った後は待ちが増えるだけ。TSQ と fq が手元を約 1 ms 分に抑えているのはそのため'
+					'線を使い切った後は待ちが増えるだけ。TSQ は 1 本ずつ約 1 ms 分に抑えるが、本数が多いと積もる。fq で分け、fq_codel で削る'
 			}
 		],
 		oneMinute:
@@ -203,8 +208,8 @@ export const net101: Lesson = {
 			{
 				ask: 'RTT 0.5 ms の網で、たまに 200 ms 止まる。何を数えるか',
 				answer:
-					'nstat の TcpExtTCPTimeouts。RTO の下限 200 ms と同じ長さなので、最後の区切りの喪失を疑う',
-				look: '200 ms という数から tcp_rto_min を思い出せるか'
+					'nstat の TcpExtTCPTimeouts と TcpExtTCPLossProbes。200 ms は RTO の下限と同じ長さなので、1 個だけ飛んでいる時の喪失を疑う',
+				look: '200 ms という数から RTO の下限（tcp_rto_min_us）を思い出せるか'
 			}
 		]
 	}

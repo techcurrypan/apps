@@ -327,6 +327,8 @@
 - 2026-11-18　検査 34 の「content-sources.md の表」は、`docs/content-sources.md` の「6. 一次情報」の節の URL とした。content:check がその節を読む
 - 2026-11-18　`impl:verify` は GitHub の公式リポジトリの版の tag の生のファイル（`raw.githubusercontent.com/<repo>/<tag>/<道>`）を取る（explanation-standard.md 検査 39「kernel.org または GitHub の torvalds/linux の tag」）。設定（`/proc/sys/...`）は、その設定を説明するソースの中の文書（`Documentation/networking/ip-sysctl.rst`）を `where` に書いて確かめる
 - 2026-11-18　分野 `k8s`・`sys` は `fields.ts` に、curriculum-standard.md 第 3 章の並び（ctr の次に k8s、cld の次に sys）で足した
+- 2026-11-19　net-101 の実戦の道具（`ss -tim`・`tc`・`sysctl`・`nstat`・`ethtool -k`）は、`tools-real/worlds/tcp.json` の世界から決まった式で数を出す模擬（`tcpstack.ts`）にした。理由：CI の機械では 10 GbE の線と 30 MB の溜まりを本物で作れず、記録が取れない（tools.md 第 2 章「本物の出力が記録できない場面は、公式文書に載る出力の形を出典つきで使う」）。出力の形は ss(8)・tc-fq(8)・tc-fq_codel(8)・sysctl(8)・nstat(8)・ethtool(8) に合わせた
+- 2026-11-19　第 2 版のレッスンは `LearnV2`（`learn2/geo.ts`）で描くので、第 1 版の図の置き方の検査（`geometry.test.ts` の番号の丸の重なり）を当てない。`lessons.test.ts` は content:check と同じ選択肢（解き方・出典・査読）で流す。理由：第 1 版の置き方は全ステップの出来事を 1 枚に置くため、16 ステップでは丸が溢れる。第 2 版の重なりは `--layout`（LS-D6）で測る
 
 ## 未決
 

@@ -11,6 +11,7 @@ import { systemdCommands } from './systemd.ts';
 import { textCommands } from './text.ts';
 import { userCommands } from './users.ts';
 import { tcpCommands } from './tcpstack.ts';
+import { k8sCommands } from './kube.ts';
 
 export function shellCommands<X>(): Commands<X> {
 	const all = {
@@ -24,7 +25,8 @@ export function shellCommands<X>(): Commands<X> {
 		...sshCommands,
 		...procCommands,
 		...systemdCommands,
-		...tcpCommands
+		...tcpCommands,
+		...k8sCommands
 	};
 	return all as Commands<unknown> as unknown as Commands<X>;
 }

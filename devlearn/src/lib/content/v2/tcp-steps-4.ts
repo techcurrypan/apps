@@ -31,9 +31,9 @@ export const s13: Step = {
 		],
 		deep: [
 			'50-default.conf の default_qdisc の 1 行は、起きた後に作られる qdisc の既定を決める。多くの送り口を持つ NIC では、根に mq が置かれ、送り口ごとの子にこの既定が付く。',
-			'ixgbe（Intel 82599 などの 10 GbE）は TSO・GRO・送り口ごとの割り込み（MSI-X）を持つ。ethtool -k eth0 で、tcp-segmentation-offload と generic-receive-offload を見る。両方 on なら、このレッスンの道で動いている。',
-			'64 KiB の TSO の上限は gso_max_size で決まる。BIG TCP を使うと、v6.12 の GSO_MAX_SIZE の 524,280 B まで 1 個の skb にできる。1 個の skb で層を下りる回数がさらに減る。',
-			'TCP_NODELAY は tcp_nagle_test() の Nagle の判断を外す。TCP_CORK は小さい区切りを MSS まで溜める（最大 200 ms）。nginx は 2 つを場面で切り替え、応答の頭と本文を 1 つの区切りに詰める。'
+			'ixgbe（Intel 82599 などの 10 GbE）は TSO と送り口ごとの割り込み（MSI-X）を持つ。GRO はカーネルの働きで、ixgbe 自身のまとめ（RSC）は v6.12 の既定で off だ。ethtool -k eth0 で、tcp-segmentation-offload と generic-receive-offload を見る。両方 on なら、このレッスンの道で動いている。',
+			'64 KiB の TSO の上限は gso_max_size で決まる。BIG TCP に対応した NIC なら、v6.12 の GSO_MAX_SIZE の 524,280 B まで 1 個の skb にできる。ixgbe は tso_max_size が 64 KiB なので使えない。',
+			'TCP_NODELAY は tcp_nagle_test() の Nagle の判断を外す。TCP_CORK は小さい区切りを MSS まで溜める（最大 200 ms）。Nagle を外さないと、小さい書き込みが 2 回続く形で、相手の遅延 ACK（ato:40 の 40 ms）と待ち合って 40 ms 止まる。'
 		]
 	},
 	callout: {
@@ -47,7 +47,7 @@ export const s13: Step = {
 	],
 	facts: [
 		{ k: 'カーネルの既定の qdisc', v: 'pfifo_fast（systemd が fq_codel にする）' },
-		{ k: 'TSO の上限', v: '65,536 B（BIG TCP で 524,280 B まで）' },
+		{ k: 'TSO の上限', v: '65,536 B（BIG TCP の NIC なら 524,280 B）' },
 		{ k: 'TCP_CORK の待ちの上限', v: '200 ms' }
 	],
 	scene: [{ op: 'change', id: 'app', k: 'qdisc', v: 'fq_codel（systemd の既定）' }],
@@ -118,7 +118,7 @@ export const s13: Step = {
 	],
 	board: [
 		'systemd：default_qdisc = fq_codel',
-		'ixgbe：TSO・GRO・MSI-X',
+		'ixgbe：TSO・MSI-X（GRO はカーネル）',
 		'nginx：tcp_nodelay・tcp_nopush'
 	],
 	badges: {
@@ -148,16 +148,16 @@ export const s14: Step = {
 			'ss -tim はつながり 1 本ずつの数、nstat は機械全体の数、tc -s qdisc は出口の行列の数を出す。'
 		],
 		work: [
-			'ss -tim の rtt:0.512/0.098 は平均と揺れ、minrtt は最小だ。rtt が minrtt の 2 倍を超えるなら、どこかの行列で待っている。',
+			'ss -tim の rtt:24.5/0.31 は平均と揺れ、minrtt は最小だ。rtt が minrtt の 2 倍を超えるなら、どこかの行列で待っている。',
 			'retrans:0/12 は「今の再送 / これまでの再送」だ。nstat -az TcpRetransSegs を 10 秒あけて 2 回取り、送った区切りの 1% を超えたら回線か相手を疑う。',
 			'tc -s qdisc show dev eth0 の backlog を見る。10 GbE で 1.25 MB（1 ms 分）を超え続けるなら、手元の溜まりすぎだ。drops と overlimits も見る。',
-			'ethtool -k eth0 で tcp-segmentation-offload と generic-receive-offload を確かめる。関数の中まで見る時は bpftrace で tcp_retransmit_skb を数える。'
+			'ethtool -k eth0 で tcp-segmentation-offload と generic-receive-offload を確かめる。関数の中まで見る時は bpftrace で tcp_retransmit_skb の tracepoint を数える。'
 		],
 		deep: [
-			'ss -tim の skmem の t は sk_wmem_alloc、tb は sk_sndbuf、w は sk_wmem_queued だ。w が tb に張り付き、notsent が 1 MB を超えるなら、アプリが送り込む速さに線が追いついていない。',
+			'ss -tim の skmem の t は sk_wmem_alloc、tb は sk_sndbuf、w は sk_wmem_queued だ。w が tb に張り付き、notsent が 1 MB を超えるなら、アプリが送り込む速さに線が追いついていない。tcp_notsent_lowat を 128 KiB ほどにすると、notsent が溜まる前に send() が待つ。',
 			'busy:・rwnd_limited:・sndbuf_limited: は、送りが止まっていた時間とその理由の内訳だ（tcp_chrono）。rwnd_limited が大きければ相手の受信窓、sndbuf_limited なら手元の sk_sndbuf が止めている。',
-			'nstat の TcpExtTCPTimeouts は RTO の回数、TcpExtTCPLossProbes は TLP の回数だ。RTO の数が速い再送の数を超えるなら、最後の区切りが落ちる形か、相手が 200 ms 以上止まっている。',
-			"bpftrace -e 'kprobe:tcp_retransmit_skb { @[comm] = count(); }' で、送り直したプロセスを数える。kprobe はカーネルの関数の入口に置くので、関数名は今の版のソースで確かめる。",
+			'nstat の TcpExtTCPTimeouts は RTO の回数、TcpExtTCPLossProbes は TLP の回数だ。TLP が再送の 10% を超えるなら、最後の区切りの喪失が目立つ。RTO が多ければ、飛んでいるのが 1 個だけの短い応答の喪失か、相手が 200 ms 以上止まっている。',
+			'bpftrace の tracepoint:tcp:tcp_retransmit_skb で、args->daddr と dport ごとに送り直しを数える。再送は softirq やタイマーで起きるので、comm（プロセス名）では数えられない。',
 			'設定は /proc/sys/net/ipv4/ の下で見る。tcp_wmem・tcp_limit_output_bytes・tcp_congestion_control の 3 つだ。qdisc の既定は /proc/sys/net/core/default_qdisc だ。sysctl -a | grep tcp_ で一覧できる。'
 		]
 	},
@@ -175,16 +175,16 @@ export const s14: Step = {
 		{ k: '行列の目安', v: '1.25 MB（10 GbE の 1 ms 分）', calc: '10000000000/8/1000/1000000' },
 		{ k: 'rtt の目安', v: 'minrtt の 2 倍' }
 	],
-	scene: [{ op: 'change', id: 'app', k: 'ss -tim', v: 'rtt 0.512・cwnd 430' }],
+	scene: [{ op: 'change', id: 'app', k: 'ss -tim', v: 'ssh の rtt 24.5・minrtt 0.5' }],
 	log: {
 		t: '9.000s',
 		from: 'app',
 		to: 'app',
 		kind: 'kernel',
-		info: 'ss -tim：rtt 0.512/0.098・cwnd 430・retrans 0/1・notsent 2100000'
+		info: 'ss -tim：ssh の rtt 24.5/0.31・minrtt 0.5。行列で待っている'
 	},
 	town: '遅いと言われたら、往復の時間・道の上の数・出口の行列・出し直しの数の 4 つを帳面で見る',
-	work: 'ss -tim dst 10.0.0.9・nstat -az・tc -s qdisc・ethtool -k eth0',
+	work: 'ss -tim dst 10.0.0.77・nstat -az・tc -s qdisc・ethtool -k eth0',
 	inside: {
 		hosts: [
 			{
@@ -193,25 +193,30 @@ export const s14: Step = {
 				addr: '10.0.0.5',
 				rows: [
 					conn,
-					{ id: 's-ss', depth: 2, what: 'ss -tim', state: 'rtt:0.512/0.098 cwnd:430 unacked:430' },
+					{ id: 's-ss', depth: 2, what: 'ss -tim', state: 'ssh rtt:24.5/0.31 minrtt:0.5' },
 					{ id: 's-retrans', depth: 2, what: 'retrans', state: '0/1' },
 					{
 						id: 'd-qdisc',
 						depth: 1,
-						what: 'qdisc fq（eth0）',
-						state: 'backlog 1357Kb 21p',
-						tone: 'ok'
+						what: 'qdisc pfifo（eth0）',
+						state: 'backlog 30000000b 458p',
+						tone: 'warn'
 					}
 				]
 			}
 		]
 	},
-	metrics: { rtt: '0.5 ms', qd: '1,357,500 B' },
+	metrics: { rtt: '24.5 ms', qd: '30,000,000 B' },
 	motion: [
 		{ at: 0, dur: 800, para: 0, do: { op: 'camera', fit: ['b_wx', 'b_tx', 'b_sendmsg'] } },
-		{ at: 400, dur: 450, para: 0, do: { op: 'badge', id: 'b_tx', text: 'rtt 0.512・minrtt 0.5' } },
+		{
+			at: 400,
+			dur: 450,
+			para: 0,
+			do: { op: 'badge', id: 'b_tx', text: 'rtt 24.5・minrtt 0.5', tone: 'warn' }
+		},
 		{ at: 500, dur: 400, para: 0, do: { op: 'board', line: 0 } },
-		{ at: 1000, dur: 1000, para: 0, do: { op: 'count', metric: 'rtt', to: '0.5 ms' } },
+		{ at: 1000, dur: 1000, para: 0, do: { op: 'count', metric: 'rtt', to: '24.5 ms' } },
 		{
 			at: 2100,
 			dur: 450,
@@ -224,9 +229,9 @@ export const s14: Step = {
 			at: 3300,
 			dur: 450,
 			para: 2,
-			do: { op: 'badge', id: 'b_dev', text: 'backlog 1357Kb・drops 0' }
+			do: { op: 'badge', id: 'b_dev', text: 'backlog 30000000b・drops 0', tone: 'warn' }
 		},
-		{ at: 3400, dur: 1000, para: 2, do: { op: 'count', metric: 'qd', to: '1,357,500 B' } },
+		{ at: 3400, dur: 1000, para: 2, do: { op: 'count', metric: 'qd', to: '30,000,000 B' } },
 		{ at: 3500, dur: 400, para: 2, do: { op: 'board', line: 2 } },
 		{ at: 4500, dur: 450, para: 3, do: { op: 'badge', id: 'b_tso', text: 'tso on・gro on' } },
 		{ at: 4600, dur: 400, para: 3, do: { op: 'board', line: 3 } },
@@ -252,9 +257,9 @@ export const s14: Step = {
 		'ethtool -k・bpftrace で中を確かめる'
 	],
 	badges: {
-		b_tx: 'rtt 0.512・minrtt 0.5',
+		b_tx: 'rtt 24.5・minrtt 0.5',
 		b_wx: 'retrans 0/1（1% 未満）',
-		b_dev: 'backlog 1357Kb・drops 0',
+		b_dev: 'backlog 30000000b・drops 0',
 		b_tso: 'tso on・gro on'
 	},
 	layers: [B.sys([]), B.tcp([]), B.qd([]), B.drv([], [])],
@@ -281,13 +286,13 @@ export const s15: Step = {
 		],
 		work: [
 			'誤解 1「send() が戻ったら届いた」。正しくは、送信キューに預けただけ。届いたかは ACK で分かり、ss の unacked が 0 になって初めて全部届いた。',
-			'誤解 2「再送はタイマー（RTO）が切れて起きる」。正しくは、大半は SACK と RACK で 1 往復のうちに直る。RTO は最後の区切りが落ちた時の最後の手段で、RTT の 400 倍かかる。',
-			'誤解 3「手元の行列を大きくすれば速くなる」。正しくは、線を使い切った後は待ちが増えるだけだ。TSQ と fq が手元を約 1 ms 分に抑えているのは、そのためだ。'
+			'誤解 2「再送はタイマー（RTO）が切れて起きる」。正しくは、途中の喪失は SACK と RACK で 1 往復のうちに直り、最後の喪失も TLP が約 3 ms で気づく。200 ms の RTO は、飛んでいるのが 1 個だけか確かめも落ちた時だ。',
+			'誤解 3「手元の行列を大きくすれば速くなる」。正しくは、線を使い切った後は待ちが増えるだけだ。TSQ は 1 本ずつ約 1 ms 分に抑えるが、本数が多いと積もる。fq で流れを分け、fq_codel で削る。'
 		],
 		deep: [
 			'1 分で説明するなら：send() はカーネルに預けるだけ。tcp_write_xmit() が cwnd と窓の分だけ skb を切り出し、clone を下へ流し、元を再送キューに残す。ACK が softirq で届くと元を捨て、cwnd を増やして次を送る。',
 			'後輩に出す問い 1：「ss で unacked:430、notsent:2100000、retrans:0/0。cwnd は 430。遅い原因はどこか」。答え：cwnd を使い切り、手元にも 2.1 MB 残る。線か相手の速さが上限だ。',
-			'後輩に出す問い 2：「RTT 0.5 ms の網で、たまに 200 ms 止まる。何を数えるか」。答え：nstat の TcpExtTCPTimeouts。RTO の下限 200 ms と同じ長さなので、最後の区切りの喪失を疑う。',
+			'後輩に出す問い 2：「RTT 0.5 ms の網で、たまに 200 ms 止まる。何を数えるか」。答え：nstat の TcpExtTCPTimeouts と TcpExtTCPLossProbes。200 ms は RTO の下限と同じ長さなので、飛んでいるのが 1 個だけの時の喪失を疑う。',
 			'たとえは「帳場と出口の係」までにとどめる。たとえで「荷物が 1 個ずつ運ばれる」と言うと、TSO と GRO で 10 個を 1 回で扱う中身と食い違う。中身を話すときは skb の数と区切りの数を分けて言う。'
 		]
 	},
@@ -302,7 +307,7 @@ export const s15: Step = {
 	],
 	facts: [
 		{ k: '誤解の数', v: '3 つ' },
-		{ k: 'RTO と RTT の比', v: '400 倍（200 ms ÷ 0.5 ms）', calc: '200/0.5' },
+		{ k: 'TLP の待ち', v: '3 ms（2 × 0.5 ms ＋ 2 ms）', calc: '2*0.5+2' },
 		{ k: '手元の行列の目安', v: '約 1 ms 分' }
 	],
 	scene: [
@@ -377,7 +382,7 @@ export const s15: Step = {
 	],
 	board: [
 		'誤：戻ったら届いた → 正：ACK で分かる',
-		'誤：再送は RTO → 正：SACK・RACK で 1 往復',
+		'誤：再送は RTO → 正：SACK・RACK・TLP',
 		'誤：行列は大きいほど速い → 正：待ちが増える',
 		'問い：unacked と notsent で原因を言う'
 	],
@@ -400,17 +405,17 @@ export const s16: Step = {
 	],
 	depth: {
 		intro: [
-			'帳簿の 46 個の区切りは、預けられ、切り出され、写しが線に出て、知らせで控えが消えた。10 GbE を使い切る流れでは、この輪が 1 秒に 80 万回ほどまわる。',
+			'帳簿の 46 個の区切りは、預けられ、切り出され、写しが線に出て、知らせで控えが消えた。10 GbE を使い切ると、線には 1 秒に約 81 万枚のフレームが流れる（前置きと間を含め 1,538 B ずつ）。TSO で 45 個ずつ扱うので、層を下りる回数は 1 秒に約 1.8 万回だ。',
 			'どこかで止まれば、数で分かる。cwnd・窓・行列・再送の 4 か所を見ればよい。'
 		],
 		work: [
-			'送る道：send() から tcp_sendmsg_locked() で sk_write_queue へ。tcp_write_xmit() が 5 つの関所を見て切る。tcp_transmit_skb() が clone を IP へ、元を再送キューへ置く。',
+			'送る道：send() から tcp_sendmsg_locked() で sk_write_queue へ。tcp_write_xmit() が 6 つの関所を見て切る。tcp_transmit_skb() が clone を IP へ、元を再送キューへ置く。',
 			'下る道：ip_queue_xmit() → neigh_output() → fq（送る時刻）→ ixgbe の送信リング。最後に TSO で 1,514 B のフレームに割れる。',
-			'戻る道：割り込み → softirq の NAPI → GRO → tcp_v4_rcv() → tcp_ack()。控えを消し、cwnd を増やして tcp_write_xmit() へ戻る。送り終えは tcp_wfree() と TSQ の tasklet が知らせる。'
+			'戻る道：割り込み → softirq の NAPI → GRO → tcp_v4_rcv() → tcp_ack()。控えを消し、cwnd を増やして tcp_write_xmit() へ戻る。送り終えは tcp_wfree() と TSQ の tasklet（softirq の一種）が知らせる。'
 		],
 		deep: [
-			'文脈は 4 つ。send() の中はプロセス（眠れる）、割り込みは hardirq（すぐ戻る）だ。取り出しと ACK と解放は softirq、TSQ の再開は tasklet で動く。持ち主が使用中のソケットへの仕事は、backlog と TCP_TSQ_DEFERRED で release_sock() まで持ち越す。',
-			'壊れ方は 3 つ見た。1 個の喪失は SACK と RACK で約 0.6 ms、最後の喪失は RTO で 200 ms、溜まりすぎは喪失 0 のまま RTT 24.5 ms。受信窓 0 は probe だけが流れる。',
+			'文脈は 3 つ。send() の中はプロセス（眠れる）、割り込みは hardirq（すぐ戻る）だ。取り出しと ACK と解放は softirq、TSQ の再開は softirq の一種の tasklet で動く。持ち主が使用中のソケットへの仕事は、backlog と TCP_TSQ_DEFERRED で release_sock() まで持ち越す。',
+			'壊れ方は 3 つ見た。1 個の喪失は SACK と RACK で約 0.6 ms、最後の喪失は TLP で約 3 ms だ。1 個だけ飛んでいれば RTO の 200 ms、溜まりすぎは喪失 0 のまま RTT 24.5 ms。受信窓 0 は probe だけが流れる。',
 			'直し方と代償：tcp_limit_output_bytes を 1 MiB に、qdisc を fq に。CUBIC は喪失に弱く、BBR は他の流れを押しのけうる。TSO の塊は CPU と突発の取り引きだ。',
 			'次に学ぶとよい物は 3 つ。輻輳制御を数で比べること、TLS の記録が TCP の区切りにどう載るか。そして Kubernetes の Pod の網が、veth と橋でこの道をどう延ばすかだ。',
 			'このレッスンの名前は全て Linux v6.12 のソースにある。版が上がると関数が分かれたり名前が変わったりするので、bpftrace で追う前に、使っている版のソースで名前を確かめる。'
@@ -428,7 +433,7 @@ export const s16: Step = {
 		{ k: '区切り', v: '46 個（3 往復）' },
 		{ k: 'cwnd の育ち', v: '56 個（10 → 20 → 40 → 56。ACK された数を足す）', calc: '40+16' },
 		{ k: '通った関数', v: '25 個以上' },
-		{ k: '文脈', v: '4 つ（プロセス・hardirq・softirq・tasklet）' }
+		{ k: '文脈', v: '3 つ（プロセス・hardirq・softirq。tasklet は softirq）' }
 	],
 	scene: [
 		{ op: 'move', from: 'app', to: 'sw', payload: 'データ', kind: 'data' },

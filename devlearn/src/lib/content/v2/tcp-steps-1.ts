@@ -158,7 +158,7 @@ export const s2: Step = {
 			'送る TCP の skb は、線形部には頭だけを置き、データはページの断片（frags）に写す。断片は 1 個の skb に最大 17 個（MAX_SKB_FRAGS）まで持てる。'
 		],
 		deep: [
-			'struct tcp_sock の先頭は struct inet_connection_sock で、その先頭が struct sock だ。だから同じポインタを sock としても tcp_sock としても読める（tcp_sk() はその型を変えるだけ）。',
+			'tcp_sock の先頭は inet_connection_sock、その先頭は inet_sock、さらにその先頭が sock だ。だから同じポインタを sock としても tcp_sock としても読める（tcp_sk() はその型を変えるだけ）。',
 			'送信キュー sk_write_queue は sk_buff_head の連結リストで、送る順に並ぶ。再送キュー tcp_rtx_queue は赤黒木（rb_root）だ。SACK で途中の区切りを探すため、番号で O(log n) で引ける形にしてある。',
 			'skb は 2 つの部分に分かれる。struct sk_buff は前後の連結と位置を持つ 200 B ほどの頭書きで、データの領域は別に取る。領域の終わり（end）には skb_shared_info があり、frags の表と gso_size（TSO の区切りの大きさ）を持つ。',
 			'下の層は skb_push() で data を head の側へずらし、頭を前に書き足す。TCP は 32 B、IP は 20 B、Ethernet は 14 B を足す。写し直しは起きないので、64 KiB の塊でも頭を足す手間は小さい。'
@@ -230,7 +230,7 @@ export const s2: Step = {
 			at: 5100,
 			dur: 450,
 			para: 2,
-			do: { op: 'badge', id: 'b_skb', text: 'len 65,160・gso_size 1,448' }
+			do: { op: 'badge', id: 'b_skb', text: 'len 31,856・gso_size 1,448' }
 		}
 	],
 	loop: [
@@ -270,7 +270,7 @@ export const s3: Step = {
 			'SYN には選択肢が 20 B 付き、頭は 40 B になる。MSS 1,460・SACK 可・時刻の印・窓の倍率 2^7 を相手に伝える。'
 		],
 		deep: [
-			'tcp_v4_connect() は経路を引き、送り元のポートを inet_hash_connect() で決める。tcp_set_state(sk, TCP_SYN_SENT) で状態を変える。最初の番号（ISN）は秘密の鍵と 4 つ組の hash から決め、tcp_connect() へ進む。',
+			'tcp_v4_connect() は経路を引き、tcp_set_state(sk, TCP_SYN_SENT) で状態を変える。その後、送り元のポートを inet_hash_connect() で決める。最初の番号（ISN）は、秘密の鍵と 4 つ組の hash に時計の分を足して決める（secure_tcp_seq()）。続けて tcp_connect() へ進む。',
 			'tcp_connect() は tcp_stream_alloc_skb() で skb を取る。tcp_init_nondata_skb() に TCPHDR_SYN を渡して SYN を立てる。tcp_rbtree_insert() で tcp_rtx_queue に入れ、tcp_transmit_skb() で clone を送る。',
 			'選択肢の並び（MSS・SACK 可・時刻の印・NOP・窓の倍率）は tcp_options_write() の順だ。時刻の印（RFC 7323）は 10 B で、RTT を測ることと、番号が一周した古い区切りを捨てることに使う。',
 			'SYN-ACK が来ると tcp_rcv_synsent_state_process() が再送キューの SYN を外し、ESTABLISHED にする。このとき初めて RTT の標本 0.5 ms が取れ、sk_sndbuf が 87,040 B に広がる（tcp_init_buffer_space()）。'
@@ -334,12 +334,12 @@ export const s3: Step = {
 			{
 				t: '10:15:01.000350',
 				src: 'tcpdump',
-				text: '10:15:01.000350 IP 10.0.0.9.9000 > 10.0.0.5.43210: Flags [S.], seq 1593000000, ack 2717001001, win 65160, options [mss 1460,sackOK,TS val 5000 ecr 3000,nop,wscale 7], length 0'
+				text: '10:15:01.000600 IP 10.0.0.9.9000 > 10.0.0.5.43210: Flags [S.], seq 1593000000, ack 2717001001, win 65160, options [mss 1460,sackOK,TS val 5000 ecr 3000,nop,wscale 7], length 0'
 			},
 			{
 				t: '10:15:01.000360',
 				src: 'tcpdump',
-				text: '10:15:01.000360 IP 10.0.0.5.43210 > 10.0.0.9.9000: Flags [.], ack 1, win 502, options [nop,nop,TS val 3000 ecr 5000], length 0'
+				text: '10:15:01.000610 IP 10.0.0.5.43210 > 10.0.0.9.9000: Flags [.], ack 1, win 502, options [nop,nop,TS val 3000 ecr 5000], length 0'
 			}
 		]
 	},
@@ -408,44 +408,44 @@ export const s4: Step = {
 	kind: 'internals',
 	short: '送るか待つ',
 	title: 'send() から送るか待つかまで',
-	lead: 'skb を送信キューへ。tcp_write_xmit() が 5 つの関所を見る',
+	lead: 'skb 3 個を送信キューへ。6 つの関所を見て 10 個だけ送る',
 	body: [
-		'tcp_sendmsg_locked() が 65,536 B を skb 2 個に写して送信キューへ入れる。',
+		'tcp_sendmsg_locked() が 65,536 B を skb 3 個に写して送信キューへ入れる。',
 		'tcp_write_xmit() が cwnd などを見て、最初の 10 個だけを切り出す。'
 	],
 	depth: {
 		intro: [
-			'send() の中で、カーネルは帳簿を 2 つの塊（skb）に写して送信キューに並べる。続けてすぐ「今いくつ送ってよいか」を確かめ、送ってよい分だけを切り出す。',
+			'send() の中で、カーネルは帳簿を 3 つの塊（skb）に写して送信キューに並べる。1 つ目の塊が満ちた所で「今いくつ送ってよいか」を確かめ、送ってよい分だけを切り出す。',
 			'始めは 10 個（14,480 B）まで。残りの 36 個は、送信キューで次の ACK を待つ。'
 		],
 		work: [
-			'__sys_sendto() から入った tcp_sendmsg_locked() は、プロセスの文脈で動く。65,536 B を 65,160 B の skb A と 376 B の skb B に写し、sk_write_queue に入れる。',
-			'最後に tcp_push() が tcp_write_xmit() を呼ぶ。tcp_write_xmit() は送信キューの先頭を覗き、送る前に 5 つの関所を順に見る。受信窓・cwnd・Nagle・TSO の待ち・TSQ だ。',
-			'cwnd は 10 個、送った数は 0 個なので、送ってよいのは 10 個（14,480 B）。受信窓は 64,256 B あり、ここは通る。',
-			'45 個の塊 A は 10 個分を超えるので、tso_fragment() が 14,480 B の A1 と 50,680 B の A2 に切る。A1 だけが次の段へ進み、cwnd を使い切った所で止まる。'
+			'tcp_sendmsg_locked() はプロセスの文脈で動き、データを skb に写して sk_write_queue に並べる。1 個に詰める量（size_goal）は 31,856 B だ。A が満ちると tcp_push_one() を呼ぶ。',
+			'tcp_write_xmit() は送信キューの先頭を覗き、6 つの関所を見る。ペーシング・cwnd・受信窓・Nagle・TSO の待ち・TSQ だ。',
+			'cwnd は 10 個なので、送ってよいのは 14,480 B。受信窓は SYN-ACK の 65,160 B で、ここは通る。',
+			'22 個の A は 10 個分を超えるので、tso_fragment() が A1（14,480 B）と A2（17,376 B）に切る。続けて B（31,856 B）と C（1,824 B）を写し、最後の tcp_push() は cwnd が尽きて何も送らない。'
 		],
 		deep: [
-			'tcp_sendmsg_locked() は size_goal（1 個の skb に詰める量）を tcp_send_mss() で決める。この接続では 64 KiB に収まる 1,448 B の倍数の 65,160 B だ。足りなくなると tcp_stream_alloc_skb() で新しい skb を取り、tcp_skb_entail() で列の後ろにつなぐ。',
+			'size_goal は tcp_send_mss() から tcp_xmit_size_goal() で決まる。tcp_bound_to_half_wnd() が、相手が見せた最大の窓 65,160 B の半分 32,580 B に切る。1,448 B の倍数に丸めて 22 個分、31,856 B だ。足りなくなると tcp_stream_alloc_skb() で次の skb を取り、tcp_skb_entail() で列の後ろにつなぐ。',
 			'データは sk_page_frag() のページに写され、skb の frags に並ぶ。sk_wmem_queued が sk_sndbuf の 87,040 B を超えると sk_stream_wait_memory() で眠る。今回は 65,536 B と頭書きの分で上限の内に収まり、待たずに戻る。',
-			'tcp_write_xmit() の輪は v6.12 で次の順だ。tcp_pacing_check()、tcp_cwnd_test()（cwnd − 飛んでいる数）、tcp_snd_wnd_test()（受信窓）。1 区切りなら tcp_nagle_test()、2 区切り以上なら tcp_tso_should_defer() を見る。',
+			'tcp_write_xmit() の輪は v6.12 で次の順だ。tcp_pacing_check()、tcp_cwnd_test()（cwnd − 飛んでいる数）、tcp_snd_wnd_test()（受信窓）。1 区切りなら tcp_nagle_test()、2 区切り以上なら tcp_tso_should_defer() を見る。push_one の時は TSO の待ちを見ない。',
 			'送ってよい量が決まると tcp_mss_split_point() で切る位置を決め、tso_fragment() で skb を割る。最後に tcp_small_queue_check()（TSQ）で手元の行列が上限を超えていないかを見て、tcp_transmit_skb() へ進む。',
-			'Nagle は MSS（1,448 B）より小さい区切りを止める。止めるのは、未 ACK の小さい区切りが 1 つ以上ある間だけだ（Minshall の変形。tcp_minshall_check()）。B（376 B）はこの回では cwnd が尽きて止まり、次の往復で A2 の後に送られる。'
+			'Nagle は MSS（1,448 B）より小さい区切りを止める。止めるのは、未 ACK の小さい区切りが 1 つ以上ある間だけだ（Minshall の変形。tcp_minshall_check()）。この帳簿では、最後の 376 B は C の後ろの断片で、C ごと 2 個として送られる。'
 		]
 	},
 	callout: {
 		type: 'point',
-		text: '「送らない」理由は 5 つ。どれで止まったかは ss -tim の rwnd_limited・cwnd の値・notsent で見分ける。'
+		text: '「送らない」理由は 6 つ。どれで止まったかは ss -tim の rwnd_limited・cwnd_limited・notsent で見分ける。'
 	},
 	changes: [
-		{ mark: '+', text: 'skb A（65,160 B）と B（376 B）' },
-		{ mark: '~', text: 'A を A1 14,480 B と A2 50,680 B に' },
+		{ mark: '+', text: 'skb A・B（31,856 B）と C（1,824 B）' },
+		{ mark: '~', text: 'A を A1 14,480 B と A2 17,376 B に' },
 		{ mark: '~', text: '送ってよい数 10 個を使い切る' }
 	],
 	facts: [
-		{ k: 'skb A', v: '65,160 B（1,448 B × 45）', calc: '1448*45' },
+		{ k: 'size_goal', v: '31,856 B（1,448 B × 22）', calc: '1448*22' },
 		{ k: '送ってよい量', v: '14,480 B（cwnd 10 × 1,448 B）', calc: '10*1448' },
-		{ k: '受信窓', v: '64,256 B（502 × 2^7）', calc: '502*128' },
-		{ k: '残る量', v: '51,056 B（50,680 ＋ 376）', calc: '50680+376' }
+		{ k: '受信窓', v: '65,160 B（SYN-ACK の win。倍率を掛けない）' },
+		{ k: '残る量', v: '51,056 B（17,376 ＋ 31,856 ＋ 1,824）', calc: '17376+31856+1824' }
 	],
 	scene: [{ op: 'change', id: 'app', k: '送信キュー', v: '65,536 B' }],
 	log: {
@@ -453,15 +453,15 @@ export const s4: Step = {
 		from: 'app',
 		to: 'app',
 		kind: 'kernel',
-		info: 'tcp_write_xmit：cwnd 10 で A を A1（10 個）と A2 に割る'
+		info: 'tcp_push_one：cwnd 10 で A を A1（10 個）と A2 に割る'
 	},
 	town: '帳場は荷を 2 箱にまとめて出口の棚に置き、今日運べる 10 箱分だけを台車に載せる',
 	work: 'ss -tim の notsent が送信キューに残った量、cwnd が関所の数',
 	ask: {
-		q: 'cwnd 10・受信窓 64,256 B。最初に線に出るのは何個？',
-		opts: ['46 個全部', '10 個', '44 個（受信窓の分）'],
+		q: 'cwnd 10・受信窓 65,160 B。最初に線に出るのは何個？',
+		opts: ['46 個全部', '10 個', '45 個（受信窓の分）'],
 		a: 1,
-		why: '受信窓は 44 個分を許すが、cwnd が 10 個までに絞る。小さい方で決まる。'
+		why: '受信窓は 45 個分を許すが、cwnd が 10 個までに絞る。小さい方で決まる。'
 	},
 	inside: {
 		hosts: [
@@ -477,7 +477,7 @@ export const s4: Step = {
 						what: 'TCP 10.0.0.5:43210 → 10.0.0.9:9000',
 						state: 'ESTABLISHED'
 					},
-					{ id: 'q-wq', depth: 2, what: 'sk_write_queue', state: 'A1 14,480・A2 50,680・B 376' },
+					{ id: 'q-wq', depth: 2, what: 'sk_write_queue', state: 'A2 17,376・B 31,856・C 1,824' },
 					{ id: 's-cwnd', depth: 2, what: 'snd_cwnd', state: '10（飛んでいる数 0）' }
 				]
 			}
@@ -499,17 +499,16 @@ export const s4: Step = {
 			para: 0,
 			do: { op: 'packet', a: 'b_send', b: 'b_sendmsg', label: 'msghdr', kind: 'call' }
 		},
-		{ at: 2200, dur: 500, para: 0, do: { op: 'enqueue', queue: 'wq', item: 'A 65160' } },
-		{ at: 2600, dur: 500, para: 0, do: { op: 'enqueue', queue: 'wq', item: 'B 376' } },
+		{ at: 2200, dur: 500, para: 0, do: { op: 'enqueue', queue: 'wq', item: 'A 31856' } },
 		{ at: 2700, dur: 800, para: 0, do: { op: 'count', metric: 'wq', to: '65,536 B' } },
 		{ at: 3500, dur: 900, para: 1, do: { op: 'camera', fit: ['b_sendmsg', 'b_wx', 'b_tx'] } },
 		{
 			at: 3800,
 			dur: 700,
 			para: 1,
-			do: { op: 'packet', a: 'b_sendmsg', b: 'b_wx', label: 'tcp_push', kind: 'call' }
+			do: { op: 'packet', a: 'b_sendmsg', b: 'b_wx', label: 'tcp_push_one', kind: 'call' }
 		},
-		{ at: 4500, dur: 600, para: 1, do: { op: 'peek', queue: 'wq', item: 'A 65160' } },
+		{ at: 4500, dur: 600, para: 1, do: { op: 'peek', queue: 'wq', item: 'A 31856' } },
 		{ at: 4600, dur: 400, para: 2, do: { op: 'board', line: 0 } },
 		{ at: 5000, dur: 400, para: 2, do: { op: 'board', line: 1 } },
 		{ at: 5400, dur: 400, para: 2, do: { op: 'board', line: 2 } },
@@ -518,7 +517,7 @@ export const s4: Step = {
 			at: 6300,
 			dur: 700,
 			para: 3,
-			do: { op: 'split', item: 'A 65160', into: ['A1 14480', 'A2 50680'] }
+			do: { op: 'split', item: 'A 31856', into: ['A1 14480', 'A2 17376'] }
 		},
 		{
 			at: 6400,
@@ -527,14 +526,16 @@ export const s4: Step = {
 			do: { op: 'badge', id: 'b_wx', text: '送る 10 個・残り 36 個', tone: 'warn' }
 		},
 		{ at: 7100, dur: 400, para: 3, do: { op: 'board', line: 4 } },
-		{ at: 7200, dur: 600, para: 3, do: { op: 'peek', queue: 'wq', item: 'A1 14480' } }
+		{ at: 7200, dur: 600, para: 3, do: { op: 'dequeue', queue: 'wq', item: 'A1 14480' } },
+		{ at: 7600, dur: 500, para: 3, do: { op: 'enqueue', queue: 'wq', item: 'B 31856' } },
+		{ at: 7900, dur: 500, para: 3, do: { op: 'enqueue', queue: 'wq', item: 'C 1824' } }
 	],
 	loop: [
-		{ at: 0, dur: 600, do: { op: 'peek', queue: 'wq', item: 'A1 14480' } },
-		{ at: 900, dur: 600, do: { op: 'peek', queue: 'wq', item: 'A2 50680' } }
+		{ at: 0, dur: 600, do: { op: 'peek', queue: 'wq', item: 'A2 17376' } },
+		{ at: 900, dur: 600, do: { op: 'peek', queue: 'wq', item: 'B 31856' } }
 	],
 	board: [
-		'受信窓 64,256 B → 通る',
+		'ペーシング：最初の 10 個は待たない。受信窓 65,160 B → 通る',
 		'cwnd 10 − 飛んでいる 0 → 10 個まで',
 		'TSO の待ち：送れる分が揃った → 待たない',
 		'TSQ：手元の行列 0 B → 通る',

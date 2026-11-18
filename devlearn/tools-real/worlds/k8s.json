@@ -1,0 +1,39 @@
+{
+	"k8s": {
+		"ns": "shop",
+		"now": "2026-11-19T10:06:12+09:00",
+		"nodes": [
+			{
+				"name": "node-1",
+				"ip": "10.0.1.11",
+				"allocMi": 3840,
+				"usedMi": 3140,
+				"podCidr": "10.244.1"
+			},
+			{
+				"name": "node-2",
+				"ip": "10.0.1.12",
+				"allocMi": 3840,
+				"usedMi": 3140,
+				"podCidr": "10.244.2"
+			}
+		],
+		"deploy": {
+			"name": "web",
+			"replicas": 3,
+			"image": "registry.example/shop-web:1.4.2",
+			"port": 8080,
+			"cpuReq": "100m",
+			"memReq": "128Mi",
+			"memLimit": "128Mi",
+			"peakMi": 182,
+			"rsHash": "6d8f7b9c4",
+			"created": "2026-11-19T10:00:00+09:00"
+		},
+		"pods": [
+			{ "suffix": "7xk2p", "node": "node-1", "ip": "10.244.1.12" },
+			{ "suffix": "b9m4t", "node": "node-2", "ip": "10.244.2.7" },
+			{ "suffix": "q2wfz", "node": "node-1", "ip": "10.244.1.13", "created": 60 }
+		]
+	}
+}

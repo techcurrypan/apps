@@ -14,10 +14,10 @@ export const s9: Step = {
 	kind: 'fail',
 	short: '1 個落ちた',
 	title: '1 個落ちたら：速い再送と RTO',
-	lead: '後ろが届けば 1 往復で直る。最後が落ちると 200 ms 待つ',
+	lead: '途中なら 1 往復で直る。最後が落ちても TLP が約 3 ms で気づく',
 	body: [
 		'スイッチで D2 が 1 個落ちると、store-1 は D3〜D5 を SACK で知らせる。',
-		'RACK が D2 を失ったと決めて送り直す。後ろが無いと 200 ms の RTO を待つ。'
+		'RACK が D2 を失ったと決めて送り直す。最後が落ちた時は TLP が確かめる。'
 	],
 	depth: {
 		intro: [
@@ -25,33 +25,33 @@ export const s9: Step = {
 			'app-1 は控えの D2 を送り直す。ここまで 1 往復と少し、0.6 ms ほどで直る。'
 		],
 		work: [
-			'store-1 は「725,449 番の手前まで受け取った」という同じ ACK を、SACK（どこが届いたか）付きで 3 回返す。重複 ACK だ。',
-			'v6.12 の既定（tcp_recovery=1）では、RACK が送った時刻で喪失を決める。D2 より後に送った D3 が届いているので、D2 は待ち 0.125 ms（min_rtt の 1/4）を過ぎて失われたと決まる。',
+			'store-1 は「725,449 番の手前まで受け取った」という ACK を、SACK（どこが届いたか）付きで返す。D3〜D5 の 3 個分だ。受け取り側の GRO が 3 個をまとめると、tcpdump では 1 本に見える。',
+			'v6.12 の既定（tcp_recovery=1）では、RACK が送った時刻で喪失を決める。並び替えを見ていない間は、SACK が 3 個（reordering の既定）に届いた所で、待たずに D2 を失ったと決める。',
 			'tcp_retransmit_skb() が再送キューの D2 の写しを作って送り直す。CUBIC は cwnd を 0.7 倍の 280 個に下げる。',
-			'落ちたのが最後の区切りで後ろが無いと、重複 ACK が返らない。TLP（最後の確かめの送り）も効かなければ、RTO の 200 ms を待ち、cwnd は 1 個からやり直す。'
+			'落ちたのが最後の区切りなら、後ろの ACK が返らない。TLP（確かめの送り）が約 3 ms（2 × srtt ＋ 2 ms）で最後を送り直し、喪失に気づく。200 ms の RTO を待つのは、飛んでいるのが 1 個だけの時か、確かめも落ちた時だ。'
 		],
 		deep: [
-			'tcp_ack() の中の tcp_fastretrans_alert() が回復に入るかを決める。tcp_time_to_recover() は、RACK を使う時は lost_out（失ったと決めた数）だけを見る。重複 ACK が 3 つ（tp->reordering の既定 3）という RFC 5681 の決まりは、RACK を切った時の道だ。',
-			'RACK（RFC 8985）は、SACK された区切りの中で最も後に送った物の時刻より、reo_wnd 以上前に送った未 ACK を失ったとする。reo_wnd は既定で min_rtt の 1/4 で、並び替えを見ると広がる。',
+			'tcp_ack() の中の tcp_fastretrans_alert() が回復に入るかを決める。RACK を使う時、tcp_time_to_recover() は lost_out（失ったと決めた数）を見る。RFC 5681 の重複 ACK 3 つの決まりも、RACK の中の近道として残る（TCP_RACK_NO_DUPTHRESH で切れる）。',
+			'RACK（RFC 8985）は、送ってからの時間が rack.rtt ＋ reo_wnd を超えた未 ACK を失ったとする。判定は tcp_rack_skb_timeout() だ。reo_wnd は min_rtt の 1/4 だ。並び替えを見ていず SACK が reordering 以上なら、tcp_rack_reo_wnd() は 0 を返す。',
 			'回復の間は PRR（Proportional Rate Reduction）が 1 ACK ごとに送ってよい数を決める。CUBIC の ssthresh は cwnd × 717/1024 で 280 だ。',
-			'RTO は srtt ＋ 4 × rttvar だが、Linux は rttvar に tcp_rto_min の 200 ms を下限として持つ。だから RTT 0.5 ms でも RTO は約 200 ms で、RTT の 400 倍だ。',
-			'RTO が切れると、tcp_retransmit_timer() から tcp_enter_loss() で cwnd を 1 にする。再送キューの先頭から送り直す。続けて切れると RTO は 2 倍ずつ伸び、上限は 120 秒（TCP_RTO_MAX）だ。'
+			'TLP は tcp_schedule_loss_probe() が時計を掛ける。待ちは 2 × srtt に 2 ms（TCP_TIMEOUT_MIN_US）を足した値だ。飛んでいるのが 1 個だけなら、待ちは 2 × srtt ＋ RTO の下限になる。',
+			'RTO は srtt ＋ 4 × rttvar だが、rttvar の下限が 200 ms だ。設定は net.ipv4.tcp_rto_min_us（既定 200000）と経路の rto_min。切れると tcp_enter_loss() で cwnd を 1 にし、続けば RTO は倍々で上限 120 秒まで伸びる。'
 		]
 	},
 	callout: {
 		type: 'warn',
-		text: '1 個の喪失の値段は場所で 300 倍違う。途中なら約 0.6 ms、最後なら 200 ms。小さい応答ほど最後が落ちやすい。'
+		text: '1 個の喪失の値段は場所で違う。途中なら約 0.6 ms、最後でも TLP で約 3 ms。飛んでいるのが 1 個だけだと RTO の 200 ms。'
 	},
 	changes: [
 		{ mark: '-', text: 'D2 がスイッチで捨てられた' },
-		{ mark: '+', text: '重複 ACK 3 つ（SACK 付き）' },
+		{ mark: '+', text: 'SACK 付きの ACK（D3〜D5 が届いた）' },
 		{ mark: '~', text: 'cwnd 400 → 280 個' }
 	],
 	facts: [
-		{ k: 'RACK の待ち', v: '0.125 ms（min_rtt 0.5 ms ÷ 4）', calc: '0.5/4' },
+		{ k: 'RACK の待ち', v: '0 ms（SACK 3 個・並び替えを見ていない）' },
 		{ k: '新しい cwnd', v: '280 個（400 × 717 ÷ 1,024）', calc: '400*717/1024' },
-		{ k: 'RTO', v: '200 ms（下限 tcp_rto_min）' },
-		{ k: 'RTO と RTT の比', v: '400 倍（200 ÷ 0.5）', calc: '200/0.5' }
+		{ k: 'TLP の待ち', v: '3 ms（2 × 0.5 ms ＋ 2 ms）', calc: '2*0.5+2' },
+		{ k: 'RTO', v: '200 ms（tcp_rto_min_us の 200,000 µs）', calc: '200000/1000' }
 	],
 	scene: [
 		{ op: 'move', from: 'app', to: 'sw', payload: 'D1〜D5', kind: 'data' },
@@ -70,9 +70,9 @@ export const s9: Step = {
 	work: 'nstat -az TcpRetransSegs TcpExtTCPTimeouts で再送と RTO の数を見る',
 	ask: {
 		q: 'D2 が落ちた。直るまでの時間は？',
-		opts: ['約 0.6 ms（後ろの ACK で気づく）', '200 ms（RTO を待つ）', '1 秒'],
+		opts: ['約 0.6 ms（後ろの SACK で気づく）', '200 ms（RTO を待つ）', '1 秒'],
 		a: 0,
-		why: 'D3〜D5 が届いて SACK が返るので、RACK が 1 往復ほどで気づく。RTO を待つのは後ろが無い時。'
+		why: 'D3〜D5 が届いて SACK が返るので、RACK が 1 往復ほどで気づく。RTO を待つのは、飛んでいるのが 1 個だけで TLP も落ちた時。'
 	},
 	inside: {
 		hosts: [
@@ -91,17 +91,17 @@ export const s9: Step = {
 			{
 				t: '10:15:06.000510',
 				src: 'tcpdump',
-				text: '10:15:06.000510 IP 10.0.0.9.9000 > 10.0.0.5.43210: Flags [.], ack 725449, win 502, options [nop,nop,TS val 9004 ecr 7001,nop,nop,sack 1 {726897:731241}], length 0'
+				text: '10:15:06.000510 IP 10.0.0.9.9000 > 10.0.0.5.43210: Flags [.], ack 725449, win 502, options [nop,nop,TS val 10000 ecr 8000,nop,nop,sack 1 {726897:731241}], length 0'
 			},
 			{
 				t: '10:15:06.000640',
 				src: 'tcpdump',
-				text: '10:15:06.000640 IP 10.0.0.5.43210 > 10.0.0.9.9000: Flags [.], seq 725449:726897, ack 1, win 502, options [nop,nop,TS val 7002 ecr 9004], length 1448'
+				text: '10:15:06.000640 IP 10.0.0.5.43210 > 10.0.0.9.9000: Flags [.], seq 725449:726897, ack 1, win 502, options [nop,nop,TS val 8000 ecr 10000], length 1448'
 			},
 			{
 				t: '10:15:06.001150',
 				src: 'tcpdump',
-				text: '10:15:06.001150 IP 10.0.0.9.9000 > 10.0.0.5.43210: Flags [.], ack 731241, win 502, options [nop,nop,TS val 9005 ecr 7002], length 0'
+				text: '10:15:06.001150 IP 10.0.0.9.9000 > 10.0.0.5.43210: Flags [.], ack 731241, win 502, options [nop,nop,TS val 10001 ecr 8000], length 0'
 			}
 		]
 	},
@@ -235,28 +235,28 @@ export const s10: Step = {
 	kind: 'fail',
 	short: '溜まりすぎ',
 	title: '手元に溜まりすぎる',
-	lead: 'pfifo と大きすぎる上限で、30 MB が 24 ms 待つ',
+	lead: '256 本が pfifo に 30 MB 積み、ssh が 24 ms 待つ',
 	body: [
-		'qdisc を pfifo にし、tcp_limit_output_bytes を 256 MiB に上げた。',
+		'backup が 256 本の流れで並べて写し、出口の qdisc は来た順の pfifo だった。',
 		'手元に 30 MB 溜まり、後ろの ssh も 24 ms 待たされる。'
 	],
 	depth: {
 		intro: [
-			'「もっと速く送りたい」と、誰かが qdisc を来た順の pfifo に替え、TCP の手元の上限を 256 MiB に上げた。',
+			'夜の写しを速めようと、backup が 256 本の流れを並べて store-1 へ写すようにした。出口の qdisc は来た順の pfifo だ。',
 			'すると app-1 の出口に 30 MB の荷が積み上がった。同じ出口を通る ssh の小さな区切りも、その後ろに並んで 24 ms 待つ。速さは上がらず、待ちだけが 50 倍になった。'
 		],
 		work: [
-			'pfifo には送る時刻の考えが無く、TCP はペーシングしない（SK_PACING_NONE）。TSQ の上限は tcp_limit_output_bytes で決まり、256 MiB まで手元に積める。',
+			'TSQ は流れ 1 本ずつの上限だ。どの流れも 2 × truesize（64 KiB の塊 2 個分、約 130 KB）までは手元に置ける。256 本では平均 117 KB ずつ、合わせて 30 MB が pfifo に並ぶ。',
 			'10 GbE は 1 秒に 1.25 GB しか出せない。積んだ 30 MB は、出し切るまで 24 ms かかる。',
-			'RTT は 0.5 ms から 24.5 ms に伸びた。cwnd は大きくなったが、線は前から使い切っていて、速さは変わらない。これが bufferbloat（溜まりすぎ）だ。',
-			'別の止まり方に受信窓 0 がある。store-1 のディスクが遅れて受け取りの場所が尽きると、win 0 が返る。app-1 は 200 ms 以上の間隔で、窓を確かめる区切り（probe）だけを送る。'
+			'RTT は 0.5 ms から 24.5 ms に伸びた。線は前から使い切っていて、速さは変わらない。これが bufferbloat（溜まりすぎ）だ。',
+			'別の止まり方に受信窓 0 がある。store-1 のディスクが遅れて受け取りの場所が尽きると、win 0 が返る。app-1 は RTO から倍々に伸びる間隔で、窓を確かめる区切り（probe）だけを送る。'
 		],
 		deep: [
-			'tcp_small_queue_check() は SK_PACING_NONE の時、上限に tcp_limit_output_bytes を当てる。既定の 1 MiB は、この溜まりすぎを止めるための値だ。256 MiB にすると、1 本の流れが qdisc と NIC に数十 MB を積める。',
-			'pfifo の上限は既定で txqueuelen（1,000 個）だが、ここでは limit 100000 で作られていた。1 個 64 KiB の塊なら 6 GB 分まで入り、実際には上限に届く前に 30 MB で釣り合った。',
-			'fq_codel なら、列に居た時間が 5 ms を超え続けた流れの区切りを捨て、TCP に速さを落とさせる。fq なら流れごとの列と送る時刻で、ssh の区切りは大きな流れの後ろに並ばない。',
-			'受信窓 0 では、送る側は tcp_send_probe0() で、番号 snd_una − 1・中身 0 B の確かめの区切りを送る。間隔は RTO から倍々に伸びる。窓が開いた ACK が来るまで送信キューは減らず、send() は sk_sndbuf で眠る。',
-			'どちらも、線はつながっていて喪失も無いのに待ちだけが伸びる。再送の数（TcpRetransSegs）が 0 でも遅い時は 3 つを見る。ss -tim の rtt、tc -s qdisc の backlog、tcpdump の win だ。'
+			'tcp_small_queue_check() の上限は max(2 × truesize, sk_pacing_rate >> 10) だ。pfifo の下（SK_PACING_NONE）では、さらに tcp_limit_output_bytes（既定 1 MiB）との小さい方になる。',
+			'1 本 39 Mbps の流れでは、速さの 1 ms 分は約 5 KB しかない。だから 2 × truesize の約 130 KB が効く。tcp_limit_output_bytes は 1 MiB でも 256 KiB でも効かず、溜まりは本数 × 1 本の量で決まる。',
+			'pfifo の上限は既定で txqueuelen（1,000 個）だが、ここでは limit 100000 で作られていた。塊 1 個は約 64 KiB なので、30 MB は 458 個で上限の内に収まり、捨てられない。',
+			'受信窓 0 では、送る側は tcp_send_probe0() で、番号 snd_una − 1・中身 0 B の確かめの区切りを送る。窓が開いた ACK が来るまで送信キューは減らず、send() は sk_sndbuf で眠る。',
+			'どちらも喪失は無いのに待ちだけが伸びる。再送の数（TcpRetransSegs）が 0 でも遅い時は 3 つを見る。ss -tim の rtt、tc -s qdisc の backlog、tcpdump の win だ。'
 		]
 	},
 	callout: {
@@ -264,19 +264,15 @@ export const s10: Step = {
 		text: '待ち行列を大きくしても、線より速くは出せない。増えるのは待ちだけ。bufferbloat は喪失 0 のまま遅くなる。'
 	},
 	changes: [
-		{ mark: '+', text: 'qdisc に 30 MB（backlog）' },
+		{ mark: '+', text: 'qdisc に 30 MB（256 本 × 117 KB）' },
 		{ mark: '~', text: 'RTT 0.5 → 24.5 ms' },
 		{ mark: '-', text: 'ssh の区切りが 24 ms 待つ' }
 	],
 	facts: [
-		{ k: 'backlog', v: '30,000,000 B' },
+		{ k: 'backlog', v: '30,000,000 B（256 本 × 約 117 KB）', calc: '256*117187.5' },
 		{ k: '出し切るまで', v: '24 ms（30 MB ÷ 1.25 GB/s）', calc: '30000000/1250000000*1000' },
 		{ k: 'RTT', v: '24.5 ms（0.5 ＋ 24）', calc: '0.5+24' },
-		{
-			k: 'tcp_limit_output_bytes',
-			v: '268,435,456 B（256 MiB に上げてあった）',
-			calc: '256*1024*1024'
-		}
+		{ k: '1 本の速さ', v: '39 Mbps（10 Gbps ÷ 256）', calc: '10000/256' }
 	],
 	scene: [
 		{ op: 'change', id: 'app', k: 'qdisc', v: 'pfifo・backlog 30 MB' },
@@ -292,10 +288,10 @@ export const s10: Step = {
 	town: '出口の前の行列が長すぎて、急ぎの小包まで大きな荷の後ろで待たされる',
 	work: 'tc -s qdisc show dev eth0 の backlog が数 MB なら溜まりすぎ',
 	ask: {
-		q: '手元の上限を 256 倍にした。速さはどうなる？',
-		opts: ['256 倍近く速くなる', '変わらず、待ちだけが伸びる', '半分になる'],
+		q: 'tcp_limit_output_bytes を 1 MiB から 256 KiB に下げた。溜まりは？',
+		opts: ['4 分の 1 に減る', 'ほぼ変わらない', '増える'],
 		a: 1,
-		why: '線の 10 Gbps は前から使い切っている。積んだ分は待ちになるだけ。'
+		why: '1 本が置くのは 2 × truesize の約 130 KB で、256 KiB より下。上限は効いておらず、溜まりは本数で決まる。'
 	},
 	inside: {
 		hosts: [
@@ -309,7 +305,7 @@ export const s10: Step = {
 						id: 'd-qdisc',
 						depth: 1,
 						what: 'qdisc pfifo（eth0）',
-						state: 'backlog 30Mb 460p',
+						state: 'backlog 30000000b 458p',
 						tone: 'bad'
 					},
 					{
@@ -333,12 +329,12 @@ export const s10: Step = {
 			{
 				t: '10:15:07.000100',
 				src: 'tcpdump',
-				text: '10:15:07.000100 IP 10.0.0.9.9000 > 10.0.0.5.43210: Flags [.], ack 412880001, win 0, options [nop,nop,TS val 11000 ecr 9500], length 0'
+				text: '10:15:07.000100 IP 10.0.0.9.9000 > 10.0.0.5.43210: Flags [.], ack 412880001, win 0, options [nop,nop,TS val 11000 ecr 9000], length 0'
 			},
 			{
 				t: '10:15:07.200300',
 				src: 'tcpdump',
-				text: '10:15:07.200300 IP 10.0.0.5.43210 > 10.0.0.9.9000: Flags [.], ack 1, win 502, options [nop,nop,TS val 9700 ecr 11000], length 0'
+				text: '10:15:07.200300 IP 10.0.0.5.43210 > 10.0.0.9.9000: Flags [.], ack 1, win 502, options [nop,nop,TS val 9200 ecr 11000], length 0'
 			}
 		]
 	},
@@ -349,7 +345,7 @@ export const s10: Step = {
 			at: 400,
 			dur: 450,
 			para: 0,
-			do: { op: 'badge', id: 'b_wx', text: 'TSQ 上限 256 MiB', tone: 'warn' }
+			do: { op: 'badge', id: 'b_wx', text: '1 本 117 KB × 256 本', tone: 'warn' }
 		},
 		{ at: 500, dur: 400, para: 0, do: { op: 'board', line: 0 } },
 		{ at: 900, dur: 450, para: 0, do: { op: 'enqueue', queue: 'qpf', item: 'C1 64K' } },
@@ -405,7 +401,7 @@ export const s10: Step = {
 		{ at: 2000, dur: 800, do: { op: 'packet', a: 'app', b: 'sw', label: 'probe', kind: 'probe' } }
 	],
 	board: [
-		'pfifo・ペーシング無し → TSQ 上限 256 MiB',
+		'TSQ：1 本ずつ 2 × truesize まで → 256 本で 30 MB',
 		'qdisc に 30 MB ＝ 10 GbE で 24 ms',
 		'RTT 0.5 → 24.5 ms、速さは同じ',
 		'store-1 の窓 0 → probe だけ送る',
@@ -422,49 +418,48 @@ export const s11: Step = {
 	n: 11,
 	kind: 'fix',
 	short: '直す',
-	title: 'fq に戻し、上限を戻す',
-	lead: '流れごとの列と送る時刻で、30 MB の行列を消す',
+	title: 'qdisc を fq に替える',
+	lead: '流れごとの列で、ssh を 30 MB の後ろに並ばせない',
 	body: [
-		'tcp_limit_output_bytes を 1 MiB に戻し、qdisc を fq にする。',
-		'TCP が送る時刻を書き、fq が流れごとにその時刻を守って出す。'
+		'qdisc を pfifo から、流れごとに列を分ける fq に替える。',
+		'ssh は自分の列ですぐ出る。溜まりそのものを削るなら fq_codel を使う。'
 	],
 	depth: {
 		intro: [
-			'直し方は 2 つ。手元の上限を元の 1 MiB に戻し、qdisc を流れごとに列を分ける fq に替える。',
-			'fq の下では TCP が荷ごとに「出してよい時刻」を書き、fq がその時刻まで待たせる。行列は 1 ms 分に収まり、ssh の区切りは自分の列ですぐ出る。'
+			'直し方は qdisc を替えること。流れごとに列を分ける fq にする。手元の上限の設定は触らなくてよい。',
+			'ssh の区切りは自分の列に入り、30 MB の後ろに並ばない。ssh の RTT は 24.5 ms から 0.6 ms に戻り、40 分の 1 になる。'
 		],
 		work: [
-			'sysctl -w net.ipv4.tcp_limit_output_bytes=1048576 で上限を戻す。tc qdisc replace dev eth0 root fq で qdisc を替える。',
-			'fq の下ではソケットが SK_PACING_FQ になり、TCP は送るたびに次の時刻を len ÷ sk_pacing_rate だけ進める。64 KiB の塊なら、9.3 Gbps で 56 µs ずつ後ろだ。',
-			'TSQ の上限は送る速さの約 1 ms 分になり、手元の行列は約 1.36 MB に収まる。fq の中で時刻を待つ分は RTT に数えないので、この流れの RTT は 24.5 ms から 0.512 ms に戻る。',
-			'ssh の区切りは fq の別の列に入る。大きな流れの後ろに並ばず、ssh の RTT は 0.5 ms のままだ。'
+			'sudo tc qdisc replace dev eth0 root fq で替える。この機械の NIC は送り口が 1 つなので、root に 1 つ置けばよい。',
+			'fq は流れごとに列を持ち、空から来た新しい流れを先に出す。ssh の区切りは数百 B で、写しの 256 列の 1 巡（約 0.6 ms）を待たずに出る。',
+			'写しの 256 本は、fq の中で溜まったままだ。送る速さが線を超える間は時刻を過ぎた荷が並び、写しの RTT は約 24 ms のまま残る。',
+			'溜まりそのものを削るなら fq_codel を選ぶ。列に居た時間が 5 ms を 100 ms 超え続けると捨て、写しの流れに cwnd を下げさせる。'
 		],
 		deep: [
-			'fq は流れ（ソケット、または 5 つ組の hash）ごとに列を持つ。fq_dequeue() は時刻の来た列を Deficit Round Robin で回す。1 回に quantum（2 × 1,514 ＝ 3,028 B）ずつ出す。1 つの流れが積める数は flow_limit の 100 個、全体は 10,000 個だ。',
-			'__tcp_transmit_skb() は skb の時刻に tcp_wstamp_ns（出してよい時刻）を書き、RTT はこの時刻から測る。だから fq で時刻まで待つ分は RTT に入らず、pfifo で並んで待つ分は入る。',
+			'fq は流れ（ソケット、または 5 つ組の hash）ごとに列を持つ。fq_dequeue() は新しい流れの列を先に回し、時刻の来た列を Deficit Round Robin で 1 回 3,028 B ずつ回す。1 つの流れは 100 個、全体は 10,000 個まで積める。',
+			'__tcp_transmit_skb() は skb の時刻に tcp_wstamp_ns（出してよい時刻）を書き、fq はその時刻まで待たせる。RTT はこの時刻から測るが、時刻を過ぎても線が空かずに待つ分は RTT に入る。',
 			'TCP はペーシングの速さ sk_pacing_rate を cwnd と srtt から決め、fq はそれを守るだけだ。BBR は fq が無くても SK_PACING_NEEDED として、TCP の中の hrtimer（tcp_pace_kick()）で同じことをする。',
-			'fq_codel を選ぶ場合は、TCP はペーシングしない。そのため tcp_limit_output_bytes の 1 MiB が手元の上限として効き、CoDel が 5 ms を超えた待ちを捨てて知らせる。',
-			'どちらも、sysctl と tc の替えは再起動で消える。/etc/sysctl.d/ に net.core.default_qdisc=fq を書き、起きた時に作られる qdisc の既定を決めておく。'
+			'fq_codel の CoDel は、列の頭の区切りが居た時間を見る。target 5 ms を interval 100 ms の間超え続けると、捨て始める。次に捨てるまでの間は interval ÷ √捨てた数 で縮める（RFC 8290）。',
+			'替えは再起動で消える。/etc/sysctl.d/ に net.core.default_qdisc=fq を書くと、起きた時の既定が決まる。送り口が 64 個ある NIC では、root の mq の下の 64 個の口にこの既定が付く。'
 		]
 	},
 	callout: {
 		type: 'tip',
-		text: '上限を戻すだけでも行列は 1 MiB（10 GbE で約 0.8 ms）に縮む。fq を足すと、流れ同士の待たせ合いも消える。'
+		text: 'tcp_limit_output_bytes を下げても、本数で積もる溜まりは減らない。効く手は qdisc を替えること。'
 	},
 	changes: [
-		{ mark: '~', text: 'tcp_limit_output_bytes 256 MiB → 1 MiB' },
-		{ mark: '~', text: 'qdisc pfifo → fq（流れごと・時刻順）' },
-		{ mark: '-', text: 'backlog 30 MB → 1.36 MB' },
-		{ mark: '~', text: 'RTT 24.5 → 0.512 ms' }
+		{ mark: '~', text: 'qdisc pfifo → fq（流れごとの列）' },
+		{ mark: '~', text: 'ssh の RTT 24.5 → 0.6 ms' },
+		{ mark: '~', text: '写しの 30 MB は残る（削るのは fq_codel）' }
 	],
 	facts: [
-		{ k: '64 KiB の間隔', v: '56 µs（65,536 B ÷ 9.3 Gbps）', calc: '65536*8/9300' },
-		{ k: '手元の行列', v: '1,357,500 B（約 1 ms 分）' },
-		{ k: 'この流れの RTT', v: '0.512 ms（fq で待つ分は数えない）' },
+		{ k: 'DRR の 1 巡', v: '775,168 B（256 列 × 3,028 B）', calc: '256*3028' },
+		{ k: '1 巡の時間', v: '0.62 ms（775,168 B ÷ 1.25 GB/s）', calc: '775168/1250000000*1000' },
+		{ k: 'ssh の RTT', v: '0.6 ms（0.5 ＋ 新しい流れの待ち 0.1）', calc: '0.5+0.1' },
 		{ k: 'fq の quantum', v: '3,028 B（2 × 1,514）', calc: '2*1514' }
 	],
 	scene: [
-		{ op: 'change', id: 'app', k: 'qdisc', v: 'fq・backlog 1.36 MB' },
+		{ op: 'change', id: 'app', k: 'qdisc', v: 'fq・ssh は別の列' },
 		{ op: 'move', from: 'app', to: 'sw', payload: 'ssh（すぐ出る）', kind: 'data' }
 	],
 	log: {
@@ -472,9 +467,9 @@ export const s11: Step = {
 		from: 'app',
 		to: 'sw',
 		kind: 'data',
-		info: 'fq に替えた。backlog 1.36 MB、RTT 0.512 ms、ssh 0.5 ms'
+		info: 'fq に替えた。ssh の RTT 0.6 ms。写しの backlog 30 MB は残る'
 	},
-	town: '出口の行列を行き先ごとに分け、荷ごとに出る時刻を決めた。急ぎの小包は自分の列ですぐ出る',
+	town: '出口の行列を行き先ごとに分けた。急ぎの小包は自分の列ですぐ出る',
 	work: 'tc qdisc replace dev eth0 root fq と sysctl.d の default_qdisc',
 	inside: {
 		hosts: [
@@ -488,7 +483,7 @@ export const s11: Step = {
 						id: 'd-qdisc',
 						depth: 1,
 						what: 'qdisc fq（eth0）',
-						state: 'backlog 1357Kb 21p',
+						state: 'backlog 30000000b 458p',
 						tone: 'ok'
 					},
 					{ id: 's-limit', depth: 1, what: 'tcp_limit_output_bytes', state: '1048576', tone: 'ok' },
@@ -503,25 +498,24 @@ export const s11: Step = {
 			}
 		]
 	},
-	metrics: { rtt: '0.5 ms', qd: '1,357,500 B' },
+	metrics: { rtt: '0.6 ms', qd: '30,000,000 B' },
 	motion: [
 		{ at: 0, dur: 800, para: 0, do: { op: 'camera', fit: ['b_wx', 'b_dev', 'b_drv'] } },
 		{
 			at: 400,
 			dur: 450,
 			para: 0,
-			do: { op: 'badge', id: 'b_wx', text: 'TSQ 上限 1 MiB → fq では 1 ms 分' }
+			do: { op: 'badge', id: 'b_wx', text: 'SK_PACING_FQ：時刻を書く' }
 		},
 		{ at: 500, dur: 400, para: 0, do: { op: 'board', line: 0 } },
 		{ at: 900, dur: 450, para: 0, do: { op: 'dequeue', queue: 'qpf', item: 'C1 64K' } },
 		{ at: 1300, dur: 450, para: 0, do: { op: 'dequeue', queue: 'qpf', item: 'C2 64K' } },
 		{ at: 1700, dur: 450, para: 0, do: { op: 'dequeue', queue: 'qpf', item: 'C3 64K' } },
-		{ at: 2100, dur: 450, para: 1, do: { op: 'enqueue', queue: 'qfq', item: 'C5 +0µs' } },
+		{ at: 2100, dur: 450, para: 1, do: { op: 'enqueue', queue: 'qfq', item: 'F1 64K' } },
 		{ at: 2200, dur: 400, para: 1, do: { op: 'board', line: 1 } },
-		{ at: 2500, dur: 450, para: 1, do: { op: 'enqueue', queue: 'qfq', item: 'C6 +56µs' } },
-		{ at: 2900, dur: 450, para: 1, do: { op: 'enqueue', queue: 'qfq', item: 'C7 +112µs' } },
-		{ at: 3400, dur: 1000, para: 2, do: { op: 'count', metric: 'qd', to: '1,357,500 B' } },
-		{ at: 3500, dur: 1000, para: 2, do: { op: 'count', metric: 'rtt', to: '0.5 ms' } },
+		{ at: 2500, dur: 450, para: 1, do: { op: 'enqueue', queue: 'qfq', item: 'F2 64K' } },
+		{ at: 2900, dur: 450, para: 1, do: { op: 'enqueue', queue: 'qfq', item: 'ssh 120B' } },
+		{ at: 3400, dur: 1000, para: 2, do: { op: 'count', metric: 'rtt', to: '0.6 ms' } },
 		{ at: 3600, dur: 400, para: 2, do: { op: 'board', line: 2 } },
 		{
 			at: 4600,
@@ -533,30 +527,30 @@ export const s11: Step = {
 			at: 4700,
 			dur: 450,
 			para: 3,
-			do: { op: 'badge', id: 'b_dev', text: 'backlog 1.36 MB・ssh は 0.5 ms' }
+			do: { op: 'badge', id: 'b_dev', text: 'ssh は別の列・0.6 ms' }
 		},
 		{ at: 4800, dur: 400, para: 3, do: { op: 'board', line: 3 } },
-		{ at: 5400, dur: 600, para: 3, do: { op: 'move', item: 'C5 +0µs', from: 'qfq', to: 'ring' } },
-		{ at: 6100, dur: 600, para: 3, do: { op: 'move', item: 'C6 +56µs', from: 'qfq', to: 'ring' } },
+		{ at: 5400, dur: 600, para: 3, do: { op: 'move', item: 'ssh 120B', from: 'qfq', to: 'ring' } },
+		{ at: 6100, dur: 600, para: 3, do: { op: 'move', item: 'F1 64K', from: 'qfq', to: 'ring' } },
 		{ at: 6800, dur: 400, para: 3, do: { op: 'board', line: 4 } }
 	],
 	loop: [
-		{ at: 0, dur: 500, do: { op: 'peek', queue: 'qfq', item: 'C7 +112µs' } },
+		{ at: 0, dur: 500, do: { op: 'peek', queue: 'qfq', item: 'F2 64K' } },
 		{
 			at: 600,
 			dur: 700,
-			do: { op: 'packet', a: 'b_dev', b: 'b_drv', label: '時刻どおり', kind: 'data' }
+			do: { op: 'packet', a: 'b_dev', b: 'b_drv', label: '1 巡 0.62 ms', kind: 'data' }
 		},
 		{ at: 1400, dur: 700, do: { op: 'packet', a: 'b_dev', b: 'b_drv', label: 'ssh', kind: 'data' } }
 	],
 	board: [
-		'tcp_limit_output_bytes を 1 MiB に戻す',
 		'tc qdisc replace … root fq',
-		'手元 30 MB → 1.36 MB、RTT 0.512 ms',
-		'ssh は別の列で 0.5 ms',
-		'skb の時刻どおりに 56 µs 間隔'
+		'新しい流れの列（ssh）を先に回す',
+		'ssh の RTT 24.5 → 0.6 ms',
+		'写しの 256 列は DRR で 1 巡 0.62 ms',
+		'溜まりを削るなら fq_codel'
 	],
-	badges: { b_dev: 'backlog 1.36 MB・ssh は 0.5 ms', b_wx: 'TSQ 上限 1 MiB → fq では 1 ms 分' },
+	badges: { b_dev: 'ssh は別の列・0.6 ms', b_wx: 'SK_PACING_FQ：時刻を書く' },
 	layers: [B.tcp([]), B.qd([], ['C1 64K', 'C2 64K', 'C3 64K', 'C4 64K']), B.drv([], [])],
 	impl: [I.wx, I.tx, I.tsqCheck, I.devq, I.fqEnq, I.fqDeq, I.drv, I.tso, I.limitOut, I.pacing],
 	refs: ['linux-fq', 'man-tc-fq', 'linux-tcp-output', 'linux-sysctl', 'systemd-sysctl'],
@@ -589,7 +583,7 @@ export const s12: Step = {
 			'Reno の目安（Mathis の式）では、速さ ≈ MSS ÷ RTT × 1.22 ÷ √p だ。RTT 0.5 ms・喪失 1% なら 1,448 B × 8 ÷ 0.5 ms × 12.2 ≈ 283 Mbps になる。CUBIC は Reno より強いが、喪失 1% で桁が落ちることは変わらない。',
 			'BBR v1 の状態は STARTUP（2.885 倍で探る）→ DRAIN → PROBE_BW（8 段の速さ）と進む。10 秒ごとに PROBE_RTT に入り、200 ms の間 cwnd を 4 個に絞る。この間は速さが落ちる。',
 			'BBR は送る速さを持つので、fq か TCP の中のペーシングが要る。BBR は Google の Cardwell らが 2016 年に ACM Queue で発表した。同じ年に Linux 4.9 の tcp_bbr.c として入った。',
-			'塊の大きさは tcp_tso_autosize() が約 1 ms 分に絞る。速さを上げたい時は BIG TCP で 64 KiB の上限を広げ、待ちを減らしたい時は ethtool -K で tso を切って比べる。'
+			'塊の大きさは tcp_tso_autosize() が約 1 ms 分に絞る。速さを上げたい時は BIG TCP で 64 KiB の上限を広げる（NIC が対応する時だけ）。ethtool -K で tso を切っても、GSO がソフトで同じ大きさに割って続けて出すので、線の上の突発は減らない。'
 		]
 	},
 	callout: {

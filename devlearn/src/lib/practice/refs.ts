@@ -93,6 +93,10 @@ export const COMMAND_REFS: Readonly<Record<string, CommandRef>> = {
 		url: 'https://www.gnu.org/software/coreutils/manual/html_node/tail-invocation.html',
 		site: 'GNU'
 	},
+	wc: {
+		url: 'https://www.gnu.org/software/coreutils/manual/html_node/wc-invocation.html',
+		site: 'GNU'
+	},
 	head: {
 		url: 'https://www.gnu.org/software/coreutils/manual/html_node/head-invocation.html',
 		site: 'GNU'

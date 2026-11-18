@@ -7,6 +7,7 @@ import { initialSys, type ProcSpec, type SysState, type SysUser } from './procs.
 import type { UnitMock } from './systemd.ts';
 import { baseFs } from './world.ts';
 import { initialTcp, type TcpState, type TcpWorld } from './tcpstack.ts';
+import { initialK8s, type K8sState, type K8sWorld } from './kube.ts';
 
 export type WorldSpec = {
 	dirs?: { path: string; mode: string; owner: string }[];
@@ -18,6 +19,7 @@ export type WorldSpec = {
 	unitMock?: Record<string, UnitMock>;
 	docker?: { images: string[] };
 	tcp?: TcpWorld; // TCP の出口（net-101）。模擬だけが使う（本物の記録の機械には置かない）
+	k8s?: K8sWorld; // Kubernetes の集まり（見本 2）。模擬だけが使う
 };
 
 const LEARNER_HOME = '/home/learner';
@@ -85,4 +87,9 @@ export function worldSys(w: WorldSpec | null): SysState | undefined {
 // TCP の出口（qdisc・設定・流れ）の初めの状態。無ければ置かない
 export function worldTcp(w: WorldSpec | null): TcpState | undefined {
 	return w?.tcp ? initialTcp(w.tcp) : undefined;
+}
+
+// Kubernetes の集まり（Deployment・Pod・node）の初めの状態。無ければ置かない
+export function worldK8s(w: WorldSpec | null): K8sState | undefined {
+	return w?.k8s ? initialK8s(w.k8s) : undefined;
 }

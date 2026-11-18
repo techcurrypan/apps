@@ -72,7 +72,7 @@ export const s5: Step = {
 				rows: [
 					{ id: 'p-backup', depth: 0, what: 'backup（pid 4120）', state: 'send() の中（syscall）' },
 					conn,
-					{ id: 'q-wq', depth: 2, what: 'sk_write_queue', state: 'A2 50,680・B 376' },
+					{ id: 'q-wq', depth: 2, what: 'sk_write_queue', state: 'A2 17,376・B 31,856・C 1,824' },
 					{ id: 'q-rtx', depth: 2, what: 'tcp_rtx_queue', state: 'A1（10 個）', tone: 'warn' },
 					{ id: 'n-store', depth: 1, what: '近隣 10.0.0.9', state: '52:54:00:00:00:09 REACHABLE' }
 				]
@@ -140,7 +140,7 @@ export const s5: Step = {
 		'neigh_output()：MAC を引いて頭を写す'
 	],
 	badges: { b_neigh: 'REACHABLE・Ethernet 14 B' },
-	layers: [B.sys(['A1 14480', 'A2 50680', 'B 376']), B.tcp([]), B.ip()],
+	layers: [B.sys(['A1 14480', 'A2 17376', 'B 31856', 'C 1824']), B.tcp([]), B.ip()],
 	impl: [I.sendto, I.sendmsg, I.wx, I.tx, I.clone, I.newData, I.ipq, I.ipf2, I.neigh],
 	refs: ['linux-tcp-output', 'linux-ip-output', 'linux-neigh', 'linux-skbuff-c'],
 	learns: [0, 2]
@@ -163,21 +163,21 @@ export const s6: Step = {
 		],
 		work: [
 			'__dev_queue_xmit() は写しを qdisc の fq に入れる。fq は流れごとに列を分け、skb に書かれた送る時刻（EDT）の順に出す。この 10 個は接続の最初の 10 区切りなので時刻を待たず、すぐ出る。',
-			'11 個目からは、TCP が送る速さに合わせて時刻を後ろへずらす。送る速さは cwnd 10 × 1,448 B ÷ 0.5 ms の 2 倍で 57.9 MB/s。14,480 B の次の塊は 250 µs 後の時刻を持つ。',
-			'fq に溜まっている量が backlog で、tc -s qdisc で見える。今は 0 B だ。fq から出た写しは ixgbe_xmit_frame_ring() が送信リングの記述子に載せる。ixgbe の既定は 512 個だ。',
+			'11 個目からは、TCP が送る速さに合わせて時刻を後ろへずらす。送る速さは cwnd 10 × 1,448 B ÷ 0.5 ms の 2 倍で 57.9 MB/s。直後は貸し（credit）で半分の 125 µs 後だ。',
+			'fq に溜まった量（backlog）は tc -s qdisc で見え、今は 0 B だ。fq から出た写しは ixgbe_xmit_frame_ring() が送信リングの記述子に載せる。ixgbe の既定は 512 個だ。',
 			'ixgbe_tso() が「MSS 1,448 で割れ」という記述子を書き、NIC が 14,480 B を 10 枚に割る。1 枚は 1,448 ＋ 32 ＋ 20 ＋ 14 ＝ 1,514 B だ。'
 		],
 		deep: [
 			'fq_enqueue() は skb->tstamp を見て fq_skb_cb(skb)->time_to_send に写す。時刻が今より 10 秒（horizon）以上先なら捨てる。流れの列は時刻の順に並び、fq_dequeue() は時刻の来た流れだけを Deficit Round Robin（1 回 2 × MTU）で回す。',
-			'TCP は送るたびに tcp_update_skb_after_send() を呼ぶ。tcp_wstamp_ns を len ÷ sk_pacing_rate だけ進める。ただし data_segs_out が 10 未満の間は進めない（最初の 10 区切りはペーシングしない）。これが EDT（Earliest Departure Time）の方式だ。',
-			'sk_pacing_rate は tcp_update_pacing_rate() が決める。元は cwnd × MSS ÷ srtt だ。スロースタートの間は tcp_pacing_ss_ratio の 200%、その後は tcp_pacing_ca_ratio の 120% を掛ける。',
+			'TCP は送るたびに tcp_update_skb_after_send() を呼ぶ。tcp_wstamp_ns を len ÷ sk_pacing_rate だけ進める。ただし data_segs_out が 10 未満の間は進めない（最初の 10 区切りはペーシングしない）。空いていた時間の分は、len_ns の半分までを貸し（credit）として引く（EDT の方式）。',
+			'sk_pacing_rate は tcp_update_pacing_rate() が決める。元は cwnd × MSS ÷ srtt だ。cwnd が ssthresh の半分より小さい間は tcp_pacing_ss_ratio の 200% を掛ける。それ以外は tcp_pacing_ca_ratio の 120% だ。',
 			'fq_codel は流れごとに列を分けるが、時刻ではなく、列に居た時間が 5 ms（target）を 100 ms（interval）超え続けたら捨てる。Ubuntu などは systemd が既定の qdisc を fq_codel にする。',
 			'TSO の大きさは tcp_tso_autosize() が決める。元は sk_pacing_rate の 1/1024（約 1 ms 分）で、min_rtt に応じた足し分を加える。上限は gso_max_size の 64 KiB だ。RTT 0.5 ms では min_rtt >> 9 が 0 になり、64 KiB の塊まで許される。'
 		]
 	},
 	callout: {
 		type: 'point',
-		text: 'CPU は 10 枚分の仕事を 1 回で済ませ、割るのは NIC。TSO を切ると、同じ量に 10 倍の回数、層を下りる。'
+		text: 'CPU は 10 枚分の仕事を 1 回で済ませ、割るのは NIC。送り手の tcpdump は割る前を取るので、14,480 B の 1 行に見える。'
 	},
 	changes: [
 		{ mark: '+', text: 'fq に A1c（時刻＝今）' },
@@ -190,7 +190,7 @@ export const s6: Step = {
 			v: '57.9 MB/s（2 × 10 × 1,448 B ÷ 0.5 ms）',
 			calc: '2*10*1448/0.0005/1000000'
 		},
-		{ k: '次の塊の時刻', v: '250 µs 後（14,480 B ÷ 57.9 MB/s）', calc: '14480/57.92' },
+		{ k: '次の塊の時刻', v: '125 µs 後（14,480 B ÷ 57.9 MB/s の半分）', calc: '14480/57.92/2' },
 		{ k: 'フレーム 1 枚', v: '1,514 B（1,448 ＋ 32 ＋ 20 ＋ 14）', calc: '1448+32+20+14' },
 		{ k: 'フレームの数', v: '10 枚（14,480 B ÷ 1,448 B）', calc: '14480/1448' }
 	],
@@ -218,7 +218,12 @@ export const s6: Step = {
 					conn,
 					{ id: 'q-rtx', depth: 2, what: 'tcp_rtx_queue', state: 'A1（10 個）' },
 					{ id: 'd-qdisc', depth: 1, what: 'qdisc fq（eth0）', state: 'backlog 0b 0p' },
-					{ id: 'd-ring', depth: 1, what: 'eth0 送信リング', state: '記述子 2 個使用中' }
+					{
+						id: 'd-ring',
+						depth: 1,
+						what: 'eth0 送信リング',
+						state: '記述子 3 個使用中（文脈・頭・断片）'
+					}
 				]
 			}
 		],
@@ -226,12 +231,7 @@ export const s6: Step = {
 			{
 				t: '10:15:01.010200',
 				src: 'tcpdump',
-				text: '10:15:01.010200 IP 10.0.0.5.43210 > 10.0.0.9.9000: Flags [.], seq 1:1449, ack 1, win 502, options [nop,nop,TS val 3010 ecr 5000], length 1448'
-			},
-			{
-				t: '10:15:01.010212',
-				src: 'tcpdump',
-				text: '10:15:01.010212 IP 10.0.0.5.43210 > 10.0.0.9.9000: Flags [P.], seq 13033:14481, ack 1, win 502, options [nop,nop,TS val 3010 ecr 5000], length 1448'
+				text: '10:15:01.010200 IP 10.0.0.5.43210 > 10.0.0.9.9000: Flags [.], seq 1:14481, ack 1, win 502, options [nop,nop,TS val 3010 ecr 5000], length 14480'
 			}
 		]
 	},
@@ -329,8 +329,8 @@ export const s7: Step = {
 			'NAPI は割り込みのたびに 1 個ずつ取らず、softirq の中で一度に最大 64 個（weight）を取る。net_rx_action() の 1 回の持ち分は netdev_budget の 300 個か、2 jiffy（HZ=1000 なら 2 ms）までだ。残れば次の softirq か ksoftirqd に回す。',
 			'tcp_gro_receive() は、ack の番号・選択肢・旗が同じで、番号が続く区切りだけをまとめる（ack_seq を比べる）。ACK だけの区切りは中身が 0 B なので len < mss で flush され、1 個ずつ上へ渡る。',
 			'tcp_v4_rcv() はソケットを引き、持ち主のプロセスが使っていなければ（!sock_owned_by_user）tcp_v4_do_rcv() へ進む。使用中なら tcp_add_backlog() で backlog に置き、持ち主が release_sock() で後から処理する。',
-			'tcp_ack() は snd_una を進め、tcp_clean_rtx_queue() で再送キューの先頭から ACK された skb を外す。時刻の印から RTT の標本を取り（tcp_ack_update_rtt()）、輻輳制御の cong_avoid を呼ぶ。',
-			'スロースタートの間、tcp_slow_start() は cwnd に ACK された数（10）を足す。最後に tcp_data_snd_check() から tcp_push_pending_frames() を経て tcp_write_xmit() へ戻る。送信キューの A2 から 20 個を切り出す。'
+			'tcp_ack() は snd_una を進め、tcp_clean_rtx_queue() で再送キューの先頭から ACK された skb を外す。skb に残した送った時刻から RTT の標本を取り（tcp_ack_update_rtt()）、cong_avoid を呼ぶ。時刻の印（TS-ECR）は、再送で送った時刻が使えない時の代わりだ。',
+			'スロースタートの間、tcp_slow_start() は cwnd に ACK された数（10）を足す。最後に tcp_data_snd_check() から tcp_push_pending_frames() を経て tcp_write_xmit() へ戻る。A2 の 12 個と、B を割った頭の 8 個で 20 個を送る。'
 		]
 	},
 	callout: {
@@ -340,7 +340,7 @@ export const s7: Step = {
 	changes: [
 		{ mark: '-', text: 'A1 が再送キューから消えた' },
 		{ mark: '~', text: 'cwnd 10 → 20 個' },
-		{ mark: '+', text: 'A2 を A3（20 個）と A4 に割った' }
+		{ mark: '+', text: 'A2（12 個）と B1（8 個）を送る' }
 	],
 	facts: [
 		{ k: 'ACK の大きさ', v: '66 B（Ethernet 14・IP 20・TCP 32）', calc: '14+20+32' },
@@ -373,7 +373,7 @@ export const s7: Step = {
 					conn,
 					{ id: 'q-rtx', depth: 2, what: 'tcp_rtx_queue', state: '0 個' },
 					{ id: 's-cwnd', depth: 2, what: 'snd_cwnd', state: '20（飛んでいる数 0）' },
-					{ id: 'q-wq', depth: 2, what: 'sk_write_queue', state: 'A3 28,960・A4 21,720・B 376' }
+					{ id: 'q-wq', depth: 2, what: 'sk_write_queue', state: 'B2 20,272・C 1,824' }
 				]
 			}
 		],
@@ -381,7 +381,7 @@ export const s7: Step = {
 			{
 				t: '10:15:01.010712',
 				src: 'tcpdump',
-				text: '10:15:01.010712 IP 10.0.0.9.9000 > 10.0.0.5.43210: Flags [.], ack 14481, win 502, options [nop,nop,TS val 5004 ecr 3011], length 0'
+				text: '10:15:01.010712 IP 10.0.0.9.9000 > 10.0.0.5.43210: Flags [.], ack 14481, win 502, options [nop,nop,TS val 5010 ecr 3010], length 0'
 			}
 		]
 	},
@@ -451,7 +451,7 @@ export const s7: Step = {
 			at: 10300,
 			dur: 700,
 			para: 3,
-			do: { op: 'split', item: 'A2 50680', into: ['A3 28960', 'A4 21720'] }
+			do: { op: 'split', item: 'B 31856', into: ['B1 11584', 'B2 20272'] }
 		},
 		{ at: 10400, dur: 400, para: 3, do: { op: 'board', line: 4 } }
 	],
@@ -470,10 +470,16 @@ export const s7: Step = {
 		'hardirq：napi_schedule だけして戻る',
 		'softirq：ixgbe_poll → GRO（ACK はまとめない）',
 		'tcp_ack()：A1 を外し、cwnd 10 → 20',
-		'tcp_write_xmit()：A2 から 20 個を切る'
+		'tcp_write_xmit()：A2 と B の頭 8 個で 20 個'
 	],
 	badges: { peer: 'GRO：10 枚 → 1 個', b_wx: '送る 20 個（softirq）' },
-	layers: [B.sys(['A2 50680', 'B 376']), B.tcp(['A1 14480']), B.irq(), B.rx([]), B.rcv()],
+	layers: [
+		B.sys(['A2 17376', 'B 31856', 'C 1824']),
+		B.tcp(['A1 14480']),
+		B.irq(),
+		B.rx([]),
+		B.rcv()
+	],
 	impl: [
 		I.sendto,
 		I.sendmsg,
@@ -513,16 +519,16 @@ export const s8: Step = {
 	title: '送り終えた後と TSQ',
 	lead: '手元の行列が 1 ms 分を超えたら止め、送り終えた知らせで再開',
 	body: [
-		'手元の qdisc と NIC に 1 ms 分より多く溜まると、TSQ が送りを止める。',
+		'遠くへの写しで、手元の qdisc と NIC に 1 ms 分より多く溜まると TSQ が止める。',
 		'NIC が送り終えると tcp_wfree() が tasklet を予約し、送りを再開させる。'
 	],
 	depth: {
 		intro: [
-			'ここからは夜の大きな写し（1 GB）の最中を見る。cwnd は 400 個まで育ち、10 GbE をほぼ使い切っている。',
-			'手元の出口に荷が溜まりすぎると、ほかの流れの荷が後ろで待たされる。そこで TCP は、出口に置いた量が約 1 ms 分を超えたら新しく置くのをやめる。これが TSQ だ。'
+			'ここでは遠くの拠点 dr-1（RTT 10 ms）への夜の写しを見る。送信の上限 tcp_wmem を 32 MiB に上げてあり、cwnd は 8,600 個まで育った。',
+			'手元の出口に荷が溜まりすぎると、ほかの流れの荷が後ろで待たされる。そこで TCP は、出口に置いた量が約 1 ms 分を超えたら新しく置くのをやめる。これが TSQ だ。同じ部屋の store-1（RTT 0.5 ms）では cwnd 400 個の 579 KB が先に効き、TSQ は止めない。'
 		],
 		work: [
-			'tcp_small_queue_check() は、qdisc と NIC にいる自分の写しの量（sk_wmem_alloc）を上限と比べる。上限は送る速さの 1/1024（約 1 ms 分）で、この場面では約 1.36 MB だ。',
+			'tcp_small_queue_check() は、qdisc と NIC にいる自分の写しの量（sk_wmem_alloc）を上限と比べる。上限は送る速さの 1/1024（約 1 ms 分）で、この場面では約 1.46 MB だ。',
 			'隣の流れで NIC が混み、C7c〜C9c がリングに残って上限を超えた。TSQ_THROTTLED を立て、送信キューの C10 は止まる。',
 			'NIC が C7c を送り終えると割り込みが上がる。softirq の ixgbe_clean_tx_irq() が napi_consume_skb() で解放する。写しに付いた tcp_wfree() が呼ばれ、ソケットを TSQ の列に入れて tasklet を予約する。',
 			'tasklet の tcp_tasklet_func() が tcp_write_xmit() を呼び、C10 が送られる。持ち主のプロセスが send() の中なら、release_sock() の時まで送りを持ち越す。'
@@ -532,7 +538,7 @@ export const s8: Step = {
 			'再送キューが空か 1 個だけなら、上限を超えても送る（tcp_rtx_queue_empty_or_single_skb()）。送り終えの知らせが遅れても、流れが止まりきらないためだ。',
 			'tcp_wfree() は写しの truesize を sk_wmem_alloc から引く。TSQF_THROTTLED が立っていれば TSQF_QUEUED に替える。CPU ごとの tsq_tasklet の列に tsq_node をつなぎ、tasklet_schedule() する。',
 			'tcp_tasklet_func() は列を外し、tcp_tsq_handler() を呼ぶ。ソケットが使用中でなければ tcp_tsq_write() → tcp_write_xmit() で送る。使用中なら TCP_TSQ_DEFERRED を立て、持ち主の release_sock() → tcp_release_cb() が後で同じ送りをする。',
-			'文脈は 4 つある。send() の中（プロセス）・割り込み（hardirq）・softirq（NET_RX と NET_TX）・tasklet だ。hardirq は眠れず短く、softirq は CPU ごとに動き、プロセスの文脈だけが眠れる。backlog と TSQ の持ち越しは、文脈の間で同じソケットを触る順を守るための仕組みだ。'
+			'文脈は 3 つある。send() の中（プロセス）・割り込み（hardirq）・softirq で、tasklet は softirq の一種（TASKLET_SOFTIRQ）だ。hardirq は眠れず短く、プロセスの文脈だけが眠れる。backlog と TSQ の持ち越しは、文脈の間で同じソケットを触る順を守る仕組みだ。'
 		]
 	},
 	callout: {
@@ -542,27 +548,27 @@ export const s8: Step = {
 	changes: [
 		{ mark: '~', text: 'TSQ_THROTTLED：C10 を止めた' },
 		{ mark: '-', text: '送り終えた C7c を解放した' },
-		{ mark: '+', text: 'tasklet から C10 を送った' }
+		{ mark: '+', text: 'tasklet（softirq）から C10 を送った' }
 	],
 	facts: [
-		{ k: 'TSQ の上限', v: '1,357,500 B（1.39 GB/s ÷ 1,024）', calc: '1390080000/1024' },
+		{ k: 'TSQ の上限', v: '1,459,125 B（1.49 GB/s ÷ 1,024）', calc: '1494144000/1024' },
 		{
 			k: '送る速さ',
-			v: '1.39 GB/s（1.2 × 400 × 1,448 B ÷ 0.5 ms）',
-			calc: '1.2*400*1448/0.0005/1000000000'
+			v: '1.49 GB/s（1.2 × 8,600 × 1,448 B ÷ 10 ms）',
+			calc: '1.2*8600*1448/0.01/1000000000'
 		},
-		{ k: 'cwnd', v: '400 個' },
+		{ k: '飛んでいる量', v: '12,452,800 B（8,600 × 1,448 B）', calc: '8600*1448' },
 		{ k: 'tcp_limit_output_bytes', v: '1,048,576 B（fq では使わない）' }
 	],
-	scene: [{ op: 'change', id: 'app', k: 'cwnd', v: '400 個' }],
+	scene: [{ op: 'change', id: 'app', k: 'cwnd', v: '8,600 個' }],
 	log: {
 		t: '5.000s',
 		from: 'app',
 		to: 'app',
 		kind: 'kernel',
-		info: 'TSQ：手元 1.36 MB を超え C10 を止める → 送り終えて再開'
+		info: 'TSQ：手元 1.46 MB を超え C10 を止める → 送り終えて再開'
 	},
-	town: '出口に置いた荷が 1 ms 分を超えたら置くのをやめ、門を出た知らせで次を置く',
+	town: '遠くへ運ぶ日は、出口に置いた荷が 1 ms 分を超えたら置くのをやめ、門を出た知らせで次を置く',
 	work: 'ss -tim の notsent と tc -s qdisc の backlog を並べて見る',
 	inside: {
 		hosts: [
@@ -573,7 +579,7 @@ export const s8: Step = {
 				rows: [
 					{ id: 'p-backup', depth: 0, what: 'backup（pid 4120）', state: 'send() の中（syscall）' },
 					conn,
-					{ id: 's-cwnd', depth: 2, what: 'snd_cwnd', state: '400' },
+					{ id: 's-cwnd', depth: 2, what: 'snd_cwnd', state: '8600' },
 					{
 						id: 's-tsq',
 						depth: 2,
@@ -586,10 +592,10 @@ export const s8: Step = {
 			}
 		]
 	},
-	metrics: { cwnd: '400 個', wq: '4,194,304 B', rtx: '400 個' },
+	metrics: { cwnd: '8,600 個', wq: '33,554,432 B', rtx: '8,600 個', rtt: '10 ms' },
 	motion: [
 		{ at: 0, dur: 800, para: 0, do: { op: 'camera', fit: ['b_sendmsg', 'b_wx', 'b_tx'] } },
-		{ at: 500, dur: 800, para: 0, do: { op: 'count', metric: 'cwnd', to: '400 個' } },
+		{ at: 500, dur: 800, para: 0, do: { op: 'count', metric: 'cwnd', to: '8,600 個' } },
 		{ at: 900, dur: 600, para: 0, do: { op: 'peek', queue: 'wq', item: 'C10' } },
 		{
 			at: 1500,
@@ -647,7 +653,7 @@ export const s8: Step = {
 		{ at: 1400, dur: 600, do: { op: 'packet', a: 'b_tsq', b: 'b_wx', label: '再開', kind: 'call' } }
 	],
 	board: [
-		'手元 1.36 MB を超えた → TSQ_THROTTLED',
+		'手元 1.46 MB を超えた → TSQ_THROTTLED',
 		'送り終えた割り込み → napi_schedule',
 		'softirq：解放 → tcp_wfree() → tasklet 予約',
 		'tasklet：tcp_tasklet_func() → tcp_write_xmit()',

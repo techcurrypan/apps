@@ -14,6 +14,7 @@ import {
 import type { Result, Tool } from '../session.ts';
 import type { Command, ListItem, Word } from './parse.ts';
 import type { TcpState } from './tcpstack.ts';
+import type { K8sState } from './kube.ts';
 import type { SysState } from './procs.ts';
 import type { NetState } from './networld.ts';
 import { parseScript, type Node } from './script.ts';
@@ -35,6 +36,7 @@ export type ShellState<X> = {
 	net?: NetState; // 作り物の網（網の実戦だけ。tools-real/worlds/net.json）
 	sys?: SysState; // 動いているプロセス・世界の利用者・サービス（tools-real/worlds/procs.json・service.json）
 	tcp?: TcpState; // TCP の出口（qdisc・設定・流れ。tools-real/worlds/tcp.json。net-101）
+	k8s?: K8sState; // Kubernetes の作り物の集まり（tools-real/worlds/k8s.json。見本 2）
 };
 
 export type Io<X = unknown> = {

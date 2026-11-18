@@ -5,7 +5,15 @@ import { gitCommands } from '../tools/git/git.ts';
 import type { Tool } from '../tools/session.ts';
 import { CLOCK_BASE, shellTool, type ShellState } from '../tools/shell/run.ts';
 import { learnerWorld, WORK } from '../tools/shell/world.ts';
-import { worldFs, worldNet, worldSys, worldTcp, type WorldSpec } from '../tools/shell/worlds.ts';
+import {
+	worldFs,
+	worldK8s,
+	worldNet,
+	worldSys,
+	worldTcp,
+	type WorldSpec
+} from '../tools/shell/worlds.ts';
+import { mebi, podView } from '../tools/shell/kube.ts';
 import { rttOf } from '../tools/shell/tcpstack.ts';
 import { plainText } from './terminal.ts';
 import type { JudgeItem } from './tool-practice.ts';
@@ -26,6 +34,8 @@ export type ShellSuccess = {
 	output?: string;
 	/** TCP の出口（net-101）：qdisc の種類（どれか）・設定の値・この流れの RTT の上限（ms） */
 	tcp?: { qdisc?: string[]; sysctl?: Record<string, string>; rttBelow?: number };
+	/** Kubernetes（見本 2）：Ready の Pod の数、落ちている Pod が無いこと、記憶の上限の下限 */
+	k8s?: { ready: number; limitAtLeast?: string };
 };
 
 // 本物の機械と同じく、シェルの実戦にも git がある
@@ -69,7 +79,8 @@ export function shellInitial(
 		vars: { ...base.vars, PWD: cwd },
 		net: worldNet(world),
 		sys: worldSys(world),
-		tcp: worldTcp(world)
+		tcp: worldTcp(world),
+		k8s: worldK8s(world)
 	};
 }
 
@@ -116,6 +127,38 @@ export function judgeShell(
 				want: `${want.tcp.rttBelow} ms 未満`,
 				got: r === null ? '（無い）' : `${r} ms`,
 				ok: r !== null && r < want.tcp.rttBelow
+			});
+		}
+	}
+	if (want.k8s) {
+		const k = s.k8s;
+		const pods = k ? k.pods.filter((p) => p.created <= k.now && (p.gone ?? Infinity) > k.now) : [];
+		const ready = k ? pods.filter((p) => podView(k, p).ready).length : 0;
+		const bad = k
+			? pods.filter((p) =>
+					['Pending', 'OOMKilled', 'CrashLoopBackOff'].includes(podView(k, p).status)
+				).length
+			: 0;
+		items.push({
+			label: 'Ready の Pod',
+			want: `${want.k8s.ready} つ`,
+			got: k ? `${ready} つ` : '（無い）',
+			ok: ready >= want.k8s.ready
+		});
+		items.push({
+			label: '落ちている・置けない Pod',
+			want: '0 つ',
+			got: k ? `${bad} つ` : '（無い）',
+			ok: !!k && bad === 0
+		});
+		if (want.k8s.limitAtLeast) {
+			const cur = k?.rss.find((r) => r.hash === k.cur);
+			const lim = cur ? mebi(cur.memLimit) : null;
+			items.push({
+				label: '記憶の上限（limits.memory）',
+				want: `${want.k8s.limitAtLeast} 以上`,
+				got: cur?.memLimit ?? '（無い）',
+				ok: lim !== null && lim >= (mebi(want.k8s.limitAtLeast) ?? Infinity)
 			});
 		}
 	}
