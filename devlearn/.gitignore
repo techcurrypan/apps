@@ -21,3 +21,6 @@ Thumbs.db
 # Vite
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# 参考サイトの撮影（判定にだけ使う。他者の画面なのでリポジトリに入れない。D-23）
+/.ref/

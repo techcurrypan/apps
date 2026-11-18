@@ -1,8 +1,12 @@
 # 説明の基準
 
 **この文書が devlearn の核。** 説明の質はここで決まる。
-目標は `https://protocol-explorer-alpha.vercel.app/` と同等以上の分かりやすさ。
-**複製はしない。** 取り入れるのは分かりやすさの原理だけ（`reference-analysis.md`）。
+目標は `https://protocol-explorer-alpha.vercel.app/` と、**`https://designed-to-scale.vercel.app/`（D-23）** と同等以上の分かりやすさ・動き・深さ。
+**複製はしない。** 取り入れるのは原理だけ（`reference-analysis.md`、`learn-standard.md` 0.2）。
+
+> **第 2 版（2026-11-18、D-23）**：利用者が「学習内容が簡易すぎる」「動的ではない」と退けた。
+> 1 レッスンの大きさ・ステップの種類・本文の量・動きの合図・深さの決まりを **2.3 と第 9 章**で作り直した。
+> 第 1 版の決まりと食い違う所は、**2.3・第 9 章が正**（下の表の「第 2 版」の欄も見る）。
 この文書は**中身（データ）の基準**。画面の配置は `screen-design-brief.md` で一から決める。
 
 決まりは**機械で検査できる形**にしてある。`npm run content:check` が全件を検査し、
@@ -47,6 +51,17 @@
 そのステップに留まったまま、**動きだけを何度でも再生し直せる**。
 見逃した、速すぎた、もう一度確かめたい、に応える。ステップを戻らなくてよい。
 
+### 1.7 止まった絵を作らない（第 2 版）
+
+ステップに入ると、視点が寄り、物が順に現れ、線が引かれ、荷物が進み、数が数え上がる。
+**続いている流れ（ハートビート・往復・再送・学習の繰り返し）は、そのステップに留まっている間も流れ続ける。**
+動きの合図（`Step.motion`）は、本文の段落と結び付ける（`learn-standard.md` 第 2 章）。
+
+### 1.8 業界をリードし、人を育てられる深さ（第 2 版）
+
+1 レッスンは、1 つの仕組みを **問題 → 仕組み → 中身 → 失敗 → 解決 → 代償 → 実際には → 運用 → 教えるとき → まとめ** と通す物語にする。
+入口だけで終わらせない。数で語り、一次情報を出典に持ち、壊れ方を動きで見せ、新人に教えるときの言い方まで書く。
+
 ---
 
 ## 2. 形（型）
@@ -63,7 +78,7 @@ export type Lesson = {
   prereq: string[];           // 推奨前提。ロックではない
   related: string[];
   next: string[];
-  explain: Step[];            // 5〜9
+  explain: Step[];            // 第 1 版 5〜9。第 2 版は 10〜16（2.3）
   example: Example;
   practice: Practice;
   check: CheckItem[];         // 3〜5
@@ -73,7 +88,7 @@ export type Step = {
   n: number;                  // 1 から連番
   title: string;              // 20 字以内
   lead: string;               // 一行の要約。40 字以内
-  body: string[];             // 2〜4 文。1 文 60 字以内
+  body: string[];             // 第 1 版 2〜4 文。第 2 版は段落の配列で詳しさ 3 段（2.3 の depth）
   facts: Fact[];              // 1 件以上。具体値の表
   scene: SceneOp[];           // 1 件以上。図の変化
   log: LogRow;                // 必須。1 行
@@ -216,6 +231,111 @@ type Icon = 'pc' | 'laptop' | 'phone' | 'router' | 'cloud' | 'server' | 'db' | '
 - `move` のある組（向きを問わない）には必ず線を 1 本置き、名前を付ける。両向きの動きがあれば `both`（検査 16）
 - 番地（`addr`）は、`appear` の `sub` と、中身の板の `hosts` の `addr` と同じ値（検査 24）
 
+
+### 2.3 第 2 版の形（D-23。1 レッスン 10〜16 ステップの物語）
+
+```ts
+export type Lesson = {
+  // …第 1 版の欄はそのまま（explain・practice・check など）
+  tier: 1 | 2 | 3 | 4;              // 段（curriculum-standard.md 第 2 章）：基礎・現場・設計と障害対応・指導
+  learn: string[];                  // 学べること 4〜7 項目。1 項目 40 字以内
+  minutes: number;                  // かかる時間の目安（見る＋やってみる＋思い出す）
+  metrics?: Metric[];               // 図の上の指標の帯（2〜5 個）
+  legend: { kind: string; label: string; style: 'solid' | 'dash' | 'double' }[];  // 流れの種類の凡例
+  sources: Source[];                // 一次情報 3 件以上
+  teach: Teach;                     // 教えるときの材料（「教えるとき」ステップの元）
+};
+
+export type Step = {
+  // …第 1 版の欄（title・facts・scene・log・inside・town・work・ask など）はそのまま
+  kind: StepKind;
+  short: string;                                               // ステップの帯に出す短い題。8 字以内
+  depth: { intro: string[]; work: string[]; deep: string[] };  // 詳しさ 3 段の本文。段落の配列（量は下の表）
+  callout: { type: 'point' | 'tip' | 'warn'; text: string };   // 囲み 1 つ。120 字以内
+  changes: { mark: '+' | '-' | '~'; text: string }[];          // 変わったこと 2〜4 行。1 行 40 字以内
+  metrics?: Record<string, string>;                            // このステップの後の指標の値（Lesson.metrics の key ごと）
+  motion: Cue[];                                               // 動きの合図 4 つ以上
+  loop?: Cue[] | 'none';                                       // 留まっている間に繰り返す流れ。'none' は reason 必須
+  loopReason?: string;
+  board?: string[];                                            // 図の中の出来事の札（3〜5 行）
+  badges?: Record<string, string>;                             // 機械ごとの状態の札（map.nodes の id ごと）
+  refs?: string[];                                             // このステップの数と仕様の出典（Source.id）
+  learns?: number[];                                           // このステップで ✓ が付く Lesson.learn の番号
+  impl?: Impl[];                                               // 実装の水準（curriculum-standard.md 第 6 章）。段 3・4 の internals で必須
+  layers?: Layer[];                                            // 層の図（learn-standard.md LS-D12）。impl を持つステップで使う
+};
+
+export type Impl = {
+  name: string;                     // 実在の関数・構造体・キュー・設定の名前 "tcp_write_xmit()" "sk_buff" "tcp_rtx_queue" "tcp_limit_output_bytes"
+  kind: 'function' | 'struct' | 'queue' | 'setting' | 'file' | 'command';
+  where: string;                    // ソースの場所 "net/ipv4/tcp_output.c"（設定は "/proc/sys/net/ipv4/..."）
+  project: string;                  // "linux" "kubernetes" "postgres" "git" など
+  version: string;                  // "v6.12" のように版を決める
+  context?: 'user' | 'syscall' | 'hardirq' | 'softirq' | 'tasklet' | 'kthread' | 'other';  // どの文脈で動くか
+  ref: string;                      // Source.id（kind 'source' の版の tag のファイルへの URL）
+};
+
+export type Layer = {
+  id: string; label: string;        // "app" "kernel" "driver" "nic" "wire"
+  boxes: { id: string; impl: string; queues?: { id: string; label: string; items: string[]; limit?: string }[] }[];  // impl は Impl.name
+};
+
+type StepKind = 'problem' | 'mechanism' | 'internals' | 'fail' | 'fix' | 'technique'
+              | 'tradeoff' | 'numbers' | 'realworld' | 'ops' | 'teach' | 'summary';
+// 画面の札：問題・仕組み・中身・失敗・解決・技・代償・数で考える・実際には・運用・教えるとき・まとめ
+
+export type Cue = {
+  at: number;                       // ステップに入ってからの ms（速さ 1 倍）
+  dur: number;                      // 長さの ms
+  para?: number;                    // 結び付く本文の段落（0 から）。その間その段落を強調する
+  do:
+    | { op: 'camera'; fit: string[] }                         // その機械たちが全部入るように寄る
+    | { op: 'appear'; id: string }                            // 機械・札が現れる
+    | { op: 'link'; a: string; b: string }                    // 線を引く
+    | { op: 'packet'; a: string; b: string; label: string; kind: string; drop?: boolean; stall?: boolean }  // 荷物が進む（落ちる・詰まる）
+    | { op: 'count'; metric: string; to: string }             // 指標を数え上げる
+    | { op: 'badge'; id: string; text: string; tone?: 'ok' | 'warn' | 'bad' }  // 状態の札を変える
+    | { op: 'board'; line: number }                           // 出来事の札の行を光らせる
+    | { op: 'pulse'; id: string }                             // 輪が広がる
+    | { op: 'vanish'; id: string }
+    | { op: 'fail'; id: string };                             // 赤く点滅して止まる
+};
+
+export type Metric = { key: string; label: string; unit?: string; sum?: boolean };  // sum：積み上げて合計に入れる
+export type Source = { id: string; title: string; url: string; kind: 'rfc' | 'spec' | 'doc' | 'man' | 'paper' | 'source'; checked: string };  // checked は開いて確かめた日
+export type Teach = {
+  myths: { wrong: string; right: string }[];   // よくある誤解 3 つ以上
+  oneMinute: string;                            // 1 分で説明する文（300 字以内）
+  questions: { ask: string; answer: string; look: string }[];  // 後輩に出す問い 2 つ以上（答えと見どころ）
+};
+```
+
+**本文の量（1 ステップ）**
+
+| 詳しさ | 段落 | 字数（計） | 中身 |
+|---|---|---|---|
+| はじめて（`intro`） | 1〜3 | 120〜260 | 町のたとえを 1 つまで使ってよい。具体値は 1 つ以上 |
+| 現場（`work`） | 2〜4 | 200〜450 | 具体値 2 つ以上。既定値・目安の数。現場で起きること |
+| 中身まで（`deep`） | 2〜5 | 現場の字数 ＋ 150 以上 | 仕様の水準：RFC・規格の節、ヘッダのビット、カーネル・製品の既定値と設定の名前、アルゴリズムの手順、計算量。出典（`refs`）必須 |
+
+- 1 文は 80 字まで（第 1 版の 60 字を改めた）。段落は 1〜4 文
+- **ステップの種類の必須**（1 レッスン）：`problem` ≥1・`mechanism` ≥2・`internals` ≥1・`fail` ≥2・`fix` ≥1・`tradeoff` ≥1・`realworld` ≥1・`ops` ≥1・`teach` ≥1・`summary` =1。順は物語として自然に（問題から始め、まとめで終わる）
+- `fail` は、壊れる様子の合図（`packet` の `drop`・`stall`、`fail`、`badge` の `bad`）を 1 つ以上と、失敗のログの行（`inside.logs`）を持つ
+- `realworld`（実際には）は、実在の製品・OSS・規格の名前と使い方を、出典つきで書く
+- `ops`（運用）は、見るべきコマンド・指標・ログの行と読み方、数の目安を書く
+- `teach`（教えるとき）は `Lesson.teach` から作る。誤解と正しい言い方を図の上でも見せる（誤った流れが止まり、正しい流れが流れる）
+- `summary` は学べることを全て振り返り、図は全体を見せ、全ての流れが流れる
+- **動き**：`motion` は 4 つ以上で、最初は `camera`。同じ `at` に 3 つ以上重ねない。`para` で全ての段落に 1 つ以上の合図が結ばれる。
+  続いている流れのあるステップは `loop` を持つ（`learn-standard.md` LS-M4）
+- `metrics` の値は、そのステップの出来事から計算で合う（例：合計 ＝ 各段の和）。検査で計算し直す
+- 学べることの全項目に、✓ を付けるステップ（`learns`）がある
+- **実装の水準**（`curriculum-standard.md` 第 6 章）：段 3・4 のレッスンの `internals` のステップは `impl` を 3 つ以上持ち、`layers` で層の図を描く。
+  名前は版を決めた一次のソースで実在を確かめ（`Source.kind = 'source'`。版の tag のファイルへの URL と行の範囲、`checked` の日付）、本文・図・中身の板で同じ名前を使う。
+  文脈の変わる所（syscall → softirq など）は、`motion` の中で `badge` か `board` の行で示す
+- キューの動き（`learn-standard.md` LS-M14）のために、`Cue.do` に次を足す：`{ op: 'enqueue' | 'dequeue' | 'peek'; queue: string; item: string }`・`{ op: 'move'; item: string; from: string; to: string }`・
+  `{ op: 'clone'; item: string; as: string }`・`{ op: 'split'; item: string; into: string[] }`（TSO）・`{ op: 'merge'; items: string[]; into: string }`（GRO）・`{ op: 'context'; to: Impl['context']; at: string }`（文脈の切り替え）
+
+
 ---
 
 ## 3. 検査（`npm run content:check`）
@@ -224,11 +344,11 @@ type Icon = 'pc' | 'laptop' | 'phone' | 'router' | 'cloud' | 'server' | 'db' | '
 
 | # | 検査 |
 |---|---|
-| 1 | `explain` が 5〜9 ステップ |
+| 1 | `explain` が 5〜9 ステップ（**第 2 版を当てる分野・レッスンは 10〜16**。検査 26） |
 | 2 | 各ステップに `facts` が 1 件以上 |
 | 3 | 各ステップに `scene` が 1 件以上 |
 | 4 | 各ステップに `log` がある |
-| 5 | `body` が 2〜4 文、1 文 60 字以内 |
+| 5 | `body` が 2〜4 文、1 文 60 字以内（第 2 版を当てるレッスンは検査 27 に替わる） |
 | 6 | `title` 20 字以内 / `lead` 40 字以内 / `goal` 60 字以内 |
 | 7 | `goal` が「できる」で終わる |
 | 8 | 1 レッスンに `why` が 1 件以上 |
@@ -249,6 +369,21 @@ type Icon = 'pc' | 'laptop' | 'phone' | 'router' | 'cloud' | 'server' | 'db' | '
 | 23 | `inside.logs` の各行が、`src` ごとの本物の書式の型（`tools.md` 第 2 章の記録から作る）に当たる。型の無い `src` は使えない（LS-Q4） |
 | 24 | 同じ物の値（IP・ポート・pid・ID・大きさ）が、そのレッスンの `facts`・`scene`・`log`・`inside` で食い違わない。時刻は進むだけ（LS-Q5・LS-Q6） |
 | 25 | 計算する題材の数（損失・確率など）を、検査が同じ式で計算し直して一致する（LS-Q3） |
+| 26 | **第 2 版**：`explain` が 10〜16 ステップ。種類の必須（2.3）を満たし、最初が `problem`、最後が `summary`。当てる範囲は `src/lib/lesson/v2-scope.ts` の表（10-R の見本から始め、10-D で分野ごとに足す。最後は全て） |
+| 27 | 第 2 版：`depth` の 3 段がそろい、段落の数と字数が 2.3 の表に合う。1 文 80 字以内。`deep` のステップに `refs` がある |
+| 28 | 第 2 版：各ステップの `facts` と本文に具体値（数字と単位）が 2 つ以上。数の無い「速い・遅い・重い・多い・少ない・大きい・小さい」を禁止（第 4 章） |
+| 29 | 第 2 版：`motion` が 4 つ以上・最初が `camera`・全段落に結び付く・同じ `at` に 3 つ以上重ならない・出てくる id が `map` にある |
+| 30 | 第 2 版：`loop` があるか、`'none'` と理由がある。`fail` のステップは壊れる合図と失敗のログを持つ |
+| 31 | 第 2 版：`short` が 8 字以内、`callout` が 1 つ、`changes` が 2〜4 行、`board` が 3〜5 行（`board` を持つとき）、`badges` の id が `map` にある |
+| 32 | 第 2 版：`metrics` の値が出来事から計算し直して合う（合計 ＝ 和など） |
+| 33 | 第 2 版：`learn` が 4〜7 項目で、全てに ✓ を付けるステップがある |
+| 34 | 第 2 版：`sources` が一次情報 3 件以上（`kind` が rfc・spec・doc・man・paper・source）で、`checked` の日付があり、`docs/content-sources.md` の表にある。`refs` の id が実在する |
+| 35 | 第 2 版：`teach` の誤解 3 つ以上・1 分の文・問い 2 つ以上 |
+| 36 | 第 2 版：実戦（`tool`）は命令 5 つ以上を要し、正しい道が 2 つ以上ある場面を持つ。`mistakes` は 3〜6 件（第 1 版の 2〜4 件を改めた） |
+| 37 | 第 2 版：`check`（思い出す）が 6 問以上、うち場面の問い 2 問以上、数の問い 1 問以上 |
+| 38 | 第 2 版：専門家の査読（第 9 章）の記録が `src/lib/content/reviews/<id>.json` にあり、全項目が合格で、本文の最後の変更より後の日付 |
+| 39 | 第 2 版：段 3・4 のレッスンの `internals` のステップが `impl` を 3 つ以上と `layers` を持つ。**`npm run impl:verify` が、`impl` の版の tag のソースのファイルを公式の取得先（Linux は kernel.org または GitHub の `torvalds/linux` の tag）から取り、名前がそのファイルにあることを確かめる**（取った物はキャッシュ。CI でも走らせる）。`impl.ref` が `kind: 'source'` の出典で、URL が版の tag を含み、`version` と合う。`layers` の `impl` が同じステップの `impl` にある。キューの合図（enqueue・move など）の `queue`・`item` が `layers` にある |
+| 40 | 第 2 版：TCP を教えるレッスン群が `curriculum-standard.md` 6.2 の 15 項目を全て持つ（どのレッスンのどのステップかの表 `src/lib/content/depth-map.ts` とテスト） |
 
 ---
 
@@ -257,12 +392,12 @@ type Icon = 'pc' | 'laptop' | 'phone' | 'router' | 'cloud' | 'server' | 'db' | '
 | 項目 | 決まり |
 |---|---|
 | 文体 | 平易な日本語。敬体を使わない。短く切る |
-| 1 文 | 60 字まで |
-| 1 ステップの本文 | 2〜4 文 |
+| 1 文 | 60 字まで（第 2 版は 80 字まで） |
+| 1 ステップの本文 | 2〜4 文（第 2 版は 2.3 の表） |
 | 用語 | 初出で 1 行の説明。英略語は日本語の意味も書く |
-| 比喩 | 1 レッスンに 1 つまで。比喩で説明を終わらせない |
+| 比喩 | 1 レッスンに 1 つまで（町のたとえは別）。比喩で説明を終わらせない |
 | 「なぜ」 | 1 レッスンに 1 回以上、仕組みの理由を書く |
-| 禁止語 | 「簡単」「〜するだけ」「ご存じのとおり」「しっかり」「とても重要」 |
+| 禁止語 | 「簡単」「〜するだけ」「ご存じのとおり」「しっかり」「とても重要」。第 2 版は数の無い「速い・遅い・重い・多い・少ない」も（検査 28） |
 | 禁止 | 公式文書の引き写し。要点を自分の言葉で書き、出典を示す |
 
 ---
@@ -338,3 +473,29 @@ type Icon = 'pc' | 'laptop' | 'phone' | 'router' | 'cloud' | 'server' | 'db' | '
 > why: 名前のままでは経路を選べないため
 
 値がある。理由がある。図とログが対応している。
+
+---
+
+## 9. 専門家の査読（第 2 版。検査 38・`learn-standard.md` LS-Q10）
+
+1 レッスンを書き終えたら、**書いた本人ではない別のエージェント**に査読させる。渡す物は、そのレッスンのデータ（本文・図・中身の板・実戦・問い・出典）と、この表だけ。
+査読する者には「その分野で 10 年以上働き、新人を育てている上級エンジニアで、誤りを見逃すと自分の部下が本番で事故を起こす」立場で読ませる。
+
+| # | 見る所 | 合格の条件 |
+|---|---|---|
+| 1 | 正しさ | 仕様・既定値・数・コマンドの出力に誤りが無い。版によって違う物は版を書いている。関数名・構造体名・呼ぶ順・文脈が、書いた版のソースと一致する（査読する者もソースを開いて確かめる） |
+| 2 | 深さ | 「中身まで」で、仕様の水準（節・ビット・既定値・手順）まで届いている。段 3・4 は実装の水準（`curriculum-standard.md` 第 6 章。TCP ならカーネルの関数・キュー・skb・文脈）まで届いている。入口の説明で終わっていない |
+| 3 | 抜け | その仕組みで現場の人が必ず知っている事（よくある障害・設定の落とし穴・観測の仕方）が抜けていない |
+| 4 | 失敗のケース | 実際によく起きる壊れ方で、原因・症状・観測・直し方がつながっている |
+| 5 | 代償 | 数で比べている（時間・費用・可用性） |
+| 6 | 実際には | 実在の製品・OSS の使い方が今の版で正しい |
+| 7 | 運用 | そのまま現場で使えるコマンドと読み方、数の目安 |
+| 8 | 教えるとき | 誤解が本当によくある物で、正しい言い方が誤解を解く |
+| 9 | 誤解を招く所 | たとえ・省略・図が、誤った理解を作らない |
+| 10 | 業界の今 | 古い慣習・廃れた物を今の標準として教えていない |
+| 11 | 実戦 | 場面が本物らしく、正しい道と誤った道の返事が技術的に正しい |
+| 12 | 動き | 図の動きが仕組みの順序・向き・数と一致している |
+
+- 返事は項目ごとに「合格」か「不合格（理由・直し方）」。不合格を直して、もう一度査読させる
+- 記録は `src/lib/content/reviews/<id>.json`（査読した日・項目ごとの結果・指摘と直した内容）
+
