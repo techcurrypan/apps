@@ -145,6 +145,21 @@
 			{/if}
 		</g>
 	{/each}
+	{#each frame.boxRings as br (br.id)}
+		{@const b = geo.boxes.get(br.id)}
+		{#if b}
+			{@const p = 4 + br.k * 18}
+			<rect
+				class="ring"
+				x={b.r.x - p}
+				y={b.r.y - p}
+				width={b.r.w + p * 2}
+				height={b.r.h + p * 2}
+				rx={10 + p}
+				style:opacity={1 - br.k}
+			/>
+		{/if}
+	{/each}
 	{#each [...geo.queues.values()] as q (q.id)}
 		{@const box = geo.boxes.get(q.box)}
 		{@const on = !!box && (frame.step === 0 || box.steps.includes(frame.step))}

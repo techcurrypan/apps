@@ -112,7 +112,8 @@ export const s9: Step = {
 			para: 2,
 			do: { op: 'badge', id: 'ctrl', text: '古い Pod は減らさない', tone: 'warn' }
 		},
-		{ at: 5800, dur: 400, para: 2, do: { op: 'board', line: 3 } }
+		{ at: 5800, dur: 400, para: 2, do: { op: 'board', line: 3 } },
+		{ at: 1050, dur: 700, para: 0, do: { op: 'pulse', id: 'b_pq' } }
 	],
 	loop: [
 		{ at: 0, dur: 600, do: { op: 'peek', queue: 'unschedQ', item: 'mkxdg 1Gi' } },
@@ -403,7 +404,9 @@ export const s11: Step = {
 			}
 		},
 		{ at: 4400, dur: 400, para: 2, do: { op: 'board', line: 2 } },
-		{ at: 5300, dur: 400, para: 2, do: { op: 'board', line: 3 } }
+		{ at: 5300, dur: 400, para: 2, do: { op: 'board', line: 3 } },
+		{ at: 1050, dur: 700, para: 0, do: { op: 'pulse', id: 'kl2' } },
+		{ at: 1250, dur: 600, para: 0, do: { op: 'pulse', id: 'sched' } }
 	],
 	loop: [
 		{ at: 0, dur: 700, do: { op: 'packet', a: 'b_qos', b: 'b_adj', label: 'QoS', kind: 'call' } },
@@ -537,7 +540,10 @@ export const s12: Step = {
 			para: 2,
 			do: { op: 'badge', id: 'kl2', text: '300 秒待って移す', tone: 'bad' }
 		},
-		{ at: 5600, dur: 400, para: 2, do: { op: 'board', line: 3 } }
+		{ at: 5600, dur: 400, para: 2, do: { op: 'board', line: 3 } },
+		{ at: 700, dur: 700, para: 0, do: { op: 'pulse', id: 'api' } },
+		{ at: 3500, dur: 700, para: 1, do: { op: 'pulse', id: 'ctrl' } },
+		{ at: 4400, dur: 700, para: 1, do: { op: 'pulse', id: 'kl2' } }
 	],
 	loop: [
 		{ at: 0, dur: 900, do: { op: 'packet', a: 'kl1', b: 'api', label: 'Lease', kind: 'status' } },

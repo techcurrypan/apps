@@ -84,9 +84,18 @@ describe('動きの時間軸（どの時点もステップと経過時間から�
 		const e = endOf(l.explain[1]);
 		const t1 = at(l, 2, e + 3000).packets.length + at(l, 2, e + 3300).packets.length;
 		expect(t1).toBeGreaterThan(0);
-		const p1 = at(l, 2, e + 3100).packets[0]?.p;
-		const p2 = at(l, 2, e + 3200).packets[0]?.p;
-		expect(p1).not.toBe(p2);
+		// 周のどこで撮っても、1 秒の間に荷物が違う位置を通る
+		const ps = Array.from({ length: 11 }, (_, i) => at(l, 2, e + 3000 + i * 100).packets[0]?.p);
+		expect(new Set(ps.filter((p) => p !== undefined)).size).toBeGreaterThan(2);
+		// 合図が終わるとすぐ流れ始める（間を空けない）
+		expect(at(l, 2, e + 50).looping).toBe(true);
+	});
+	it('強調：層の図の関数の箱も pulse で縁が広がる（LS-M2 の強調）', () => {
+		const l = validV2();
+		l.explain[3].motion!.push({ at: 100, dur: 500, para: 0, do: { op: 'pulse', id: 'wx' } });
+		const mid = at(l, 4, 350).boxRings.find((r) => r.id === 'wx');
+		expect(mid?.k).toBeCloseTo(0.5, 1);
+		expect(at(l, 4, 700).boxRings.find((r) => r.id === 'wx')).toBeUndefined();
 	});
 	it('段落：結び付いた合図が始まると現れ、その間は強調される（LS-M5）', () => {
 		const l = validV2();

@@ -86,7 +86,7 @@ export const s13: Step = {
 		},
 		{ at: 500, dur: 400, para: 0, do: { op: 'board', line: 0 } },
 		{
-			at: 1200,
+			at: 900,
 			dur: 700,
 			para: 0,
 			do: { op: 'packet', a: 'b_dev', b: 'b_drv', label: '64 KiB', kind: 'data' }
@@ -106,7 +106,9 @@ export const s13: Step = {
 			dur: 700,
 			para: 2,
 			do: { op: 'packet', a: 'b_wx', b: 'b_tx', label: '小さい応答', kind: 'data' }
-		}
+		},
+		{ at: 1000, dur: 700, para: 0, do: { op: 'pulse', id: 'b_drv' } },
+		{ at: 3700, dur: 700, para: 2, do: { op: 'pulse', id: 'b_wx' } }
 	],
 	loop: [
 		{
@@ -114,7 +116,9 @@ export const s13: Step = {
 			dur: 700,
 			do: { op: 'packet', a: 'b_dev', b: 'b_drv', label: '64 KiB', kind: 'data' }
 		},
-		{ at: 800, dur: 700, do: { op: 'packet', a: 'b_wx', b: 'b_tx', label: '応答', kind: 'data' } }
+		{ at: 800, dur: 700, do: { op: 'packet', a: 'b_wx', b: 'b_tx', label: '応答', kind: 'data' } },
+		{ at: 500, dur: 600, do: { op: 'pulse', id: 'b_drv' } },
+		{ at: 1300, dur: 600, do: { op: 'pulse', id: 'b_tx' } }
 	],
 	board: [
 		'systemd：default_qdisc = fq_codel',
@@ -240,7 +244,10 @@ export const s14: Step = {
 			dur: 700,
 			para: 3,
 			do: { op: 'packet', a: 'b_dev', b: 'b_drv', label: '数える', kind: 'data' }
-		}
+		},
+		{ at: 0, dur: 600, para: 0, do: { op: 'pulse', id: 'b_tx' } },
+		{ at: 800, dur: 700, para: 0, do: { op: 'pulse', id: 'b_wx' } },
+		{ at: 4900, dur: 700, para: 3, do: { op: 'pulse', id: 'b_dev' } }
 	],
 	loop: [
 		{
@@ -248,7 +255,9 @@ export const s14: Step = {
 			dur: 700,
 			do: { op: 'packet', a: 'b_dev', b: 'b_drv', label: '64 KiB', kind: 'data' }
 		},
-		{ at: 800, dur: 700, do: { op: 'packet', a: 'b_wx', b: 'b_tx', label: 'skb', kind: 'data' } }
+		{ at: 800, dur: 700, do: { op: 'packet', a: 'b_wx', b: 'b_tx', label: 'skb', kind: 'data' } },
+		{ at: 500, dur: 600, do: { op: 'pulse', id: 'b_drv' } },
+		{ at: 1300, dur: 600, do: { op: 'pulse', id: 'b_tx' } }
 	],
 	board: [
 		'ss -tim：rtt と minrtt を比べる',
@@ -516,7 +525,8 @@ export const s16: Step = {
 		{ at: 5500, dur: 400, para: 2, do: { op: 'board', line: 2 } },
 		{ at: 6200, dur: 1000, para: 2, do: { op: 'count', metric: 'wq', to: '0 B' } },
 		{ at: 6300, dur: 900, para: 2, do: { op: 'camera', fit: ['app', 'sw', 'peer'] } },
-		{ at: 6800, dur: 400, para: 2, do: { op: 'board', line: 3 } }
+		{ at: 6800, dur: 400, para: 2, do: { op: 'board', line: 3 } },
+		{ at: 800, dur: 600, para: 0, do: { op: 'pulse', id: 'b_sendmsg' } }
 	],
 	loop: [
 		{ at: 0, dur: 800, do: { op: 'packet', a: 'app', b: 'sw', label: 'データ', kind: 'data' } },

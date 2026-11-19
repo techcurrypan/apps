@@ -53,6 +53,8 @@ export type QueueF = { id: string; count: number };
 export type MetricF = { key: string; text: string; moving: boolean };
 export type BoardF = { text: string; shown: boolean; active: boolean };
 export type ContextF = { at: string; to: ImplContext; k: number };
+/** 層の図の関数の箱の縁が広がる強調（0〜1） */
+export type BoxRingF = { id: string; k: number };
 export type Frame = {
 	step: number;
 	t: number;
@@ -69,6 +71,7 @@ export type Frame = {
 	board: BoardF[];
 	para: { active: number; shown: number[] };
 	contexts: ContextF[];
+	boxRings: BoxRingF[];
 	done: boolean;
 	looping: boolean;
 };
@@ -84,7 +87,7 @@ export function endOf(s: Step): number {
 	return Math.max(0, ...(s.motion ?? []).map((c) => c.at + c.dur));
 }
 const loopPeriod = (s: Step): number =>
-	Array.isArray(s.loop) && s.loop.length ? Math.max(...s.loop.map((c) => c.at + c.dur)) + 400 : 0;
+	Array.isArray(s.loop) && s.loop.length ? Math.max(...s.loop.map((c) => c.at + c.dur)) + 200 : 0;
 
 /** 文字の中の最初の数（小数の桁も） */
 export function numberIn(s: string): { n: number; dec: number } | null {
@@ -352,8 +355,8 @@ export function frameAt(l: Lesson, g: Geo, s: number, tIn: number, o: FrameOpts)
 	const t = o.reduced ? end + 1 : tIn;
 	const done = t >= end;
 	const period = step && !o.reduced ? loopPeriod(step) : 0;
-	const looping = !!step && period > 0 && t > end + 300;
-	const lt = looping ? (t - end - 300) % period : -1;
+	const looping = !!step && period > 0 && t >= end;
+	const lt = looping ? (t - end) % period : -1;
 	const loopCues = step && Array.isArray(step.loop) ? step.loop : [];
 	// 今流れている合図（ステップの合図と、続く流れの今の周）
 	const live: { c: Cue; t: number }[] = [
@@ -361,12 +364,21 @@ export function frameAt(l: Lesson, g: Geo, s: number, tIn: number, o: FrameOpts)
 		...(looping ? loopCues.map((c) => ({ c, t: lt })) : [])
 	];
 
-	// 寄り
-	const cam = motion.find((c) => c.do.op === 'camera');
+	// 寄り。camera の合図が幾つもあるときは順につなぐ（前の合図の行き先から次の行き先へ）。
+	// 寄っている物（data-fit・hot）も、今の合図の物にする
+	const cams = motion.filter((c) => c.do.op === 'camera');
+	const cam = cams[0];
 	let view = fin.view;
-	if (s === 0) view = fin.view;
-	else if (cam && !o.reduced) view = lerpView(prev.view, fin.view, ease(win(t, cam.at, cam.dur)));
-	const fit = s === 0 ? fin.fit : fin.fit;
+	let fit = fin.fit;
+	if (s > 0 && cams.length && !o.reduced) {
+		let i = 0;
+		for (let k = 0; k < cams.length; k++) if (t >= cams[k].at) i = k;
+		const fitIds = (c: Cue) => (c.do.op === 'camera' ? c.do.fit : []);
+		const to = viewFor(g, fitIds(cams[i]), o);
+		const from = i === 0 ? prev.view : viewFor(g, fitIds(cams[i - 1]), o).view;
+		view = lerpView(from, to.view, ease(win(t, cams[i].at, cams[i].dur)));
+		fit = to.fit;
+	}
 
 	// 機械
 	const appearAt = new Map<string, number>();
@@ -598,6 +610,12 @@ export function frameAt(l: Lesson, g: Geo, s: number, tIn: number, o: FrameOpts)
 		if (c.do.op === 'context' && ct >= c.at)
 			contexts.push({ at: c.do.at, to: c.do.to, k: win(ct, c.at, c.dur) });
 
+	// 関数の箱の強調（pulse の id が層の箱のとき）
+	const boxRings: BoxRingF[] = [];
+	for (const { c, t: ct } of live)
+		if (c.do.op === 'pulse' && g.boxes.has(c.do.id) && ct >= c.at && ct < c.at + c.dur)
+			boxRings.push({ id: c.do.id, k: win(ct, c.at, c.dur) });
+
 	return {
 		step: s,
 		t,
@@ -614,6 +632,7 @@ export function frameAt(l: Lesson, g: Geo, s: number, tIn: number, o: FrameOpts)
 		board,
 		para: { active: paraActive, shown: [...paraShown].sort((a, b) => a - b) },
 		contexts,
+		boxRings,
 		done,
 		looping
 	};

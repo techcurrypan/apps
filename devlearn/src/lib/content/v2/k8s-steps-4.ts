@@ -255,7 +255,9 @@ export const s14: Step = {
 		{ at: 3100, dur: 800, para: 2, do: { op: 'camera', fit: ['sched', 'kl1', 'kl2'] } },
 		{ at: 3500, dur: 450, para: 2, do: { op: 'badge', id: 'sched', text: 'requests ＝ 予約' } },
 		{ at: 3600, dur: 400, para: 2, do: { op: 'board', line: 2 } },
-		{ at: 4400, dur: 400, para: 2, do: { op: 'board', line: 3 } }
+		{ at: 4400, dur: 400, para: 2, do: { op: 'board', line: 3 } },
+		{ at: 900, dur: 700, para: 0, do: { op: 'pulse', id: 'kl1' } },
+		{ at: 4300, dur: 700, para: 2, do: { op: 'pulse', id: 'kl2' } }
 	],
 	loop: [
 		{
@@ -263,7 +265,8 @@ export const s14: Step = {
 			dur: 800,
 			do: { op: 'packet', a: 'ctrl', b: 'api', label: '数を戻す', kind: 'write' }
 		},
-		{ at: 1000, dur: 600, do: { op: 'fail', id: 'kl1' } }
+		{ at: 1000, dur: 600, do: { op: 'fail', id: 'kl1' } },
+		{ at: 600, dur: 700, do: { op: 'pulse', id: 'sched' } }
 	],
 	board: [
 		'消せば直る → 同じ理由でまた落ちる',
@@ -376,7 +379,9 @@ export const s15: Step = {
 		{ at: 4800, dur: 900, para: 2, do: { op: 'count', metric: 'ready', to: '3 個' } },
 		{ at: 4900, dur: 400, para: 2, do: { op: 'board', line: 2 } },
 		{ at: 5800, dur: 450, para: 2, do: { op: 'badge', id: 'kl1', text: 'Ready', tone: 'ok' } },
-		{ at: 5900, dur: 450, para: 2, do: { op: 'badge', id: 'kl2', text: 'Ready', tone: 'ok' } }
+		{ at: 5900, dur: 450, para: 2, do: { op: 'badge', id: 'kl2', text: 'Ready', tone: 'ok' } },
+		{ at: 3700, dur: 700, para: 1, do: { op: 'pulse', id: 'api' } },
+		{ at: 4300, dur: 700, para: 1, do: { op: 'pulse', id: 'kl1' } }
 	],
 	loop: [
 		{ at: 0, dur: 900, do: { op: 'packet', a: 'api', b: 'ctrl', label: 'watch', kind: 'watch' } },

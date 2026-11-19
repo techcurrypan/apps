@@ -675,7 +675,8 @@ export const s12: Step = {
 			do: { op: 'badge', id: 'sw', text: '64 KiB の突発 52 µs', tone: 'warn' }
 		},
 		{ at: 4700, dur: 400, para: 3, do: { op: 'board', line: 3 } },
-		{ at: 5300, dur: 500, para: 3, do: { op: 'pulse', id: 'sw' } }
+		{ at: 5300, dur: 500, para: 3, do: { op: 'pulse', id: 'sw' } },
+		{ at: 3300, dur: 700, para: 2, do: { op: 'pulse', id: 'sw' } }
 	],
 	loop: [
 		{ at: 0, dur: 800, do: { op: 'packet', a: 'app', b: 'sw', label: '窓', kind: 'data' } },

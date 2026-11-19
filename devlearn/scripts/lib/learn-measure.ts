@@ -49,6 +49,7 @@ async function stepCount(tab: Tab): Promise<number> {
 export type MotionStep = {
 	step: number;
 	early: number[]; // 入ってから 0.25 秒ごとの差（6 つ）
+	times: number[]; // 撮った時の画面の経過時間（ms）
 	late: number[]; // 3〜6 秒の間の差（3 つ）
 	m1: boolean; // 6 回のうち 5 回以上が 0.3% 以上
 	m4: boolean; // 3〜6 秒の差が全て 0.3% 以上
@@ -88,15 +89,26 @@ export async function motionOf(tab: Tab, url: string): Promise<MotionStep[]> {
 		const t0 = Date.now();
 		const r = await rectOf(tab, DIA);
 		if (!r) {
-			out.push({ step: s, early: [], late: [], m1: false, m4: false, packet: null, counts: {} });
+			out.push({
+				step: s,
+				early: [],
+				times: [],
+				late: [],
+				m1: false,
+				m4: false,
+				packet: null,
+				counts: {}
+			});
 			continue;
 		}
 		const shots: Img[] = [];
+		const times: number[] = [];
 		const seen: Record<string, Set<string>> = {};
 		for (let i = 0; i <= 6; i++) {
 			const wait = t0 + i * 250 - Date.now();
 			if (wait > 0) await sleep(wait);
 			shots.push(await clipShot(tab, r));
+			times.push(Math.round(await tab.eval<number>('window.__learn2?.t ?? -1')));
 			for (const [k, v] of await tab.eval<[string, string][]>(METRICS))
 				(seen[k] ??= new Set()).add(v);
 		}
@@ -106,6 +118,8 @@ export async function motionOf(tab: Tab, url: string): Promise<MotionStep[]> {
 			if (wait > 0) await sleep(wait);
 			late.push(await clipShot(tab, r));
 		}
+		// loop: 'none' のステップは「何も流れていない」ことを見せるので、3〜6 秒は数えない（LS-M4）
+		const still = await tab.eval<boolean>(`!!window.__learn2?.still?.(${s})`);
 		const early = shots.slice(1).map((im, i) => diffRatio(shots[i], im));
 		const lateD = late.slice(1).map((im, i) => diffRatio(late[i], im));
 		// 荷物：もう一度流して（R）、10 回位置を取る
@@ -128,9 +142,10 @@ export async function motionOf(tab: Tab, url: string): Promise<MotionStep[]> {
 		out.push({
 			step: s,
 			early: early.map((d) => Math.round(d * 10000) / 100),
+			times,
 			late: lateD.map((d) => Math.round(d * 10000) / 100),
 			m1: early.filter((d) => d >= 0.003).length >= 5,
-			m4: lateD.length > 0 && lateD.every((d) => d >= 0.003),
+			m4: still || (lateD.length > 0 && lateD.every((d) => d >= 0.003)),
 			packet: ps.length
 				? {
 						samples: ps.length,

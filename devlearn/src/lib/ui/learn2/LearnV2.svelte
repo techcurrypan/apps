@@ -290,10 +290,25 @@
 		playing = true;
 	}
 	if (typeof window !== 'undefined')
-		(window as unknown as { __learn2: { steps: number; go: (n: number) => void } }).__learn2 = {
+		(
+			window as unknown as {
+				__learn2: {
+					steps: number;
+					t: number;
+					still: (n: number) => boolean;
+					go: (n: number) => void;
+				};
+			}
+		).__learn2 = {
 			get steps() {
 				return N;
 			},
+			/** 今の経過時間（測りが、撮った絵の時点を記すため） */
+			get t() {
+				return t;
+			},
+			/** ステップ n が「何も流れていない」ことを見せるステップか（loop: 'none'。LS-M4 を当てない） */
+			still: (n: number) => steps[n - 1]?.loop === 'none',
 			go: (n: number) => {
 				mode = 'watch';
 				answered = { ...answered, [n]: answered[n] ?? steps[n - 1]?.ask?.a ?? 0 };

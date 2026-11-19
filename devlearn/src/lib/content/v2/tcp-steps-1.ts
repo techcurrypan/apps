@@ -88,11 +88,11 @@ export const s1: Step = {
 	metrics: { cwnd: '10 個', wq: '65,536 B', rtx: '0 個', rtt: '0.5 ms', qd: '0 B' },
 	motion: [
 		{ at: 0, dur: 800, para: 0, do: { op: 'camera', fit: ['app', 'sw', 'peer'] } },
-		{ at: 500, dur: 500, para: 0, do: { op: 'pulse', id: 'app' } },
+		{ at: 0, dur: 500, para: 0, do: { op: 'pulse', id: 'app' } },
 		{ at: 700, dur: 900, para: 0, do: { op: 'count', metric: 'wq', to: '65,536 B' } },
 		{ at: 1000, dur: 400, para: 0, do: { op: 'board', line: 0 } },
 		{
-			at: 1700,
+			at: 1150,
 			dur: 900,
 			para: 1,
 			do: { op: 'packet', a: 'app', b: 'sw', label: '10 個', kind: 'data' }
@@ -217,7 +217,7 @@ export const s2: Step = {
 			do: { op: 'badge', id: 'b_sock', text: 'snd_cwnd 10・srtt 0.5 ms' }
 		},
 		{ at: 1200, dur: 400, para: 0, do: { op: 'board', line: 0 } },
-		{ at: 1700, dur: 500, para: 1, do: { op: 'enqueue', queue: 'skbv', item: 'head' } },
+		{ at: 1250, dur: 500, para: 1, do: { op: 'enqueue', queue: 'skbv', item: 'head' } },
 		{ at: 2100, dur: 500, para: 1, do: { op: 'enqueue', queue: 'skbv', item: 'data' } },
 		{ at: 2500, dur: 500, para: 1, do: { op: 'enqueue', queue: 'skbv', item: 'tail' } },
 		{ at: 2900, dur: 500, para: 1, do: { op: 'enqueue', queue: 'skbv', item: 'end' } },
@@ -350,7 +350,7 @@ export const s3: Step = {
 		{ at: 700, dur: 450, para: 0, do: { op: 'badge', id: 'app', text: 'SYN_SENT', tone: 'warn' } },
 		{ at: 1100, dur: 400, para: 0, do: { op: 'board', line: 0 } },
 		{
-			at: 1600,
+			at: 950,
 			dur: 800,
 			para: 1,
 			do: { op: 'packet', a: 'b_connect', b: 'b_tx', label: 'SYN の skb', kind: 'syn' }

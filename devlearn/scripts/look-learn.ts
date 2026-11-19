@@ -365,7 +365,7 @@ async function measure2(flag: string) {
 					const ok = s.m1 && s.m4;
 					if (!ok) bad++;
 					console.log(
-						`${id} ${String(s.step).padStart(2)} M1 ${s.m1 ? 'o' : 'x'} M4 ${s.m4 ? 'o' : 'x'} 早 ${s.early.join(' ')} 遅 ${s.late.join(' ')} 荷物 ${JSON.stringify(s.packet)} 数 ${JSON.stringify(s.counts)}`
+						`${id} ${String(s.step).padStart(2)} M1 ${s.m1 ? 'o' : 'x'} M4 ${s.m4 ? 'o' : 'x'} 早 ${s.early.join(' ')} 時 ${s.times.join(' ')} 遅 ${s.late.join(' ')} 荷物 ${JSON.stringify(s.packet)} 数 ${JSON.stringify(s.counts)}`
 					);
 				}
 				continue;

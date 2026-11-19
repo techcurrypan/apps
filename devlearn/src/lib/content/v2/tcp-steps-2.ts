@@ -122,7 +122,9 @@ export const s5: Step = {
 			para: 3,
 			do: { op: 'badge', id: 'b_neigh', text: 'REACHABLE・Ethernet 14 B' }
 		},
-		{ at: 6200, dur: 400, para: 3, do: { op: 'board', line: 3 } }
+		{ at: 6200, dur: 400, para: 3, do: { op: 'board', line: 3 } },
+		{ at: 0, dur: 600, para: 0, do: { op: 'pulse', id: 'b_wx' } },
+		{ at: 600, dur: 700, para: 0, do: { op: 'pulse', id: 'b_tx' } }
 	],
 	loop: [
 		{ at: 0, dur: 600, do: { op: 'peek', queue: 'rtx', item: 'A1 14480' } },
@@ -276,7 +278,8 @@ export const s6: Step = {
 			dur: 900,
 			para: 3,
 			do: { op: 'packet', a: 'sw', b: 'peer', label: '1,514 B × 10', kind: 'data' }
-		}
+		},
+		{ at: 700, dur: 600, para: 0, do: { op: 'pulse', id: 'b_dev' } }
 	],
 	loop: [
 		{ at: 0, dur: 700, do: { op: 'packet', a: 'b_tso', b: 'sw', label: 'F', kind: 'data' } },
@@ -644,7 +647,8 @@ export const s8: Step = {
 		{ at: 8000, dur: 400, para: 3, do: { op: 'context', to: 'tasklet', at: 'b_wx' } },
 		{ at: 8100, dur: 450, para: 3, do: { op: 'badge', id: 'b_wx', text: '再開（tasklet）' } },
 		{ at: 8500, dur: 700, para: 3, do: { op: 'move', item: 'C10', from: 'wq', to: 'rtx' } },
-		{ at: 8600, dur: 400, para: 3, do: { op: 'board', line: 4 } }
+		{ at: 8600, dur: 400, para: 3, do: { op: 'board', line: 4 } },
+		{ at: 800, dur: 700, para: 0, do: { op: 'pulse', id: 'b_wx' } }
 	],
 	loop: [
 		{

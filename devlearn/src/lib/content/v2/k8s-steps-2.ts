@@ -140,7 +140,8 @@ export const s5: Step = {
 			do: { op: 'packet', a: 'b_bind', b: 'api', label: 'binding node-1', kind: 'bind' }
 		},
 		{ at: 6300, dur: 800, para: 2, do: { op: 'count', metric: 'pending', to: '0 個' } },
-		{ at: 7000, dur: 400, para: 2, do: { op: 'board', line: 3 } }
+		{ at: 7000, dur: 400, para: 2, do: { op: 'board', line: 3 } },
+		{ at: 800, dur: 700, para: 0, do: { op: 'pulse', id: 'b_one' } }
 	],
 	loop: [
 		{ at: 0, dur: 600, do: { op: 'enqueue', queue: 'activeQ', item: '次の Pod' } },
@@ -661,7 +662,10 @@ export const s8: Step = {
 			para: 2,
 			do: { op: 'badge', id: 'api', text: 'Ready の番地 0 個', tone: 'bad' }
 		},
-		{ at: 6400, dur: 400, para: 2, do: { op: 'board', line: 3 } }
+		{ at: 6400, dur: 400, para: 2, do: { op: 'board', line: 3 } },
+		{ at: 1100, dur: 700, para: 0, do: { op: 'pulse', id: 'b_dbo' } },
+		{ at: 3100, dur: 700, para: 1, do: { op: 'pulse', id: 'b_ibo' } },
+		{ at: 3800, dur: 700, para: 1, do: { op: 'pulse', id: 'b_next2' } }
 	],
 	loop: [
 		{

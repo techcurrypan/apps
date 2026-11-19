@@ -348,7 +348,10 @@ export const s2: Step = {
 			para: 2,
 			do: { op: 'badge', id: 'b_gu', text: 'MODIFIED を流す', tone: 'ok' }
 		},
-		{ at: 5400, dur: 400, para: 2, do: { op: 'board', line: 3 } }
+		{ at: 5400, dur: 400, para: 2, do: { op: 'board', line: 3 } },
+		{ at: 1150, dur: 600, para: 0, do: { op: 'pulse', id: 'b_before' } },
+		{ at: 3100, dur: 800, para: 1, do: { op: 'pulse', id: 'b_gu' } },
+		{ at: 3900, dur: 700, para: 2, do: { op: 'pulse', id: 'b_grace' } }
 	],
 	loop: [
 		{
@@ -505,7 +508,8 @@ export const s3: Step = {
 			para: 2,
 			do: { op: 'badge', id: 'b_wq', text: '同じ鍵は 1 つ', tone: 'ok' }
 		},
-		{ at: 4900, dur: 400, para: 2, do: { op: 'board', line: 3 } }
+		{ at: 4900, dur: 400, para: 2, do: { op: 'board', line: 3 } },
+		{ at: 1100, dur: 700, para: 0, do: { op: 'pulse', id: 'b_fifo' } }
 	],
 	loop: [
 		{ at: 0, dur: 600, do: { op: 'enqueue', queue: 'fifo', item: 'Updated b9m4t' } },
@@ -695,7 +699,8 @@ export const s4: Step = {
 			dur: 450,
 			para: 3,
 			do: { op: 'badge', id: 'b_sync', text: '約束を果たした', tone: 'ok' }
-		}
+		},
+		{ at: 1100, dur: 700, para: 0, do: { op: 'pulse', id: 'b_sync' } }
 	],
 	loop: [
 		{ at: 0, dur: 600, do: { op: 'enqueue', queue: 'wq', item: 'shop/web-6d8f7b9c4' } },
