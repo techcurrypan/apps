@@ -38,6 +38,7 @@ import { net011 } from './lessons/net-011.ts';
 import { net012 } from './lessons/net-012.ts';
 import { net013 } from './lessons/net-013.ts';
 import { net101 } from './lessons/net-101.ts';
+import { k8s101 } from './lessons/k8s-101.ts';
 import { sec001 } from './lessons/sec-001.ts';
 import { sec002 } from './lessons/sec-002.ts';
 import { sec003 } from './lessons/sec-003.ts';
@@ -173,6 +174,7 @@ export const lessons: readonly Lesson[] = [
 	net012,
 	net013,
 	net101,
+	k8s101,
 	sec001,
 	sec002,
 	sec003,

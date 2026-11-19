@@ -106,6 +106,13 @@
 | `sysctl` | https://man7.org/linux/man-pages/man8/sysctl.8.html | sysctl(8) - Linux manual page（2026-11-19） |
 | `nstat` | https://man7.org/linux/man-pages/man8/nstat.8.html | nstat(8) - Linux manual page（2026-11-19） |
 | `ethtool` | https://man7.org/linux/man-pages/man8/ethtool.8.html | ethtool(8) - Linux manual page（2026-11-19） |
+| `kubectl get` | https://kubernetes.io/docs/reference/kubectl/generated/kubectl_get/ | kubectl get（kubernetes.io の kubectl の説明。2026-11-19） |
+| `kubectl describe` | https://kubernetes.io/docs/reference/kubectl/generated/kubectl_describe/ | kubectl describe（kubernetes.io の kubectl の説明。2026-11-19） |
+| `kubectl logs` | https://kubernetes.io/docs/reference/kubectl/generated/kubectl_logs/ | kubectl logs（kubernetes.io の kubectl の説明。2026-11-19） |
+| `kubectl set` | https://kubernetes.io/docs/reference/kubectl/generated/kubectl_set/kubectl_set_resources/ | kubectl set（kubernetes.io の kubectl の説明。2026-11-19） |
+| `kubectl rollout` | https://kubernetes.io/docs/reference/kubectl/generated/kubectl_rollout/kubectl_rollout_status/ | kubectl rollout（kubernetes.io の kubectl の説明。2026-11-19） |
+| `kubectl delete` | https://kubernetes.io/docs/reference/kubectl/generated/kubectl_delete/ | kubectl delete（kubernetes.io の kubectl の説明。2026-11-19） |
+| `kubectl top` | https://kubernetes.io/docs/reference/kubectl/generated/kubectl_top/ | kubectl top（kubernetes.io の kubectl の説明。2026-11-19） |
 
 ## 6. 一次情報（第 2 版の出典。検査 34）
 
@@ -156,3 +163,61 @@ ACM Queue の頁は自動の取得を断る（403）ため、BBR は Google の�
 | net-101 | linux-fq-codel | source | Linux v6.12 net/sched/sch_fq_codel.c | https://github.com/torvalds/linux/blob/v6.12/net/sched/sch_fq_codel.c | 2026-11-19 |
 | net-101 | linux-ixgbe | source | Linux v6.12 drivers/net/ethernet/intel/ixgbe/ixgbe_main.c | https://github.com/torvalds/linux/blob/v6.12/drivers/net/ethernet/intel/ixgbe/ixgbe_main.c | 2026-11-19 |
 | net-101 | linux-sysctl | source | Linux v6.12 Documentation/networking/ip-sysctl.rst | https://github.com/torvalds/linux/blob/v6.12/Documentation/networking/ip-sysctl.rst | 2026-11-19 |
+| k8s-101 | k8s-pod-lifecycle | doc | Kubernetes「Pod Lifecycle」 | https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/ | 2026-11-19 |
+| k8s-101 | k8s-controller | doc | Kubernetes「Controllers」 | https://kubernetes.io/docs/concepts/architecture/controller/ | 2026-11-19 |
+| k8s-101 | k8s-replicaset | doc | Kubernetes「ReplicaSet」 | https://kubernetes.io/docs/concepts/workloads/controllers/replicaset/ | 2026-11-19 |
+| k8s-101 | k8s-deployment | doc | Kubernetes「Deployments」 | https://kubernetes.io/docs/concepts/workloads/controllers/deployment/ | 2026-11-19 |
+| k8s-101 | k8s-resources | doc | Kubernetes「Resource Management for Pods and Containers」 | https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/ | 2026-11-19 |
+| k8s-101 | k8s-scheduler | doc | Kubernetes「Kubernetes Scheduler」 | https://kubernetes.io/docs/concepts/scheduling-eviction/kube-scheduler/ | 2026-11-19 |
+| k8s-101 | k8s-qos | doc | Kubernetes「Pod Quality of Service Classes」 | https://kubernetes.io/docs/concepts/workloads/pods/pod-qos/ | 2026-11-19 |
+| k8s-101 | k8s-assign-memory | doc | Kubernetes「Assign Memory Resources to Containers and Pods」 | https://kubernetes.io/docs/tasks/configure-pod-container/assign-memory-resource/ | 2026-11-19 |
+| k8s-101 | k8s-debug-pod | doc | Kubernetes「Debug Running Pods」 | https://kubernetes.io/docs/tasks/debug/debug-application/debug-running-pod/ | 2026-11-19 |
+| k8s-101 | k8s-api-concepts | doc | Kubernetes「Kubernetes API Concepts」 | https://kubernetes.io/docs/reference/using-api/api-concepts/ | 2026-11-19 |
+| k8s-101 | k8s-nodes | doc | Kubernetes「Nodes」 | https://kubernetes.io/docs/concepts/architecture/nodes/ | 2026-11-19 |
+| k8s-101 | k8s-taints | doc | Kubernetes「Taints and Tolerations」 | https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/ | 2026-11-19 |
+| k8s-101 | k8s-disruptions | doc | Kubernetes「Disruptions」 | https://kubernetes.io/docs/concepts/workloads/pods/disruptions/ | 2026-11-19 |
+| k8s-101 | k8s-kcm | doc | Kubernetes「kube-controller-manager」 | https://kubernetes.io/docs/reference/command-line-tools-reference/kube-controller-manager/ | 2026-11-19 |
+| k8s-101 | k8s-eviction | doc | Kubernetes「Node-pressure Eviction」 | https://kubernetes.io/docs/concepts/scheduling-eviction/node-pressure-eviction/ | 2026-11-19 |
+| k8s-101 | kubectl-describe | doc | kubectl describe | https://kubernetes.io/docs/reference/kubectl/generated/kubectl_describe/ | 2026-11-19 |
+| k8s-101 | kubectl-logs | doc | kubectl logs | https://kubernetes.io/docs/reference/kubectl/generated/kubectl_logs/ | 2026-11-19 |
+| k8s-101 | kubectl-events | doc | kubectl events | https://kubernetes.io/docs/reference/kubectl/generated/kubectl_events/ | 2026-11-19 |
+| k8s-101 | cgroup-v2 | doc | Linux「Control Group v2」 | https://docs.kernel.org/admin-guide/cgroup-v2.html | 2026-11-19 |
+| k8s-101 | etcd-api | doc | etcd v3.5「etcd API」 | https://etcd.io/docs/v3.5/learning/api/ | 2026-11-19 |
+| k8s-101 | k8s-rs | source | Kubernetes v1.31.0 pkg/controller/replicaset/replica_set.go | https://github.com/kubernetes/kubernetes/blob/v1.31.0/pkg/controller/replicaset/replica_set.go | 2026-11-19 |
+| k8s-101 | k8s-rs-utils | source | Kubernetes v1.31.0 pkg/controller/replicaset/replica_set_utils.go | https://github.com/kubernetes/kubernetes/blob/v1.31.0/pkg/controller/replicaset/replica_set_utils.go | 2026-11-19 |
+| k8s-101 | k8s-ctrl-utils | source | Kubernetes v1.31.0 pkg/controller/controller_utils.go | https://github.com/kubernetes/kubernetes/blob/v1.31.0/pkg/controller/controller_utils.go | 2026-11-19 |
+| k8s-101 | k8s-deploy-ctrl | source | Kubernetes v1.31.0 pkg/controller/deployment/deployment_controller.go | https://github.com/kubernetes/kubernetes/blob/v1.31.0/pkg/controller/deployment/deployment_controller.go | 2026-11-19 |
+| k8s-101 | k8s-deploy-rolling | source | Kubernetes v1.31.0 pkg/controller/deployment/rolling.go | https://github.com/kubernetes/kubernetes/blob/v1.31.0/pkg/controller/deployment/rolling.go | 2026-11-19 |
+| k8s-101 | k8s-deploy-sync | source | Kubernetes v1.31.0 pkg/controller/deployment/sync.go | https://github.com/kubernetes/kubernetes/blob/v1.31.0/pkg/controller/deployment/sync.go | 2026-11-19 |
+| k8s-101 | k8s-apps-defaults | source | Kubernetes v1.31.0 pkg/apis/apps/v1/defaults.go | https://github.com/kubernetes/kubernetes/blob/v1.31.0/pkg/apis/apps/v1/defaults.go | 2026-11-19 |
+| k8s-101 | k8s-sched-one | source | Kubernetes v1.31.0 pkg/scheduler/schedule_one.go | https://github.com/kubernetes/kubernetes/blob/v1.31.0/pkg/scheduler/schedule_one.go | 2026-11-19 |
+| k8s-101 | k8s-sched-queue | source | Kubernetes v1.31.0 pkg/scheduler/internal/queue/scheduling_queue.go | https://github.com/kubernetes/kubernetes/blob/v1.31.0/pkg/scheduler/internal/queue/scheduling_queue.go | 2026-11-19 |
+| k8s-101 | k8s-fit | source | Kubernetes v1.31.0 pkg/scheduler/framework/plugins/noderesources/fit.go | https://github.com/kubernetes/kubernetes/blob/v1.31.0/pkg/scheduler/framework/plugins/noderesources/fit.go | 2026-11-19 |
+| k8s-101 | k8s-binder | source | Kubernetes v1.31.0 pkg/scheduler/framework/plugins/defaultbinder/default_binder.go | https://github.com/kubernetes/kubernetes/blob/v1.31.0/pkg/scheduler/framework/plugins/defaultbinder/default_binder.go | 2026-11-19 |
+| k8s-101 | k8s-kubelet | source | Kubernetes v1.31.0 pkg/kubelet/kubelet.go | https://github.com/kubernetes/kubernetes/blob/v1.31.0/pkg/kubelet/kubelet.go | 2026-11-19 |
+| k8s-101 | k8s-pod-workers | source | Kubernetes v1.31.0 pkg/kubelet/pod_workers.go | https://github.com/kubernetes/kubernetes/blob/v1.31.0/pkg/kubelet/pod_workers.go | 2026-11-19 |
+| k8s-101 | k8s-pleg | source | Kubernetes v1.31.0 pkg/kubelet/pleg/generic.go | https://github.com/kubernetes/kubernetes/blob/v1.31.0/pkg/kubelet/pleg/generic.go | 2026-11-19 |
+| k8s-101 | k8s-kuberuntime | source | Kubernetes v1.31.0 pkg/kubelet/kuberuntime/kuberuntime_manager.go | https://github.com/kubernetes/kubernetes/blob/v1.31.0/pkg/kubelet/kuberuntime/kuberuntime_manager.go | 2026-11-19 |
+| k8s-101 | k8s-kr-container | source | Kubernetes v1.31.0 pkg/kubelet/kuberuntime/kuberuntime_container.go | https://github.com/kubernetes/kubernetes/blob/v1.31.0/pkg/kubelet/kuberuntime/kuberuntime_container.go | 2026-11-19 |
+| k8s-101 | k8s-kr-linux | source | Kubernetes v1.31.0 pkg/kubelet/kuberuntime/kuberuntime_container_linux.go | https://github.com/kubernetes/kubernetes/blob/v1.31.0/pkg/kubelet/kuberuntime/kuberuntime_container_linux.go | 2026-11-19 |
+| k8s-101 | k8s-status | source | Kubernetes v1.31.0 pkg/kubelet/status/status_manager.go | https://github.com/kubernetes/kubernetes/blob/v1.31.0/pkg/kubelet/status/status_manager.go | 2026-11-19 |
+| k8s-101 | k8s-qos-policy | source | Kubernetes v1.31.0 pkg/kubelet/qos/policy.go | https://github.com/kubernetes/kubernetes/blob/v1.31.0/pkg/kubelet/qos/policy.go | 2026-11-19 |
+| k8s-101 | k8s-qos-helper | source | Kubernetes v1.31.0 pkg/apis/core/v1/helper/qos/qos.go | https://github.com/kubernetes/kubernetes/blob/v1.31.0/pkg/apis/core/v1/helper/qos/qos.go | 2026-11-19 |
+| k8s-101 | k8s-cri-api | source | Kubernetes v1.31.0 staging/src/k8s.io/cri-api/pkg/apis/runtime/v1/api.proto | https://github.com/kubernetes/kubernetes/blob/v1.31.0/staging/src/k8s.io/cri-api/pkg/apis/runtime/v1/api.proto | 2026-11-19 |
+| k8s-101 | k8s-backoff | source | Kubernetes v1.31.0 staging/src/k8s.io/client-go/util/flowcontrol/backoff.go | https://github.com/kubernetes/kubernetes/blob/v1.31.0/staging/src/k8s.io/client-go/util/flowcontrol/backoff.go | 2026-11-19 |
+| k8s-101 | k8s-reflector | source | Kubernetes v1.31.0 staging/src/k8s.io/client-go/tools/cache/reflector.go | https://github.com/kubernetes/kubernetes/blob/v1.31.0/staging/src/k8s.io/client-go/tools/cache/reflector.go | 2026-11-19 |
+| k8s-101 | k8s-fifo | source | Kubernetes v1.31.0 staging/src/k8s.io/client-go/tools/cache/delta_fifo.go | https://github.com/kubernetes/kubernetes/blob/v1.31.0/staging/src/k8s.io/client-go/tools/cache/delta_fifo.go | 2026-11-19 |
+| k8s-101 | k8s-informer | source | Kubernetes v1.31.0 staging/src/k8s.io/client-go/tools/cache/shared_informer.go | https://github.com/kubernetes/kubernetes/blob/v1.31.0/staging/src/k8s.io/client-go/tools/cache/shared_informer.go | 2026-11-19 |
+| k8s-101 | k8s-workqueue | source | Kubernetes v1.31.0 staging/src/k8s.io/client-go/util/workqueue/queue.go | https://github.com/kubernetes/kubernetes/blob/v1.31.0/staging/src/k8s.io/client-go/util/workqueue/queue.go | 2026-11-19 |
+| k8s-101 | k8s-ratelimit | source | Kubernetes v1.31.0 staging/src/k8s.io/client-go/util/workqueue/default_rate_limiters.go | https://github.com/kubernetes/kubernetes/blob/v1.31.0/staging/src/k8s.io/client-go/util/workqueue/default_rate_limiters.go | 2026-11-19 |
+| k8s-101 | k8s-create | source | Kubernetes v1.31.0 staging/src/k8s.io/apiserver/pkg/endpoints/handlers/create.go | https://github.com/kubernetes/kubernetes/blob/v1.31.0/staging/src/k8s.io/apiserver/pkg/endpoints/handlers/create.go | 2026-11-19 |
+| k8s-101 | k8s-delete | source | Kubernetes v1.31.0 staging/src/k8s.io/apiserver/pkg/endpoints/handlers/delete.go | https://github.com/kubernetes/kubernetes/blob/v1.31.0/staging/src/k8s.io/apiserver/pkg/endpoints/handlers/delete.go | 2026-11-19 |
+| k8s-101 | k8s-rest-delete | source | Kubernetes v1.31.0 staging/src/k8s.io/apiserver/pkg/registry/rest/delete.go | https://github.com/kubernetes/kubernetes/blob/v1.31.0/staging/src/k8s.io/apiserver/pkg/registry/rest/delete.go | 2026-11-19 |
+| k8s-101 | k8s-registry | source | Kubernetes v1.31.0 staging/src/k8s.io/apiserver/pkg/registry/generic/registry/store.go | https://github.com/kubernetes/kubernetes/blob/v1.31.0/staging/src/k8s.io/apiserver/pkg/registry/generic/registry/store.go | 2026-11-19 |
+| k8s-101 | k8s-etcd3 | source | Kubernetes v1.31.0 staging/src/k8s.io/apiserver/pkg/storage/etcd3/store.go | https://github.com/kubernetes/kubernetes/blob/v1.31.0/staging/src/k8s.io/apiserver/pkg/storage/etcd3/store.go | 2026-11-19 |
+| k8s-101 | k8s-cacher | source | Kubernetes v1.31.0 staging/src/k8s.io/apiserver/pkg/storage/cacher/cacher.go | https://github.com/kubernetes/kubernetes/blob/v1.31.0/staging/src/k8s.io/apiserver/pkg/storage/cacher/cacher.go | 2026-11-19 |
+| k8s-101 | k8s-nodelifecycle | source | Kubernetes v1.31.0 pkg/controller/nodelifecycle/node_lifecycle_controller.go | https://github.com/kubernetes/kubernetes/blob/v1.31.0/pkg/controller/nodelifecycle/node_lifecycle_controller.go | 2026-11-19 |
+| k8s-101 | k8s-tolerations | source | Kubernetes v1.31.0 plugin/pkg/admission/defaulttolerationseconds/admission.go | https://github.com/kubernetes/kubernetes/blob/v1.31.0/plugin/pkg/admission/defaulttolerationseconds/admission.go | 2026-11-19 |
+| k8s-101 | linux-memcontrol | source | Linux v6.12 mm/memcontrol.c | https://github.com/torvalds/linux/blob/v6.12/mm/memcontrol.c | 2026-11-19 |
+| k8s-101 | linux-oom | source | Linux v6.12 mm/oom_kill.c | https://github.com/torvalds/linux/blob/v6.12/mm/oom_kill.c | 2026-11-19 |
+| k8s-101 | containerd-events | source | containerd v1.7.22 pkg/cri/server/events.go | https://github.com/containerd/containerd/blob/v1.7.22/pkg/cri/server/events.go | 2026-11-19 |

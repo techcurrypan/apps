@@ -80,6 +80,12 @@ export function k8sBackoff(v: Record<string, number>): KnobOut {
 }
 
 export const KNOB_CALC: Record<string, KnobCalc> = {
+	'k8s-101': {
+		ask: '再起動 5 回の後に、また落ちた。次に起こし直すまで何秒待つ？',
+		opts: ['10 秒', '160 秒', '300 秒'],
+		a: 1,
+		run: k8sBackoff
+	},
 	'net-101': {
 		ask: 'RTT 0.5 ms・cwnd 430 で、喪失を 0% から 1% にすると速さはどうなる？',
 		opts: ['ほぼ同じ', '30 分の 1 ほどに落ちる', '倍になる'],

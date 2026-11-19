@@ -28,6 +28,37 @@ export const SOLUTIONS: Record<string, { pass: string[]; wrong: string[][]; alt?
 			['tc -s qdisc show dev eth1']
 		]
 	},
+	'k8s-101': {
+		pass: [
+			'kubectl get pods -n shop',
+			'kubectl describe pod web-6d8f7b9c4-7xk2p -n shop',
+			'kubectl logs web-6d8f7b9c4-7xk2p -n shop --previous',
+			'kubectl get events -n shop',
+			'kubectl set resources deployment web -n shop --limits=memory=256Mi',
+			'kubectl rollout status deployment/web -n shop',
+			'kubectl get pods -n shop'
+		],
+		alt: [
+			'kubectl get pods -n shop -o wide',
+			'kubectl describe pod web-6d8f7b9c4-b9m4t -n shop',
+			'kubectl logs web-6d8f7b9c4-b9m4t -n shop --previous',
+			'kubectl set resources deployment web -n shop --limits=memory=256Mi --requests=memory=192Mi',
+			'kubectl rollout status deployment/web -n shop',
+			'kubectl get deploy -n shop'
+		],
+		wrong: [
+			['kubectl get pods'],
+			[
+				'kubectl set resources deployment web -n shop --limits=memory=1Gi --requests=memory=1Gi',
+				'kubectl get events -n shop'
+			],
+			[
+				'kubectl set resources deployment web -n shop --limits=memory=160Mi',
+				'kubectl rollout status deployment/web -n shop --timeout=60s'
+			],
+			['kubectl gett pods']
+		]
+	},
 	'db-002': {
 		pass: ["SELECT name, kind FROM items WHERE kind = '惣菜' OR stock = 0;"],
 		wrong: [

@@ -143,6 +143,34 @@ export const COMMAND_REFS: Readonly<Record<string, CommandRef>> = {
 	sysctl: { url: 'https://man7.org/linux/man-pages/man8/sysctl.8.html', site: 'man7.org' },
 	nstat: { url: 'https://man7.org/linux/man-pages/man8/nstat.8.html', site: 'man7.org' },
 	ethtool: { url: 'https://man7.org/linux/man-pages/man8/ethtool.8.html', site: 'man7.org' },
+	'kubectl get': {
+		url: 'https://kubernetes.io/docs/reference/kubectl/generated/kubectl_get/',
+		site: 'kubernetes.io'
+	},
+	'kubectl describe': {
+		url: 'https://kubernetes.io/docs/reference/kubectl/generated/kubectl_describe/',
+		site: 'kubernetes.io'
+	},
+	'kubectl logs': {
+		url: 'https://kubernetes.io/docs/reference/kubectl/generated/kubectl_logs/',
+		site: 'kubernetes.io'
+	},
+	'kubectl set': {
+		url: 'https://kubernetes.io/docs/reference/kubectl/generated/kubectl_set/kubectl_set_resources/',
+		site: 'kubernetes.io'
+	},
+	'kubectl rollout': {
+		url: 'https://kubernetes.io/docs/reference/kubectl/generated/kubectl_rollout/kubectl_rollout_status/',
+		site: 'kubernetes.io'
+	},
+	'kubectl delete': {
+		url: 'https://kubernetes.io/docs/reference/kubectl/generated/kubectl_delete/',
+		site: 'kubernetes.io'
+	},
+	'kubectl top': {
+		url: 'https://kubernetes.io/docs/reference/kubectl/generated/kubectl_top/',
+		site: 'kubernetes.io'
+	},
 	dig: {
 		url: 'https://bind9.readthedocs.io/en/latest/manpages.html#dig-dns-lookup-utility',
 		site: 'BIND 9'
@@ -163,7 +191,8 @@ export const OFFICIAL: readonly string[] = [
 	'www.freedesktop.org',
 	'bind9.readthedocs.io',
 	'docs.openssl.org',
-	'man.openbsd.org'
+	'man.openbsd.org',
+	'kubernetes.io'
 ];
 
 /** その実戦の作業場所にある、自分で作った命令（公式の説明が無いので鍵にしない） */
