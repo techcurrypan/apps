@@ -1,7 +1,7 @@
 // Kubernetes の模擬（見本 2 の実戦。docs/tools.md 3.2）：kubectl の get・describe・logs・delete・set resources・rollout status・top。
 // 世界（tools-real/worlds/k8s.json）の Deployment と、打った手と、模擬の時計から、Pod の様子を決まった式で計算する（乱数なし）。
 //   - コンテナは起きて 2 秒で動き、使う記憶が上限（limits.memory）を超えると 3 秒で OOMKilled（exit 137）になる
-//   - kubelet は落ちたコンテナを 10s → 20s → 40s … 300s と待つ間を倍にして起こし直す（CrashLoopBackOff）
+//   - kubelet は落ちたコンテナを、1 回目は待たずに、その後 10s → 20s → 40s … 300s と待つ間を倍にして起こし直す（CrashLoopBackOff）
 //   - 新しい Pod は、要求（requests.memory）が入る空きのある node に置く。どこにも入らなければ Pending
 //   - kubectl を 1 回打つと、模擬の時計が 5 秒進む（打つ間に時間が経つ）
 // 出力の形は Kubernetes v1.31 の kubectl（表は Go の tabwriter。get は余白 3・最小幅 6、describe は余白 2）と、
@@ -57,8 +57,11 @@ export type K8sState = {
 const START = 2; // 起きるまで（イメージは node にある）
 const RUN = 3; // OOMKilled になるまで動く秒
 const STEP = 5; // kubectl 1 回で進む秒
-const BACKOFF = [10, 20, 40, 80, 160, 300];
-const backoffAt = (k: number) => BACKOFF[Math.min(k, BACKOFF.length - 1)];
+// kuberuntime_manager.go doBackOff（v1.31）：1 回目に落ちた時は記録が無いので待たずに起こし直し（Next で 10 秒を記す）、
+// 2 回目からは落ちた時刻から 10・20・40… 秒待つ。上限 300 秒（MaxContainerBackOff）
+const BACKOFF = [0, 10, 20, 40, 80, 160, 300];
+/** k 回起こし直した後に落ちた時、次に起こすまでの秒 */
+export const backoffAt = (k: number) => BACKOFF[Math.min(k, BACKOFF.length - 1)];
 
 export function initialK8s(w: K8sWorld): K8sState {
 	const base = Date.parse(w.deploy.created);

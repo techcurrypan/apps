@@ -6,8 +6,8 @@ const N1 = (rows: ReturnType<typeof row>[]) => node('node-1', '10.0.1.11', '棟 
 const N2 = (rows: ReturnType<typeof row>[]) => node('node-2', '10.0.1.12', '棟 2', rows);
 const kl1 = row('kl-1', 0, 'kubelet（node-1）', '動いている');
 const kl2 = row('kl-2', 0, 'kubelet（node-2）', '動いている');
-const b9m4t = row('p-b9m4t', 1, `${POD}b9m4t`, 'CrashLoopBackOff（5 回）', 'bad');
-const q2wfz = row('p-q2wfz', 1, `${POD}q2wfz`, 'CrashLoopBackOff（4 回）', 'bad');
+const b9m4t = row('p-b9m4t', 1, `${POD}b9m4t`, 'CrashLoopBackOff（6 回）', 'bad');
+const q2wfz = row('p-q2wfz', 1, `${POD}q2wfz`, 'CrashLoopBackOff（5 回）', 'bad');
 
 export const s5: Step = {
 	n: 5,
@@ -555,14 +555,14 @@ export const s8: Step = {
 		],
 		work: [
 			'1 回目は待たずに起こし直す。また落ちると、kubelet は次を 10 秒待たせる。待ちは 10 → 20 → 40 → 80 → 160 秒と倍に伸び、300 秒で頭打ちになる。',
-			'待っている間、コンテナの state は Waiting・理由 CrashLoopBackOff だ。get pods の RESTARTS は「5 (42s ago)」のように、回数と最後に起こしてからの時間を出す。',
+			'待っている間、コンテナの state は Waiting・理由 CrashLoopBackOff だ。get pods の RESTARTS は「6 (39s ago)」のように、回数と最後に起こしてからの時間を出す。',
 			'3 つとも Ready でないので、Service web の EndpointSlice の番地は 0 個になり、入口は 503 を返す。Pod 自体は在るので、ReplicaSet は何もしない。'
 		],
 		deep: [
 			'SyncPod() の中の doBackOff() は、Pod の名前・名前空間・UID・コンテナの名前・型紙の hash を鍵に、待ちの表を引く。最後に終わった時刻から待ちが過ぎていなければ ErrCrashLoopBackOff を返し、起こさない。',
 			'待ちの表は client-go の flowcontrol.Backoff だ。初めは 10 秒（backOffPeriod）、上限は 300 秒（MaxContainerBackOff）。IsInBackOffSince() が待ちの中かを答え、Next() が待ちを倍にする。',
 			'最後に更新してから 600 秒（上限の 2 倍）落ちなければ、表の行は古いと見なされ、次の失敗は 10 秒から数え直す。公式文書は「10 分動けば待ちを戻す」と書く。',
-			'kubelet は 1 秒ごとの見直しのたびに doBackOff() を通る。そのたびに BackOff の出来事が数え上がり、describe の「x39」になる。pod_workers.go は「Error syncing pod, skipping」を E の行で残す。'
+			'kubelet は 1 秒ごとの見直しのたびに doBackOff() を通る。そのたびに BackOff の出来事が数え上がり、describe の「x40」になる。pod_workers.go は「Error syncing pod, skipping」を E の行で残す。'
 		]
 	},
 	callout: {

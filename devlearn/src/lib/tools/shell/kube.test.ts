@@ -7,6 +7,7 @@ import { shellCommands } from './commands.ts';
 import { shellTool } from './run.ts';
 import { learnerWorld } from './world.ts';
 import { worldFs, worldK8s, type WorldSpec } from './worlds.ts';
+import { backoffAt } from './kube.ts';
 
 const runIn = (lines: string[]) => {
 	const w = JSON.parse(readFileSync('tools-real/worlds/k8s.json', 'utf8')) as WorldSpec;
@@ -25,7 +26,7 @@ describe('kubectl の模擬', () => {
 		expect(rows[0]).toMatch(/^NAME {3,}READY {3}STATUS {3,}RESTARTS {3,}AGE$/);
 		expect(rows).toHaveLength(4);
 		expect(rows[1]).toMatch(
-			/^web-6d8f7b9c4-7xk2p {3}0\/1 {5}CrashLoopBackOff {3}5 \(\d+s ago\) {3,}6m12s$/
+			/^web-6d8f7b9c4-7xk2p {3}0\/1 {5}CrashLoopBackOff {3}6 \(39s ago\) {3,}6m12s$/
 		);
 	});
 	it('名前空間を付け忘れると default を見る', () => {
@@ -41,7 +42,7 @@ describe('kubectl の模擬', () => {
 		expect(a.out).toMatch(
 			/ {4}Last State: {5}Terminated\n {6}Reason: {7}OOMKilled\n {6}Exit Code: {4}137\n/
 		);
-		expect(a.out).toContain('    Restart Count:  5\n');
+		expect(a.out).toContain('    Restart Count:  6\n');
 		expect(a.out).toMatch(/ {4}Limits:\n {6}memory: {2}128Mi\n/);
 		expect(a.out).toMatch(
 			/Warning {2}BackOff .*Back-off restarting failed container web in pod web-6d8f7b9c4-7xk2p_shop/
@@ -121,5 +122,25 @@ describe('kubectl の模擬', () => {
 		expect(a.code).toBe(1);
 		expect(a.err.startsWith('error: unknown command "gett" for "kubectl"')).toBe(true);
 		expect(a.err).toContain('Did you mean this?' + String.fromCharCode(10, 9) + 'get');
+	});
+	it('再起動の待ち：1 回目に落ちた後は待たずに起こし直し、その後 10・20・40・80・160 秒、上限 300 秒（kuberuntime_manager.go doBackOff。査読 2026-11-19）', () => {
+		expect([0, 1, 2, 3, 4, 5, 6, 7].map(backoffAt)).toEqual([0, 10, 20, 40, 80, 160, 300, 300]);
+	});
+	it('get pods：CrashLoopBackOff の行は、落ちてからの時間が待ちより短い（N 回の後の待ちは backoffAt(N)）', () => {
+		const rows = last(['kubectl get pods -n shop'])
+			.out.trimEnd()
+			.split(String.fromCharCode(10))
+			.slice(1);
+		for (const r of rows) {
+			const m = /CrashLoopBackOff\s+(\d+) \((?:(\d+)m)?(\d+)s ago\)/.exec(r);
+			expect(m).not.toBeNull();
+			const ago = Number(m![2] ?? 0) * 60 + Number(m![3]);
+			expect(ago).toBeLessThan(backoffAt(Number(m![1])));
+		}
+	});
+	it('logs：CrashLoopBackOff で待っている間は、--previous が無くても前の回のログが出る（kubelet_pods.go validateContainerLogStatus。査読 2026-11-19）', () => {
+		const a = last(['kubectl logs web-6d8f7b9c4-7xk2p -n shop']);
+		expect(a.code).toBe(0);
+		expect(a.out).toContain('loading catalog cache');
 	});
 });

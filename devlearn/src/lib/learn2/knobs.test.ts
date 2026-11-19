@@ -17,7 +17,8 @@ describe('実験のつまみ（LS-L5。決まった式・乱数なし）', () =>
 		expect(k8sBackoff({ restarts: 1 }).rows[0].v).toBe('10 秒');
 		expect(k8sBackoff({ restarts: 3 }).rows[0].v).toBe('40 秒');
 		expect(k8sBackoff({ restarts: 9 }).rows[0].v).toBe('300 秒');
-		expect(k8sBackoff({ restarts: 3 }).rows[1].v).toBe('70 秒');
+		expect(k8sBackoff({ restarts: 3 }).rows[1].v).toBe('30 秒'); // 0 ＋ 10 ＋ 20（1 回目は待たない）
+		expect(k8sBackoff({ restarts: 0 }).rows[0].v).toBe('0 秒（初回はすぐ）');
 	});
 	it('続く流れを作り直す：数・長さ・落ちる荷物', () => {
 		const s = validV2().explain[1];

@@ -21,14 +21,14 @@ export const s13: Step = {
 			'この順なら、命令 4 つ・5 分ほどで「数の問題か・置き場所の問題か・中身の問題か」を分けられる。どの段で何が分かるかを、1 つずつ見る。'
 		],
 		work: [
-			'kubectl get pods -n shop で STATUS と RESTARTS を見る。「CrashLoopBackOff・5 (42s ago)」なら落ちて待っている。Pending なら置き場所、ImagePullBackOff ならイメージの問題だ。',
+			'kubectl get pods -n shop で STATUS と RESTARTS を見る。「CrashLoopBackOff・6 (39s ago)」なら落ちて待っている。Pending なら置き場所、ImagePullBackOff ならイメージの問題だ。',
 			'kubectl describe pod で Last State を読む。「Terminated・Reason OOMKilled・Exit Code 137」なら上限、「Error・Exit Code 1」ならプログラムの失敗だ。Limits と Requests も同じ画面にある。',
 			'logs --previous で落ちる前の最後の行を読む。SIGKILL ではエラーの行が残らず、「96 MiB of 182 MiB」で途切れる。',
-			'get events は 1 時間分しか残らない。REASON（BackOff・FailedScheduling）と回数（x39）で止まった所を見る。'
+			'get events は 1 時間分しか残らない。REASON（BackOff・FailedScheduling）と回数（x40）で止まった所を見る。'
 		],
 		deep: [
 			'get pods の STATUS は、コンテナの state の理由をそのまま出す。Waiting なら CrashLoopBackOff など、Terminated なら OOMKilled・Error が出る。phase の Running とは別の物を出している。',
-			'describe の Events は、その Pod に関わる出来事だけを、同じ物をまとめて「x39 over 5m59s」と出す。BackOff の数は、kubelet が待ちの中で起こすのを見送った回数だ。落ちた回数は RESTARTS で読む。',
+			'describe の Events は、その Pod に関わる出来事だけを、同じ物をまとめて「x40 over 6m4s」と出す。BackOff の数は、kubelet が待ちの中で起こすのを見送った回数だ。落ちた回数は RESTARTS で読む。',
 			'kubectl logs は kubelet の /containerLogs を通して、node のファイルを読む。道は /var/log/pods/<名前空間>_<名前>_<UID>/<コンテナ>/<回数>.log だ。--previous は 1 つ前の回数のファイルだ。2 回以上前は node に入らないと読めない。',
 			'events は API サーバの --event-ttl（既定 1 時間）で消える。後で調べるには、events を集める仕組み（kubernetes-event-exporter など）で貯めておく。',
 			'kubectl top pod は metrics-server が要る。無い集まりでは「Metrics API not available」になる。使う量は、ログか、node の cgroup の memory.peak で確かめる。'
@@ -46,7 +46,7 @@ export const s13: Step = {
 	facts: [
 		{ k: 'events が残る長さ', v: '1 時間（--event-ttl の既定）' },
 		{ k: '--previous で読める', v: '1 つ前の回だけ' },
-		{ k: 'まとめた出来事', v: 'x39 over 5m59s' },
+		{ k: 'まとめた出来事', v: 'x40 over 6m4s' },
 		{ k: '絞るまで', v: '命令 4 つ・約 5 分' }
 	],
 	scene: [
@@ -102,7 +102,7 @@ export const s13: Step = {
 			{
 				t: '10:21:00',
 				src: 'stdout',
-				text: '2026-11-19T01:05:28.871Z INFO  catalog cache 96 MiB of 182 MiB loaded'
+				text: '2026-11-19T01:05:31.871Z INFO  catalog cache 96 MiB of 182 MiB loaded'
 			}
 		]
 	},
@@ -153,7 +153,7 @@ export const s13: Step = {
 			at: 6100,
 			dur: 450,
 			para: 3,
-			do: { op: 'badge', id: 'you', text: 'BackOff x39', tone: 'warn' }
+			do: { op: 'badge', id: 'you', text: 'BackOff x40', tone: 'warn' }
 		},
 		{ at: 6200, dur: 400, para: 3, do: { op: 'board', line: 3 } }
 	],
@@ -166,12 +166,12 @@ export const s13: Step = {
 		{ at: 1000, dur: 800, do: { op: 'packet', a: 'api', b: 'you', label: '知らせ', kind: 'watch' } }
 	],
 	board: [
-		'get pods：CrashLoopBackOff・5 回',
+		'get pods：CrashLoopBackOff・6 回',
 		'describe：OOMKilled・137・Limits 128Mi',
 		'logs --previous：96 of 182 MiB で終わる',
-		'get events：BackOff x39'
+		'get events：BackOff x40'
 	],
-	badges: { you: 'BackOff x39', api: 'OOMKilled・137' },
+	badges: { you: 'BackOff x40', api: 'OOMKilled・137' },
 	refs: [
 		'k8s-debug-pod',
 		'kubectl-describe',

@@ -6,8 +6,8 @@ const N1 = (rows: ReturnType<typeof row>[]) => node('node-1', '10.0.1.11', '棟 
 const N2 = (rows: ReturnType<typeof row>[]) => node('node-2', '10.0.1.12', '棟 2', rows);
 const kl1 = row('kl-1', 0, 'kubelet（node-1）', '動いている');
 const kl2 = row('kl-2', 0, 'kubelet（node-2）', '動いている');
-const b9m4t = row('p-b9m4t', 1, `${POD}b9m4t`, 'CrashLoopBackOff（5 回）', 'bad');
-const q2wfz = row('p-q2wfz', 1, `${POD}q2wfz`, 'CrashLoopBackOff（4 回）', 'bad');
+const b9m4t = row('p-b9m4t', 1, `${POD}b9m4t`, 'CrashLoopBackOff（6 回）', 'bad');
+const q2wfz = row('p-q2wfz', 1, `${POD}q2wfz`, 'CrashLoopBackOff（5 回）', 'bad');
 
 export const s1: Step = {
 	n: 1,
@@ -25,7 +25,7 @@ export const s1: Step = {
 			'ところが新しい Pod も 5 秒で落ちる。数を戻す仕組みは、落ちる理由までは直さない。誰が・何を見て・どう戻すのかを追い、落ちる理由も突き止める。'
 		],
 		work: [
-			'get pods -n shop では、3 つとも READY 0/1・CrashLoopBackOff・RESTARTS 4〜5 回だ。Deployment web の欲しい数は 3 個、Ready は 0 個になる。',
+			'get pods -n shop では、3 つとも READY 0/1・CrashLoopBackOff・RESTARTS 5〜6 回だ。Deployment web の欲しい数は 3 個、Ready は 0 個になる。',
 			'番頭が 7xk2p を消すと、ReplicaSet web-6d8f7b9c4 の生きている Pod が 2 個に減る。コントローラが差の 1 個を見つけ、87cwj を作る。スケジューラが node-1 に置き、kubelet が 2 秒で起こす。',
 			'87cwj も品物の一覧を読んで 182 MiB を使い、上限 128 MiB を超えて 5 秒目に落ちる。数は戻るが Ready は 0 個のままで、入口は 503 を返し続ける。'
 		],

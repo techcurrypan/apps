@@ -1,6 +1,7 @@
 // 実験のつまみ（learn-standard.md LS-L5）。「予想する → つまみを動かす → 動きと指標が計算し直される → 結果を読む」。
 // 計算は決まった式の純粋な関数（乱数なし。同じ値なら同じ結果）。式はレッスンごとに 1 つ（KNOB_CALC）。
 import type { Cue, Step } from '../lesson/types.ts';
+import { backoffAt } from '../tools/shell/kube.ts';
 
 export type KnobOut = {
 	rows: { k: string; v: string }[]; // 計算し直した指標
@@ -50,18 +51,13 @@ export function tcpWindow(v: Record<string, number>): KnobOut {
 	};
 }
 
-/** Kubernetes：落ちてから戻るまで。再起動の待ちは 10 秒から倍に伸び、上限 300 秒 */
+/** Kubernetes：落ちてから戻るまで。1 回目は待たずに起こし直し、その後の待ちは 10 秒から倍に伸び、上限 300 秒 */
 export function k8sBackoff(v: Record<string, number>): KnobOut {
 	const restarts = Math.max(0, Math.round(v.restarts ?? 0));
 	const replicas = Math.max(1, Math.round(v.replicas ?? 3));
-	const wait = Math.min(300, 10 * Math.pow(2, Math.max(0, restarts - 1)));
-	const total =
-		restarts === 0
-			? 0
-			: Array.from({ length: restarts }, (_, i) => Math.min(300, 10 * 2 ** i)).reduce(
-					(a, b) => a + b,
-					0
-				);
+	const wait = backoffAt(restarts);
+	// ここまでの待ち：起こし直した各回の前の待ち（1 回目は 0 秒）
+	const total = Array.from({ length: restarts }, (_, i) => backoffAt(i)).reduce((a, b) => a + b, 0);
 	const up = Math.round(((replicas - 1) / replicas) * 1000) / 10;
 	return {
 		rows: [
@@ -72,7 +68,7 @@ export function k8sBackoff(v: Record<string, number>): KnobOut {
 		note:
 			restarts >= 5
 				? `5 回目からは待ちが 160 秒、さらに 300 秒で頭打ち。落ち続ける Pod は CrashLoopBackOff のまま。`
-				: `再起動 ${restarts} 回なら次の待ちは ${restarts === 0 ? 0 : wait} 秒。レプリカ ${replicas} なら 1 つ落ちても ${up}% が残る。`,
+				: `再起動 ${restarts} 回なら次の待ちは ${wait} 秒。レプリカ ${replicas} なら 1 つ落ちても ${up}% が残る。`,
 		count: replicas,
 		dur: 700,
 		drops: restarts > 0 ? [0] : []

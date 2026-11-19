@@ -69,18 +69,18 @@ export const k8s101: Lesson = {
 	explain: [s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12, s13, s14, s15],
 	example: {
 		intro:
-			'3 つとも RESTARTS 4〜5 回の CrashLoopBackOff。前のコンテナのログの最後は読み込みの途中で終わっている',
+			'3 つとも RESTARTS 5〜6 回の CrashLoopBackOff。前のコンテナのログの最後は読み込みの途中で終わっている',
 		lines: [
 			'$ kubectl get pods -n shop',
 			'NAME                  READY   STATUS             RESTARTS        AGE',
-			'web-6d8f7b9c4-7xk2p   0/1     CrashLoopBackOff   5 (42s ago)     6m12s',
-			'web-6d8f7b9c4-b9m4t   0/1     CrashLoopBackOff   5 (42s ago)     6m12s',
-			'web-6d8f7b9c4-q2wfz   0/1     CrashLoopBackOff   4 (2m25s ago)   5m12s',
+			'web-6d8f7b9c4-7xk2p   0/1     CrashLoopBackOff   6 (39s ago)     6m12s',
+			'web-6d8f7b9c4-b9m4t   0/1     CrashLoopBackOff   6 (39s ago)     6m12s',
+			'web-6d8f7b9c4-q2wfz   0/1     CrashLoopBackOff   5 (2m22s ago)   5m12s',
 			'$ kubectl logs web-6d8f7b9c4-7xk2p -n shop --previous',
-			'2026-11-19T01:05:27.412Z INFO  shop-web 1.4.2 starting (node v22.11.0, pid 1)',
-			'2026-11-19T01:05:27.618Z INFO  listening on :8080',
-			'2026-11-19T01:05:28.003Z INFO  loading catalog cache (48,210 items)',
-			'2026-11-19T01:05:28.871Z INFO  catalog cache 96 MiB of 182 MiB loaded'
+			'2026-11-19T01:05:30.412Z INFO  shop-web 1.4.2 starting (node v22.11.0, pid 1)',
+			'2026-11-19T01:05:30.618Z INFO  listening on :8080',
+			'2026-11-19T01:05:31.003Z INFO  loading catalog cache (48,210 items)',
+			'2026-11-19T01:05:31.871Z INFO  catalog cache 96 MiB of 182 MiB loaded'
 		]
 	},
 	practice: {
@@ -127,7 +127,7 @@ export const k8s101: Lesson = {
 	},
 	check: [
 		{
-			ask: 'RESTARTS 5・CrashLoopBackOff の Pod。まず何を見るか',
+			ask: 'RESTARTS 6・CrashLoopBackOff の Pod。まず何を見るか',
 			how: 'describe の Last State と logs --previous',
 			kind: 'scene',
 			opts: [
