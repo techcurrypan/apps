@@ -7,6 +7,7 @@ import {
 	fitFirstOf,
 	lerpView,
 	rectOfId,
+	union,
 	type Geo,
 	type Pt,
 	type Rect,
@@ -119,11 +120,6 @@ type After = {
 
 const cache = new WeakMap<Lesson, Map<string, After>>();
 
-function fitOf(s: Step): string[] {
-	const c = [...(s.motion ?? [])].reverse().find((x) => x.do.op === 'camera');
-	return c && c.do.op === 'camera' ? c.do.fit : [];
-}
-
 /** 寄せる視点と、その視点に入れた物（data-fit。入らずに外した物は含めない） */
 function viewFor(g: Geo, ids: readonly string[], o: FrameOpts): { view: View; fit: string[] } {
 	const have = ids.filter((id) => !!rectOfId(g, id));
@@ -134,6 +130,128 @@ function viewFor(g: Geo, ids: readonly string[], o: FrameOpts): { view: View; fi
 		view: { ...v, w: v.w + inset / v.scale },
 		fit: rs.length ? taken.map((k) => have[k]) : [...ids]
 	};
+}
+
+// ---- 寄りの道筋：書いた camera の合図に、図の外で起きる合図の前の寄り直しを足す（LS-D1・M2） ----
+
+type CamKey = { at: number; dur: number; view: View; fit: string[] };
+const camCache = new WeakMap<Lesson, Map<string, CamKey[]>>();
+/** 寄り直しの長さ（ms） */
+const FOLLOW = 450;
+
+/** 合図が触る物の id（図の上で見えていてほしい物） */
+function targetsOf(d: CueDo): string[] {
+	switch (d.op) {
+		case 'pulse':
+		case 'fail':
+		case 'badge':
+			return [d.id];
+		case 'enqueue':
+		case 'dequeue':
+		case 'peek':
+			return [d.queue];
+		case 'move':
+			return [d.from, d.to];
+		case 'context':
+			return [d.at];
+		case 'packet':
+			return [d.a, d.b];
+		default:
+			return [];
+	}
+}
+const inside = (v: View, r: Rect, m = 8) =>
+	r.x >= v.x + m && r.x + r.w <= v.x + v.w - m && r.y >= v.y + m && r.y + r.h <= v.y + v.h - m;
+
+/**
+ * ステップ s の寄りの道筋（時刻の順）。書いた camera の合図はそのまま使い、
+ * 合図の触る物が今の行き先の視点に入っていなければ、その合図の少し前に寄り直しを足す。
+ * 荷物の道の両端が 1 つの視点に入らないときは、出る所に寄り、流れる間に着く所へ寄る（荷物を追う）。決まった計算で、乱数は使わない
+ */
+export function camTrack(l: Lesson, g: Geo, s: number, o: FrameOpts): CamKey[] {
+	let m = camCache.get(l);
+	if (!m) camCache.set(l, (m = new Map()));
+	const key = `${s}|${o.sw}|${o.sh}|${o.insetR ?? 0}`;
+	const hit = m.get(key);
+	if (hit) return hit;
+	const st = l.explain[s - 1];
+	const out: CamKey[] = [];
+	let cur: View = s > 1 ? after(l, g, s - 1, o).view : after(l, g, 0, o).view;
+	let curFit: string[] = s > 1 ? after(l, g, s - 1, o).fit : [];
+	let free = 0; // 前の寄りが終わる時刻
+	const set = (at: number, dur: number, view: View, fit: string[]) => {
+		out.push({ at, dur, view, fit });
+		cur = view;
+		curFit = fit;
+		free = at + dur;
+	};
+	const push = (at: number, dur: number, ids: string[]) => {
+		const vf = viewFor(g, ids, o);
+		set(at, dur, vf.view, vf.fit);
+	};
+	const inset = Math.min(o.insetR ?? 0, o.sw * 0.4);
+	/** 今の倍率のまま、targets が入るだけ横・縦に滑らせた視点（入らなければ null）。寄り直しで拡大・縮小を繰り返さない */
+	const panTo = (ids: string[]): View | null => {
+		const u = union(ids.map((id) => rectOfId(g, id) as Rect));
+		const mg = 24 / cur.scale;
+		const w = cur.w - inset / cur.scale;
+		if (u.w + mg * 2 > w || u.h + mg * 2 > cur.h) return null;
+		let x = cur.x;
+		let y = cur.y;
+		if (u.x - mg < x) x = u.x - mg;
+		if (u.x + u.w + mg > x + w) x = u.x + u.w + mg - w;
+		if (u.y - mg < y) y = u.y - mg;
+		if (u.y + u.h + mg > y + cur.h) y = u.y + u.h + mg - cur.h;
+		return { ...cur, x, y };
+	};
+	/** 寄り直し：滑らせて入るなら滑らせ、入らなければ新しく見せたい物を先に、今見えている物を後に並べて入るだけ入れる（文脈を失わない） */
+	const follow = (at: number, dur: number, ids: string[]) => {
+		const v = panTo(ids);
+		if (!v) return push(at, dur, [...new Set([...ids, ...curFit])]);
+		const keep = [...new Set([...ids, ...curFit])].filter((id) =>
+			inside(v, rectOfId(g, id) as Rect, 0)
+		);
+		set(at, dur, v, keep);
+	};
+	for (const c of [...(st.motion ?? [])].sort((a, b) => a.at - b.at)) {
+		const d = c.do;
+		if (d.op === 'camera') {
+			push(c.at, c.dur, d.fit);
+			continue;
+		}
+		const ids = targetsOf(d).filter((id) => !!rectOfId(g, id));
+		const rs = ids.map((id) => rectOfId(g, id) as Rect);
+		if (!rs.length || rs.every((r) => inside(cur, r))) continue;
+		const start = Math.max(free, c.at - FOLLOW);
+		// 前の寄りが長引いて、合図が終わるまでに寄れないなら寄らない（遅れて寄ると、次の合図と行き来して揺れる）
+		if (start >= c.at + c.dur) continue;
+		if (d.op === 'packet' && rs.length === 2) {
+			if (panTo(ids) || viewFor(g, ids, o).fit.length === 2) {
+				follow(start, FOLLOW, ids);
+				continue;
+			}
+			// 両端が入らない：出る所に寄ってから、流れる間に着く所へ（荷物を追う）
+			if (!inside(cur, rs[0])) follow(start, FOLLOW, [ids[0]]);
+			const mid = Math.max(free, c.at + c.dur * 0.25);
+			if (mid < c.at + c.dur) follow(mid, Math.max(FOLLOW, c.dur * 0.6), [ids[1]]);
+			continue;
+		}
+		follow(start, FOLLOW, ids);
+	}
+	// 続く流れ（loop）の触る物が最後の視点に無ければ、合図が終わる所で寄り直す（留まる間も流れが見える。LS-M4）
+	if (Array.isArray(st.loop)) {
+		const lids = [...new Set(st.loop.flatMap((c) => targetsOf(c.do)))].filter(
+			(id) => !!rectOfId(g, id)
+		);
+		if (lids.some((id) => !inside(cur, rectOfId(g, id) as Rect))) {
+			const end = Math.max(0, ...(st.motion ?? []).map((c) => c.at + c.dur));
+			// 滑らせて全部が入る時だけ寄り直す。入らない時は書いたレッスンの側で、続く流れを最後の寄りの中に収める（テストで見る）
+			const v = panTo(lids);
+			if (v) set(Math.max(free, end - FOLLOW), FOLLOW, v, [...new Set([...lids, ...curFit])]);
+		}
+	}
+	m.set(key, out);
+	return out;
 }
 
 /** ステップ s（0 は概要）の後の形 */
@@ -174,11 +292,11 @@ function after(l: Lesson, g: Geo, s: number, o: FrameOpts): After {
 			badges.set(id, { text, tone: badges.get(id)?.tone ?? 'ok' });
 		const metrics = new Map(prev.metrics);
 		for (const [k, v] of Object.entries(st.metrics ?? {})) metrics.set(k, v);
-		const fit = fitOf(st);
-		const vf = fit.length ? viewFor(g, fit, o) : null;
+		const track = camTrack(l, g, s, o);
+		const last = track[track.length - 1];
 		r = {
-			view: vf ? vf.view : prev.view,
-			fit: vf ? vf.fit : prev.fit,
+			view: last ? last.view : prev.view,
+			fit: last ? last.fit : prev.fit,
 			badges,
 			metrics,
 			failed,
@@ -366,18 +484,16 @@ export function frameAt(l: Lesson, g: Geo, s: number, tIn: number, o: FrameOpts)
 
 	// 寄り。camera の合図が幾つもあるときは順につなぐ（前の合図の行き先から次の行き先へ）。
 	// 寄っている物（data-fit・hot）も、今の合図の物にする
-	const cams = motion.filter((c) => c.do.op === 'camera');
-	const cam = cams[0];
+	const cam = motion.find((c) => c.do.op === 'camera');
 	let view = fin.view;
 	let fit = fin.fit;
-	if (s > 0 && cams.length && !o.reduced) {
+	const track = s > 0 && !o.reduced ? camTrack(l, g, s, o) : [];
+	if (track.length) {
 		let i = 0;
-		for (let k = 0; k < cams.length; k++) if (t >= cams[k].at) i = k;
-		const fitIds = (c: Cue) => (c.do.op === 'camera' ? c.do.fit : []);
-		const to = viewFor(g, fitIds(cams[i]), o);
-		const from = i === 0 ? prev.view : viewFor(g, fitIds(cams[i - 1]), o).view;
-		view = lerpView(from, to.view, ease(win(t, cams[i].at, cams[i].dur)));
-		fit = to.fit;
+		for (let k = 0; k < track.length; k++) if (t >= track[k].at) i = k;
+		const from = i === 0 ? prev.view : track[i - 1].view;
+		view = lerpView(from, track[i].view, ease(win(t, track[i].at, track[i].dur)));
+		fit = track[i].fit;
 	}
 
 	// 機械

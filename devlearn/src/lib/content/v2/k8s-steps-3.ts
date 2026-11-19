@@ -116,13 +116,18 @@ export const s9: Step = {
 		{ at: 1050, dur: 700, para: 0, do: { op: 'pulse', id: 'b_pq' } }
 	],
 	loop: [
-		{ at: 0, dur: 600, do: { op: 'peek', queue: 'unschedQ', item: 'mkxdg 1Gi' } },
+		// 最後の寄りの中で流す（留まる間も図の中で流れが続く。LS-M4・D1）
 		{
-			at: 900,
+			at: 0,
 			dur: 800,
 			do: { op: 'packet', a: 'sched', b: 'api', label: '入らない', kind: 'bind', stall: true }
 		},
-		{ at: 2000, dur: 600, do: { op: 'fail', id: 'b_fit' } }
+		{ at: 900, dur: 600, do: { op: 'pulse', id: 'sched' } },
+		{
+			at: 1600,
+			dur: 800,
+			do: { op: 'packet', a: 'api', b: 'you', label: 'Pending', kind: 'status' }
+		}
 	],
 	board: [
 		'requests 1Gi の Pod mkxdg',
@@ -267,9 +272,18 @@ export const s10: Step = {
 		{ at: 6600, dur: 400, para: 2, do: { op: 'board', line: 3 } }
 	],
 	loop: [
-		{ at: 0, dur: 900, do: { op: 'packet', a: 'api', b: 'kl1', label: 'watch', kind: 'watch' } },
-		{ at: 300, dur: 900, do: { op: 'packet', a: 'api', b: 'kl2', label: 'watch', kind: 'watch' } },
-		{ at: 1400, dur: 900, do: { op: 'packet', a: 'kl2', b: 'api', label: 'Ready', kind: 'status' } }
+		// 最後の寄りの中で流す（留まる間も図の中で流れが続く。LS-M4・D1）
+		{
+			at: 0,
+			dur: 700,
+			do: { op: 'packet', a: 'b_sdep', b: 'b_roll', label: '新しい上限', kind: 'call' }
+		},
+		{
+			at: 800,
+			dur: 700,
+			do: { op: 'packet', a: 'b_roll', b: 'b_newrs', label: '新しい RS', kind: 'call' }
+		},
+		{ at: 1600, dur: 600, do: { op: 'pulse', id: 'b_newrs' } }
 	],
 	board: [
 		'logs --previous：182 MiB 使う',
@@ -409,12 +423,10 @@ export const s11: Step = {
 		{ at: 1250, dur: 600, para: 0, do: { op: 'pulse', id: 'sched' } }
 	],
 	loop: [
-		{ at: 0, dur: 700, do: { op: 'packet', a: 'b_qos', b: 'b_adj', label: 'QoS', kind: 'call' } },
-		{
-			at: 1200,
-			dur: 900,
-			do: { op: 'packet', a: 'sched', b: 'api', label: '入る数', kind: 'bind' }
-		}
+		// 最後の寄りの中で流す（留まる間も図の中で流れが続く。LS-M4・D1）
+		{ at: 0, dur: 900, do: { op: 'packet', a: 'sched', b: 'api', label: '入る数', kind: 'bind' } },
+		{ at: 1000, dur: 600, do: { op: 'pulse', id: 'kl1' } },
+		{ at: 1300, dur: 600, do: { op: 'pulse', id: 'kl2' } }
 	],
 	board: [
 		'入る数 ＝ 3,840 ÷ requests',

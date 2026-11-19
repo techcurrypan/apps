@@ -111,14 +111,19 @@ export const s13: Step = {
 		{ at: 3700, dur: 700, para: 2, do: { op: 'pulse', id: 'b_wx' } }
 	],
 	loop: [
+		// 最後の寄り（nginx の送り）の中だけで流す。qdisc とドライバはステップの前半で見せた
 		{
 			at: 0,
 			dur: 700,
-			do: { op: 'packet', a: 'b_dev', b: 'b_drv', label: '64 KiB', kind: 'data' }
+			do: { op: 'packet', a: 'b_wx', b: 'b_tx', label: '応答 1,448 B', kind: 'data' }
 		},
-		{ at: 800, dur: 700, do: { op: 'packet', a: 'b_wx', b: 'b_tx', label: '応答', kind: 'data' } },
-		{ at: 500, dur: 600, do: { op: 'pulse', id: 'b_drv' } },
-		{ at: 1300, dur: 600, do: { op: 'pulse', id: 'b_tx' } }
+		{ at: 500, dur: 700, do: { op: 'pulse', id: 'b_tx' } },
+		{
+			at: 900,
+			dur: 700,
+			do: { op: 'packet', a: 'b_wx', b: 'b_tx', label: '応答 1,448 B', kind: 'data' }
+		},
+		{ at: 1300, dur: 700, do: { op: 'pulse', id: 'b_wx' } }
 	],
 	board: [
 		'systemd：default_qdisc = fq_codel',
@@ -250,14 +255,15 @@ export const s14: Step = {
 		{ at: 4900, dur: 700, para: 3, do: { op: 'pulse', id: 'b_dev' } }
 	],
 	loop: [
+		// 最後の寄りの中で流す（留まる間も図の中で流れが続く。LS-M4・D1）
 		{
 			at: 0,
 			dur: 700,
 			do: { op: 'packet', a: 'b_dev', b: 'b_drv', label: '64 KiB', kind: 'data' }
 		},
-		{ at: 800, dur: 700, do: { op: 'packet', a: 'b_wx', b: 'b_tx', label: 'skb', kind: 'data' } },
 		{ at: 500, dur: 600, do: { op: 'pulse', id: 'b_drv' } },
-		{ at: 1300, dur: 600, do: { op: 'pulse', id: 'b_tx' } }
+		{ at: 800, dur: 700, do: { op: 'packet', a: 'b_drv', b: 'b_tso', label: 'skb', kind: 'data' } },
+		{ at: 1300, dur: 600, do: { op: 'pulse', id: 'b_tso' } }
 	],
 	board: [
 		'ss -tim：rtt と minrtt を比べる',

@@ -404,13 +404,14 @@ export const s10: Step = {
 		{ at: 7400, dur: 400, para: 3, do: { op: 'board', line: 4 } }
 	],
 	loop: [
-		{ at: 0, dur: 450, do: { op: 'peek', queue: 'qpf', item: 'C1 64K' } },
+		// 最後の寄りの中で流す（留まる間も図の中で流れが続く。LS-M4・D1）
 		{
-			at: 500,
+			at: 0,
 			dur: 1400,
-			do: { op: 'packet', a: 'b_dev', b: 'b_drv', label: 'ssh', kind: 'data', stall: true }
+			do: { op: 'packet', a: 'app', b: 'sw', label: 'ssh（待つ）', kind: 'data', stall: true }
 		},
-		{ at: 2000, dur: 800, do: { op: 'packet', a: 'app', b: 'sw', label: 'probe', kind: 'probe' } }
+		{ at: 1500, dur: 800, do: { op: 'packet', a: 'app', b: 'sw', label: 'probe', kind: 'probe' } },
+		{ at: 600, dur: 600, do: { op: 'pulse', id: 'sw' } }
 	],
 	board: [
 		'TSQ：1 本ずつ 2 × truesize まで → 256 本で 30 MB',

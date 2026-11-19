@@ -486,9 +486,9 @@ export const s4: Step = {
 	metrics: { cwnd: '10 個', wq: '65,536 B', rtx: '0 個' },
 	motion: [
 		{ at: 0, dur: 800, para: 0, do: { op: 'camera', fit: ['app', 'b_send', 'b_sendmsg'] } },
-		{ at: 400, dur: 400, para: 0, do: { op: 'context', to: 'syscall', at: 'b_send' } },
+		{ at: 150, dur: 400, para: 0, do: { op: 'context', to: 'syscall', at: 'b_send' } },
 		{
-			at: 700,
+			at: 450,
 			dur: 800,
 			para: 0,
 			do: { op: 'packet', a: 'app', b: 'b_send', label: 'send 65,536', kind: 'call' }

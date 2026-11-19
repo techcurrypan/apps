@@ -144,17 +144,13 @@ export const s5: Step = {
 		{ at: 800, dur: 700, para: 0, do: { op: 'pulse', id: 'b_one' } }
 	],
 	loop: [
-		{ at: 0, dur: 600, do: { op: 'enqueue', queue: 'activeQ', item: '次の Pod' } },
-		{ at: 700, dur: 600, do: { op: 'dequeue', queue: 'activeQ', item: '次の Pod' } },
+		// 最後の寄りの中で流す（留まる間も図の中で流れが続く。LS-M4・D1）
+		{ at: 0, dur: 700, do: { op: 'packet', a: 'api', b: 'etcd', label: 'Binding', kind: 'bind' } },
+		{ at: 600, dur: 600, do: { op: 'pulse', id: 'etcd' } },
 		{
 			at: 1300,
 			dur: 700,
-			do: { op: 'packet', a: 'b_one', b: 'b_sp', label: '1 つずつ', kind: 'call' }
-		},
-		{
-			at: 2000,
-			dur: 700,
-			do: { op: 'packet', a: 'b_sp', b: 'b_fit', label: 'Filter', kind: 'call' }
+			do: { op: 'packet', a: 'etcd', b: 'api', label: '保存した', kind: 'status' }
 		}
 	],
 	board: [
@@ -500,23 +496,17 @@ export const s7: Step = {
 		{ at: 6900, dur: 400, para: 2, do: { op: 'board', line: 3 } }
 	],
 	loop: [
+		// 最後の寄りの中で流す（留まる間も図の中で流れが続く。LS-M4・D1）
 		{
 			at: 0,
 			dur: 700,
-			do: {
-				op: 'packet',
-				a: 'b_charge',
-				b: 'b_memcg',
-				label: '使いすぎ',
-				kind: 'kill',
-				stall: true
-			}
+			do: { op: 'packet', a: 'kl1', b: 'api', label: 'OOMKilled', kind: 'status' }
 		},
-		{ at: 900, dur: 600, do: { op: 'fail', id: 'b_kill' } },
+		{ at: 900, dur: 600, do: { op: 'fail', id: 'kl1' } },
 		{
 			at: 1700,
 			dur: 700,
-			do: { op: 'packet', a: 'b_kill', b: 'b_ctd', label: 'TaskOOM', kind: 'kill' }
+			do: { op: 'packet', a: 'api', b: 'etcd', label: '再起動 1', kind: 'status' }
 		}
 	],
 	board: [
@@ -668,13 +658,14 @@ export const s8: Step = {
 		{ at: 3800, dur: 700, para: 1, do: { op: 'pulse', id: 'b_next2' } }
 	],
 	loop: [
+		// 最後の寄りの中で流す（留まる間も図の中で流れが続く。LS-M4・D1）
 		{
 			at: 0,
 			dur: 900,
 			do: { op: 'packet', a: 'kl1', b: 'api', label: 'BackOff', kind: 'status', stall: true }
 		},
-		{ at: 1000, dur: 600, do: { op: 'peek', queue: 'boq', item: 'web 10 秒' } },
-		{ at: 2000, dur: 600, do: { op: 'fail', id: 'kl1' } }
+		{ at: 1000, dur: 600, do: { op: 'fail', id: 'kl1' } },
+		{ at: 2000, dur: 600, do: { op: 'pulse', id: 'api' } }
 	],
 	board: [
 		'doBackOff()：表を引く',

@@ -282,9 +282,10 @@ export const s6: Step = {
 		{ at: 700, dur: 600, para: 0, do: { op: 'pulse', id: 'b_dev' } }
 	],
 	loop: [
-		{ at: 0, dur: 700, do: { op: 'packet', a: 'b_tso', b: 'sw', label: 'F', kind: 'data' } },
+		// 最後の寄りの中で流す（留まる間も図の中で流れが続く。LS-M4・D1）
+		{ at: 0, dur: 700, do: { op: 'packet', a: 'app', b: 'sw', label: 'F', kind: 'data' } },
 		{ at: 300, dur: 700, do: { op: 'packet', a: 'sw', b: 'peer', label: 'F', kind: 'data' } },
-		{ at: 900, dur: 600, do: { op: 'peek', queue: 'wire', item: 'F10' } }
+		{ at: 900, dur: 600, do: { op: 'pulse', id: 'peer' } }
 	],
 	board: [
 		'fq_enqueue()：最初の 10 個は時刻＝今',
@@ -465,14 +466,15 @@ export const s7: Step = {
 		{ at: 10400, dur: 400, para: 3, do: { op: 'board', line: 4 } }
 	],
 	loop: [
-		{ at: 0, dur: 800, do: { op: 'packet', a: 'sw', b: 'b_irq', label: 'ACK', kind: 'ack' } },
+		// 最後の寄りの中で流す（留まる間も図の中で流れが続く。LS-M4・D1）
+		{ at: 0, dur: 600, do: { op: 'packet', a: 'b_wx', b: 'b_tx', label: '送れ', kind: 'call' } },
+		{ at: 500, dur: 600, do: { op: 'pulse', id: 'b_tx' } },
 		{
-			at: 800,
+			at: 1100,
 			dur: 600,
-			do: { op: 'packet', a: 'b_irq', b: 'b_poll', label: 'napi', kind: 'call' }
+			do: { op: 'packet', a: 'b_wx', b: 'b_tx', label: '次の塊', kind: 'data' }
 		},
-		{ at: 1400, dur: 600, do: { op: 'packet', a: 'b_gro', b: 'b_v4', label: 'ACK', kind: 'ack' } },
-		{ at: 2000, dur: 600, do: { op: 'packet', a: 'b_ack', b: 'b_wx', label: '送れ', kind: 'call' } }
+		{ at: 1600, dur: 600, do: { op: 'pulse', id: 'b_wx' } }
 	],
 	board: [
 		'store-1：GRO で 10 枚 → 1 個、ACK を 1 つ',
@@ -651,17 +653,10 @@ export const s8: Step = {
 		{ at: 800, dur: 700, para: 0, do: { op: 'pulse', id: 'b_wx' } }
 	],
 	loop: [
-		{
-			at: 0,
-			dur: 600,
-			do: { op: 'packet', a: 'b_irq', b: 'b_poll', label: 'TX 完了', kind: 'call' }
-		},
-		{
-			at: 700,
-			dur: 600,
-			do: { op: 'packet', a: 'b_poll', b: 'b_wfree', label: '解放', kind: 'call' }
-		},
-		{ at: 1400, dur: 600, do: { op: 'packet', a: 'b_tsq', b: 'b_wx', label: '再開', kind: 'call' } }
+		// 最後の寄りの中で流す（留まる間も図の中で流れが続く。LS-M4・D1）
+		{ at: 0, dur: 600, do: { op: 'packet', a: 'b_wx', b: 'b_tx', label: '再開', kind: 'call' } },
+		{ at: 700, dur: 600, do: { op: 'pulse', id: 'b_wx' } },
+		{ at: 1300, dur: 600, do: { op: 'pulse', id: 'b_tx' } }
 	],
 	board: [
 		'手元 1.46 MB を超えた → TSQ_THROTTLED',

@@ -26,6 +26,10 @@ export function changedArea(g: Geo, a: Frame, b: Frame, o: FrameOpts): number {
 	);
 	if (shift >= 1) return o.sw * o.sh * 0.2;
 	let area = 0;
+	// 見えている所（世界の座標）。図の外で動いても画素は変わらない
+	const v = b.view;
+	const seen = (x: number, y: number, hw: number, hh: number) =>
+		x + hw > v.x && x - hw < v.x + v.w && y + hh > v.y && y - hh < v.y + v.h;
 
 	// 荷物
 	const pa = new Map(a.packets.map((p) => [p.key, p]));
@@ -34,6 +38,9 @@ export function changedArea(g: Geo, a: Frame, b: Frame, o: FrameOpts): number {
 		const x = pa.get(key);
 		const y = pb.get(key);
 		const pill = pillOf((x ?? y)!.label);
+		const inX = !!x && seen(x.pos.x, x.pos.y, pill.w / 2, pill.h / 2);
+		const inY = !!y && seen(y.pos.x, y.pos.y, pill.w / 2, pill.h / 2);
+		if (!inX && !inY) continue;
 		const w = pill.w * s;
 		const h = pill.h * s;
 		if (!x || !y) {
@@ -51,6 +58,8 @@ export function changedArea(g: Geo, a: Frame, b: Frame, o: FrameOpts): number {
 	const RING = 2 * Math.PI * 86 * 6 * s2;
 	for (const y of b.nodes) {
 		const x = na.get(y.id);
+		const gn = g.nodes.get(y.id);
+		if (gn && !seen(gn.c.x, gn.c.y, NODE_HW + 40, NODE_HH + 40)) continue;
 		if (!x) {
 			area += NODE * y.opacity;
 			continue;
@@ -71,6 +80,8 @@ export function changedArea(g: Geo, a: Frame, b: Frame, o: FrameOpts): number {
 	const ba = new Map(a.badges.map((x) => [x.id, x]));
 	for (const y of b.badges) {
 		const x = ba.get(y.id);
+		const at = g.nodes.get(y.id)?.badgeAt ?? g.boxes.get(y.id)?.r;
+		if (at && !seen(at.x + 60, at.y, 200, 40)) continue;
 		const bw = (textW(y.text, 15) + 20) * s;
 		const bh = 27 * s;
 		if (!x || x.text !== y.text || x.tone !== y.tone) area += bw * bh * 2;
@@ -104,6 +115,8 @@ export function changedArea(g: Geo, a: Frame, b: Frame, o: FrameOpts): number {
 	for (const id of new Set([...ia.keys(), ...ib.keys()])) {
 		const x = ia.get(id);
 		const y = ib.get(id);
+		const z = (y ?? x)!;
+		if (!seen(z.x + ITEM_W / 2, z.y + ITEM_H / 2, ITEM_W, ITEM_H)) continue;
 		if (!x || !y) {
 			area += ITEM * ((x ?? y)!.opacity >= FADE ? 1 : 0);
 			continue;
@@ -119,6 +132,8 @@ export function changedArea(g: Geo, a: Frame, b: Frame, o: FrameOpts): number {
 	for (const id of new Set([...ra.keys(), ...rb.keys()])) {
 		const box = g.boxes.get(id);
 		if (!box || ra.get(id) === rb.get(id)) continue;
+		if (!seen(box.r.x + box.r.w / 2, box.r.y + box.r.h / 2, box.r.w / 2 + 20, box.r.h / 2 + 20))
+			continue;
 		area += 2 * (box.r.w + box.r.h + 80) * 3 * 2 * s2;
 	}
 
@@ -161,6 +176,55 @@ export function stills(l: Lesson, g: Geo, o: FrameOpts, dia: number, margin = 1.
 		for (let t = 3000; t + 1000 <= 6000; t += 100) {
 			const area = changedArea(g, at(s, t), at(s, t + 1000), o);
 			if (area < line) out.push({ step: s, phase: 'late', t, area: Math.round(area) });
+		}
+	});
+	return out;
+}
+
+export type Unseen = { step: number; at: number; op: string; id: string };
+
+/**
+ * 図の外で起きる合図（LS-D1「そのステップに関わる物が既定の視点で見える」を動きの時刻ごとに）。
+ * 合図が流れている真ん中の時刻の視点に、合図の触る物（機械・箱・キュー。荷物はその時の位置）が入っていなければ返す。
+ * 寄る物が多すぎて 0.8 倍で入らないと前の物だけに寄るので、後ろの物で起きる合図が見えなくなる。camera を足して寄り直す
+ */
+export function unseenCues(l: Lesson, g: Geo, o: FrameOpts): Unseen[] {
+	const out: Unseen[] = [];
+	const itemQueue = new Map<string, string>();
+	l.explain.forEach((step, i) => {
+		const s = i + 1;
+		for (const c of step.motion ?? []) {
+			const d = c.do;
+			const ids: string[] = [];
+			if (d.op === 'pulse' || d.op === 'fail' || d.op === 'badge') ids.push(d.id);
+			if (d.op === 'enqueue' || d.op === 'dequeue' || d.op === 'peek') {
+				ids.push(d.queue);
+				itemQueue.set(d.item, d.queue);
+			}
+			if (d.op === 'move') ids.push(d.to);
+			if (d.op === 'context') ids.push(d.at);
+			if (d.op !== 'packet' && ids.length === 0) continue;
+			const inView = (v: Frame['view'], r: { x: number; y: number; w: number; h: number }) =>
+				r.x + r.w > v.x + 8 && r.x < v.x + v.w - 8 && r.y + r.h > v.y + 8 && r.y < v.y + v.h - 8;
+			// 流れている間を 4 つに分けて見る。残る変化（札・キュー・文脈・失敗）は終わってから 0.6 秒の間に見えればよい
+			const lasting = d.op !== 'packet' && d.op !== 'pulse';
+			const ts = [1, 2, 3, 4].map((k) => c.at + (c.dur * k) / 4);
+			if (lasting) ts.push(c.at + c.dur + 300, c.at + c.dur + 600);
+			if (d.op === 'packet') {
+				const ok = ts.filter((t) => {
+					const f = frameAt(l, g, s, t, o);
+					const p = f.packets.find((x) => x.label === d.label);
+					return !p || inView(f.view, { x: p.pos.x - 20, y: p.pos.y - 14, w: 40, h: 28 });
+				}).length;
+				if (ok < 3) out.push({ step: s, at: c.at, op: d.op, id: `${d.a}>${d.b}` });
+				continue;
+			}
+			for (const id of ids) {
+				const r = g.nodes.get(id)?.r ?? g.boxes.get(id)?.r ?? g.queues.get(id)?.r;
+				if (!r) continue;
+				if (!ts.some((t) => inView(frameAt(l, g, s, t, o).view, r)))
+					out.push({ step: s, at: c.at, op: d.op, id });
+			}
 		}
 	});
 	return out;
