@@ -39,7 +39,10 @@ async function typeLine(t: Tab, line: string) {
 	);
 	await sleep(2600);
 }
-const deep = (t: Tab) => click(t, '.seg button', '中身まで').then(() => sleep(300));
+const deep = async (t: Tab): Promise<void> => {
+	await click(t, '.seg button', '中身まで');
+	await sleep(300);
+};
 
 const SCENES: Scene[] = [
 	{ id: 'C-1', prod: { lesson: 'net-101', step: 0 }, proto: { hash: '#net', next: 0 } },
