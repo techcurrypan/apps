@@ -89,7 +89,12 @@
 	{#each geo.bands as b (b.id)}
 		<g class="band">
 			<rect x={b.r.x} y={b.r.y} width={b.r.w} height={b.r.h} rx="10" />
-			<text x={b.r.x + 16} y={b.r.y + 30} data-label="層 {b.label}">{b.label}</text>
+			<!-- 帯の名前は上の段に。寄りで帯の左端が外れても、見えている左端に付いてくる -->
+			<text
+				x={Math.min(Math.max(b.r.x + 16, view.x + 12 / view.scale), b.r.x + b.r.w - 16)}
+				y={b.r.y + 25}
+				data-label="層 {b.label}">{b.label}</text
+			>
 		</g>
 	{/each}
 

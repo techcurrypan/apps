@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { validV2 } from '../lesson/testing/v2-fixture.ts';
-import { fitView, geoOf, trim } from './geo.ts';
+import { MIN_SCALE, fitFirst, fitView, geoOf, trim } from './geo.ts';
 
 describe('第 2 版の図の置き方', () => {
 	const g = geoOf(validV2());
@@ -38,5 +38,20 @@ describe('第 2 版の図の置き方', () => {
 		const p = trim({ x: 0, y: 0 }, { x: 100, y: 0 }, { x: -10, y: -10, w: 20, h: 20 });
 		expect(p.x).toBeCloseTo(10);
 		expect(p.y).toBeCloseTo(0);
+	});
+	it('寄せる物が 0.8 倍でも入らない時は、前から入るだけを入れ、入れた物は切らない（LS-D1。2026-11-19）', () => {
+		const a = { x: 0, y: 0, w: 400, h: 200 };
+		const b = { x: 300, y: 100, w: 300, h: 150 };
+		const far = { x: 0, y: 3000, w: 400, h: 200 };
+		const v = fitFirst([a, b, far], 900, 450);
+		expect(v.scale).toBeGreaterThanOrEqual(MIN_SCALE);
+		for (const r of [a, b]) {
+			expect(r.x).toBeGreaterThanOrEqual(v.x);
+			expect(r.y).toBeGreaterThanOrEqual(v.y);
+			expect(r.x + r.w).toBeLessThanOrEqual(v.x + v.w);
+			expect(r.y + r.h).toBeLessThanOrEqual(v.y + v.h);
+		}
+		// 全部入る時は fitView と同じ
+		expect(fitFirst([a, b], 900, 450)).toEqual(fitView([a, b], 900, 450));
 	});
 });

@@ -150,8 +150,11 @@ export const LAYOUT = `(() => {
 	const q = (s) => document.querySelector(s);
 	const box = (s) => { const e = q(s); if (!e) return null; const r = e.getBoundingClientRect(); return { x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.width), h: Math.round(r.height), bottom: Math.round(r.bottom) }; };
 	const inView = (s) => { const e = q(s); if (!e) return false; const r = e.getBoundingClientRect(); return r.height > 0 && r.top >= -1 && r.bottom <= vh + 1 && r.left >= -1 && r.right <= vw + 1; };
-	const dia = q('.l2-stage') || q('.l2-dia') || q('.dia');
+	// 図＝指標の帯・出来事の札・絵・凡例を含む枠（LS-A4「図（指標の帯と凡例を含む）」）。はみ出し（LS-D1）は絵の枠で見る
+	const dia = q('.l2-dia') || q('.dia');
 	const dr = dia ? dia.getBoundingClientRect() : null;
+	const stg = q('.l2-stage');
+	const sr = stg ? stg.getBoundingClientRect() : dr;
 	const scrollers = [...document.querySelectorAll('body *')].filter((e) => {
 		if (e.closest('.l2-term-out')) return false;
 		const cs = getComputedStyle(e);
@@ -176,10 +179,12 @@ export const LAYOUT = `(() => {
 	const pad = vw <= 400 ? 8 : 24;
 	const outside = dr ? [...document.querySelectorAll('[data-fit]')].filter((e) => {
 		const r = e.getBoundingClientRect(); if (!r.width) return false;
-		return r.left < dr.left + pad - 1 || r.right > dr.right - pad + 1 || r.top < dr.top + pad - 1 || r.bottom > dr.bottom - pad + 1;
+		return r.left < sr.left + pad - 1 || r.right > sr.right - pad + 1 || r.top < sr.top + pad - 1 || r.bottom > sr.bottom - pad + 1;
 	}).map((e) => e.getAttribute('data-fit')) : ['図が無い'];
 	// LS-D6：図の中の字・札・丸が重ならない
-	const labs = [...document.querySelectorAll('[data-label]')].map((e) => [e.getAttribute('data-label'), e.getBoundingClientRect()]).filter(([, r]) => r.width > 0);
+	// 絵の中の字は絵の枠で切られた後の見える部分で比べる（枠の外に隠れた部分は見えない）
+	const clip = (e, r) => { if (!stg || !stg.contains(e)) return r; const L = Math.max(r.left, sr.left), T = Math.max(r.top, sr.top), R = Math.min(r.right, sr.right), B = Math.min(r.bottom, sr.bottom); return { left: L, top: T, right: R, bottom: B, width: Math.max(0, R - L), height: Math.max(0, B - T) }; };
+	const labs = [...document.querySelectorAll('[data-label]')].map((e) => [e.getAttribute('data-label'), clip(e, e.getBoundingClientRect())]).filter(([, r]) => r.width > 0 && r.height > 0);
 	const overlaps = [];
 	for (let i = 0; i < labs.length; i++) for (let j = i + 1; j < labs.length; j++) {
 		const a = labs[i][1], b = labs[j][1];
@@ -188,11 +193,14 @@ export const LAYOUT = `(() => {
 	const term = q('.l2-term-out');
 	let termFont = 0, termRows = 0;
 	if (term) { const cs = getComputedStyle(term); termFont = parseFloat(cs.fontSize); termRows = Math.floor(term.getBoundingClientRect().height / (parseFloat(cs.lineHeight) || termFont * 1.4)); }
-	const insideRows = [...document.querySelectorAll('.l2-inside [data-row]')].filter((e) => { const r = e.getBoundingClientRect(); return r.height > 0 && r.bottom <= vh + 1; }).length;
+	const rowsAll = [...document.querySelectorAll('.l2-inside [data-row]')].filter((e) => e.getBoundingClientRect().height > 0);
+	const insideRows = rowsAll.filter((e) => e.getBoundingClientRect().bottom <= vh + 1).length;
+	const insideAll = rowsAll.length;
 	return {
 		size: vw + 'x' + vh,
 		overflowX: document.documentElement.scrollWidth - vw,
 		dia: dr ? { w: Math.round(dr.width), h: Math.round(dr.height), area: Math.round((dr.width * dr.height) / (vw * vh) * 100) } : null,
+		stage: sr ? { w: Math.round(sr.width), h: Math.round(sr.height) } : null,
 		top: box('.l2-top'), head: box('.l2-head'), toc: box('.l2-toc'), narr: box('.l2-narr'), steps: box('.l2-steps'),
 		term: box('.l2-term'), termFont, termRows,
 		visible: {
@@ -200,6 +208,7 @@ export const LAYOUT = `(() => {
 			steps: inView('.l2-steps'), title: inView('.l2-narr h2'), para: inView('.l2-narr .l2-para'), next: inView('.l2-next'), insideHead: inView('.l2-inside .ih')
 		},
 		insideRows,
+		insideAll,
 		innerScroll: scrollers,
 		minFont: Math.round(minFont * 10) / 10, minAt, minDia: Math.round(minDia * 10) / 10, minDiaAt,
 		outside, overlaps
@@ -210,6 +219,7 @@ export type Layout = {
 	size: string;
 	overflowX: number;
 	dia: { w: number; h: number; area: number } | null;
+	stage?: { w: number; h: number } | null;
 	toc: { w: number } | null;
 	narr: { w: number } | null;
 	term: { w: number; h: number } | null;
@@ -217,6 +227,8 @@ export type Layout = {
 	termRows: number;
 	visible: Record<string, boolean>;
 	insideRows: number;
+	/** そのステップの中身の板の行の数（5 行・2 行に満たないステップは、全部見えれば足りる） */
+	insideAll?: number;
 	innerScroll: string[];
 	minFont: number;
 	minDia: number;
@@ -242,8 +254,17 @@ export function judgeLayout(m: Layout, mode: 'watch' | 'try'): Record<string, st
 			const miss = need.filter((k) => !m.visible[k]);
 			ok('LS-A4', miss.length === 0, `見えない ${miss.join('・')}`);
 			if (w >= 1900)
-				ok('LS-A5', m.visible.insideHead && m.insideRows >= 5, `中身の板 ${m.insideRows} 行`);
-			else ok('LS-I12', m.visible.insideHead && m.insideRows >= 2, `中身の板 ${m.insideRows} 行`);
+				ok(
+					'LS-A5',
+					m.visible.insideHead && m.insideRows >= Math.min(5, m.insideAll ?? 5),
+					`中身の板 ${m.insideRows} / ${m.insideAll} 行`
+				);
+			else
+				ok(
+					'LS-I12',
+					m.visible.insideHead && m.insideRows >= Math.min(2, m.insideAll ?? 2),
+					`中身の板 ${m.insideRows} / ${m.insideAll} 行`
+				);
 		}
 		ok('LS-D1', m.outside.length === 0, `はみ出す ${m.outside.join('・')}`);
 		ok('LS-D6', m.overlaps.length === 0, `重なる ${m.overlaps.slice(0, 4).join('・')}`);

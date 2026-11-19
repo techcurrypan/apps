@@ -216,7 +216,8 @@
 	// ---- 図の大きさと視点 ----
 	let sw = $state(1000);
 	let sh = $state(600);
-	const insetR = $derived(sw >= 900 && mode === 'watch' ? 300 : 0);
+	// 出来事の札は図の上の細い帯に置き、図には重ねない（寄りの幅を削らない。LS-D1）
+	const insetR = 0;
 	const frame = $derived(frameAt(drawn, geo, cur, t, { sw, sh, reduced, insetR }));
 	let userView = $state<View | null>(null);
 	let blend = $state<{ from: View; k: number } | null>(null);
@@ -725,9 +726,17 @@
 					{/each}
 					<span class="sp"></span>
 					{#if mode === 'watch'}
-						<button type="button" onclick={() => replay()} title="もう一度（R）">↻ もう一度</button>
-						<button type="button" onclick={() => (playing = !playing)} title="一時停止（Space）"
-							>{playing ? '❚❚ 一時停止' : '▶ 再生'}</button
+						<button
+							type="button"
+							onclick={() => replay()}
+							title="もう一度（R）"
+							aria-label="もう一度">↻</button
+						>
+						<button
+							type="button"
+							onclick={() => (playing = !playing)}
+							title="一時停止（Space）"
+							aria-label={playing ? '一時停止' : '再生'}>{playing ? '❚❚' : '▶'}</button
 						>
 						<button
 							type="button"
@@ -747,6 +756,17 @@
 					{/if}
 					<button type="button" onclick={() => (full = !full)} title="図を大きく（F）">⤢</button>
 				</div>
+
+				<!-- 出来事の札（LS-D4）。図の枠の中、絵の上の帯 -->
+				{#if mode === 'watch' && prefs.view !== 'seq'}
+					<ol class="l2-board" aria-label="出来事の札">
+						{#each frame.board as b, i (i)}
+							<li class:shown={b.shown} class:active={b.active} data-label="出来事 {i + 1}">
+								<b>{i + 1}</b>{b.text}
+							</li>
+						{/each}
+					</ol>
+				{/if}
 
 				<div
 					class="l2-stage"
@@ -774,15 +794,6 @@
 							{onpick}
 							{desc}
 						/>
-					{/if}
-					{#if mode === 'watch' && frame.board.length && prefs.view !== 'seq'}
-						<ol class="l2-board" aria-label="出来事の札">
-							{#each frame.board as b, i (i)}
-								<li class:shown={b.shown} class:active={b.active} data-label="出来事 {i + 1}">
-									{b.text}
-								</li>
-							{/each}
-						</ol>
 					{/if}
 					<div class="zoom">
 						<button type="button" onclick={() => zoomBy(1.2)} aria-label="拡大">＋</button>
@@ -1148,7 +1159,7 @@
 
 <style>
 	.l2 {
-		--peek: 150px;
+		--peek: 172px;
 		--narr: 400px;
 		min-height: 100vh;
 		background: var(--dl-bg);
@@ -1157,7 +1168,7 @@
 	}
 	@media (min-height: 1000px) {
 		.l2 {
-			--peek: 196px;
+			--peek: 232px;
 		}
 	}
 	@media (min-width: 1900px) {
@@ -1350,7 +1361,7 @@
 	}
 	.l2-dia {
 		display: grid;
-		grid-template-rows: auto minmax(0, 1fr) auto;
+		grid-template-rows: auto auto minmax(0, 1fr) auto;
 		min-height: 0;
 		border-right: 1px solid var(--dl-border);
 	}
@@ -1370,7 +1381,7 @@
 		line-height: 1.2;
 	}
 	.mt small {
-		font-size: 11.5px;
+		font-size: 12px;
 		color: var(--dl-text-muted);
 	}
 	.mt b {
@@ -1399,18 +1410,21 @@
 			var(--dl-bg);
 	}
 	.l2-board {
-		position: absolute;
-		top: 12px;
-		right: 12px;
-		width: 272px;
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		grid-auto-flow: column;
+		grid-template-rows: repeat(3, 20px);
+		column-gap: 18px;
+		height: 72px;
+		box-sizing: border-box;
 		margin: 0;
-		padding: 10px 12px 10px 30px;
-		background: color-mix(in oklab, var(--dl-surface-raised) 94%, transparent);
-		border: 1px solid var(--dl-border-strong);
-		border-radius: var(--dl-radius-box);
+		padding: 6px 14px;
+		list-style: none;
+		background: var(--dl-surface);
+		border-bottom: 1px solid var(--dl-border);
 		font-size: 13px;
-		line-height: 1.45;
-		box-shadow: var(--dl-shadow);
+		line-height: 20px;
+		overflow: hidden;
 	}
 	.l2-board li {
 		opacity: 0;
@@ -1418,10 +1432,19 @@
 		transition:
 			opacity 0.25s,
 			transform 0.25s;
-		margin: 2px 0;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		min-width: 0;
+	}
+	.l2-board li b {
+		display: inline-block;
+		min-width: 1.6em;
+		font-family: var(--dl-font-code);
+		color: var(--dl-text-muted);
 	}
 	.l2-board li.shown {
-		opacity: 0.75;
+		opacity: 0.8;
 		transform: none;
 	}
 	.l2-board li.active {
@@ -1429,12 +1452,22 @@
 		color: var(--dl-now);
 		font-weight: 700;
 	}
+	.l2-board li.active b {
+		color: var(--dl-now);
+	}
+	/* 拡大・縮小などは図の右下に小さく重ねる（図の段を削らない） */
 	.zoom {
 		position: absolute;
-		left: 10px;
-		bottom: 10px;
+		right: 8px;
+		bottom: 8px;
 		display: flex;
-		gap: 6px;
+		gap: 4px;
+		z-index: 3;
+	}
+	.zoom button {
+		font-size: 12px;
+		padding: 2px 8px;
+		background: color-mix(in oklab, var(--dl-surface) 88%, transparent);
 	}
 	.zoom .back {
 		border-color: var(--dl-now);
@@ -1473,9 +1506,9 @@
 	}
 	.l2-legend {
 		display: flex;
-		gap: 16px;
+		gap: 4px 12px;
 		align-items: center;
-		padding: 5px 12px;
+		padding: 4px 10px;
 		border-top: 1px solid var(--dl-border);
 		font-size: 12.5px;
 		flex-wrap: wrap;
@@ -1539,11 +1572,10 @@
 		display: flex;
 		list-style: none;
 		margin: 0;
-		padding: 6px 8px;
+		padding: 4px 8px;
 		gap: 4px;
 		border-top: 1px solid var(--dl-border);
 		border-right: 1px solid var(--dl-border);
-		min-height: 56px;
 		align-items: stretch;
 	}
 	.l2-steps li {
@@ -1558,7 +1590,7 @@
 		align-items: center;
 		padding: 2px;
 		font-size: 11.5px;
-		line-height: 1.25;
+		line-height: 1.2;
 	}
 	.l2-steps button b {
 		font-family: var(--dl-font-code);

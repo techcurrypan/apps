@@ -123,7 +123,10 @@ export const ITEM_W = 92;
 export const ITEM_H = 32;
 const ITEM_GAP = 8;
 const BOX_GAP = 90;
-const BAND_LABEL = 170;
+/** 層の帯の左の余白。帯の名前は箱の左ではなく、帯の上の細い段に置く（寄りの幅を削らない。LS-D1・D16） */
+const BAND_PAD = 24;
+/** 帯の名前の段の高さ */
+export const BAND_HEAD = 34;
 
 function cuesOf(l: Lesson): { cue: Cue; step: number }[] {
 	const out: { cue: Cue; step: number }[] = [];
@@ -248,7 +251,7 @@ export function geoOf(l: Lesson): Geo {
 	let y = mapRects.length ? mapBounds.y + mapBounds.h + 140 : 0;
 	const x0 = mapRects.length ? mapBounds.x : 0;
 	for (const band of bandOrder) {
-		let x = x0 + BAND_LABEL;
+		let x = x0 + BAND_PAD;
 		let bandH = 0;
 		const placed: { id: string; w: number; h: number }[] = [];
 		for (const id of band.boxes) {
@@ -257,12 +260,18 @@ export function geoOf(l: Lesson): Geo {
 			const qW = qs.length
 				? Math.max(...qs.map(([, q]) => Math.min(Math.max(q.max, 3), 6) * (ITEM_W + ITEM_GAP) + 16))
 				: 0;
-			const w = Math.max(textW(info.impl, FONT.name) + 36, qW + 24, 200);
+			// 右上の実行の文脈の札（syscall・softirq など。最大 9 字）の分も空ける
+			const w = Math.max(
+				textW(info.impl, FONT.name) + 36 + textW('kthread__', FONT.sub) + 12,
+				qW + 24,
+				200
+			);
 			const h = 56 + qs.length * 78;
 			placed.push({ id, w, h });
 			bandH = Math.max(bandH, h);
 		}
-		const top = y + 20;
+		// 帯の名前の段の下に、箱の上の状態の札（箱の 34 上から）の分を空ける
+		const top = y + 32 + BAND_HEAD;
 		for (const p of placed) {
 			const info = boxInfo.get(p.id)!;
 			const r = { x, y: top + (bandH - p.h) / 2, w: p.w, h: p.h };
@@ -289,9 +298,9 @@ export function geoOf(l: Lesson): Geo {
 			}
 			x += p.w + BOX_GAP;
 		}
-		const r = { x: x0, y, w: x - BOX_GAP - x0 + 30, h: bandH + 40 };
+		const r = { x: x0, y, w: x - BOX_GAP - x0 + BAND_PAD, h: bandH + 52 + BAND_HEAD };
 		bands.push({ id: band.id, label: band.label, r });
-		y += bandH + 40 + 14;
+		y += bandH + 52 + BAND_HEAD + 14;
 	}
 	// 帯の幅をそろえる
 	const bw = Math.max(0, ...bands.map((b) => b.r.w));
@@ -371,6 +380,41 @@ export function fitView(rs: readonly Rect[], sw: number, sh: number, margin = 24
 	const c = ctr(u);
 	return { x: c.x - w / 2, y: c.y - h / 2, w, h, scale };
 }
+
+/**
+ * 寄せる物を前から順に足し、0.8 倍で入る所まで入れる視点（LS-D1）。全部入れば fitView と同じ。
+ * 入らない物を入れて中を切るより、前（そのステップの主役）を切らずに見せる。1 つ目も入らない時は 1 つ目に寄せる。
+ * 入れなかった物がある時は、周りが見えるよう倍率を 1 までにする。taken は入れた物の番号
+ */
+export function fitFirstOf(
+	rs: readonly Rect[],
+	sw: number,
+	sh: number,
+	margin = 24
+): { view: View; taken: number[] } {
+	const fits = (xs: readonly Rect[]) => {
+		const u = union(xs);
+		return (
+			u.w * MIN_SCALE <= Math.max(1, sw - margin * 2) &&
+			u.h * MIN_SCALE <= Math.max(1, sh - margin * 2)
+		);
+	};
+	if (rs.length === 0 || fits(rs))
+		return { view: fitView(rs, sw, sh, margin), taken: rs.map((_, i) => i) };
+	const taken = [0];
+	for (let i = 1; i < rs.length; i++) if (fits([...taken.map((k) => rs[k]), rs[i]])) taken.push(i);
+	const v = fitView(
+		taken.map((k) => rs[k]),
+		sw,
+		sh,
+		margin
+	);
+	if (v.scale <= 1) return { view: v, taken };
+	const c = { x: v.x + v.w / 2, y: v.y + v.h / 2 };
+	return { view: { x: c.x - sw / 2, y: c.y - sh / 2, w: sw, h: sh, scale: 1 }, taken };
+}
+export const fitFirst = (rs: readonly Rect[], sw: number, sh: number, margin = 24): View =>
+	fitFirstOf(rs, sw, sh, margin).view;
 
 export const lerpView = (a: View, b: View, k: number): View => ({
 	x: a.x + (b.x - a.x) * k,

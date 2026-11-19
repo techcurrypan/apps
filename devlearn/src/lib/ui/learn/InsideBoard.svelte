@@ -249,7 +249,7 @@
 		min-width: 0;
 	}
 	.col {
-		padding: 10px 12px 12px;
+		padding: 6px 12px 12px;
 		min-width: 0;
 		border-left: 1px solid var(--dl-border);
 	}
@@ -261,7 +261,8 @@
 		justify-content: space-between;
 		align-items: baseline;
 		gap: 8px;
-		margin-bottom: 8px;
+		margin-bottom: 4px;
+		min-width: 0;
 	}
 	.ih h3 {
 		margin: 0;
@@ -272,6 +273,11 @@
 		font-size: 11px;
 		color: var(--dl-text-muted);
 		text-align: right;
+		/* 見出しは 1 行に（行を上に詰め、スクロールせずに見える行を増やす。LS-I12） */
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		min-width: 0;
 	}
 	.none {
 		margin: 0;
@@ -317,7 +323,7 @@
 		justify-content: center;
 		flex-basis: 0;
 		min-width: 0;
-		font: 700 10px var(--dl-font-code);
+		font: 700 11px var(--dl-font-code);
 		color: var(--dl-surface);
 		font-style: normal;
 		overflow: hidden;
@@ -355,7 +361,7 @@
 	.pbl {
 		display: flex;
 		justify-content: space-between;
-		font: 500 10.5px var(--dl-font-code);
+		font: 500 11px var(--dl-font-code);
 		color: var(--dl-text-muted);
 		margin: 2px 0 8px;
 	}
@@ -371,7 +377,7 @@
 	}
 	.pl h5 small {
 		color: var(--dl-text-muted);
-		font: 500 10.5px var(--dl-font-code);
+		font: 500 11px var(--dl-font-code);
 	}
 	.pf {
 		display: grid;
@@ -510,7 +516,7 @@
 	}
 	.mk {
 		flex-basis: 100%;
-		font: 700 10.5px var(--dl-font);
+		font: 700 11px var(--dl-font);
 		color: var(--dl-now);
 	}
 	.row.gone .mk {
@@ -546,10 +552,10 @@
 		grid-row: span 2;
 		height: 18px;
 		min-width: 18px;
-		font-size: 10px;
+		font-size: 11px;
 	}
 	.lrow .tm {
-		font-size: 10.5px;
+		font-size: 11px;
 	}
 	.lrow .src {
 		color: var(--k-fg);

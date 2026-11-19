@@ -4,7 +4,7 @@
 import type { Cue, CueDo, ImplContext, Lesson, Step } from '../lesson/types.ts';
 import {
 	along,
-	fitView,
+	fitFirstOf,
 	lerpView,
 	rectOfId,
 	type Geo,
@@ -121,11 +121,16 @@ function fitOf(s: Step): string[] {
 	return c && c.do.op === 'camera' ? c.do.fit : [];
 }
 
-function viewFor(g: Geo, ids: readonly string[], o: FrameOpts): View {
-	const rs = ids.map((id) => rectOfId(g, id)).filter((r): r is Rect => !!r);
+/** 寄せる視点と、その視点に入れた物（data-fit。入らずに外した物は含めない） */
+function viewFor(g: Geo, ids: readonly string[], o: FrameOpts): { view: View; fit: string[] } {
+	const have = ids.filter((id) => !!rectOfId(g, id));
+	const rs = have.map((id) => rectOfId(g, id) as Rect);
 	const inset = Math.min(o.insetR ?? 0, o.sw * 0.4);
-	const v = fitView(rs.length ? rs : [g.all], o.sw - inset, o.sh);
-	return { ...v, w: v.w + inset / v.scale };
+	const { view: v, taken } = fitFirstOf(rs.length ? rs : [g.all], o.sw - inset, o.sh);
+	return {
+		view: { ...v, w: v.w + inset / v.scale },
+		fit: rs.length ? taken.map((k) => have[k]) : [...ids]
+	};
 }
 
 /** ステップ s（0 は概要）の後の形 */
@@ -138,9 +143,10 @@ function after(l: Lesson, g: Geo, s: number, o: FrameOpts): After {
 	let r: After;
 	if (s <= 0) {
 		const ids = [...g.nodes.keys()];
+		const vf = viewFor(g, ids.length ? ids : [...g.boxes.keys()], o);
 		r = {
-			view: viewFor(g, ids.length ? ids : [...g.boxes.keys()], o),
-			fit: ids,
+			view: vf.view,
+			fit: vf.fit,
 			badges: new Map(),
 			metrics: new Map((l.metrics ?? []).map((x) => [x.key, '—'])),
 			failed: new Set(),
@@ -166,9 +172,10 @@ function after(l: Lesson, g: Geo, s: number, o: FrameOpts): After {
 		const metrics = new Map(prev.metrics);
 		for (const [k, v] of Object.entries(st.metrics ?? {})) metrics.set(k, v);
 		const fit = fitOf(st);
+		const vf = fit.length ? viewFor(g, fit, o) : null;
 		r = {
-			view: fit.length ? viewFor(g, fit, o) : prev.view,
-			fit: fit.length ? fit : prev.fit,
+			view: vf ? vf.view : prev.view,
+			fit: vf ? vf.fit : prev.fit,
 			badges,
 			metrics,
 			failed,
