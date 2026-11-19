@@ -381,6 +381,14 @@ async function measure2(flag: string) {
 				await tab.go(url);
 				await tab.eval('window.__learn2?.go(3)');
 				await sleep(2500);
+				// 保存の空の初回に画面が落ちていないこと（2026-11-19、効果の回り続けで 500 になった）
+				const err = await tab.eval<string>(
+					`document.querySelector('.l2-dia, [data-learn2]') ? '' : document.body.innerText.slice(0, 60)`
+				);
+				if (err) {
+					bad++;
+					console.log(`${id} ${w} 画面が開かない × ${JSON.stringify(err)}`);
+				}
 				const m = await tab.eval<Layout>(LAYOUT);
 				const r = judgeLayout(m, 'watch');
 				out[`${id}-${w}`] = { m, r };

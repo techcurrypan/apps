@@ -92,9 +92,10 @@
 	let showNotes = $state(false);
 	$effect(() => {
 		const saved = read(PREFS_KEY);
-		prefs = parsePrefs(saved);
-		// 第 2 版の既定の詳しさは「現場」（explanation-standard.md 2.3 の量の基準）
-		if (saved === null) prefs = { ...prefs, depth: 2 };
+		const p = parsePrefs(saved);
+		// 第 2 版の既定の詳しさは「現場」（explanation-standard.md 2.3 の量の基準）。
+		// prefs を書いてから読むと、この効果が prefs に依存して回り続ける（保存が空の初回に 500 になった）
+		prefs = saved === null ? { ...p, depth: 2 } : p;
 		summary = parseSummary(read(SUMMARY_KEY));
 		notes = parseNotes(read(NOTES_KEY));
 		hands = loadProgress().done.length;
@@ -687,7 +688,12 @@
 		</nav>
 	</div>
 
-	<div class="l2-body" class:try={mode === 'try'} class:recall={mode === 'recall'}>
+	<div
+		class="l2-body"
+		class:try={mode === 'try'}
+		class:recall={mode === 'recall'}
+		class:watch={mode === 'watch'}
+	>
 		<!-- 左の目次（畳んだ形 56px。開くと図の上に重なる。LS-A2） -->
 		<nav class="l2-toc" class:open={tocOpen} aria-label="同じ分野のレッスン">
 			<button type="button" class="tt" onclick={() => (tocOpen = !tocOpen)} aria-expanded={tocOpen}
@@ -1024,15 +1030,18 @@
 							{x}
 						</li>{/each}
 				</ul>
-				<p class="src">
-					出典：{#each lesson.sources ?? [] as s, i (s.id)}{i
-							? '・'
-							: ''}<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- 外の一次情報（別タブ） --><a
-							href={s.url}
-							target="_blank"
-							rel="noopener noreferrer">{s.title}</a
-						>{/each}
-				</p>
+				{#if S?.refs?.length}
+					<!-- このステップの出典だけ（全部は用語集の頁と同じく、レッスンの出典の数で示す） -->
+					<p class="src">
+						出典（このステップ {S.refs.length} 件 / 全 {lesson.sources?.length ?? 0} 件）：{#each (lesson.sources ?? []).filter( (x) => S?.refs?.includes(x.id) ) as s, i (s.id)}{i
+								? '・'
+								: ''}<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- 外の一次情報（別タブ） --><a
+								href={s.url}
+								target="_blank"
+								rel="noopener noreferrer">{s.title}</a
+							>{/each}
+					</p>
+				{/if}
 			</aside>
 		{:else if mode === 'try'}
 			<aside class="l2-term">
@@ -1269,6 +1278,20 @@
 		grid-template-columns: 56px minmax(0, 1fr) var(--narr);
 		min-height: max(560px, calc(100vh - 104px - var(--peek)));
 		position: relative;
+	}
+	/* 見るの広い画面：図の段の高さを決め、語りが長いときは右の通り（中身の板と記録が空けておく）へ続ける。
+	   語りが図の段を押し広げると、図が縦に伸びて画面からはみ出す（LS-A4。2026-11-19） */
+	.l2-body.watch {
+		height: max(560px, calc(100vh - 104px - var(--peek)));
+		min-height: 0;
+		grid-template-rows: minmax(0, 1fr);
+	}
+	.l2-body.watch > .l2-narr {
+		align-self: start;
+	}
+	.l2-body.watch ~ .l2-inside,
+	.l2-body.watch ~ .l2-rec {
+		margin-right: var(--narr);
 	}
 	.l2-body.try {
 		grid-template-columns: 56px minmax(0, 1fr) minmax(640px, 46%);
@@ -1865,6 +1888,7 @@
 	.l2.full .l2-body {
 		grid-template-columns: minmax(0, 1fr) var(--narr);
 		min-height: 100vh;
+		height: 100vh;
 	}
 	/* 中くらいの幅（11.9） */
 	@media (max-width: 1280px) {
@@ -1896,9 +1920,15 @@
 			display: none;
 		}
 		.l2-body,
-		.l2-body.try {
+		.l2-body.try,
+		.l2-body.watch {
 			display: block;
 			min-height: 0;
+			height: auto;
+		}
+		.l2-body.watch ~ .l2-inside,
+		.l2-body.watch ~ .l2-rec {
+			margin-right: 0;
 		}
 		.l2-toc {
 			display: none;
@@ -1915,12 +1945,13 @@
 		.l2-board {
 			display: none;
 		}
+		/* 携帯でも帯の中を横に送らない（LS-A6）。4 つずつ折り返す */
 		.l2-steps {
-			overflow-x: auto;
+			flex-wrap: wrap;
 			border-right: 0;
 		}
 		.l2-steps li {
-			flex: 0 0 64px;
+			flex: 0 0 calc(25% - 3px);
 		}
 		.l2-narr {
 			padding: 10px 12px;
