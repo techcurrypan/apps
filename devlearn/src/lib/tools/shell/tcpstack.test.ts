@@ -44,14 +44,14 @@ describe('TCP の出口の模擬', () => {
 	it('tc -s qdisc：pfifo に 30 MB', () => {
 		const [a] = outs(['tc -s qdisc show dev eth0']);
 		expect(a.out).toMatch(/^qdisc pfifo 8001: root refcnt 2 limit 100000p\n/);
-		expect(a.out).toContain(' backlog 30000000b 458p requeues 0\n');
+		expect(a.out).toContain(' backlog 30000000b 440p requeues 0\n');
 	});
 	it('tcp_limit_output_bytes を下げても溜まりは減らない（1 本 117 KB で効いていない）', () => {
 		const [, b] = outs([
 			'sudo sysctl -w net.ipv4.tcp_limit_output_bytes=262144',
 			'tc -s qdisc show dev eth0'
 		]);
-		expect(b.out).toContain(' backlog 30000000b 458p requeues 0\n');
+		expect(b.out).toContain(' backlog 30000000b 440p requeues 0\n');
 	});
 	it('sysctl の読み書き。sudo が無いと書けない', () => {
 		const [a, b, c, d] = outs([
@@ -79,7 +79,7 @@ describe('TCP の出口の模擬', () => {
 		expect(b.code).toBe(0);
 		expect(b.out).toBe('');
 		expect(c.out).toMatch(/^qdisc fq 8002: root refcnt 2 limit 10000p flow_limit 100p /);
-		expect(c.out).toContain(' backlog 30000000b 458p requeues 0\n');
+		expect(c.out).toContain(' backlog 30000000b 440p requeues 0\n');
 		expect(d.out).toContain(' rtt:0.6/');
 		expect(e.out).toContain(' rtt:24.5/');
 	});
@@ -90,7 +90,7 @@ describe('TCP の出口の模擬', () => {
 			'ss -tim dst 10.0.0.77',
 			'ss -tim dst 10.0.0.9 | head -3'
 		]);
-		expect(b.out).toContain(' backlog 6250000b 95p requeues 0\n');
+		expect(b.out).toContain(' backlog 6250000b 92p requeues 0\n');
 		expect(c.out).toContain(' rtt:0.6/');
 		expect(d.out).toContain(' rtt:5.5/');
 	});
@@ -107,14 +107,14 @@ describe('TCP の出口の模擬', () => {
 		expect(a.err).toBe('Cannot find device "eth1"\n');
 		expect(b.err).toBe('Error: Specified qdisc kind is unknown.\n');
 	});
-	it('tcp_limit_output_bytes を 130 KB より下げると、1 本 1 塊（66 KB）まで減るが 17 MB 残る（査読 2026-11-19）', () => {
+	it('tcp_limit_output_bytes を塊 1 個の truesize（66 KB）より下げると、1 本 1 塊まで減るが、qdisc の数え方（1 塊 68,130 B）で 17 MB 残る（査読 2026-11-19）', () => {
 		const [, b, c] = outs([
 			'sudo sysctl -w net.ipv4.tcp_limit_output_bytes=65536',
 			'tc -s qdisc show dev eth0',
 			'ss -tim dst 10.0.0.77'
 		]);
-		expect(b.out).toContain(' backlog 16896000b 258p requeues 0\n');
-		expect(c.out).toContain(' rtt:14.017/');
+		expect(b.out).toContain(' backlog 17441280b 256p requeues 0\n');
+		expect(c.out).toContain(' rtt:14.453/');
 	});
 	it('sysctl：tcp_wmem・tcp_notsent_lowat・tcp_rto_min_us・tcp_ecn を v6.12 の既定で読める', () => {
 		const [a] = outs([
@@ -150,5 +150,25 @@ describe('TCP の出口の模擬', () => {
 		const [a] = outs(['ethtool -l eth0']);
 		expect(a.out).toContain('Pre-set maximums:');
 		expect(a.out).toMatch(/Current hardware settings:\n(.*\n)*Combined:\t1\n/);
+	});
+	it('ss の rto は jiffy（HZ=1000 で 1 ms）に切り上げた整数（査読 2026-11-19）', () => {
+		const [a, , c] = outs([
+			'ss -tim dst 10.0.0.77',
+			'sudo tc qdisc replace dev eth0 root fq',
+			'ss -tim dst 10.0.0.77'
+		]);
+		expect(a.out).toContain(' rto:225 rtt:24.5/');
+		expect(c.out).toContain(' rto:201 rtt:0.6/');
+	});
+	it('fq_codel の maxpacket は区切りごとの頭を足した 68130、bfifo の既定は 1000 × 1514 B（査読 2026-11-19）', () => {
+		const [, b, , d] = outs([
+			'sudo tc qdisc replace dev eth0 root fq_codel',
+			'tc -s qdisc show dev eth0',
+			'sudo tc qdisc replace dev eth0 root bfifo',
+			'tc -s qdisc show dev eth0'
+		]);
+		expect(b.out).toContain('  maxpacket 68130 ');
+		expect(d.out).toMatch(/^qdisc bfifo 8003: root refcnt 2 limit 1514000b\n/);
+		expect(d.out).toContain(' backlog 1514000b 22p requeues 0\n');
 	});
 });

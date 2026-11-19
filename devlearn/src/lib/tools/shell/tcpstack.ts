@@ -22,7 +22,8 @@ export type TcpState = TcpWorld & { handle: number };
 const LINE_BPS = 1.25e9; // 10 GbE の 1 秒の B
 const PER_FLOW = 30_000_000 / 256; // 1 本が手元に置く量（TSQ の下限 2 × truesize の内。net-101 ステップ 10）
 const TRUESIZE = 66_000; // 64 KB の塊 1 個の truesize。TSQ は手元が 0 の時、上限より大きくても 1 個は通す
-const SKB = 65_536;
+// qdisc が数える塊 1 個の長さ（qdisc_pkt_len_init()：45 区切りの GSO の skb に、区切りごとの頭 66 B を足す。65,226 ＋ 44 × 66）
+const SKB = 68_130;
 const MSS = 1448;
 const QDISCS: Qdisc[] = [
 	'pfifo',
@@ -47,7 +48,7 @@ const CAP: Record<Qdisc, number> = {
 	cake: 0.005 * LINE_BPS, // 既定の target 5ms
 	fq_pie: 0.015 * LINE_BPS, // target 15ms
 	sfq: 127 * SKB, // limit 127p
-	bfifo: 1_500_000 // limit は txqueuelen 1000 × mtu 1500
+	bfifo: 1_514_000 // limit は tx_queue_len 1000 × psched_mtu 1514（sch_fifo.c fifo_init()）
 };
 
 export function initialTcp(w: TcpWorld): TcpState {
@@ -61,7 +62,8 @@ export function initialTcp(w: TcpWorld): TcpState {
  */
 export function pileOf(t: TcpWorld): number {
 	const lim = Number(t.sysctl['net.ipv4.tcp_limit_output_bytes'] ?? '1048576');
-	const per = Math.min(PER_FLOW, Math.max(lim, TRUESIZE));
+	// 手元が上限を「超えたら」止めるので、置ける塊は floor(上限 ÷ truesize) ＋ 1 個。qdisc ではそれぞれ SKB として数える
+	const per = Math.min(PER_FLOW, SKB * (Math.floor(lim / TRUESIZE) + 1));
 	return Math.round(t.flows.count * per);
 }
 /** 手元の行列（qdisc の B）。fq は流れを分けるだけで溜まりは残る。AQM（fq_codel・cake・fq_pie）は目標の待ちを超えた分を捨てる */
@@ -117,7 +119,7 @@ function copyFlow(t: TcpState, i: number, info: boolean, mem: boolean): string {
 		'ts sack',
 		t.sysctl['net.ipv4.tcp_congestion_control'] ?? 'cubic',
 		'wscale:7,7',
-		`rto:${fmtMs(200 + rtt)}`,
+		`rto:${Math.ceil(200 + rtt)}`,
 		`rtt:${fmtMs(rtt)}/${t.qdisc === 'fq_codel' ? '0.412' : '0.398'}`,
 		'ato:40 mss:1448 pmtu:1500 rcvmss:536 advmss:1448',
 		`cwnd:${cwnd} ssthresh:${Math.round(cwnd * 0.7)}`,
@@ -138,7 +140,7 @@ function sshFlow(t: TcpState, info: boolean, mem: boolean): string {
 		'ts sack',
 		t.sysctl['net.ipv4.tcp_congestion_control'] ?? 'cubic',
 		'wscale:7,7',
-		`rto:${fmtMs(200 + rtt)}`,
+		`rto:${Math.ceil(200 + rtt)}`,
 		`rtt:${fmtMs(rtt)}/${rtt > 2 ? '0.31' : '0.1'}`,
 		'ato:40 mss:1448 pmtu:1500 rcvmss:536 advmss:1448',
 		'cwnd:10 bytes_sent:184320 bytes_acked:184320 bytes_received:36864 segs_out:2210 segs_in:1630 data_segs_out:1180 data_segs_in:640',
@@ -193,7 +195,7 @@ function qdiscText(t: TcpState): string {
 			return (
 				`qdisc fq_codel ${h} root refcnt 2 limit 10240p flows 1024 quantum 1514 target 5ms interval 100ms memory_limit 32Mb ecn drop_batch 64\n${sent}` +
 				// 写しの流れは ECN を使わない（tcp_ecn=2 は求められた時だけ使う）ので、印ではなく捨てる
-				`  maxpacket 65160 drop_overlimit 0 new_flow_count 12 ecn_mark 0\n  new_flows_len 1 old_flows_len ${t.flows.count}\n`
+				`  maxpacket ${SKB} drop_overlimit 0 new_flow_count 12 ecn_mark 0\n  new_flows_len 1 old_flows_len ${t.flows.count}\n`
 			);
 		case 'sfq':
 			return `qdisc sfq ${h} root refcnt 2 limit 127p quantum 1514b depth 127 divisor 1024 \n${sent}`;
@@ -202,7 +204,7 @@ function qdiscText(t: TcpState): string {
 		case 'fq_pie':
 			return `qdisc fq_pie ${h} root refcnt 2 limit 10240p flows 1024 target 15ms tupdate 16ms alpha 2 beta 20 quantum 1514b memory_limit 32Mb ecn_prob 10\n${sent}`;
 		case 'bfifo':
-			return `qdisc bfifo ${h} root refcnt 2 limit 1500000b\n${sent}`;
+			return `qdisc bfifo ${h} root refcnt 2 limit 1514000b\n${sent}`;
 		case 'mq':
 			return `qdisc mq ${h} root \n${sent}`;
 	}

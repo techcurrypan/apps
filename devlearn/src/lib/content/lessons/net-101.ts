@@ -79,11 +79,11 @@ export const net101: Lesson = {
 			'$ ss -tim dst 10.0.0.77',
 			'State Recv-Q Send-Q     Local Address:Port  Peer Address:Port Process',
 			'ESTAB 0      0                 10.0.0.5:22    10.0.0.77:51022 ',
-			'\t skmem:(r0,rb131072,t0,tb87040,f0,w0,o0,bl0,d0) ts sack cubic wscale:7,7 rto:224.5 rtt:24.5/0.31 ato:40 mss:1448 pmtu:1500 rcvmss:536 advmss:1448 cwnd:10 bytes_sent:184320 bytes_acked:184320 bytes_received:36864 segs_out:2210 segs_in:1630 data_segs_out:1180 data_segs_in:640 send 4.73Mbps lastsnd:12 lastrcv:12 lastack:12 pacing_rate 9.46Mbps delivery_rate 1.2Mbps delivered:1181 app_limited busy:1200ms rcv_space:14480 rcv_ssthresh:64088 minrtt:0.5',
+			'\t skmem:(r0,rb131072,t0,tb87040,f0,w0,o0,bl0,d0) ts sack cubic wscale:7,7 rto:225 rtt:24.5/0.31 ato:40 mss:1448 pmtu:1500 rcvmss:536 advmss:1448 cwnd:10 bytes_sent:184320 bytes_acked:184320 bytes_received:36864 segs_out:2210 segs_in:1630 data_segs_out:1180 data_segs_in:640 send 4.73Mbps lastsnd:12 lastrcv:12 lastack:12 pacing_rate 9.46Mbps delivery_rate 1.2Mbps delivered:1181 app_limited busy:1200ms rcv_space:14480 rcv_ssthresh:64088 minrtt:0.5',
 			'$ tc -s qdisc show dev eth0',
 			'qdisc pfifo 8001: root refcnt 2 limit 100000p',
 			' Sent 81234567890 bytes 1239500 pkt (dropped 0, overlimits 0 requeues 0) ',
-			' backlog 30000000b 458p requeues 0'
+			' backlog 30000000b 440p requeues 0'
 		]
 	},
 	practice: {
@@ -107,7 +107,7 @@ export const net101: Lesson = {
 			{
 				when: 'sudo を付けずに sysctl -w した',
 				why: '/proc/sys の設定を書けるのは root だけ',
-				next: 'sudo を付ける。ただし 256 KiB に下げても溜まりは減らず、130 KB より下げても 256 本で約 17 MB 残る。qdisc を見る',
+				next: 'sudo を付ける。ただし 256 KiB に下げても溜まりは減らず、塊 1 個（66 KB）より下げても 256 本 × 1 個で約 17 MB 残る。qdisc を見る',
 				match: 'permission denied on key'
 			},
 			{
