@@ -332,12 +332,12 @@ export const s3: Step = {
 				text: '10:15:01.000100 IP 10.0.0.5.43210 > 10.0.0.9.9000: Flags [S], seq 2717001000, win 64240, options [mss 1460,sackOK,TS val 3000 ecr 0,nop,wscale 7], length 0'
 			},
 			{
-				t: '10:15:01.000350',
+				t: '10:15:01.000600',
 				src: 'tcpdump',
 				text: '10:15:01.000600 IP 10.0.0.9.9000 > 10.0.0.5.43210: Flags [S.], seq 1593000000, ack 2717001001, win 65160, options [mss 1460,sackOK,TS val 5000 ecr 3000,nop,wscale 7], length 0'
 			},
 			{
-				t: '10:15:01.000360',
+				t: '10:15:01.000610',
 				src: 'tcpdump',
 				text: '10:15:01.000610 IP 10.0.0.5.43210 > 10.0.0.9.9000: Flags [.], ack 1, win 502, options [nop,nop,TS val 3000 ecr 5000], length 0'
 			}
@@ -428,13 +428,13 @@ export const s4: Step = {
 			'size_goal は tcp_send_mss() から tcp_xmit_size_goal() で決まる。tcp_bound_to_half_wnd() が、相手が見せた最大の窓 65,160 B の半分 32,580 B に切る。1,448 B の倍数に丸めて 22 個分、31,856 B だ。足りなくなると tcp_stream_alloc_skb() で次の skb を取り、tcp_skb_entail() で列の後ろにつなぐ。',
 			'データは sk_page_frag() のページに写され、skb の frags に並ぶ。sk_wmem_queued が sk_sndbuf の 87,040 B を超えると sk_stream_wait_memory() で眠る。今回は 65,536 B と頭書きの分で上限の内に収まり、待たずに戻る。',
 			'tcp_write_xmit() の輪は v6.12 で次の順だ。tcp_pacing_check()、tcp_cwnd_test()（cwnd − 飛んでいる数）、tcp_snd_wnd_test()（受信窓）。1 区切りなら tcp_nagle_test()、2 区切り以上なら tcp_tso_should_defer() を見る。push_one の時は TSO の待ちを見ない。',
-			'送ってよい量が決まると tcp_mss_split_point() で切る位置を決め、tso_fragment() で skb を割る。最後に tcp_small_queue_check()（TSQ）で手元の行列が上限を超えていないかを見て、tcp_transmit_skb() へ進む。',
-			'Nagle は MSS（1,448 B）より小さい区切りを止める。止めるのは、未 ACK の小さい区切りが 1 つ以上ある間だけだ（Minshall の変形。tcp_minshall_check()）。この帳簿では、最後の 376 B は C の後ろの断片で、C ごと 2 個として送られる。'
+			'送ってよい量が決まると tcp_mss_split_point() で切る位置を決め、tso_fragment() で skb を割る。skb が cwnd の残りより小さい時は、tcp_grow_skb() が次の skb から足りない分を移す（2 往復目で使う）。最後に tcp_small_queue_check()（TSQ）で手元の行列を見て、tcp_transmit_skb() へ進む。',
+			'tcp_pacing_check() が待たせるのは、fq の無い BBR のように TCP が自分でペーシングする時だけだ。Nagle は MSS（1,448 B）より小さい区切りを止める。止めるのは、未 ACK の小さい区切りが 1 つ以上ある間だけだ（Minshall の変形。tcp_minshall_check()）。この帳簿では、最後の 376 B は C の後ろの断片で、C ごと 2 個として送られる。'
 		]
 	},
 	callout: {
 		type: 'point',
-		text: '「送らない」理由は 6 つ。どれで止まったかは ss -tim の rwnd_limited・cwnd_limited・notsent で見分ける。'
+		text: '「送らない」理由は 6 つ。どれで止まったかは ss -tim の busy・rwnd_limited・sndbuf_limited と、cwnd と unacked が等しいか、notsent で見分ける。'
 	},
 	changes: [
 		{ mark: '+', text: 'skb A・B（31,856 B）と C（1,824 B）' },
@@ -535,7 +535,7 @@ export const s4: Step = {
 		{ at: 900, dur: 600, do: { op: 'peek', queue: 'wq', item: 'B 31856' } }
 	],
 	board: [
-		'ペーシング：最初の 10 個は待たない。受信窓 65,160 B → 通る',
+		'ペーシング：cubic と fq では TCP は待たない。受信窓 65,160 B → 通る',
 		'cwnd 10 − 飛んでいる 0 → 10 個まで',
 		'TSO の待ち：送れる分が揃った → 待たない',
 		'TSQ：手元の行列 0 B → 通る',

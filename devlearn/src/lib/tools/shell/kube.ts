@@ -6,7 +6,7 @@
 //   - kubectl を 1 回打つと、模擬の時計が 5 秒進む（打つ間に時間が経つ）
 // 出力の形は Kubernetes v1.31 の kubectl（表は Go の tabwriter。get は余白 3・最小幅 6、describe は余白 2）と、
 // 公式文書（kubernetes.io「Debug Running Pods」「Assign Memory Resources to Containers and Pods」）に合わせた（decisions.md 2026-11-19）。
-import { fail, ok, type Cmd, type CmdResult, type ShellState } from './run.ts';
+import { fail, type Cmd, type CmdResult, type ShellState } from './run.ts';
 
 export type K8sNode = {
 	name: string;

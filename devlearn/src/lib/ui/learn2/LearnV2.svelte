@@ -117,7 +117,9 @@
 	const ctxOfBox = $derived.by(() => {
 		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- $derived.by の中で作って返すだけ（後から書き換えない）
 		const m = new Map<string, ImplContext>();
-		for (const s of steps) {
+		// 今のステップの文脈を先に取る（同じ箱が、ステップによって syscall でも softirq でも動く）
+		const here = step > 0 ? steps[step - 1] : undefined;
+		for (const s of here ? [here, ...steps] : steps) {
 			const byName = new Map((s.impl ?? []).map((i) => [i.name, i.context]));
 			for (const ly of s.layers ?? [])
 				for (const b of ly.boxes) {

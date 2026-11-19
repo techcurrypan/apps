@@ -8,7 +8,6 @@ const kl1 = row('kl-1', 0, 'kubelet（node-1）', '動いている');
 const kl2 = row('kl-2', 0, 'kubelet（node-2）', '動いている');
 const b9m4t = row('p-b9m4t', 1, `${POD}b9m4t`, 'CrashLoopBackOff（5 回）', 'bad');
 const q2wfz = row('p-q2wfz', 1, `${POD}q2wfz`, 'CrashLoopBackOff（4 回）', 'bad');
-const UID = '9c1e2f04-6b7a-4d3e-8f21-0a5b7c9d3e61';
 
 export const s5: Step = {
 	n: 5,

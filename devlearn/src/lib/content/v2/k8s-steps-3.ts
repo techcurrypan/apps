@@ -1,6 +1,6 @@
 // 見本 2（k8s-101）のステップ 9〜12：資源不足で Pending・上限を測って直す・requests と limits の代償・実際には。
 import type { Step } from '../../lesson/types.ts';
-import { B, cp, I, node, POD, row } from './k8s-base.ts';
+import { B, cp, I, node, row } from './k8s-base.ts';
 
 const N1 = (rows: ReturnType<typeof row>[]) => node('node-1', '10.0.1.11', '棟 1', rows);
 const N2 = (rows: ReturnType<typeof row>[]) => node('node-2', '10.0.1.12', '棟 2', rows);

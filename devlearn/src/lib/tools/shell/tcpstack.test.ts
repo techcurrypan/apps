@@ -107,4 +107,48 @@ describe('TCP の出口の模擬', () => {
 		expect(a.err).toBe('Cannot find device "eth1"\n');
 		expect(b.err).toBe('Error: Specified qdisc kind is unknown.\n');
 	});
+	it('tcp_limit_output_bytes を 130 KB より下げると、1 本 1 塊（66 KB）まで減るが 17 MB 残る（査読 2026-11-19）', () => {
+		const [, b, c] = outs([
+			'sudo sysctl -w net.ipv4.tcp_limit_output_bytes=65536',
+			'tc -s qdisc show dev eth0',
+			'ss -tim dst 10.0.0.77'
+		]);
+		expect(b.out).toContain(' backlog 16896000b 258p requeues 0\n');
+		expect(c.out).toContain(' rtt:14.017/');
+	});
+	it('sysctl：tcp_wmem・tcp_notsent_lowat・tcp_rto_min_us・tcp_ecn を v6.12 の既定で読める', () => {
+		const [a] = outs([
+			'sysctl net.ipv4.tcp_wmem net.ipv4.tcp_notsent_lowat net.ipv4.tcp_rto_min_us net.ipv4.tcp_ecn'
+		]);
+		expect(a.out).toBe(
+			'net.ipv4.tcp_wmem = 4096\t16384\t4194304\n' +
+				'net.ipv4.tcp_notsent_lowat = 4294967295\n' +
+				'net.ipv4.tcp_rto_min_us = 200000\n' +
+				'net.ipv4.tcp_ecn = 2\n'
+		);
+	});
+	it('カーネルにある qdisc（sfq・cake・fq_pie・bfifo・mq）は作れる。無い名前だけが unknown', () => {
+		for (const k of ['sfq', 'cake', 'fq_pie', 'bfifo', 'mq']) {
+			const [a, b] = outs([
+				`sudo tc qdisc replace dev eth0 root ${k}`,
+				'tc -s qdisc show dev eth0'
+			]);
+			expect(a.code, k).toBe(0);
+			expect(b.out, k).toMatch(new RegExp(`^qdisc ${k} 8002: root`));
+		}
+	});
+	it('替えた qdisc の数は 0 から数え、fq_codel は ECN を使わないので捨てた数が出る', () => {
+		const [, b] = outs([
+			'sudo tc qdisc replace dev eth0 root fq_codel',
+			'tc -s qdisc show dev eth0'
+		]);
+		expect(b.out).not.toContain('81234567890');
+		expect(b.out).toMatch(/\(dropped [1-9]\d*, overlimits 0 requeues 0\)/);
+		expect(b.out).toContain('new_flows_len 1 old_flows_len 256');
+	});
+	it('ethtool -l：送り口は combined 1 にしてある（ixgbe の最大は ATR が有効な既定で 63）', () => {
+		const [a] = outs(['ethtool -l eth0']);
+		expect(a.out).toContain('Pre-set maximums:');
+		expect(a.out).toMatch(/Current hardware settings:\n(.*\n)*Combined:\t1\n/);
+	});
 });

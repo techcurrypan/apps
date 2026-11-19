@@ -129,6 +129,7 @@ ACM Queue の頁は自動の取得を断る（403）ため、BBR は Google の�
 | net-101 | rfc8985 | rfc | RFC 8985 The RACK-TLP Loss Detection Algorithm for TCP | https://www.rfc-editor.org/rfc/rfc8985 | 2026-11-19 |
 | net-101 | rfc9438 | rfc | RFC 9438 CUBIC for Fast and Long-Distance Networks | https://www.rfc-editor.org/rfc/rfc9438 | 2026-11-19 |
 | net-101 | rfc8290 | rfc | RFC 8290 The Flow Queue CoDel Packet Scheduler and AQM Algorithm | https://www.rfc-editor.org/rfc/rfc8290 | 2026-11-19 |
+| net-101 | rfc8289 | rfc | RFC 8289 Controlled Delay Active Queue Management | https://www.rfc-editor.org/rfc/rfc8289 | 2026-11-19 |
 | net-101 | rfc7323 | rfc | RFC 7323 TCP Extensions for High Performance | https://www.rfc-editor.org/rfc/rfc7323 | 2026-11-19 |
 | net-101 | bbr | paper | Cardwell ほか「BBR: Congestion-Based Congestion Control」ACM Queue 14(5), 2016 | https://research.google/pubs/bbr-congestion-based-congestion-control-2/ | 2026-11-19 |
 | net-101 | man-ss | man | ss(8) | https://man7.org/linux/man-pages/man8/ss.8.html | 2026-11-19 |

@@ -416,7 +416,7 @@ export const s16: Step = {
 		deep: [
 			'文脈は 3 つ。send() の中はプロセス（眠れる）、割り込みは hardirq（すぐ戻る）だ。取り出しと ACK と解放は softirq、TSQ の再開は softirq の一種の tasklet で動く。持ち主が使用中のソケットへの仕事は、backlog と TCP_TSQ_DEFERRED で release_sock() まで持ち越す。',
 			'壊れ方は 3 つ見た。1 個の喪失は SACK と RACK で約 0.6 ms、最後の喪失は TLP で約 3 ms だ。1 個だけ飛んでいれば RTO の 200 ms、溜まりすぎは喪失 0 のまま RTT 24.5 ms。受信窓 0 は probe だけが流れる。',
-			'直し方と代償：tcp_limit_output_bytes を 1 MiB に、qdisc を fq に。CUBIC は喪失に弱く、BBR は他の流れを押しのけうる。TSO の塊は CPU と突発の取り引きだ。',
+			'直し方と代償：qdisc を fq に（溜まりを削るなら fq_codel に）。CUBIC は喪失に弱く、BBR は他の流れを押しのけうる。TSO の塊は CPU と突発の取り引きだ。',
 			'次に学ぶとよい物は 3 つ。輻輳制御を数で比べること、TLS の記録が TCP の区切りにどう載るか。そして Kubernetes の Pod の網が、veth と橋でこの道をどう延ばすかだ。',
 			'このレッスンの名前は全て Linux v6.12 のソースにある。版が上がると関数が分かれたり名前が変わったりするので、bpftrace で追う前に、使っている版のソースで名前を確かめる。'
 		]
@@ -431,7 +431,7 @@ export const s16: Step = {
 	],
 	facts: [
 		{ k: '区切り', v: '46 個（3 往復）' },
-		{ k: 'cwnd の育ち', v: '56 個（10 → 20 → 40 → 56。ACK された数を足す）', calc: '40+16' },
+		{ k: 'cwnd の育ち', v: '40 個（10 → 20 → 40。使い切らない往復では増えない）', calc: '20+20' },
 		{ k: '通った関数', v: '25 個以上' },
 		{ k: '文脈', v: '3 つ（プロセス・hardirq・softirq。tasklet は softirq）' }
 	],
@@ -465,7 +465,7 @@ export const s16: Step = {
 			}
 		]
 	},
-	metrics: { cwnd: '56 個', wq: '0 B', rtx: '0 個', rtt: '0.5 ms', qd: '0 B' },
+	metrics: { cwnd: '40 個', wq: '0 B', rtx: '0 個', rtt: '0.5 ms', qd: '0 B' },
 	motion: [
 		{
 			at: 0,

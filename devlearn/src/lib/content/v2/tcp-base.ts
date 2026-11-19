@@ -67,6 +67,13 @@ const sources: Source[] = [
 		checked: DAY
 	},
 	{
+		id: 'rfc8289',
+		title: 'RFC 8289 Controlled Delay Active Queue Management',
+		url: 'https://www.rfc-editor.org/rfc/rfc8289',
+		kind: 'rfc',
+		checked: DAY
+	},
+	{
 		id: 'rfc7323',
 		title: 'RFC 7323 TCP Extensions for High Performance',
 		url: 'https://www.rfc-editor.org/rfc/rfc7323',
@@ -167,6 +174,12 @@ const I = {
 	wx: fn('tcp_write_xmit()', 'net/ipv4/tcp_output.c', 'linux-tcp-output', 'syscall'),
 	wxSoft: fn('tcp_write_xmit()', 'net/ipv4/tcp_output.c', 'linux-tcp-output', 'softirq'),
 	tx: fn('tcp_transmit_skb()', 'net/ipv4/tcp_output.c', 'linux-tcp-output', 'syscall'),
+	// ACK を受けて送る時（ステップ 7・9）は、同じ関数が softirq で動く
+	txSoft: fn('tcp_transmit_skb()', 'net/ipv4/tcp_output.c', 'linux-tcp-output', 'softirq'),
+	growSkb: fn('tcp_grow_skb()', 'net/ipv4/tcp_output.c', 'linux-tcp-output', 'softirq'),
+	devqSoft: fn('__dev_queue_xmit()', 'net/core/dev.c', 'linux-dev', 'softirq'),
+	fqDeqSoft: fn('fq_dequeue()', 'net/sched/sch_fq.c', 'linux-fq', 'softirq'),
+	ipListRcv: fn('ip_list_rcv()', 'net/ipv4/ip_input.c', 'linux-ip-input', 'softirq'),
 	defer: fn('tcp_tso_should_defer()', 'net/ipv4/tcp_output.c', 'linux-tcp-output', 'syscall'),
 	tsqCheck: fn('tcp_small_queue_check()', 'net/ipv4/tcp_output.c', 'linux-tcp-output', 'syscall'),
 	nagle: fn('tcp_nagle_test()', 'net/ipv4/tcp_output.c', 'linux-tcp-output', 'syscall'),

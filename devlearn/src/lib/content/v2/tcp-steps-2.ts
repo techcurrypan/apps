@@ -35,7 +35,7 @@ export const s5: Step = {
 			'写しには skb->destructor = tcp_wfree が付く。写しの truesize は sk_wmem_alloc に足され、線に出て解放される時に tcp_wfree() で引かれる。この数が、後で見る TSQ の物差しになる。',
 			'tcp_event_new_data_sent() は __skb_unlink() で送信キューから外す。tcp_rbtree_insert() で tcp_rtx_queue に入れる。packets_out に 10 を足し、再送の時計（RTO）が止まっていれば動かす。',
 			'ip_queue_xmit() は sk の経路の控え（sk_dst_cache）を使い、無ければ引き直す。頭を付けて ip_local_out() に渡し、netfilter の OUTPUT と POSTROUTING を通す。その後 ip_finish_output2() から neigh_output() へ進む。',
-			'近隣の表が REACHABLE なら neigh_hh_output() で頭を写すだけで済む。表に無いか古ければ neigh_resolve_output() が skb を近隣の待ち行列に置き、ARP の問いを送る。答えが来るまで、この skb は待つ。'
+			'近隣の表が REACHABLE なら、neigh_hh_output() で頭を写すだけで済む。STALE（古い）なら古い MAC のまま直ぐ送り、裏で DELAY → PROBE と確かめる。表に無い（INCOMPLETE）時だけ、neigh_resolve_output() が skb を arp_queue に置いて ARP の答えを待つ。'
 		]
 	},
 	callout: {
@@ -251,7 +251,7 @@ export const s6: Step = {
 			at: 2000,
 			dur: 450,
 			para: 1,
-			do: { op: 'badge', id: 'b_dev', text: '次の塊は +250 µs', tone: 'warn' }
+			do: { op: 'badge', id: 'b_dev', text: '次の塊は +125 µs', tone: 'warn' }
 		},
 		{ at: 2100, dur: 400, para: 1, do: { op: 'board', line: 1 } },
 		{ at: 2800, dur: 900, para: 2, do: { op: 'camera', fit: ['b_dev', 'b_drv', 'b_tso'] } },
@@ -289,7 +289,7 @@ export const s6: Step = {
 		'ixgbe_xmit_frame_ring()：記述子に載せる',
 		'TSO：14,480 B → 1,514 B × 10 枚'
 	],
-	badges: { b_dev: '次の塊は +250 µs' },
+	badges: { b_dev: '次の塊は +125 µs' },
 	layers: [B.ip(), B.qd([]), B.drv([], [])],
 	impl: [I.ipq, I.neigh, I.devq, I.fqEnq, I.fqDeq, I.direct, I.drv, I.tso],
 	refs: [
@@ -322,7 +322,7 @@ export const s7: Step = {
 		work: [
 			'store-1 の側では GRO が 10 枚を 14,480 B の 1 個の skb にまとめる。TCP はまとめた 1 個に ACK を 1 つ返す。',
 			'app-1 の NIC は割り込みを上げる。hardirq の ixgbe_msix_clean_rings() は napi_schedule だけをして、すぐ戻る。取り出しは softirq の net_rx_action() が ixgbe_poll() を呼んで行う。',
-			'ACK は napi_gro_receive() に入るが、データの無い ACK はまとめない。ip_rcv() を経て tcp_v4_rcv() へ渡る。',
+			'ACK は napi_gro_receive() に入るが、データの無い ACK はまとめない。8 個ずつ束ねて ip_list_rcv() から tcp_v4_rcv() へ渡る。',
 			'tcp_rcv_established() から tcp_ack() が呼ばれ、tcp_clean_rtx_queue() が A1 を外して解放する。未 ACK は 0 個、cwnd は 10 から 20 へ増え、tcp_write_xmit() へ戻る。'
 		],
 		deep: [
@@ -330,7 +330,7 @@ export const s7: Step = {
 			'tcp_gro_receive() は、ack の番号・選択肢・旗が同じで、番号が続く区切りだけをまとめる（ack_seq を比べる）。ACK だけの区切りは中身が 0 B なので len < mss で flush され、1 個ずつ上へ渡る。',
 			'tcp_v4_rcv() はソケットを引き、持ち主のプロセスが使っていなければ（!sock_owned_by_user）tcp_v4_do_rcv() へ進む。使用中なら tcp_add_backlog() で backlog に置き、持ち主が release_sock() で後から処理する。',
 			'tcp_ack() は snd_una を進め、tcp_clean_rtx_queue() で再送キューの先頭から ACK された skb を外す。skb に残した送った時刻から RTT の標本を取り（tcp_ack_update_rtt()）、cong_avoid を呼ぶ。時刻の印（TS-ECR）は、再送で送った時刻が使えない時の代わりだ。',
-			'スロースタートの間、tcp_slow_start() は cwnd に ACK された数（10）を足す。最後に tcp_data_snd_check() から tcp_push_pending_frames() を経て tcp_write_xmit() へ戻る。A2 の 12 個と、B を割った頭の 8 個で 20 個を送る。'
+			'スロースタートの間、tcp_slow_start() は cwnd に ACK された数（10）を足す。最後に tcp_data_snd_check() から tcp_push_pending_frames() を経て tcp_write_xmit() へ戻る。A2 は 12 個分しか無いので、tcp_grow_skb() が B の頭 11,584 B を A2 へ移す。28,960 B（20 個）の 1 個にして送る。'
 		]
 	},
 	callout: {
@@ -340,7 +340,7 @@ export const s7: Step = {
 	changes: [
 		{ mark: '-', text: 'A1 が再送キューから消えた' },
 		{ mark: '~', text: 'cwnd 10 → 20 個' },
-		{ mark: '+', text: 'A2（12 個）と B1（8 個）を送る' }
+		{ mark: '+', text: 'B の頭 11,584 B を A2 へ移し 20 個を送る' }
 	],
 	facts: [
 		{ k: 'ACK の大きさ', v: '66 B（Ethernet 14・IP 20・TCP 32）', calc: '14+20+32' },
@@ -373,7 +373,7 @@ export const s7: Step = {
 					conn,
 					{ id: 'q-rtx', depth: 2, what: 'tcp_rtx_queue', state: '0 個' },
 					{ id: 's-cwnd', depth: 2, what: 'snd_cwnd', state: '20（飛んでいる数 0）' },
-					{ id: 'q-wq', depth: 2, what: 'sk_write_queue', state: 'B2 20,272・C 1,824' }
+					{ id: 'q-wq', depth: 2, what: 'sk_write_queue', state: 'B 20,272・C 1,824' }
 				]
 			}
 		],
@@ -451,7 +451,13 @@ export const s7: Step = {
 			at: 10300,
 			dur: 700,
 			para: 3,
-			do: { op: 'split', item: 'B 31856', into: ['B1 11584', 'B2 20272'] }
+			do: { op: 'split', item: 'B 31856', into: ['B頭 11584', 'B 20272'] }
+		},
+		{
+			at: 10900,
+			dur: 600,
+			para: 3,
+			do: { op: 'merge', items: ['A2 17376', 'B頭 11584'], into: 'A2 28960' }
 		},
 		{ at: 10400, dur: 400, para: 3, do: { op: 'board', line: 4 } }
 	],
@@ -470,7 +476,7 @@ export const s7: Step = {
 		'hardirq：napi_schedule だけして戻る',
 		'softirq：ixgbe_poll → GRO（ACK はまとめない）',
 		'tcp_ack()：A1 を外し、cwnd 10 → 20',
-		'tcp_write_xmit()：A2 と B の頭 8 個で 20 個'
+		'tcp_grow_skb()：B の頭を A2 へ移し 20 個'
 	],
 	badges: { peer: 'GRO：10 枚 → 1 個', b_wx: '送る 20 個（softirq）' },
 	layers: [
@@ -484,13 +490,14 @@ export const s7: Step = {
 		I.sendto,
 		I.sendmsg,
 		I.wxSoft,
-		I.tx,
+		I.txSoft,
+		I.growSkb,
 		I.irq,
 		I.rxAction,
 		I.poll,
 		I.gro,
 		I.groTcp,
-		I.ipRcv,
+		I.ipListRcv,
 		I.v4rcv,
 		I.est,
 		I.ack,

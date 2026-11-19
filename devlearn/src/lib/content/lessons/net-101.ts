@@ -56,7 +56,10 @@ export const net101: Lesson = {
 		{ word: 'NAPI', mean: '割り込みの後、softirq の中で受け取った物をまとめて取り出す仕組み' },
 		{ word: 'softirq', mean: '割り込みの後で動く、眠れないカーネルの仕事の文脈' },
 		{ word: 'qdisc', mean: 'NIC に渡す前の待ち行列と、出す順の決め方' },
-		{ word: 'TSQ', mean: '手元の qdisc と NIC に置く量を約 1 ms 分に抑える TCP の仕組み' },
+		{
+			word: 'TSQ',
+			mean: '手元の qdisc と NIC に置く量を、1 本ずつ max(約 1 ms 分, 塊 2 個) に抑える仕組み'
+		},
 		{ word: 'EDT', mean: 'skb に「出してよい時刻」を書いて、qdisc がその時刻まで待たせる方式' },
 		{ word: 'RACK', mean: '送った時刻で喪失を決める仕組み（RFC 8985）' },
 		{ word: 'RTO', mean: 'ACK が来ないまま時間切れで送り直すまでの待ち。Linux では下限 200 ms' },
@@ -104,7 +107,7 @@ export const net101: Lesson = {
 			{
 				when: 'sudo を付けずに sysctl -w した',
 				why: '/proc/sys の設定を書けるのは root だけ',
-				next: 'sudo を付ける。ただしこの溜まりは本数で積もるので、上限を下げても減らない。qdisc を見る',
+				next: 'sudo を付ける。ただし 256 KiB に下げても溜まりは減らず、130 KB より下げても 256 本で約 17 MB 残る。qdisc を見る',
 				match: 'permission denied on key'
 			},
 			{
@@ -153,7 +156,7 @@ export const net101: Lesson = {
 			how: '別の列に入り、大きな流れの後ろで待たない'
 		},
 		{
-			ask: '256 本の写しで 30 MB 溜まる。tcp_limit_output_bytes を下げても減らないのはなぜか',
+			ask: '256 本の写しで 30 MB 溜まる。tcp_limit_output_bytes を 256 KiB に下げても減らないのはなぜか',
 			how: '1 本が置くのは 2 × truesize の約 130 KB で、上限より下。溜まりは本数で決まる',
 			kind: 'scene',
 			opts: ['1 本 130 KB で上限が効いていない', '設定が再起動まで効かない', 'fq の時しか効かない']
@@ -193,7 +196,7 @@ export const net101: Lesson = {
 			{
 				wrong: '手元の待ち行列を大きくすれば速くなる',
 				right:
-					'線を使い切った後は待ちが増えるだけ。TSQ は 1 本ずつ約 1 ms 分に抑えるが、本数が多いと積もる。fq で分け、fq_codel で削る'
+					'線を使い切った後は待ちが増えるだけ。TSQ は 1 本ずつ max(約 1 ms 分, 塊 2 個) に抑えるが、本数が多いと積もる。fq で分け、fq_codel で削る'
 			}
 		],
 		oneMinute:

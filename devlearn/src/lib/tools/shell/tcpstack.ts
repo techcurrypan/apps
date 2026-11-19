@@ -1,10 +1,11 @@
-// TCP の出口の模擬（net-101 の実戦。docs/tools.md 3.2）：ss -tim・tc（qdisc の表示と替え）・sysctl・nstat・ethtool -k。
+// TCP の出口の模擬（net-101 の実戦。docs/tools.md 3.2）：ss -tim・tc（qdisc の表示と替え）・sysctl・nstat・ethtool -k・-l。
 // 世界（tools-real/worlds/tcp.json）の qdisc と tcp_limit_output_bytes から、手元の行列と RTT を決まった式で計算する。
 // 式はレッスン net-101 のステップ 10・11 と同じ：手元の行列 ÷ 10 GbE（1.25 GB/s）が待ちになり、RTT に足される。
 // 出力の形は ss(8)・tc-fq(8)・tc-fq_codel(8)・sysctl(8)・nstat(8)・ethtool(8) の書式に合わせた（decisions.md 2026-11-19）。
 import { fail, ok, type Cmd, type ShellState } from './run.ts';
 
-export type Qdisc = 'pfifo' | 'pfifo_fast' | 'fq' | 'fq_codel';
+export type Qdisc =
+	'pfifo' | 'pfifo_fast' | 'fq' | 'fq_codel' | 'sfq' | 'cake' | 'fq_pie' | 'bfifo' | 'mq';
 export type TcpWorld = {
 	dev: string; // 送り口が 1 つの NIC（root に qdisc を 1 つ置く形）
 	qdisc: Qdisc;
@@ -20,33 +21,64 @@ export type TcpState = TcpWorld & { handle: number };
 
 const LINE_BPS = 1.25e9; // 10 GbE の 1 秒の B
 const PER_FLOW = 30_000_000 / 256; // 1 本が手元に置く量（TSQ の下限 2 × truesize の内。net-101 ステップ 10）
-const CODEL_TARGET_B = 0.005 * LINE_BPS; // 5 ms 分（6.25 MB）
+const TRUESIZE = 66_000; // 64 KB の塊 1 個の truesize。TSQ は手元が 0 の時、上限より大きくても 1 個は通す
 const SKB = 65_536;
 const MSS = 1448;
-const QDISCS: Qdisc[] = ['pfifo', 'pfifo_fast', 'fq', 'fq_codel'];
+const QDISCS: Qdisc[] = [
+	'pfifo',
+	'pfifo_fast',
+	'fq',
+	'fq_codel',
+	'sfq',
+	'cake',
+	'fq_pie',
+	'bfifo',
+	'mq'
+];
+/** 流れごとに列を分ける qdisc（新しい流れの ssh は写しの後ろに並ばない） */
+const PER_FLOW_QDISC: Qdisc[] = ['fq', 'fq_codel', 'sfq', 'cake', 'fq_pie'];
+/** 溜まりの上限（B）。AQM は目標の待ち × 線の速さ、大きさで切る物はその上限。上限の無い物は Infinity */
+const CAP: Record<Qdisc, number> = {
+	pfifo: Infinity, // limit 100000p（世界の設定）で 30 MB は入る
+	pfifo_fast: Infinity,
+	mq: Infinity, // 子は pfifo_fast
+	fq: Infinity,
+	fq_codel: 0.005 * LINE_BPS, // target 5ms（6.25 MB）
+	cake: 0.005 * LINE_BPS, // 既定の target 5ms
+	fq_pie: 0.015 * LINE_BPS, // target 15ms
+	sfq: 127 * SKB, // limit 127p
+	bfifo: 1_500_000 // limit は txqueuelen 1000 × mtu 1500
+};
 
 export function initialTcp(w: TcpWorld): TcpState {
 	return { ...w, handle: 0x8001 };
 }
 
 /**
- * 手元の行列（qdisc の B）。決まった式（net-101 ステップ 10・11）：
- * TSQ の上限は流れ 1 本ずつ（max(2 × truesize, 速さ ÷ 1024) と tcp_limit_output_bytes の小さい方）。
- * 1 本 39 Mbps では 2 × truesize（約 130 KB）が効き、tcp_limit_output_bytes は効かない。溜まりは本数 × 1 本の量。
- * fq は流れを分けるだけで溜まりは残る。fq_codel は 5 ms を超えた待ちを捨て、5 ms 分に縮める
+ * TSQ が流れごとに置かせる量の和（B）。決まった式（net-101 ステップ 10・11）：
+ * 上限は流れ 1 本ずつ max(2 × truesize, 速さ ÷ 1024) と tcp_limit_output_bytes の小さい方。1 本 39 Mbps では 2 × truesize が効く。
+ * 上限を塊 1 個より下げても、手元が 0 の時の 1 個は通る（tcp_small_queue_check() は「超えたら」止める）。溜まりは本数 × 1 本の量
  */
+export function pileOf(t: TcpWorld): number {
+	const lim = Number(t.sysctl['net.ipv4.tcp_limit_output_bytes'] ?? '1048576');
+	const per = Math.min(PER_FLOW, Math.max(lim, TRUESIZE));
+	return Math.round(t.flows.count * per);
+}
+/** 手元の行列（qdisc の B）。fq は流れを分けるだけで溜まりは残る。AQM（fq_codel・cake・fq_pie）は目標の待ちを超えた分を捨てる */
 export function backlogOf(t: TcpWorld): number {
-	const pile = Math.round(t.flows.count * PER_FLOW);
-	if (t.qdisc === 'fq_codel') return Math.min(pile, CODEL_TARGET_B);
-	return pile;
+	return Math.min(pileOf(t), CAP[t.qdisc]);
+}
+/** 溜まりきらずに捨てた塊の数（AQM と大きさの上限。来た順の列では 0） */
+export function droppedOf(t: TcpWorld): number {
+	return Math.round((pileOf(t) - backlogOf(t)) / SKB);
 }
 /** 写しの流れの RTT（ms）＝ 最小 ＋ 手元の行列 ÷ 線の速さ */
 export function copyRttOf(t: TcpWorld): number {
 	return t.minrtt + (backlogOf(t) / LINE_BPS) * 1000;
 }
-/** ssh の RTT（ms）。来た順の列では写しの後ろに並ぶ。流れごとの列（fq・fq_codel）では新しい流れとして先に出る */
+/** ssh の RTT（ms）。来た順の列では写しの後ろに並ぶ。流れごとの列（fq・fq_codel・sfq・cake・fq_pie）では新しい流れとして先に出る */
 export function rttOf(t: TcpWorld): number {
-	if (t.qdisc === 'fq' || t.qdisc === 'fq_codel') return t.minrtt + 0.1;
+	if (PER_FLOW_QDISC.includes(t.qdisc)) return t.minrtt + 0.1;
 	return copyRttOf(t);
 }
 const fmtMs = (v: number) => String(Math.round(v * 1000) / 1000);
@@ -142,7 +174,11 @@ function qdiscText(t: TcpState): string {
 	const h = `${t.handle.toString(16)}:`;
 	const bl = backlogOf(t);
 	const p = Math.round(bl / SKB);
-	const sent = ` Sent 81234567890 bytes 1239500 pkt (dropped 0, overlimits 0 requeues 0) \n backlog ${bl}b ${p}p requeues 0\n`;
+	// 起きた時からの qdisc（8001:）は長く数えている。替えた qdisc は 0 から数え、替えてから 1 秒分（1.25 GB）を出した所
+	const fresh = t.handle !== 0x8001;
+	const sentB = fresh ? 1_250_000_000 : 81_234_567_890;
+	const sentP = fresh ? Math.round(sentB / SKB) : 1_239_500;
+	const sent = ` Sent ${sentB} bytes ${sentP} pkt (dropped ${droppedOf(t)}, overlimits 0 requeues 0) \n backlog ${bl}b ${p}p requeues 0\n`;
 	switch (t.qdisc) {
 		case 'pfifo':
 			return `qdisc pfifo ${h} root refcnt 2 limit ${t.pfifoLimit}p\n${sent}`;
@@ -156,8 +192,19 @@ function qdiscText(t: TcpState): string {
 		case 'fq_codel':
 			return (
 				`qdisc fq_codel ${h} root refcnt 2 limit 10240p flows 1024 quantum 1514 target 5ms interval 100ms memory_limit 32Mb ecn drop_batch 64\n${sent}` +
-				'  maxpacket 65160 drop_overlimit 0 new_flow_count 12 ecn_mark 0\n  new_flows_len 0 old_flows_len 2\n'
+				// 写しの流れは ECN を使わない（tcp_ecn=2 は求められた時だけ使う）ので、印ではなく捨てる
+				`  maxpacket 65160 drop_overlimit 0 new_flow_count 12 ecn_mark 0\n  new_flows_len 1 old_flows_len ${t.flows.count}\n`
 			);
+		case 'sfq':
+			return `qdisc sfq ${h} root refcnt 2 limit 127p quantum 1514b depth 127 divisor 1024 \n${sent}`;
+		case 'cake':
+			return `qdisc cake ${h} root refcnt 2 bandwidth unlimited diffserv3 triple-isolate nonat nowash no-ack-filter split-gso rtt 100ms raw overhead 0 \n${sent}`;
+		case 'fq_pie':
+			return `qdisc fq_pie ${h} root refcnt 2 limit 10240p flows 1024 target 15ms tupdate 16ms alpha 2 beta 20 quantum 1514b memory_limit 32Mb ecn_prob 10\n${sent}`;
+		case 'bfifo':
+			return `qdisc bfifo ${h} root refcnt 2 limit 1500000b\n${sent}`;
+		case 'mq':
+			return `qdisc mq ${h} root \n${sent}`;
 	}
 }
 
@@ -240,12 +287,20 @@ export const nstat: Cmd<unknown> = (s, args) => {
 export const ethtool: Cmd<unknown> = (s, args) => {
 	const t = s.tcp;
 	if (!t) return fail(s, '（この実戦の模擬には NIC が無い）\n', 1);
-	if (args[0] !== '-k') return fail(s, '（模擬の ethtool は -k の形を扱う）\n', 1);
+	if (args[0] !== '-k' && args[0] !== '-l')
+		return fail(s, '（模擬の ethtool は -k と -l の形を扱う）\n', 1);
 	if (args[1] !== t.dev)
 		return fail(
 			s,
 			`netlink error: no device matches name (offset 24)\nnetlink error: No such device\n`,
 			1
+		);
+	if (args[0] === '-l')
+		// ixgbe_max_channels()（v6.12）：ATR が有効な既定では 63（IXGBE_MAX_FDIR_INDICES）。この機械は送り口を 1 つにしてある
+		return ok(
+			s,
+			`Channel parameters for ${t.dev}:\nPre-set maximums:\nRX:\t\tn/a\nTX:\t\tn/a\nOther:\t\t1\nCombined:\t63\n` +
+				'Current hardware settings:\nRX:\t\tn/a\nTX:\t\tn/a\nOther:\t\t1\nCombined:\t1\n'
 		);
 	const on = (b: boolean) => (b ? 'on' : 'off');
 	return ok(

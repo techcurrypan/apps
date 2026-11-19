@@ -6,7 +6,11 @@
 		"sysctl": {
 			"net.ipv4.tcp_limit_output_bytes": "1048576",
 			"net.core.default_qdisc": "pfifo_fast",
-			"net.ipv4.tcp_congestion_control": "cubic"
+			"net.ipv4.tcp_congestion_control": "cubic",
+			"net.ipv4.tcp_wmem": "4096\t16384\t4194304",
+			"net.ipv4.tcp_notsent_lowat": "4294967295",
+			"net.ipv4.tcp_rto_min_us": "200000",
+			"net.ipv4.tcp_ecn": "2"
 		},
 		"offload": { "tso": true, "gro": true },
 		"minrtt": 0.5,
