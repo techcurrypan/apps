@@ -6,7 +6,7 @@
 	"recordedOn": {
 		"os": "Ubuntu 24.04.5 LTS",
 		"bash": "GNU bash, version 5.2.21(1)-release (x86_64-pc-linux-gnu)",
-		"git": "git version 2.56.0",
+		"git": "git version 2.56.1",
 		"coreutils": "ls (GNU coreutils) 9.4",
 		"grep": "grep (GNU grep) 3.11",
 		"iproute2": "ip utility, iproute2-6.1.0, libbpf 1.3.0",
@@ -33,18 +33,18 @@
 		{
 			"line": "docker build -t shop-web:1.0 .",
 			"out": "",
-			"err": "#0 building with \"default\" instance using docker driver\n\n#1 [internal] load build definition from Dockerfile\n#1 transferring dockerfile: 133B 0.0s done\n#1 DONE 0.1s\n\n#2 [internal] load metadata for docker.io/library/busybox:1.37\n#2 DONE 0.0s\n\n#3 [internal] load .dockerignore\n#3 transferring context: 2B done\n#3 DONE 0.0s\n\n#4 [1/2] FROM docker.io/library/busybox:1.37\n#4 DONE 0.0s\n\n#5 [internal] load build context\n#5 transferring context: 49B done\n#5 DONE 0.0s\n\n#6 [2/2] COPY index.html /www/index.html\n#6 DONE 0.1s\n\n#7 exporting to image\n#7 exporting layers\n#7 exporting layers 0.9s done\n#7 writing image sha256:e5720d999beffe3964d1f0428b2043a5d6d79053afaa94629bd0f0f9b04542e2\n#7 writing image sha256:e5720d999beffe3964d1f0428b2043a5d6d79053afaa94629bd0f0f9b04542e2 done\n#7 naming to docker.io/library/shop-web:1.0 done\n#7 DONE 0.9s\n",
+			"err": "#0 building with \"default\" instance using docker driver\n\n#1 [internal] load build definition from Dockerfile\n#1 transferring dockerfile: 133B 0.0s done\n#1 DONE 0.0s\n\n#2 [internal] load metadata for docker.io/library/busybox:1.37\n#2 DONE 0.0s\n\n#3 [internal] load .dockerignore\n#3 transferring context: 2B done\n#3 DONE 0.0s\n\n#4 [1/2] FROM docker.io/library/busybox:1.37\n#4 DONE 0.0s\n\n#5 [internal] load build context\n#5 transferring context: 49B done\n#5 DONE 0.0s\n\n#6 [2/2] COPY index.html /www/index.html\n#6 DONE 0.1s\n\n#7 exporting to image\n#7 exporting layers\n#7 exporting layers 0.9s done\n#7 writing image sha256:ad17861da575edea61701c66eb25292f6033d00b52535cf3beea71f2d0d9e0ed done\n#7 naming to docker.io/library/shop-web:1.0 done\n#7 DONE 0.9s\n",
 			"code": 0
 		},
 		{
 			"line": "docker images",
-			"out": "REPOSITORY   TAG       IMAGE ID       CREATED        SIZE\nshop-web     1.0       e5720d999bef   1 second ago   4.42MB\nbusybox      1.37      30ecbe150909   2 years ago    4.42MB\n",
+			"out": "REPOSITORY   TAG       IMAGE ID       CREATED        SIZE\nshop-web     1.0       ad17861da575   1 second ago   4.42MB\nbusybox      1.37      30ecbe150909   2 years ago    4.42MB\n",
 			"err": "",
 			"code": 0
 		},
 		{
 			"line": "docker run -d --name web -p 8080:80 shop-web:1.0",
-			"out": "e7766b160aab7f18f2d0d6e9fcb54a15298a91f36a16be9ef0dba0288cead862\n",
+			"out": "d41289df0ff7fcc0d38246fef90c424c2ba463d6a5c991103ded3d53cb1f00f4\n",
 			"err": "",
 			"code": 0
 		},

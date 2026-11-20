@@ -6,7 +6,7 @@
 	"recordedOn": {
 		"os": "Ubuntu 24.04.5 LTS",
 		"bash": "GNU bash, version 5.2.21(1)-release (x86_64-pc-linux-gnu)",
-		"git": "git version 2.56.0",
+		"git": "git version 2.56.1",
 		"coreutils": "ls (GNU coreutils) 9.4",
 		"grep": "grep (GNU grep) 3.11",
 		"iproute2": "ip utility, iproute2-6.1.0, libbpf 1.3.0",
@@ -27,13 +27,13 @@
 		{
 			"line": "docker build -t shop-web:1.0 .",
 			"out": "",
-			"err": "#0 building with \"default\" instance using docker driver\n\n#1 [internal] load build definition from Dockerfile\n#1 transferring dockerfile: 181B done\n#1 DONE 0.0s\n\n#2 [internal] load metadata for docker.io/library/busybox:1.37\n#2 DONE 0.0s\n\n#3 [internal] load .dockerignore\n#3 transferring context: 2B done\n#3 DONE 0.0s\n\n#4 [1/3] FROM docker.io/library/busybox:1.37\n#4 DONE 0.0s\n\n#5 [internal] load build context\n#5 transferring context: 49B done\n#5 DONE 0.0s\n\n#6 [2/3] RUN mkdir /www && echo built > /www/build.txt\n#6 DONE 0.1s\n\n#7 [3/3] COPY index.html /www/index.html\n#7 DONE 0.0s\n\n#8 exporting to image\n#8 exporting layers 0.1s done\n#8 writing image sha256:6aa73433fc2b66f1d2b8ae293fd75cf276e45a8406bf500d47cdbcf065a0c2ea done\n#8 naming to docker.io/library/shop-web:1.0 done\n#8 DONE 0.1s\n",
+			"err": "#0 building with \"default\" instance using docker driver\n\n#1 [internal] load build definition from Dockerfile\n#1 transferring dockerfile: 181B done\n#1 DONE 0.0s\n\n#2 [internal] load metadata for docker.io/library/busybox:1.37\n#2 DONE 0.0s\n\n#3 [internal] load .dockerignore\n#3 transferring context: 2B done\n#3 DONE 0.0s\n\n#4 [1/3] FROM docker.io/library/busybox:1.37\n#4 DONE 0.0s\n\n#5 [internal] load build context\n#5 transferring context: 49B done\n#5 DONE 0.0s\n\n#6 [2/3] RUN mkdir /www && echo built > /www/build.txt\n#6 DONE 0.1s\n\n#7 [3/3] COPY index.html /www/index.html\n#7 DONE 0.0s\n\n#8 exporting to image\n#8 exporting layers\n#8 exporting layers 0.2s done\n#8 writing image sha256:cbe8176fddbf93da22630435d17eaf0cc7f11f841e39768eeaa466c5d7740c6d done\n#8 naming to docker.io/library/shop-web:1.0 done\n#8 DONE 0.2s\n",
 			"code": 0
 		},
 		{
 			"line": "docker build -t shop-web:1.0 .",
 			"out": "",
-			"err": "#0 building with \"default\" instance using docker driver\n\n#1 [internal] load build definition from Dockerfile\n#1 transferring dockerfile: 181B done\n#1 DONE 0.0s\n\n#2 [internal] load metadata for docker.io/library/busybox:1.37\n#2 DONE 0.0s\n\n#3 [internal] load .dockerignore\n#3 transferring context: 2B done\n#3 DONE 0.0s\n\n#4 [1/3] FROM docker.io/library/busybox:1.37\n#4 DONE 0.0s\n\n#5 [internal] load build context\n#5 transferring context: 31B done\n#5 DONE 0.0s\n\n#6 [2/3] RUN mkdir /www && echo built > /www/build.txt\n#6 CACHED\n\n#7 [3/3] COPY index.html /www/index.html\n#7 CACHED\n\n#8 exporting to image\n#8 exporting layers done\n#8 writing image sha256:6aa73433fc2b66f1d2b8ae293fd75cf276e45a8406bf500d47cdbcf065a0c2ea done\n#8 naming to docker.io/library/shop-web:1.0 done\n#8 DONE 0.0s\n",
+			"err": "#0 building with \"default\" instance using docker driver\n\n#1 [internal] load build definition from Dockerfile\n#1 transferring dockerfile: 181B done\n#1 DONE 0.0s\n\n#2 [internal] load metadata for docker.io/library/busybox:1.37\n#2 DONE 0.0s\n\n#3 [internal] load .dockerignore\n#3 transferring context: 2B done\n#3 DONE 0.0s\n\n#4 [1/3] FROM docker.io/library/busybox:1.37\n#4 DONE 0.0s\n\n#5 [internal] load build context\n#5 transferring context: 31B done\n#5 DONE 0.0s\n\n#6 [2/3] RUN mkdir /www && echo built > /www/build.txt\n#6 CACHED\n\n#7 [3/3] COPY index.html /www/index.html\n#7 CACHED\n\n#8 exporting to image\n#8 exporting layers done\n#8 writing image sha256:cbe8176fddbf93da22630435d17eaf0cc7f11f841e39768eeaa466c5d7740c6d done\n#8 naming to docker.io/library/shop-web:1.0 done\n#8 DONE 0.0s\n",
 			"code": 0
 		},
 		{
@@ -45,18 +45,18 @@
 		{
 			"line": "docker build -t shop-web:1.1 .",
 			"out": "",
-			"err": "#0 building with \"default\" instance using docker driver\n\n#1 [internal] load build definition from Dockerfile\n#1 DONE 0.0s\n\n#1 [internal] load build definition from Dockerfile\n#1 transferring dockerfile: 181B done\n#1 DONE 0.0s\n\n#2 [internal] load metadata for docker.io/library/busybox:1.37\n#2 DONE 0.0s\n\n#3 [internal] load .dockerignore\n#3 transferring context: 2B done\n#3 DONE 0.0s\n\n#4 [1/3] FROM docker.io/library/busybox:1.37\n#4 DONE 0.0s\n\n#5 [internal] load build context\n#5 transferring context: 52B done\n#5 DONE 0.0s\n\n#6 [2/3] RUN mkdir /www && echo built > /www/build.txt\n#6 CACHED\n\n#7 [3/3] COPY index.html /www/index.html\n#7 DONE 0.0s\n\n#8 exporting to image\n#8 exporting layers\n#8 exporting layers 0.7s done\n#8 writing image sha256:181a01c7cf285f28f890cb2650556a2eff2fd9fb5eebcdc144df8b9ce9c6a6d9\n#8 writing image sha256:181a01c7cf285f28f890cb2650556a2eff2fd9fb5eebcdc144df8b9ce9c6a6d9 done\n#8 naming to docker.io/library/shop-web:1.1 done\n#8 DONE 0.7s\n",
+			"err": "#0 building with \"default\" instance using docker driver\n\n#1 [internal] load build definition from Dockerfile\n#1 transferring dockerfile: 181B done\n#1 DONE 0.0s\n\n#2 [internal] load metadata for docker.io/library/busybox:1.37\n#2 DONE 0.0s\n\n#3 [internal] load .dockerignore\n#3 transferring context: 2B done\n#3 DONE 0.0s\n\n#4 [1/3] FROM docker.io/library/busybox:1.37\n#4 DONE 0.0s\n\n#5 [internal] load build context\n#5 transferring context: 52B done\n#5 DONE 0.0s\n\n#6 [2/3] RUN mkdir /www && echo built > /www/build.txt\n#6 CACHED\n\n#7 [3/3] COPY index.html /www/index.html\n#7 DONE 0.0s\n\n#8 exporting to image\n#8 exporting layers\n#8 exporting layers 0.6s done\n#8 writing image sha256:63548f0dbba3a31b0b8589f5b2f5081023e9f142cabe2070918724d803e99427 done\n#8 naming to docker.io/library/shop-web:1.1 done\n#8 DONE 0.6s\n",
 			"code": 0
 		},
 		{
 			"line": "docker history shop-web:1.1",
-			"out": "IMAGE          CREATED         CREATED BY                                      SIZE      COMMENT\n181a01c7cf28   1 second ago    CMD [\"httpd\" \"-f\" \"-p\" \"80\" \"-h\" \"/www\"]        0B        buildkit.dockerfile.v0\n<missing>      1 second ago    COPY index.html /www/index.html # buildkit      15B       buildkit.dockerfile.v0\n<missing>      2 seconds ago   RUN /bin/sh -c mkdir /www && echo built > /w…   6B        buildkit.dockerfile.v0\n<missing>      2 years ago     BusyBox 1.37.0 (glibc), Debian 13               4.42MB    \n",
+			"out": "IMAGE          CREATED         CREATED BY                                      SIZE      COMMENT\n63548f0dbba3   1 second ago    CMD [\"httpd\" \"-f\" \"-p\" \"80\" \"-h\" \"/www\"]        0B        buildkit.dockerfile.v0\n<missing>      1 second ago    COPY index.html /www/index.html # buildkit      15B       buildkit.dockerfile.v0\n<missing>      2 seconds ago   RUN /bin/sh -c mkdir /www && echo built > /w…   6B        buildkit.dockerfile.v0\n<missing>      2 years ago     BusyBox 1.37.0 (glibc), Debian 13               4.42MB    \n",
 			"err": "",
 			"code": 0
 		},
 		{
 			"line": "docker images",
-			"out": "REPOSITORY   TAG       IMAGE ID       CREATED         SIZE\nshop-web     1.1       181a01c7cf28   1 second ago    4.42MB\nshop-web     1.0       6aa73433fc2b   2 seconds ago   4.42MB\nbusybox      1.37      30ecbe150909   2 years ago     4.42MB\n",
+			"out": "REPOSITORY   TAG       IMAGE ID       CREATED         SIZE\nshop-web     1.1       63548f0dbba3   1 second ago    4.42MB\nshop-web     1.0       cbe8176fddbf   2 seconds ago   4.42MB\nbusybox      1.37      30ecbe150909   2 years ago     4.42MB\n",
 			"err": "",
 			"code": 0
 		}
