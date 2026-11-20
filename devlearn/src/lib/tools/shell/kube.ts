@@ -62,12 +62,13 @@ const STEP = 5; // kubectl 1 回で進む秒
 const BACKOFF = [0, 10, 20, 40, 80, 160, 300];
 /** k 回起こし直した後に落ちた時、次に起こすまでの秒 */
 export const backoffAt = (k: number) => BACKOFF[Math.min(k, BACKOFF.length - 1)];
-// doBackOff を通るのは Pod の同期が走る時だけ。落ちた時の PLEG の出来事（ContainerDied）で 1 回、
-// 待ちだけで止まった同期はエラーにならない（kubelet.go SyncPod）ので、その後は見直し（--sync-frequency 既定 1 分。
-// pod_workers.go completeWork）ごとに 1 回。本物はゆらぎ（最大 1.5 倍）が付くが、模擬は決まった 60 秒で数える
-const RESYNC = 60;
-/** 長さ w 秒の待ちの間に、待ちの中で同期が走って BackOff を記す回数 */
-const syncsIn = (w: number) => 1 + Math.floor(Math.max(0, w - 1) / RESYNC);
+// doBackOff を通るのは Pod の同期が走る時だけ。待ちの中の同期は ErrCrashLoopBackOff の結果を返すが、先に積まれた
+// ConfigPodSandbox の結果（Error nil）が kubelet.go SyncPod の除外の輪に当たり、同期はエラーになる（v1.31.0。k/k#123602）。
+// pod worker は「Error syncing pod, skipping」を E の行で残し、wait.Jitter(10 秒, 0.5)＝10〜15 秒後に入れ直す
+// （pod_workers.go completeWork の default 枝）。模擬はゆらぎを除いて 10 秒ごとに同期し、起こし直しは公式の並びの時刻になる
+const RESYNC = 10;
+/** 長さ w 秒の待ちの間に、待ちの中で同期が走って BackOff を記す回数（落ちた時の 1 回 ＋ 10 秒ごと。待ちが明けた同期は起こす） */
+const syncsIn = (w: number) => Math.max(1, Math.ceil(w / RESYNC));
 
 export function initialK8s(w: K8sWorld): K8sState {
 	const base = Date.parse(w.deploy.created);
@@ -255,7 +256,7 @@ export function podView(k: K8sState, p: KPod): PodView {
 				lastCrash: p.created + crash,
 				runStart: p.created + s,
 				runs: k2 + 1,
-				backoffTicks: ticks + (k2 === 0 ? 0 : syncsIn(waited + 1)),
+				backoffTicks: ticks + (k2 === 0 ? 0 : Math.floor(waited / RESYNC) + 1),
 				state: k2 === 0 ? 'terminated' : 'waiting'
 			};
 		}

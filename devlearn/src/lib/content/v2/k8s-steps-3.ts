@@ -16,7 +16,7 @@ export const s9: Step = {
 	lead: '記憶を 1 GiB 求めると、どの node にも入らず動かない',
 	body: [
 		'番頭が記憶を 1 GiB 求めるよう直すと、新しい Pod は Pending のままだ。',
-		'node の空きは 700 MiB ずつで、更新は 1 つ目で止まる。'
+		'node の空きは 828 MiB と 700 MiB で、更新は 1 つ目で止まる。'
 	],
 	depth: {
 		intro: [
@@ -24,12 +24,12 @@ export const s9: Step = {
 			'部屋割り係は「どの棟にも 1 GiB の空きが無い」と書き残し、空きができるのを待つ。古い部屋は消されず、落ち続けたままだ。'
 		],
 		work: [
-			'番頭が requests と limits の記憶を 1Gi にした。新しい ReplicaSet web-88cks584b の Pod mkxdg が作られ、Pending のまま動かない。どちらの node も、空きは 700 MiB しか無い。',
+			'番頭が requests と limits の記憶を 1Gi にした。新しい ReplicaSet web-88cks584b の Pod mkxdg が作られ、Pending のまま動かない。空きは node-1 が 828 MiB、node-2 が 700 MiB しか無い。',
 			'Filter は 2 台とも落とす。FailedScheduling に「0/2 nodes are available: 2 Insufficient memory.」と残る。Pod は unschedulablePods の列に移り、node や Pod が変わるのを待つ。',
 			'maxSurge 25% なら 1 個多く作れるが、maxUnavailable 25% は 3 個の 0.75 を切り捨てて 0 個だ。新しい Pod が Ready にならない限り、古い Pod を 1 つも減らさない。'
 		],
 		deep: [
-			'fitsRequest() は記憶の要求 1,073,741,824 B を、allocatable から requests の和を引いた残りと比べる。node-1 の残りは 734,003,200 B（700 MiB）で足りず、Insufficient memory を返す。',
+			'fitsRequest() は記憶の要求 1,073,741,824 B を、allocatable から requests の和を引いた残りと比べる。残りは node-1 が 868,220,928 B（828 MiB）、node-2 が 734,003,200 B（700 MiB）だ。どちらも足りず、Insufficient memory を返す。',
 			'入る所が無い Pod は AddUnschedulableIfNotPresent() で unschedulablePods に置かれる。node が足された・Pod が消えた等の出来事が来ると、関係する Pod だけを activeQ か backoffQ へ戻す。何も来なくても、最長 5 分で戻して試し直す。',
 			'プリエンプションは、優先度の低い Pod を追い出して入れる道だ。ここでは全ての Pod の優先度が 0 で、追い出しても入らないので「No preemption victims found」になる。',
 			'rolloutRolling() は新しい ReplicaSet を maxSurge の分だけ増やす。古い方は、動ける数が欲しい数 − maxUnavailable を割らない分だけ減らす。600 秒（progressDeadlineSeconds）進まないと、理由 ProgressDeadlineExceeded が付く。更新は止めず、待ち続ける。'
@@ -46,7 +46,8 @@ export const s9: Step = {
 	],
 	facts: [
 		{ k: '求めた記憶', v: '1,024 MiB（1 GiB）' },
-		{ k: 'node の空き', v: '700 MiB ずつ（3,840 − 3,140）', calc: '3840-3140' },
+		{ k: 'node-1 の空き', v: '828 MiB（3,840 − 3,012）', calc: '3840-3012' },
+		{ k: 'node-2 の空き', v: '700 MiB（3,840 − 3,140）', calc: '3840-3140' },
 		{ k: 'maxUnavailable', v: '0 個（3 × 25% ＝ 0.75 を切り捨て）' },
 		{ k: 'maxSurge', v: '1 個（0.75 を切り上げ）' }
 	],
@@ -71,7 +72,7 @@ export const s9: Step = {
 				row('rs-big', 1, 'ReplicaSet web-88cks584b', '1 個・Pending', 'bad'),
 				row('s-q', 1, 'unschedulablePods', 'web-88cks584b-mkxdg', 'bad')
 			]),
-			N1([kl1, row('n1-free', 1, 'allocatable の残り', '700 MiB（1 GiB は入らない）', 'bad')]),
+			N1([kl1, row('n1-free', 1, 'allocatable の残り', '828 MiB（1 GiB は入らない）', 'bad')]),
 			N2([kl2, row('n2-free', 1, 'allocatable の残り', '700 MiB（1 GiB は入らない）', 'bad')])
 		],
 		logs: [
@@ -94,7 +95,7 @@ export const s9: Step = {
 		{ at: 1000, dur: 800, para: 0, do: { op: 'count', metric: 'pending', to: '1 個' } },
 		{ at: 1100, dur: 400, para: 0, do: { op: 'board', line: 0 } },
 		{ at: 1900, dur: 600, para: 1, do: { op: 'dequeue', queue: 'activeQ', item: 'mkxdg 1Gi' } },
-		{ at: 2500, dur: 600, para: 1, do: { op: 'enqueue', queue: 'fitq', item: 'node-1 700 ✗' } },
+		{ at: 2500, dur: 600, para: 1, do: { op: 'enqueue', queue: 'fitq', item: 'node-1 828 ✗' } },
 		{ at: 3100, dur: 600, para: 1, do: { op: 'enqueue', queue: 'fitq', item: 'node-2 700 ✗' } },
 		{ at: 3700, dur: 600, para: 1, do: { op: 'fail', id: 'b_fit' } },
 		{ at: 3800, dur: 400, para: 1, do: { op: 'board', line: 1 } },
@@ -131,7 +132,7 @@ export const s9: Step = {
 	],
 	board: [
 		'requests 1Gi の Pod mkxdg',
-		'fitsRequest()：700 MiB < 1,024 MiB',
+		'fitsRequest()：828・700 MiB < 1,024 MiB',
 		'unschedulablePods で待つ',
 		'maxUnavailable 0 個 → 古い方は残る'
 	],
@@ -215,12 +216,12 @@ export const s10: Step = {
 				row('rs-big', 1, 'ReplicaSet web-88cks584b', '0 個'),
 				row('rs-new', 1, 'ReplicaSet web-v475cz8h8', '3 個・Ready 3', 'ok')
 			]),
-			N1([kl1, row('p-8frqg', 1, `${NEW}8frqg`, 'Running・10.244.1.25', 'ok')]),
-			N2([
-				kl2,
-				row('p-w6vzf', 1, `${NEW}w6vzf`, 'Running・10.244.2.24', 'ok'),
-				row('p-m2sg4', 1, `${NEW}m2sg4`, 'Running・10.244.2.26', 'ok')
-			])
+			N1([
+				kl1,
+				row('p-8frqg', 1, `${NEW}8frqg`, 'Running・10.244.1.24', 'ok'),
+				row('p-m2sg4', 1, `${NEW}m2sg4`, 'Running・10.244.1.26', 'ok')
+			]),
+			N2([kl2, row('p-w6vzf', 1, `${NEW}w6vzf`, 'Running・10.244.2.25', 'ok')])
 		],
 		logs: [
 			{
@@ -315,7 +316,7 @@ export const s11: Step = {
 	lead: '予約を大きくすれば守られるが、node に入る数が減る',
 	body: [
 		'requests は予約で、大きいほど node に入る Pod が減る。',
-		'limits は上限で、requests と同じにすると Guaranteed になり最後まで守られる。'
+		'limits は上限だ。cpu と記憶の両方で requests と同じにすると Guaranteed になり、最後まで守られる。'
 	],
 	depth: {
 		intro: [
@@ -324,11 +325,11 @@ export const s11: Step = {
 		],
 		work: [
 			'node の allocatable は 3,840 MiB だ。requests 192 MiB なら web の Pod は 20 個入るが、limits と同じ 256 MiB なら 15 個に減る。予約を上げた分だけ、同じ数を動かす node の費用も上がる。',
-			'requests ＝ limits なら QoS は Guaranteed で、oom_score_adj は −997 だ。node の記憶が足りない時も最後に止められる。今の 192Mi / 256Mi は Burstable で、954 から始まる。',
+			'cpu と記憶の両方で requests ＝ limits なら QoS は Guaranteed で、oom_score_adj は −997 だ。今の web は cpu の limits が無いので、記憶を 256Mi / 256Mi にそろえても Burstable のまま 954 だ。',
 			'上限を外すと、1 つの Pod の漏れが node の記憶を食べる。memory.available が 100 MiB を割ると、kubelet が Pod を追い出す（Evicted）。上限は、隣の Pod を守る壁でもある。'
 		],
 		deep: [
-			'ComputePodQOS() は、全てのコンテナが CPU と記憶で requests ＝ limits なら Guaranteed にする。どれも無ければ BestEffort、それ以外は Burstable だ。今の web は記憶の requests と limits が違うので Burstable だ。',
+			'ComputePodQOS() は、全てのコンテナが CPU と記憶で requests ＝ limits なら Guaranteed にする。どれも無ければ BestEffort、それ以外は Burstable だ。今の web は cpu に limits が無いので、記憶をそろえても Burstable だ。',
 			'GetContainerOOMScoreAdjust() は、Burstable に 1000 − 1000 × requests ÷ 記憶を付ける。記憶 4 GiB・requests 192 MiB では 1000 − 46 ＝ 954 だ（46.875 を切り捨て）。BestEffort の 1000 の次に止められやすい。',
 			'node の記憶が足りなくなると、kubelet は memory.available が既定の 100 Mi を割った所で追い出しを始める。順は、使う量が requests を超えている Pod から、優先度と超えた量の順だ。',
 			'CPU の limits は CFS の上限（cpu.max）で、超えると止められずに待たされる（throttled）。記憶の limits は超えると止められる。CPU には requests だけ、記憶には requests と limits の 2 つを付ける現場が多い。'
@@ -341,7 +342,7 @@ export const s11: Step = {
 	changes: [
 		{ mark: '~', text: '192Mi なら 20 個、256Mi なら 15 個' },
 		{ mark: '+', text: 'QoS：Burstable（oom_score_adj 954）' },
-		{ mark: '~', text: 'Guaranteed なら −997' }
+		{ mark: '~', text: 'cpu も記憶もそろえて Guaranteed なら −997' }
 	],
 	facts: [
 		{ k: '192 MiB で入る数', v: '20 個（3,840 ÷ 192）', calc: '3840/192' },
@@ -371,13 +372,10 @@ export const s11: Step = {
 			N1([
 				kl1,
 				row('p-8frqg', 1, `${NEW}8frqg`, 'Burstable・oom_score_adj 954', 'warn'),
+				row('p-m2sg4', 1, `${NEW}m2sg4`, 'Burstable・oom_score_adj 954', 'warn'),
 				row('n1-free', 1, 'allocatable の残り', '700 MiB')
 			]),
-			N2([
-				kl2,
-				row('p-w6vzf', 1, `${NEW}w6vzf`, 'Burstable・oom_score_adj 954', 'warn'),
-				row('p-m2sg4', 1, `${NEW}m2sg4`, 'Burstable・oom_score_adj 954', 'warn')
-			])
+			N2([kl2, row('p-w6vzf', 1, `${NEW}w6vzf`, 'Burstable・oom_score_adj 954', 'warn')])
 		]
 	},
 	metrics: { want: '3 個', ready: '3 個' },
@@ -511,19 +509,22 @@ export const s12: Step = {
 	inside: {
 		hosts: [
 			cp([
-				row('d-web', 0, 'Deployment web', 'Ready 3 / 3 → 1 / 3', 'warn'),
-				row('rs-new', 1, 'ReplicaSet web-v475cz8h8', '3 個（1 個 Ready）', 'warn'),
+				row('d-web', 0, 'Deployment web', 'Ready 3 / 3 → 2 / 3', 'warn'),
+				row('rs-new', 1, 'ReplicaSet web-v475cz8h8', '3 個（2 個 Ready）', 'warn'),
 				row('n-2', 1, 'node node-2', 'NotReady・taint unreachable', 'bad')
 			]),
-			N1([kl1, row('p-8frqg', 1, `${NEW}8frqg`, 'Running', 'ok')]),
+			N1([
+				kl1,
+				row('p-8frqg', 1, `${NEW}8frqg`, 'Running', 'ok'),
+				row('p-m2sg4', 1, `${NEW}m2sg4`, 'Running', 'ok')
+			]),
 			N2([
 				row('kl-2', 0, 'kubelet（node-2）', '返事が無い', 'bad'),
-				row('p-w6vzf', 1, `${NEW}w6vzf`, 'Running・0/1 Ready=False（300 秒後に追い出し）', 'bad'),
-				row('p-m2sg4', 1, `${NEW}m2sg4`, 'Running・0/1 Ready=False（300 秒後に追い出し）', 'bad')
+				row('p-w6vzf', 1, `${NEW}w6vzf`, 'Running・0/1 Ready=False（300 秒後に追い出し）', 'bad')
 			])
 		]
 	},
-	metrics: { want: '3 個', ready: '1 個' },
+	metrics: { want: '3 個', ready: '2 個' },
 	motion: [
 		{ at: 0, dur: 800, para: 0, do: { op: 'camera', fit: ['ctrl', 'api', 'kl1', 'kl2'] } },
 		{
@@ -547,7 +548,7 @@ export const s12: Step = {
 			para: 1,
 			do: { op: 'packet', a: 'ctrl', b: 'api', label: 'taint', kind: 'write' }
 		},
-		{ at: 4600, dur: 900, para: 2, do: { op: 'count', metric: 'ready', to: '1 個' } },
+		{ at: 4600, dur: 900, para: 2, do: { op: 'count', metric: 'ready', to: '2 個' } },
 		{ at: 4700, dur: 400, para: 2, do: { op: 'board', line: 2 } },
 		{
 			at: 5500,

@@ -231,7 +231,7 @@ export const k8s101: Lesson = {
 			{
 				ask: 'RESTARTS 12・Last State OOMKilled・Limits 256Mi。何を見て、何を直すか',
 				answer:
-					'logs --previous と node の memory.peak で使う量を測り、上限を測った最大 ＋ 余裕にする。漏れなら上げても止まらないので、使う量が時間で増えるかも見る',
+					'logs --previous を読み、上限を一時的に上げた 1 つの Pod の memory.peak（止められた回は上限と同じ数しか出ない）かヒープの指標で使う量を測り、上限を測った最大 ＋ 余裕にする。漏れなら上げても止まらないので、使う量が時間で増えるかも見る',
 				look: '上限を倍にして終えず、使う量を測ってから決めるか'
 			},
 			{

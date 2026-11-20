@@ -391,7 +391,7 @@ const B = {
 		]),
 	cri: () => band('cri', 'containerd（CRI の gRPC）→ runc', [box('b_cri', I.cri)]),
 	back: (ev: string[]) =>
-		band('back', '状態の戻り道', [
+		band('back', '状態の戻り道（PLEG は同期を起こすだけ。書くのは SyncPod の中）', [
 			box('b_pleg', I.relist, [q('plegq', 'PLEG の出来事（1 秒ごと）', ev)]),
 			box('b_sm', I.setStatus)
 		]),

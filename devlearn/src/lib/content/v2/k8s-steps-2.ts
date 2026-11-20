@@ -195,8 +195,8 @@ export const s6: Step = {
 		work: [
 			'kubelet は nodeName が node-1 の Pod だけを watch する。87cwj は SyncLoop ADD で worker（podWorkerLoop()）に渡る。',
 			'SyncPod() は computePodActions() で作る物を決める。RunPodSandbox・CreateContainer・StartContainer を containerd に頼む。',
-			'コンテナの cgroup には、limits から memory.max 134,217,728 B（128 MiB）が書かれる。requests の cpu 100m は cpu.weight 4 になる。起動は 2 秒で、品物の一覧を読み始める。',
-			'PLEG が 1 秒ごとの Relist で ContainerStarted を見つける。status を PATCH して Running になる。'
+			'コンテナの cgroup には、limits から memory.max 134,217,728 B（128 MiB）が書かれる。requests の cpu 100m は cpu.weight 4 になる。起動は 2 秒だ。',
+			'PLEG が 1 秒ごとの Relist で ContainerStarted を見つけ、syncLoopIteration() が同期を起こす。SyncPod() の中の SetPodStatus() が Running を書き、PATCH で送られる。'
 		],
 		deep: [
 			'syncLoopIteration() は複数の道を待つ。API サーバからの Pod の変化・PLEG の出来事・1 秒ごとの見直し・2 秒ごとの片づけ・probe の結果だ。どれが来ても、該当の Pod を UpdatePod() で worker に知らせる。',
@@ -278,36 +278,59 @@ export const s6: Step = {
 			do: { op: 'packet', a: 'b_syncpod', b: 'b_cpa', label: '作る物は？', kind: 'call' }
 		},
 		{
-			at: 2900,
+			at: 2800,
 			dur: 700,
 			para: 1,
-			do: { op: 'packet', a: 'b_start', b: 'b_cri', label: 'CreateContainer', kind: 'cri' }
+			do: { op: 'packet', a: 'b_syncpod', b: 'b_cri', label: 'RunPodSandbox', kind: 'cri' }
 		},
 		{ at: 3000, dur: 400, para: 1, do: { op: 'board', line: 1 } },
 		{
-			at: 3700,
+			at: 3500,
 			dur: 700,
 			para: 2,
 			do: { op: 'packet', a: 'b_start', b: 'b_res', label: 'limits', kind: 'call' }
 		},
-		{ at: 4400, dur: 450, para: 2, do: { op: 'badge', id: 'b_res', text: 'memory.max 134217728' } },
-		{ at: 4500, dur: 400, para: 2, do: { op: 'board', line: 2 } },
-		{ at: 5200, dur: 800, para: 3, do: { op: 'camera', fit: ['b_cri', 'b_pleg', 'b_sm'] } },
 		{
-			at: 5600,
+			at: 4200,
+			dur: 700,
+			para: 2,
+			do: { op: 'packet', a: 'b_start', b: 'b_cri', label: 'CreateContainer', kind: 'cri' }
+		},
+		{
+			at: 4900,
+			dur: 450,
+			para: 2,
+			do: { op: 'badge', id: 'b_cri', text: 'runc：memory.max 134217728' }
+		},
+		{ at: 5000, dur: 400, para: 2, do: { op: 'board', line: 2 } },
+		{
+			at: 5400,
+			dur: 700,
+			para: 2,
+			do: { op: 'packet', a: 'b_start', b: 'b_cri', label: 'StartContainer', kind: 'cri' }
+		},
+		{ at: 6100, dur: 800, para: 3, do: { op: 'camera', fit: ['b_iter', 'b_pleg', 'b_sm'] } },
+		{
+			at: 6500,
 			dur: 600,
 			para: 3,
 			do: { op: 'enqueue', queue: 'plegq', item: 'ContainerStarted' }
 		},
 		{
-			at: 6200,
+			at: 7100,
 			dur: 700,
 			para: 3,
-			do: { op: 'packet', a: 'b_pleg', b: 'b_sm', label: 'Running', kind: 'status' }
+			do: { op: 'packet', a: 'b_pleg', b: 'b_iter', label: 'ContainerStarted', kind: 'status' }
 		},
-		{ at: 6300, dur: 400, para: 3, do: { op: 'board', line: 3 } },
 		{
-			at: 7000,
+			at: 7800,
+			dur: 700,
+			para: 3,
+			do: { op: 'packet', a: 'b_iter', b: 'b_sm', label: 'SyncPod → Running', kind: 'status' }
+		},
+		{ at: 7900, dur: 400, para: 3, do: { op: 'board', line: 3 } },
+		{
+			at: 8600,
 			dur: 450,
 			para: 3,
 			do: { op: 'badge', id: 'b_sm', text: 'PATCH status', tone: 'ok' }
@@ -328,11 +351,11 @@ export const s6: Step = {
 	],
 	board: [
 		'SyncLoop ADD → podWorkerLoop()',
-		'computePodActions() → CRI の 3 つの呼び',
-		'cgroup に memory.max 128 MiB',
-		'PLEG が見つけ、status を Running に'
+		'computePodActions() → RunPodSandbox',
+		'limits → CreateContainer（runc が memory.max 128 MiB）→ Start',
+		'PLEG → syncLoop → SyncPod → SetPodStatus で Running'
 	],
-	badges: { b_res: 'memory.max 134217728', b_sm: 'PATCH status' },
+	badges: { b_cri: 'runc：memory.max 134217728', b_sm: 'PATCH status' },
 	layers: [B.klLoop([]), B.krt(), B.cri(), B.back([])],
 	impl: [
 		I.loopIter,
@@ -557,7 +580,7 @@ export const s8: Step = {
 			'SyncPod() の中の doBackOff() は、getStableKey() の鍵で待ちの表を引く。鍵は Pod の名前・名前空間・UID・コンテナの名前と、コンテナの定義の hash（HashContainer()）だ。最後に落ちた時刻（FinishedAt）から待ちが過ぎていなければ ErrCrashLoopBackOff を返し、起こさない。',
 			'待ちの表は client-go の flowcontrol.Backoff だ。初めは 10 秒（backOffPeriod）、上限は 300 秒（MaxContainerBackOff）。IsInBackOffSince() が待ちの中かを答え、Next() が待ちを倍にする。',
 			'最後に更新してから 600 秒（上限の 2 倍）落ちなければ、表の行は古いと見なされ、次の失敗は 10 秒から数え直す。公式文書は「10 分動けば待ちを戻す」と書く。',
-			'doBackOff() を通るのは Pod の同期が走る時だけだ（PLEG の出来事・Pod の更新・ワークキューの期限）。待ちだけで止まった同期は、SyncPod() がエラーにしない。次の同期は見直しの間隔（--sync-frequency 既定 1 分）か次の出来事なので、実際の間隔は待ちより長く出ることがある。待ちの中の同期ごとに BackOff の出来事が 1 つ記され、E の行は出ない（-v=3 で Back-off の行が出る）。'
+			'待ちの中の同期は ErrCrashLoopBackOff を返す。先に積まれた ConfigPodSandbox の結果が除外の輪に当たり、同期はエラーになる（v1.31.0。k/k#123602）。pod worker は E の行「Error syncing pod, skipping」を残し、10〜15 秒後（10 秒 × ゆらぎ 0.5）に入れ直す。起こし直しは待ちが明けた後の最初の同期なので、公式の並びより最大 15 秒ほど遅れる。'
 		]
 	},
 	callout: {
@@ -607,7 +630,7 @@ export const s8: Step = {
 			{
 				t: '10:06:39',
 				src: 'kubelet',
-				text: 'I1119 10:06:39.118702 1873 kuberuntime_manager.go:1445] "Back-off restarting failed container" err="back-off 20s …"'
+				text: 'E1119 10:06:39.118702 1873 pod_workers.go:1301] "Error syncing pod, skipping" err="… CrashLoopBackOff: \\"back-off 20s …"'
 			},
 			{
 				t: '10:06:39',
@@ -620,7 +643,6 @@ export const s8: Step = {
 	motion: [
 		{ at: 0, dur: 800, para: 0, do: { op: 'camera', fit: ['b_dbo', 'b_ibo', 'b_next2'] } },
 		{ at: 400, dur: 600, para: 0, do: { op: 'enqueue', queue: 'boq', item: 'web 10 秒' } },
-		{ at: 1000, dur: 800, para: 0, do: { op: 'count', metric: 'wait', to: '20 秒' } },
 		{ at: 1100, dur: 400, para: 0, do: { op: 'board', line: 0 } },
 		{
 			at: 1900,
@@ -632,16 +654,24 @@ export const s8: Step = {
 			at: 2600,
 			dur: 450,
 			para: 1,
-			do: { op: 'badge', id: 'b_ibo', text: 'まだ待ち → 起こさない', tone: 'bad' }
+			do: { op: 'badge', id: 'b_ibo', text: 'まだ待ち → BackOff を記して戻る', tone: 'bad' }
 		},
 		{ at: 2700, dur: 400, para: 1, do: { op: 'board', line: 1 } },
 		{
-			at: 3400,
+			at: 3300,
 			dur: 700,
 			para: 1,
-			do: { op: 'packet', a: 'b_ibo', b: 'b_next2', label: '倍に', kind: 'call' }
+			do: { op: 'packet', a: 'b_dbo', b: 'b_ibo', label: '待ちが明けた', kind: 'call' }
 		},
-		{ at: 4100, dur: 800, para: 1, do: { op: 'count', metric: 'restarts', to: '2 回' } },
+		{
+			at: 4000,
+			dur: 700,
+			para: 1,
+			do: { op: 'packet', a: 'b_ibo', b: 'b_next2', label: 'Next：倍に', kind: 'call' }
+		},
+		{ at: 4600, dur: 400, para: 1, do: { op: 'board', line: 2 } },
+		{ at: 4700, dur: 800, para: 1, do: { op: 'count', metric: 'wait', to: '20 秒' } },
+		{ at: 4800, dur: 800, para: 1, do: { op: 'count', metric: 'restarts', to: '2 回' } },
 		{ at: 5000, dur: 800, para: 2, do: { op: 'camera', fit: ['b_next2', 'kl1', 'api'] } },
 		{
 			at: 5400,
@@ -649,7 +679,6 @@ export const s8: Step = {
 			para: 2,
 			do: { op: 'packet', a: 'kl1', b: 'api', label: 'BackOff', kind: 'status', stall: true }
 		},
-		{ at: 5500, dur: 400, para: 2, do: { op: 'board', line: 2 } },
 		{
 			at: 6300,
 			dur: 450,
@@ -659,7 +688,7 @@ export const s8: Step = {
 		{ at: 6400, dur: 400, para: 2, do: { op: 'board', line: 3 } },
 		{ at: 1100, dur: 700, para: 0, do: { op: 'pulse', id: 'b_dbo' } },
 		{ at: 3100, dur: 700, para: 1, do: { op: 'pulse', id: 'b_ibo' } },
-		{ at: 3800, dur: 700, para: 1, do: { op: 'pulse', id: 'b_next2' } }
+		{ at: 4500, dur: 700, para: 1, do: { op: 'pulse', id: 'b_next2' } }
 	],
 	loop: [
 		// 最後の寄りの中で流す（留まる間も図の中で流れが続く。LS-M4・D1）
@@ -673,11 +702,11 @@ export const s8: Step = {
 	],
 	board: [
 		'doBackOff()：表を引く',
-		'IsInBackOffSince()：待ちの中',
-		'Next()：10 → 20 秒に倍',
+		'待ちの中：BackOff を記して戻る（10〜15 秒ごと）',
+		'待ちが明けた同期：Next() で 10 → 20 秒、起こす',
 		'Ready 0 個 → 入口は 503'
 	],
-	badges: { api: 'Ready の番地 0 個', b_ibo: 'まだ待ち → 起こさない' },
+	badges: { api: 'Ready の番地 0 個', b_ibo: 'まだ待ち → BackOff を記して戻る' },
 	layers: [B.bo([])],
 	impl: [I.syncPod, I.doBackOff, I.inBackOff, I.boNext, I.maxBackOff],
 	knobs: ['restarts', 'replicas'],

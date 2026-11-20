@@ -24,14 +24,14 @@ export const s13: Step = {
 			'kubectl get pods -n shop で STATUS と RESTARTS を見る。「CrashLoopBackOff・6 (39s ago)」なら落ちて待っている。Pending なら置き場所、ImagePullBackOff ならイメージの問題だ。',
 			'kubectl describe pod で Last State を読む。「Terminated・Reason OOMKilled・Exit Code 137」なら上限、「Error・Exit Code 1」ならプログラムの失敗だ。Limits と Requests も同じ画面にある。',
 			'logs --previous で落ちる前の最後の行を読む。SIGKILL ではエラーの行が残らず、「96 MiB of 182 MiB」で途切れる。',
-			'get events は 1 時間分しか残らない。REASON（BackOff・FailedScheduling）と回数（x9）で止まった所を見る。'
+			'get events は 1 時間分しか残らない。REASON（BackOff・FailedScheduling）と回数（x35）で止まった所を見る。'
 		],
 		deep: [
 			'get pods の STATUS は、コンテナの state の理由をそのまま出す。Waiting なら CrashLoopBackOff など、Terminated なら OOMKilled・Error が出る。phase の Running とは別の物を出している。',
-			'describe の Events は、その Pod に関わる出来事だけを、同じ物をまとめて「x9 over 6m9s」と出す。BackOff の数は、kubelet が待ちの中で起こすのを見送った回数だ。落ちた回数は RESTARTS で読む。',
+			'describe の Events は、その Pod に関わる出来事だけを、同じ物をまとめて「x35 over 6m4s」と出す。BackOff の数は、kubelet が待ちの中で起こすのを見送った回数だ。数は kubelet の手元で数え、API に届く更新は間引かれて遅れる（1 つの Pod に 25 件の後は 5 分に 1 件）。落ちた回数は RESTARTS で読む。',
 			'kubectl logs は kubelet の /containerLogs を通して、node のファイルを読む。道は /var/log/pods/<名前空間>_<名前>_<UID>/<コンテナ>/<回数>.log だ。--previous は 1 つ前の回数のファイルだ。止まったコンテナは 1 つしか残らない（MaxPerPodContainerCount 1）ので、2 回以上前のログは node からも消える。',
 			'events は API サーバの --event-ttl（既定 1 時間）で消える。後で調べるには、events を集める仕組み（kubernetes-event-exporter など）で貯めておく。',
-			'kubectl top pod は metrics-server が要る。無い集まりでは「Metrics API not available」になる。使う量は、ログか、node の cgroup の memory.peak で確かめる。'
+			'kubectl top pod は metrics-server が要る。上限で止められた回の memory.peak は上限と同じ数しか出ず、起こし直すと cgroup も新しくなる。本当の量は、上限を一時的に上げた 1 つの Pod の memory.peak か、アプリのヒープの指標で測る。このログが 182 MiB と総量を書くのは特別な場合だ。'
 		]
 	},
 	callout: {
@@ -46,7 +46,7 @@ export const s13: Step = {
 	facts: [
 		{ k: 'events が残る長さ', v: '1 時間（--event-ttl の既定）' },
 		{ k: '--previous で読める', v: '1 つ前の回だけ' },
-		{ k: 'まとめた出来事', v: 'x9 over 6m9s' },
+		{ k: 'まとめた出来事', v: 'x35 over 6m4s' },
 		{ k: '絞るまで', v: '命令 4 つ・約 5 分' }
 	],
 	scene: [
@@ -83,7 +83,7 @@ export const s13: Step = {
 						},
 						{
 							k: 'node のファイル',
-							v: '/var/log/pods/shop_web-6d8f7b9c4-87cwj_…/web/1.log',
+							v: '/var/log/pods/shop_web-6d8f7b9c4-87cwj_…/web/2.log',
 							level: 3
 						}
 					]
@@ -95,14 +95,14 @@ export const s13: Step = {
 			N1([
 				kl1,
 				row('p-87cwj', 1, `${POD}87cwj`, 'CrashLoopBackOff（2 回）', 'bad'),
-				row('f-log', 2, '/var/log/pods/…/web/1.log', '4 行（読み込みの途中で終わる）', 'warn')
+				row('f-log', 2, '/var/log/pods/…/web/2.log', '4 行（読み込みの途中で終わる）', 'warn')
 			])
 		],
 		logs: [
 			{
 				t: '10:21:00',
 				src: 'stdout',
-				text: '2026-11-19T01:05:31.871Z INFO  catalog cache 96 MiB of 182 MiB loaded'
+				text: '2026-11-19T01:06:32.871Z INFO  catalog cache 96 MiB of 182 MiB loaded'
 			}
 		]
 	},
@@ -115,7 +115,7 @@ export const s13: Step = {
 			para: 0,
 			do: { op: 'packet', a: 'you', b: 'api', label: 'get pods', kind: 'write' }
 		},
-		{ at: 1200, dur: 450, para: 0, do: { op: 'badge', id: 'you', text: 'CrashLoopBackOff・5' } },
+		{ at: 1200, dur: 450, para: 0, do: { op: 'badge', id: 'you', text: 'CrashLoopBackOff・6' } },
 		{ at: 1300, dur: 400, para: 0, do: { op: 'board', line: 0 } },
 		{
 			at: 2000,
@@ -140,22 +140,28 @@ export const s13: Step = {
 			at: 4400,
 			dur: 800,
 			para: 2,
-			do: { op: 'packet', a: 'kl1', b: 'you', label: '96 of 182 MiB', kind: 'status' }
+			do: { op: 'packet', a: 'kl1', b: 'api', label: '96 of 182 MiB', kind: 'status' }
+		},
+		{
+			at: 5000,
+			dur: 700,
+			para: 2,
+			do: { op: 'packet', a: 'api', b: 'you', label: '4 行', kind: 'status' }
 		},
 		{ at: 4500, dur: 400, para: 2, do: { op: 'board', line: 2 } },
 		{
-			at: 5300,
+			at: 5800,
 			dur: 800,
 			para: 3,
 			do: { op: 'packet', a: 'you', b: 'api', label: 'get events', kind: 'write' }
 		},
 		{
-			at: 6100,
+			at: 6600,
 			dur: 450,
 			para: 3,
-			do: { op: 'badge', id: 'you', text: 'BackOff x9', tone: 'warn' }
+			do: { op: 'badge', id: 'you', text: 'BackOff x35', tone: 'warn' }
 		},
-		{ at: 6200, dur: 400, para: 3, do: { op: 'board', line: 3 } }
+		{ at: 6700, dur: 400, para: 3, do: { op: 'board', line: 3 } }
 	],
 	loop: [
 		{
@@ -169,9 +175,9 @@ export const s13: Step = {
 		'get pods：CrashLoopBackOff・6 回',
 		'describe：OOMKilled・137・Limits 128Mi',
 		'logs --previous：96 of 182 MiB で終わる',
-		'get events：BackOff x9'
+		'get events：BackOff x35'
 	],
-	badges: { you: 'BackOff x9', api: 'OOMKilled・137' },
+	badges: { you: 'BackOff x35', api: 'OOMKilled・137' },
 	refs: [
 		'k8s-debug-pod',
 		'kubectl-describe',
@@ -204,9 +210,9 @@ export const s14: Step = {
 		],
 		deep: [
 			'1 分の説明：欲しい数は API サーバを通して etcd に書かれる。コントローラ・スケジューラ・kubelet は watch で変化を受け、手元の写しで差を見て、差を埋める書き込みだけをする。Pod が落ちても数は戻るが、落ちる理由は戻らない。',
-			'問い 1：「RESTARTS 12・Last State OOMKilled・Limits 256Mi。何を見て、何を直すか」。答えは logs --previous と memory.peak で使う量を測り、上限を測った最大 ＋ 余裕にする。上限を 2 倍にして終える答えは不可だ。',
+			'問い 1：「RESTARTS 12・Last State OOMKilled・Limits 256Mi。何を見て、何を直すか」。答えは logs --previous を読み、上限を一時的に上げた 1 つの Pod の memory.peak で使う量を測る。上限は測った最大 ＋ 余裕にする。上限を 2 倍にして終える答えは不可だ。',
 			'問い 2：「Pending のまま 10 分。どこを見るか」。答えは get events の FailedScheduling の文と、describe node の Allocated resources だ。Insufficient memory なら requests か node の数、untolerated taint なら tolerations を見る。',
-			'教える時は、ステップ 4 の差 −1 の動きと、ステップ 8 の待ちが倍に伸びる動きを、つまみで再起動の回数を動かして見せる。待ちの和が 310 秒になる計算を、自分で出させる。'
+			'教える時は、ステップ 4 の差 −1 の動きと、ステップ 8 の待ちが倍に伸びる動きを、つまみで再起動の回数を動かして見せる。待ちの和が 310 秒（下限。実際は同期の間隔の分だけ遅れる）になる計算を、自分で出させる。'
 		]
 	},
 	callout: {
@@ -301,7 +307,7 @@ export const s15: Step = {
 		],
 		deep: [
 			'書く道は DeleteResource() → GuaranteedUpdate() だ。届く道は ListAndWatch() → HandleDeltas() だ。埋める道は syncReplicaSet() → manageReplicas() → ScheduleOne() → Bind() だ。',
-			'起こす道は syncLoopIteration() → startContainer() → CreateContainer() だ。戻り道は Relist() → SetPodStatus() だ。',
+			'起こす道は syncLoopIteration() → startContainer() → CreateContainer() だ。戻り道は Relist() → syncLoopIteration() → SyncPod() → SetPodStatus() だ。',
 			'壊れた所は try_charge_memcg() → mem_cgroup_out_of_memory() → oom_kill_process() だ。待ちは doBackOff() で 10・20・40・80・160・300 秒。',
 			'数の目安：猶予 30 秒、NotReady まで 40 秒、移すまで 300 秒、待ちの上限 300 秒。待ちを戻すまで 600 秒、events は 1 時間、追い出しは 100 MiB を割った時。',
 			'次に学ぶとよいこと：probe（liveness・readiness・startup）で Ready を決める道。Service と EndpointSlice と kube-proxy の規則、HPA で数を変える道。'

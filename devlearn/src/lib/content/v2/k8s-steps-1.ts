@@ -560,10 +560,10 @@ export const s4: Step = {
 			'2 つしか無いので、1 つ足すと決める。足す前に「1 つ作る」とメモしておき、同じ部屋を 2 度作らないようにする。'
 		],
 		work: [
-			'worker が processNextWorkItem() でワークキューから鍵を取り、syncReplicaSet() を呼ぶ。手元の写しから、ラベル app=web で持ち主がこの ReplicaSet の Pod を集める。',
-			'deletionTimestamp が付いた 7xk2p と、終わった Pod を除くと、生きている Pod は 2 個だ。manageReplicas() は差 2 − 3 ＝ −1 を見て、1 個を作ると決める。',
+			'worker が鍵を取り、syncReplicaSet() を呼ぶ。名前空間の Pod を全て取って動く物に絞り、claimPods() がセレクタと ownerReferences で引き取る物を決める。セレクタは pod-template-hash=6d8f7b9c4 まで含む。',
+			'deletionTimestamp が付いた 7xk2p と、終わった Pod を除くと、生きている Pod は 2 個だ。manageReplicas() は差 2 − 3 ＝ −1 で 1 個を作ると決める。',
 			'作る前に expectations に「作成 1 個」と書き、CreatePods() で API サーバに Pod を POST する。名前は generateName の web-6d8f7b9c4- に 5 字が足され、87cwj になる。',
-			'作った Pod の ADDED が watch で届くと、expectations が 0 に戻る。それまでの調整は数え直さないので、同じ Pod を 2 度作らない。'
+			'作った Pod の ADDED が watch で届くと、expectations が 0 に戻る。それまでは数え直さず、同じ Pod を 2 度作らない。'
 		],
 		deep: [
 			'syncReplicaSet() は最初に SatisfiedExpectations() を見る。約束した作成・削除が全て watch で見えたか、約束から 5 分（ExpectationsTimeout）経っていれば、数え直してよい。',
@@ -575,7 +575,7 @@ export const s4: Step = {
 	},
 	callout: {
 		type: 'warn',
-		text: '持ち主の無い Pod に同じラベルを付けると、ReplicaSet が自分の数に引き取り、余った分を消す。ラベルは Deployment ごとに分ける。'
+		text: '持ち主の無い Pod にセレクタ（pod-template-hash まで）に合うラベルを付けると、ReplicaSet が引き取り、余った分を消す。ラベルは Deployment ごとに分ける。'
 	},
 	changes: [
 		{ mark: '+', text: 'expectations に作成 1 個' },
