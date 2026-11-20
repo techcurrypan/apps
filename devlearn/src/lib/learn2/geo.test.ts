@@ -55,3 +55,31 @@ describe('第 2 版の図の置き方', () => {
 		expect(fitFirst([a, b], 900, 450)).toEqual(fitView([a, b], 900, 450));
 	});
 });
+
+describe('区画（LS-D6・D7）', () => {
+	const cut = (a: { x: number; y: number; w: number; h: number }, b: typeof a) =>
+		a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+	it('第 2 版の全レッスンで、区画どうしが重ならず、区画の名前は外の機械と重ならない', async () => {
+		const { lessons } = await import('../content/lessons.ts');
+		const { isV2 } = await import('../lesson/types.ts');
+		const bad: string[] = [];
+		for (const l of lessons.filter((x) => isV2(x))) {
+			const g = geoOf(l);
+			g.zones.forEach((z, i) => {
+				for (const o of g.zones.slice(i + 1))
+					if (cut(z.r, o.r)) bad.push(`${l.id} ${z.label}×${o.label}`);
+				for (const n of g.nodes.values()) {
+					// 機械の絵と名前（状態の札の空けておく所は除く）。中の機械とも外の機械とも重ならない
+					const body = {
+						x: n.r.x,
+						y: n.c.y - 50,
+						w: 2 * (n.c.x - n.r.x),
+						h: n.r.y + n.r.h - (n.c.y - 50)
+					};
+					if (cut(z.lr, body)) bad.push(`${l.id} ${z.label} の名前×${n.id}`);
+				}
+			});
+		}
+		expect(bad).toEqual([]);
+	});
+});

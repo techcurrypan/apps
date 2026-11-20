@@ -3,6 +3,7 @@ import { lessons } from '../content/lessons.ts';
 import { git001 } from '../content/lessons/git-001.ts';
 import { net007 } from '../content/lessons/net-007.ts';
 import { addNote, judgeRecall, noteOf, recallOf } from './recall.ts';
+import { isV2 } from '../lesson/types.ts';
 
 describe('思い出すの問い（LS-R1）', () => {
 	it('並べる・図の機械を押す・打つ・選ぶの 4 種がそろう（図と町の呼び名のあるレッスン）', () => {
@@ -76,5 +77,50 @@ describe('打つ答えの空白', () => {
 		const q = { kind: 'type' as const, q: '', label: '', ans: 'git status', why: 'x' };
 		expect(judgeRecall(q, 'git\u3000 status').ok).toBe(true);
 		expect(judgeRecall(q, 'git tatu').ok).toBe(false);
+	});
+});
+
+describe('第 2 版のレッスンの思い出す（LS-R1・R2）', () => {
+	const v2 = lessons.filter((l) => isV2(l));
+	it('第 2 版のレッスンがある', () => expect(v2.length).toBeGreaterThanOrEqual(2));
+	it('6 問以上。場面の問い 2 問以上・数の問い 1 問以上（レッスンの check から出す）', () => {
+		for (const l of v2) {
+			const qs = recallOf(l);
+			expect(qs.length, l.id).toBeGreaterThanOrEqual(6);
+			expect(qs.filter((q) => q.tag === 'scene').length, l.id).toBeGreaterThanOrEqual(2);
+			expect(qs.filter((q) => q.tag === 'number').length, l.id).toBeGreaterThanOrEqual(1);
+		}
+	});
+	it('場面の問いは選ぶ。正しい答えは check の how で、並びは決まった崩し方（最初が答えとは限らない）', () => {
+		for (const l of v2) {
+			const qs = recallOf(l).filter((q) => q.tag === 'scene');
+			for (const q of qs) {
+				expect(q.kind, l.id).toBe('pick');
+				if (q.kind === 'pick') {
+					const c = l.check.find((x) => x.ask === q.q);
+					expect(q.opts[q.a], l.id).toBe(c?.how);
+				}
+			}
+			expect(
+				qs.some((q) => q.kind === 'pick' && q.a !== 0),
+				l.id
+			).toBe(true);
+		}
+	});
+	it('数の問いは打つ。数が合えば当たり（桁の区切り・単位の書き方は問わない）', () => {
+		const l = v2.find((x) =>
+			x.check.some((c) => c.kind === 'number' && c.how.startsWith('14,480'))
+		);
+		expect(l).toBeDefined();
+		const q = recallOf(l!).find(
+			(x) => x.tag === 'number' && x.kind === 'type' && x.ans.includes('14,480')
+		);
+		expect(q?.kind).toBe('type');
+		if (q?.kind !== 'type') return;
+		expect(judgeRecall(q, '14480').ok).toBe(true);
+		expect(judgeRecall(q, '14,480 B').ok).toBe(true);
+		expect(judgeRecall(q, '１４４８０').ok).toBe(true);
+		expect(judgeRecall(q, '14,481').ok).toBe(false);
+		expect(judgeRecall(q, '').ok).toBe(false);
 	});
 });

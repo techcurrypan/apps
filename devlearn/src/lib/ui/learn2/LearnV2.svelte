@@ -21,7 +21,7 @@
 		type Note,
 		type Prefs
 	} from '../../learn/prefs.ts';
-	import { geoOf, lerpView, type View } from '../../learn2/geo.ts';
+	import { fitView, geoOf, lerpView, type View } from '../../learn2/geo.ts';
 	import { endOf, frameAt } from '../../learn2/timeline.ts';
 	import { KNOB_CALC, knobLoop } from '../../learn2/knobs.ts';
 	import { segment } from '../../learn2/terms.ts';
@@ -222,8 +222,19 @@
 	let userView = $state<View | null>(null);
 	let blend = $state<{ from: View; k: number } | null>(null);
 	let lastView: View | null = null;
+	// 思い出すは図だけを残し、どの機械も押せるよう全ての機械が入る視点にする（LS-R1・R3）
+	const recallView = $derived(
+		mode === 'recall' && geo.nodes.size
+			? fitView(
+					[...geo.nodes.values()].map((n) => n.r),
+					sw,
+					sh
+				)
+			: null
+	);
 	const shownView = $derived.by(() => {
 		if (userView) return userView;
+		if (recallView) return recallView;
 		if (blend && blend.k < 1) return lerpView(blend.from, frame.view, 1 - Math.pow(1 - blend.k, 3));
 		return frame.view;
 	});
@@ -383,6 +394,11 @@
 		col: 'pk' | 'os' | 'lg';
 	} | null>(null);
 	function onpick(w: { kind: 'node' | 'packet' | 'box'; id: string; x: number; y: number }) {
+		// 思い出すでは、機械を押すのは「図の機械を押す」問いへの答え（LS-R1）。小さな板は開かない
+		if (mode === 'recall') {
+			if (w.kind === 'node') recallPanel?.hit(w.id);
+			return;
+		}
 		const host = w.x - (stageEl?.getBoundingClientRect().x ?? 0);
 		const y = w.y - (stageEl?.getBoundingClientRect().y ?? 0);
 		if (w.kind === 'packet')
@@ -808,6 +824,7 @@
 							contextOf={(id) => ctxOfBox.get(id)}
 							{onpick}
 							{desc}
+							keys={mode === 'recall'}
 						/>
 					{/if}
 					<div class="zoom">
@@ -1307,10 +1324,15 @@
 	}
 	/* 見るの広い画面：図の段の高さを決め、語りが長いときは右の通り（中身の板と記録が空けておく）へ続ける。
 	   語りが図の段を押し広げると、図が縦に伸びて画面からはみ出す（LS-A4。2026-11-19） */
-	.l2-body.watch {
+	.l2-body.watch,
+	.l2-body.recall {
 		height: max(560px, calc(100vh - 104px - var(--peek)));
 		min-height: 0;
 		grid-template-rows: minmax(0, 1fr);
+	}
+	/* 思い出すは中身の板と記録を隠す（LS-I11）ので、その分も図に使う */
+	.l2-body.recall {
+		height: max(560px, calc(100vh - 106px));
 	}
 	.l2-body.watch > .l2-narr {
 		align-self: start;
@@ -1408,6 +1430,19 @@
 	}
 	.mt.sum b {
 		color: var(--dl-kind-4-fg);
+	}
+	/* 出来事の札が無い時（思い出す・時系列）も、図が伸びる段に入るよう段を決めておく */
+	.l2-dia > .l2-metrics {
+		grid-row: 1;
+	}
+	.l2-dia > .l2-board {
+		grid-row: 2;
+	}
+	.l2-dia > .l2-stage {
+		grid-row: 3;
+	}
+	.l2-dia > .l2-legend {
+		grid-row: 4;
 	}
 	.l2-stage {
 		position: relative;

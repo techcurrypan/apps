@@ -3,11 +3,21 @@
 import type { Lesson } from '../lesson/types.ts';
 import type { Note } from './prefs.ts';
 
-export type Recall =
+/** 第 2 版の問いの種類の札（LS-R1・R2）：場面の問い・数の問い */
+export type RecallTag = 'scene' | 'number';
+export type Recall = (
 	| { kind: 'order'; q: string; items: string[]; right: string[]; why: string }
 	| { kind: 'hit'; q: string; a: string; why: string }
-	| { kind: 'type'; q: string; label: string; ans: string; why: string }
-	| { kind: 'pick'; q: string; opts: string[]; a: number; why: string };
+	| { kind: 'type'; q: string; label: string; ans: string; why: string; num?: number }
+	| { kind: 'pick'; q: string; opts: string[]; a: number; why: string }
+) & { tag?: RecallTag };
+
+/** 文の最初の数（全角の数字・桁の区切りを読む）。無ければ null */
+export function firstNumber(s: string): number | null {
+	const t = s.replace(/[０-９．，]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0));
+	const m = /\d[\d,]*(?:\.\d+)?/.exec(t);
+	return m ? Number(m[0].replace(/,/g, '')) : null;
+}
 
 /** 文字から決まる 32 ビットの数（FNV-1a） */
 function hash(s: string): number {
@@ -128,6 +138,28 @@ export function recallOf(l: Lesson): Recall[] {
 	// 予想の問いがあれば、もう一度（思い出す手間が記憶を強くする）
 	const ask = steps.find((s) => s.ask)?.ask;
 	if (ask) out.push({ kind: 'pick', q: ask.q, opts: ask.opts, a: ask.a, why: ask.why });
+
+	// 第 2 版：レッスンの確かめ（check）から、場面の問い・数の問い・選ぶ問いを出す（LS-R1・R2）。
+	// 選択肢のある物は選ぶ（並びは決まった崩し方）、数の問いは打つ（数が合えば当たり）。どちらでもない物は出さない
+	for (const c of l.check) {
+		const why = `${c.how}。`;
+		if (c.opts && c.opts.length >= 2 && c.opts.includes(c.how)) {
+			const opts = mixed(c.opts, (x) => x + c.ask);
+			out.push({ kind: 'pick', q: c.ask, opts, a: opts.indexOf(c.how), why, tag: c.kind });
+		} else if (c.kind === 'number') {
+			const num = firstNumber(c.how);
+			if (num !== null)
+				out.push({
+					kind: 'type',
+					q: `${c.ask}（数で答える）`,
+					label: '答え',
+					ans: c.how,
+					why,
+					num,
+					tag: 'number'
+				});
+		}
+	}
 	return out;
 }
 
@@ -150,6 +182,12 @@ export function judgeRecall(
 		case 'hit':
 			return { ok: answer === q.a, why: q.why, right: q.a };
 		case 'type':
+			if (q.num !== undefined)
+				return {
+					ok: typeof answer === 'string' && firstNumber(answer) === q.num,
+					why: q.why,
+					right: q.ans
+				};
 			return {
 				ok: typeof answer === 'string' && norm(answer) === norm(q.ans),
 				why: q.why,

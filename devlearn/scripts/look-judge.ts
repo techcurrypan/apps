@@ -71,6 +71,19 @@ const SCENES: Scene[] = [
 		},
 		proto: { hash: '#net', next: 2 }
 	},
+	// C-8 の当たりと外れ（LS-M10）。問いが出た所で 2（当たり）か 1（外れ）を押し、答えた直後から撮る
+	...(['a', 'b'] as const).map((v) => ({
+		id: `C-8${v}`,
+		prod: {
+			lesson: 'net-101',
+			step: 0,
+			after: async (t: Tab) => {
+				await t.key('ArrowRight');
+				await sleep(600);
+				await t.key(v === 'a' ? '2' : '1');
+			}
+		}
+	})),
 	{
 		id: 'C-9',
 		prod: {
@@ -121,6 +134,41 @@ const SCENES: Scene[] = [
 			}
 		}
 	},
+	// C-10 の終わり（LS-R4）：全ての問いに答え（選ぶは 1 つ目、並べるはそのまま、打つは空でない文字、押すは図の最初の機械）、終えた所
+	{
+		id: 'C-10b',
+		prod: {
+			lesson: 'k8s-101',
+			step: 0,
+			after: async (t) => {
+				await click(t, '.l2-modes button', '思い出す');
+				await sleep(800);
+				for (let k = 0; k < 40; k++) {
+					if (await t.eval<boolean>('!!document.querySelector(".rc .end")')) break;
+					await t.eval(`(() => {
+						const rc = document.querySelector('.rc');
+						if (!rc) return;
+						const nx = [...rc.querySelectorAll('button.btn.pri')].find(b => /次の問い|終える/.test(b.textContent));
+						if (nx) { nx.click(); return; }
+						const opt = rc.querySelector('button.opt');
+						if (opt) { opt.click(); return; }
+						const inp = rc.querySelector('input');
+						if (inp) {
+							const set = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(inp), 'value').set;
+							set.call(inp, 'kubectl get pods');
+							inp.dispatchEvent(new Event('input', { bubbles: true }));
+							inp.form?.requestSubmit();
+							return;
+						}
+						const chk = [...rc.querySelectorAll('button.btn.pri')].find(b => b.textContent.includes('確かめる'));
+						if (chk) { chk.click(); return; }
+						document.querySelector('.l2-svg g[role=button][transform*=scale]')?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+					})()`);
+					await sleep(400);
+				}
+			}
+		}
+	},
 	{
 		id: 'C-11',
 		prod: {
@@ -142,6 +190,33 @@ const SCENES: Scene[] = [
 		id: 'C-12b',
 		prod: { lesson: 'k8s-101', step: 3 },
 		proto: { hash: '#k8s', next: 2 },
+		opt: { phone: true }
+	},
+	{
+		id: 'C-12c',
+		prod: {
+			lesson: 'k8s-101',
+			step: 0,
+			after: async (t) => {
+				await click(t, '.l2-modes button', 'やってみる');
+				await sleep(600);
+				for (const l of [
+					'kubectl get pods -n shop',
+					'kubectl describe pod web-6d8f7b9c4-7xk2p -n shop'
+				])
+					await typeLine(t, l);
+			}
+		},
+		proto: {
+			hash: '#k8s',
+			next: 0,
+			after: async (t) => {
+				await t.eval(`window.__l?.setMode('try')`);
+				await sleep(500);
+				for (const l of ['kubectl get pods', 'kubectl scale deployment shop --replicas=5'])
+					await typeLine(t, l);
+			}
+		},
 		opt: { phone: true }
 	},
 	{ id: 'C-13', prod: { lesson: 'net-101', step: 5, before: deep }, opt: { light: true } },
@@ -169,7 +244,9 @@ async function burst(tab: Tab, name: string, n = 8, every = 250) {
 
 const { tab, chrome } = await openChrome(9333);
 try {
-	for (const s of SCENES) {
+	// ONLY=C-8a,C-8b のように場面を絞れる（撮り足すとき）
+	const only = process.env.ONLY?.split(',');
+	for (const s of SCENES.filter((x) => !only || only.includes(x.id))) {
 		await setup(tab, s.opt);
 		// 本番
 		const url = `${base}/lesson/${s.prod.lesson}`;

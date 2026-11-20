@@ -51,7 +51,15 @@ export type GNode = {
 	badgeAt: Pt;
 	step: number; // 現れるステップ（1 から）
 };
-export type GZone = { label: string; note: string; r: Rect; members: string[] };
+/** 区画。lr は名前の札の箱、bottom は名前を下の縁に置くとき（上に置くと外の機械と重なる時） */
+export type GZone = {
+	label: string;
+	note: string;
+	r: Rect;
+	members: string[];
+	lr: Rect;
+	bottom: boolean;
+};
 export type GLink = {
 	a: string;
 	b: string;
@@ -168,16 +176,7 @@ export function geoOf(l: Lesson): Geo {
 			});
 		}
 	});
-	const zones: GZone[] = (l.map?.zones ?? []).map((z) => {
-		const rs = z.members.map((id) => nodes.get(id)?.r).filter((r): r is Rect => !!r);
-		const r = pad(union(rs), 22);
-		return {
-			label: z.label,
-			note: z.note,
-			members: z.members,
-			r: { ...r, y: r.y - 26, h: r.h + 26 }
-		};
-	});
+	const zones: GZone[] = zonesOf(l.map?.zones ?? [], nodes);
 	const links: GLink[] = [];
 	for (const k of l.map?.links ?? []) {
 		const a = nodes.get(k.a);
@@ -353,6 +352,68 @@ export function geoOf(l: Lesson): Geo {
 		...(layerBounds ? [layerBounds] : [])
 	]);
 	return { nodes, zones, links, bands, boxes, queues, edges, mapBounds, layerBounds, all };
+}
+
+const ZONE_PAD = 22;
+const ZONE_HEAD = 26;
+const cuts = (a: Rect, b: Rect) =>
+	a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+
+/** 機械の絵と名前の箱（状態の札の空けておく所を除く。札は左右対称に置かれる絵と名前の右に出る） */
+const bodyOf = (n: GNode): Rect => ({
+	x: n.r.x,
+	y: n.c.y - NODE_HH,
+	w: 2 * (n.c.x - n.r.x),
+	h: n.r.y + n.r.h - (n.c.y - NODE_HH)
+});
+
+/**
+ * 区画の囲い（LS-D7）。中の機械を余白 22px で囲み、名前の段 26px を上に足す。
+ * 上の名前が外の機械と重なる時は名前を下の縁へ。縦に並んだ区画が重なる時は、中の機械どうしの間の真ん中で分ける（LS-D6）
+ */
+function zonesOf(
+	zs: readonly { label: string; note: string; members: string[] }[],
+	nodes: Map<string, GNode>
+): GZone[] {
+	const inner = zs.map((z) =>
+		union(z.members.map((id) => nodes.get(id)?.r).filter((r): r is Rect => !!r))
+	);
+	const out = zs.map((z, i) => {
+		const r = pad(inner[i], ZONE_PAD);
+		const lw = textW(`${z.label}・${z.note}`, FONT.small) + 28;
+		const top = { x: r.x, y: r.y - ZONE_HEAD, w: lw, h: ZONE_HEAD };
+		const bottom = [...nodes.values()].some(
+			(n) => !z.members.includes(n.id) && cuts(top, bodyOf(n))
+		);
+		const zr = bottom
+			? { ...r, h: r.h + ZONE_HEAD }
+			: { ...r, y: r.y - ZONE_HEAD, h: r.h + ZONE_HEAD };
+		return { label: z.label, note: z.note, members: z.members, r: zr, bottom, lr: top };
+	});
+	// 縦か横に並んで重なる区画を、中の機械の間の真ん中で分ける
+	for (let i = 0; i < out.length; i++)
+		for (let j = 0; j < out.length; j++) {
+			if (i === j) continue;
+			const a = out[i];
+			const b = out[j];
+			if (!cuts(a.r, b.r)) continue;
+			if (inner[i].y + inner[i].h <= inner[j].y) {
+				const mid = (inner[i].y + inner[i].h + inner[j].y) / 2;
+				if (a.r.y + a.r.h > mid - 2) a.r = { ...a.r, h: mid - 2 - a.r.y };
+				if (b.r.y < mid + 2) b.r = { ...b.r, h: b.r.h - (mid + 2 - b.r.y), y: mid + 2 };
+			} else if (inner[i].x + inner[i].w <= inner[j].x) {
+				const mid = (inner[i].x + inner[i].w + inner[j].x) / 2;
+				if (a.r.x + a.r.w > mid - 2) a.r = { ...a.r, w: mid - 2 - a.r.x };
+				if (b.r.x < mid + 2) b.r = { ...b.r, w: b.r.w - (mid + 2 - b.r.x), x: mid + 2 };
+			}
+		}
+	for (const z of out) {
+		const lw = z.lr.w;
+		z.lr = z.bottom
+			? { x: z.r.x, y: z.r.y + z.r.h - ZONE_HEAD, w: lw, h: ZONE_HEAD }
+			: { x: z.r.x, y: z.r.y, w: lw, h: ZONE_HEAD };
+	}
+	return out;
 }
 
 /** id の箱（機械・層の箱・キュー・帯） */

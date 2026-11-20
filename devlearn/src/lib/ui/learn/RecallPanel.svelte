@@ -93,7 +93,9 @@
 	</div>
 	{#if !done && q}
 		<p class="cnt">{i + 1} / {qs.length}</p>
-		<p class="q">{q.q}</p>
+		<p class="q">
+			{#if q.tag}<span class="tag">{q.tag === 'scene' ? '場面の問い' : '数の問い'}</span>{/if}{q.q}
+		</p>
 		{#if q.kind === 'order'}
 			<ol class="ord">
 				{#each order as it, j (it)}
@@ -384,5 +386,15 @@
 	.mv:focus-visible {
 		outline: 3px solid var(--dl-now);
 		outline-offset: 2px;
+	}
+	.tag {
+		display: inline-block;
+		margin-right: 6px;
+		padding: 0 6px;
+		border-radius: 4px;
+		font-size: 12px;
+		font-weight: 700;
+		color: var(--dl-now);
+		border: 1px solid var(--dl-now);
 	}
 </style>

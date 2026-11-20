@@ -18,8 +18,21 @@
 		/** 機械・荷物・箱を押した（LS-I13） */
 		onpick?: (what: { kind: 'node' | 'packet' | 'box'; id: string; x: number; y: number }) => void;
 		desc: string;
+		/** 機械に Tab で届き、Enter・Space で押せる（思い出すの「図の機械を押す」問い。LS-R1・X3） */
+		keys?: boolean;
 	};
-	let { lesson, geo, frame, view, town, styleOf, contextOf, onpick, desc }: Props = $props();
+	let {
+		lesson,
+		geo,
+		frame,
+		view,
+		town,
+		styleOf,
+		contextOf,
+		onpick,
+		desc,
+		keys = false
+	}: Props = $props();
 
 	const CTX_LABEL: Record<ImplContext, string> = {
 		user: 'ユーザー空間',
@@ -81,7 +94,7 @@
 	{#each geo.zones as z (z.label)}
 		<g class="zone">
 			<rect x={z.r.x} y={z.r.y} width={z.r.w} height={z.r.h} rx="16" />
-			<text x={z.r.x + 14} y={z.r.y + 22} data-label="区画 {z.label}">{z.label}・{z.note}</text>
+			<text x={z.lr.x + 14} y={z.lr.y + 19} data-label="区画 {z.label}">{z.label}・{z.note}</text>
 		</g>
 	{/each}
 
@@ -220,9 +233,18 @@
 				<g
 					transform="translate({n.c.x},{n.c.y}) scale({f.scale})"
 					role="button"
-					tabindex="-1"
+					tabindex={keys ? 0 : -1}
+					aria-label={keys ? `機械 ${n.label}` : undefined}
 					onclick={pick('node', n.id)}
-					onkeydown={() => {}}
+					onkeydown={(e) => {
+						if (keys && (e.key === 'Enter' || e.key === ' ')) {
+							e.preventDefault();
+							e.stopPropagation();
+							(e.currentTarget as Element).dispatchEvent(
+								new MouseEvent('click', { bubbles: true })
+							);
+						}
+					}}
 				>
 					<Machine icon={n.icon} failed={f.failed} flash={f.flash} hot={f.hot} />
 				</g>
