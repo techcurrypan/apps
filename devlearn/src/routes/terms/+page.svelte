@@ -1,6 +1,9 @@
 <script lang="ts">
 	// 用語集（learn-standard.md LS-L3）。第 2 版のレッスンの用語（Lesson.terms）を集め、出るレッスンへ飛べる。
+	// 図の絵の一式（LS-L8）も同じ頁に並べる。図の中の絵は、全てのレッスンで同じ物に同じ絵を使う（src/lib/learn2/iso.ts）
 	import { resolve } from '$app/paths';
+	import { KINDS } from '#lib/learn2/iso.ts';
+	import Machine from '#lib/ui/learn2/Machine.svelte';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
@@ -22,6 +25,18 @@
 			<p>まだ用語は無い。</p>
 		{/each}
 	</dl>
+	<h2 id="icons">図の絵</h2>
+	<p>図の中の機械の絵。形と色の系統で種類が分かる。同じ物は、どのレッスンでも同じ絵になる。</p>
+	<ul class="icons" data-icons={Object.keys(KINDS).length}>
+		{#each Object.entries(KINDS) as [id, k] (id)}
+			<li>
+				<svg viewBox="-70 -90 140 140" width="96" height="96" role="img" aria-label={k.name}>
+					<Machine icon={id} />
+				</svg>
+				<span>{k.name}</span>
+			</li>
+		{/each}
+	</ul>
 </main>
 
 <style>
@@ -36,5 +51,18 @@
 	}
 	dd {
 		margin: 0;
+	}
+	.icons {
+		list-style: none;
+		padding: 0;
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr));
+		gap: var(--dl-space-3);
+	}
+	.icons li {
+		display: grid;
+		justify-items: center;
+		gap: var(--dl-space-1);
+		font-size: 0.85rem;
 	}
 </style>
