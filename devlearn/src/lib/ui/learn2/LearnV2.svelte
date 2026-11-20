@@ -1646,10 +1646,11 @@
 		font-family: var(--dl-font-code);
 		font-size: 12px;
 	}
+	/* 短い題は切らずに 2 行まで折り返す（LS-T7「題が全部見える」） */
 	.l2-steps button span {
-		white-space: nowrap;
-		overflow: hidden;
 		max-width: 100%;
+		text-align: center;
+		overflow-wrap: anywhere;
 	}
 	.l2-steps button.done {
 		border-color: var(--dl-done);

@@ -74,6 +74,23 @@
 	role="img"
 	aria-label={desc}
 >
+	{#snippet edgesOf(active: boolean)}
+		{#each geo.edges as e (e.id)}
+			{@const f = edgeF.get(e.id)}
+			{@const st = styleOf(e.kind)}
+			{#if f && f.active === active}
+				{@const end = along(e.from, e.to, f.draw)}
+				<path id={e.id} class="track" d="M{e.from.x},{e.from.y}L{e.to.x},{e.to.y}" />
+				<g class="edge k{st.slot} {st.line}" class:active={f.active} class:broken={f.broken}>
+					<path
+						d="M{e.from.x},{e.from.y}L{end.x},{end.y}"
+						marker-end={f.draw >= 1 ? `url(#l2-arrow-${st.slot})` : undefined}
+					/>
+				</g>
+			{/if}
+		{/each}
+	{/snippet}
+
 	<defs>
 		{#each [1, 2, 3, 4, 5] as s (s)}
 			<marker
@@ -137,6 +154,9 @@
 		{/if}
 	{/each}
 
+	<!-- ほかのステップの道は薄く、箱の下に通す（箱を横切って重ならない。LS-D6・D15） -->
+	{@render edgesOf(false)}
+
 	<!-- 関数の箱とキュー（LS-D12〜D14） -->
 	{#each [...geo.boxes.values()] as b (b.id)}
 		{@const ctx = contextOf(b.id)}
@@ -194,21 +214,8 @@
 		</g>
 	{/each}
 
-	<!-- 荷物の道（層の図。LS-D15：全て描き、このステップの道を濃く） -->
-	{#each geo.edges as e (e.id)}
-		{@const f = edgeF.get(e.id)}
-		{@const st = styleOf(e.kind)}
-		{#if f}
-			{@const end = along(e.from, e.to, f.draw)}
-			<path id={e.id} class="track" d="M{e.from.x},{e.from.y}L{e.to.x},{e.to.y}" />
-			<g class="edge k{st.slot} {st.line}" class:active={f.active} class:broken={f.broken}>
-				<path
-					d="M{e.from.x},{e.from.y}L{end.x},{end.y}"
-					marker-end={f.draw >= 1 ? `url(#l2-arrow-${st.slot})` : undefined}
-				/>
-			</g>
-		{/if}
-	{/each}
+	<!-- 荷物の道（層の図。LS-D15：全て描き、このステップの道を濃く）。今のステップの道は箱の上に -->
+	{@render edgesOf(true)}
 
 	<!-- 機械（LS-D2） -->
 	{#each geo.nodes.values() as n (n.id)}
