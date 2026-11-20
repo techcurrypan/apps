@@ -7,14 +7,14 @@
 				"name": "node-1",
 				"ip": "10.0.1.11",
 				"allocMi": 3840,
-				"usedMi": 3140,
+				"usedMi": 2756,
 				"podCidr": "10.244.1"
 			},
 			{
 				"name": "node-2",
 				"ip": "10.0.1.12",
 				"allocMi": 3840,
-				"usedMi": 3140,
+				"usedMi": 3012,
 				"podCidr": "10.244.2"
 			}
 		],

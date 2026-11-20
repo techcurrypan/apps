@@ -53,6 +53,33 @@ describe('TCP の出口の模擬', () => {
 		]);
 		expect(b.out).toContain(' backlog 30000000b 440p requeues 0\n');
 	});
+	it('fq の下では tcp_limit_output_bytes が効かない（SK_PACING_NONE の時だけ min を取る）', () => {
+		const pfifo = outs([
+			'sudo sysctl -w net.ipv4.tcp_limit_output_bytes=65536',
+			'tc -s qdisc show dev eth0'
+		])[1];
+		expect(pfifo.out).not.toContain(' backlog 30000000b ');
+		const fq = outs([
+			'sudo tc qdisc replace dev eth0 root fq',
+			'sudo sysctl -w net.ipv4.tcp_limit_output_bytes=65536',
+			'tc -s qdisc show dev eth0'
+		])[2];
+		expect(fq.out).toContain(' backlog 30000000b ');
+	});
+	it('輻輳制御の名前は流れを作った時の物。sysctl は新しいソケットにだけ効く', () => {
+		const [, b] = outs([
+			'sudo sysctl -w net.ipv4.tcp_congestion_control=bbr',
+			'ss -tim dst 10.0.0.9 | head -3'
+		]);
+		expect(b.out).toContain(' ts sack cubic wscale:7,7 ');
+	});
+	it('無い輻輳制御の名前を書くと sysctl が断る', () => {
+		const [a] = outs(['sudo sysctl -w net.ipv4.tcp_congestion_control=vegasx']);
+		expect(a.err).toBe(
+			'sysctl: setting key "net.ipv4.tcp_congestion_control": No such file or directory\n'
+		);
+		expect(a.code).not.toBe(0);
+	});
 	it('sysctl の読み書き。sudo が無いと書けない', () => {
 		const [a, b, c, d] = outs([
 			'sysctl net.ipv4.tcp_limit_output_bytes',

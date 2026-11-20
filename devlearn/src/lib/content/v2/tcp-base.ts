@@ -343,7 +343,7 @@ const ackPacket = tcpPacket({
 	flags: ['ACK'],
 	window: 502,
 	ipId: 0x1f40,
-	options: tcpOptions({ ts: [5004, 3011] })
+	options: tcpOptions({ ts: [5010, 3010] })
 });
 
 export { APP, STORE, ISN, PEER_ISN, sources, I, B, synPacket, ackPacket };

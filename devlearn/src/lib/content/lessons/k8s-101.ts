@@ -55,7 +55,10 @@ export const k8s101: Lesson = {
 		{ word: 'resourceVersion', mean: '物の版の番号。etcd の revision をそのまま使う' },
 		{ word: 'requests', mean: '置き場所を決める予約の量。node の空きから引かれる' },
 		{ word: 'limits', mean: '使ってよい上限。記憶は超えると止められる' },
-		{ word: 'OOMKilled', mean: '記憶の上限を超え、カーネルに SIGKILL で止められた理由' },
+		{
+			word: 'OOMKilled',
+			mean: 'カーネルの OOM killer に SIGKILL で止められた理由（cgroup の上限か node 全体の不足）'
+		},
 		{ word: 'CrashLoopBackOff', mean: '落ちたコンテナを起こし直すのを待っている状態の名前' },
 		{ word: 'kubelet', mean: 'node ごとに動き、割り当てられた Pod を CRI で起こす係' },
 		{ word: 'CRI', mean: 'kubelet が containerd などに頼む gRPC の決まり' },
@@ -107,14 +110,14 @@ export const k8s101: Lesson = {
 			},
 			{
 				when: '記憶の requests を 1Gi にした',
-				why: 'requests は node の空きから引く予約。どの node も空きは 700 MiB で、新しい Pod は入らず Pending になる',
-				next: 'requests は 128Mi のまま、limits だけを使う量（182 MiB）より上の 256Mi にする',
+				why: 'requests は node の空きから引く予約。空きは node-1 が 828 MiB、node-2 が 700 MiB で、1Gi の新しい Pod は入らず Pending になる',
+				next: 'limits を使う量（182 MiB）より上の 256Mi に、requests を普段の量に近い 192Mi にする',
 				match: 'Insufficient memory'
 			},
 			{
 				when: '上限を少しだけ上げた',
 				why: '使う量は 182 MiB。160Mi ではまだ超えるので、新しい Pod も OOMKilled になり、入れ替えが進まない',
-				next: 'logs --previous の「of 182 MiB」を見て、上限を 256Mi にする',
+				next: 'logs --previous の「of 182 MiB」を見て、上限を 256Mi・予約を 192Mi にする',
 				match: 'timed out waiting for the condition'
 			},
 			{
@@ -214,7 +217,7 @@ export const k8s101: Lesson = {
 			{
 				wrong: '終わりの番号 137 はアプリが返した失敗',
 				right:
-					'137 は 128 ＋ 9 で、外から SIGKILL で止められた印。理由が OOMKilled なら記憶の上限、無ければ猶予切れや手で止めた時'
+					'137 は 128 ＋ 9 で、外から SIGKILL で止められた印。OOMKilled なら OOM killer（上限か node 全体の不足。dmesg で分ける）、無ければ猶予切れや手で止めた時'
 			},
 			{
 				wrong: 'requests は使ってよい上限',

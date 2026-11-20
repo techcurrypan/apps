@@ -268,9 +268,14 @@
 		{#if box}
 			{@const txt = `ここで実行の文脈が変わる → ${CTX_LABEL[c.to]}`}
 			{@const w = textW(txt, 15) + 20}
+			<!-- 見えている右端からはみ出さないよう左へ寄せる（箱の左端より右には出さない） -->
+			{@const tx = Math.max(
+				Math.min(box.r.x, frame.view.x + frame.view.w - w - 12),
+				Math.min(box.r.x, frame.view.x + 12)
+			)}
 			<g class="ctxtag ctx-{c.to}" style:opacity={Math.min(1, c.k * 3)} data-label="文脈 {c.at}">
-				<rect x={box.r.x} y={box.r.y - 36} width={w} height="28" rx="6" />
-				<text x={box.r.x + 10} y={box.r.y - 17}>{txt}</text>
+				<rect x={tx} y={box.r.y - 36} width={w} height="28" rx="6" />
+				<text x={tx + 10} y={box.r.y - 17}>{txt}</text>
 			</g>
 		{/if}
 	{/each}

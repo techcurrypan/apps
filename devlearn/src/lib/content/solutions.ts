@@ -34,7 +34,7 @@ export const SOLUTIONS: Record<string, { pass: string[]; wrong: string[][]; alt?
 			'kubectl describe pod web-6d8f7b9c4-7xk2p -n shop',
 			'kubectl logs web-6d8f7b9c4-7xk2p -n shop --previous',
 			'kubectl get events -n shop',
-			'kubectl set resources deployment web -n shop --limits=memory=256Mi',
+			'kubectl set resources deployment web -n shop --limits=memory=256Mi --requests=memory=192Mi',
 			'kubectl rollout status deployment/web -n shop',
 			'kubectl get pods -n shop'
 		],
@@ -42,7 +42,7 @@ export const SOLUTIONS: Record<string, { pass: string[]; wrong: string[][]; alt?
 			'kubectl get pods -n shop -o wide',
 			'kubectl describe pod web-6d8f7b9c4-b9m4t -n shop',
 			'kubectl logs web-6d8f7b9c4-b9m4t -n shop --previous',
-			'kubectl set resources deployment web -n shop --limits=memory=256Mi --requests=memory=192Mi',
+			'kubectl set resources deployment web -n shop --limits=memory=256Mi --requests=memory=256Mi',
 			'kubectl rollout status deployment/web -n shop',
 			'kubectl get deploy -n shop'
 		],

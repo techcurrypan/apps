@@ -164,7 +164,7 @@ export const s14: Step = {
 		],
 		deep: [
 			'ss -tim の skmem の t は sk_wmem_alloc、tb は sk_sndbuf、w は sk_wmem_queued だ。w が tb に張り付き、notsent が 1 MB を超えるなら、アプリが送り込む速さに線が追いついていない。tcp_notsent_lowat を 128 KiB ほどにすると、notsent が溜まる前に send() が待つ。',
-			'busy:・rwnd_limited:・sndbuf_limited: は、送りが止まっていた時間とその理由の内訳だ（tcp_chrono）。rwnd_limited が大きければ相手の受信窓、sndbuf_limited なら手元の sk_sndbuf が止めている。',
+			'busy: は送る物があった時間の合計で、tcp_chrono の BUSY・RWND_LIMITED・SNDBUF_LIMITED の和だ。その中で相手の受信窓に止められた時間が rwnd_limited:、手元の sk_sndbuf に止められた時間が sndbuf_limited: だ。どちらも busy の 1% 未満で、unacked < cwnd なのに notsent が 1 MB を超えるなら、手元の TSQ か qdisc だ。',
 			'nstat の TcpExtTCPTimeouts は RTO の回数、TcpExtTCPLossProbes は TLP の回数だ。TLP が再送の 10% を超えるなら、最後の区切りの喪失が目立つ。RTO が多ければ、飛んでいるのが 1 個だけの短い応答の喪失か、相手が 200 ms 以上止まっている。',
 			'bpftrace の tracepoint:tcp:tcp_retransmit_skb で、args->daddr と dport ごとに送り直しを数える。再送は softirq やタイマーで起きるので、comm（プロセス名）では数えられない。',
 			'設定は /proc/sys/net/ipv4/ の下で見る。tcp_wmem・tcp_limit_output_bytes・tcp_congestion_control の 3 つだ。qdisc の既定は /proc/sys/net/core/default_qdisc だ。sysctl -a | grep tcp_ で一覧できる。'
@@ -208,7 +208,7 @@ export const s14: Step = {
 						id: 'd-qdisc',
 						depth: 1,
 						what: 'qdisc pfifo（eth0）',
-						state: 'backlog 30000000b 458p',
+						state: 'backlog 30000000b 440p',
 						tone: 'warn'
 					}
 				]

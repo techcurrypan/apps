@@ -6,7 +6,7 @@ const N1 = (rows: ReturnType<typeof row>[]) => node('node-1', '10.0.1.11', '棟 
 const N2 = (rows: ReturnType<typeof row>[]) => node('node-2', '10.0.1.12', '棟 2', rows);
 const kl1 = row('kl-1', 0, 'kubelet（node-1）', '動いている');
 const kl2 = row('kl-2', 0, 'kubelet（node-2）', '動いている');
-const NEW = 'web-xs9gnsnfb-';
+const NEW = 'web-v475cz8h8-';
 
 export const s9: Step = {
 	n: 9,
@@ -154,25 +154,26 @@ export const s10: Step = {
 	kind: 'fix',
 	short: '直す',
 	title: '使う量を測って上限を直す',
-	lead: '前のログで 182 MiB と分かる。上限 256Mi・予約 128Mi に直す',
+	lead: '前のログで 182 MiB と分かる。上限 256Mi・予約 192Mi に直す',
 	body: [
 		'前のコンテナのログに「96 MiB of 182 MiB」とあり、使う量が分かる。',
-		'上限を 256Mi にすると、新しい ReplicaSet の 3 つが Ready になる。'
+		'上限を 256Mi・予約を 192Mi にすると、新しい ReplicaSet の 3 つが Ready になる。'
 	],
 	depth: {
 		intro: [
 			'番頭は頼み方を戻し、まず部屋がどれだけ記憶を使うのかを調べる。止められる前の日誌に「182 MiB のうち 96 MiB を読み込んだ」とある。',
-			'そこで上限を 256 MiB にし、予約は 128 MiB のままにした。新しい型紙の部屋が 1 つずつ作られ、古い部屋と入れ替わる。'
+			'そこで上限を 256 MiB に、予約を普段の量に近い 192 MiB にした。新しい型紙の部屋が 1 つずつ作られ、古い部屋と入れ替わる。'
 		],
 		work: [
 			'kubectl logs web-6d8f7b9c4-87cwj -n shop --previous は、止められる前のコンテナのログを出す。最後の行の「catalog cache 96 MiB of 182 MiB loaded」で、使う量が 182 MiB と分かる。',
-			'set resources deployment web -n shop --limits=memory=256Mi で上限を直す。requests は 128 MiB のまま。型紙が変わるので、Deployment は新しい ReplicaSet web-xs9gnsnfb を作る。',
+			'set resources で --limits=memory=256Mi と --requests=memory=192Mi を付けて直す。型紙が変わるので、Deployment は新しい ReplicaSet web-v475cz8h8 を作る。',
 			'maxSurge 1 個・maxUnavailable 0 個なので、新しい Pod を 1 つ作り、Ready になるたびに古い Pod を 1 つ減らす。3 回の入れ替えで、14 秒ほどで 3 つとも Running・Ready になる。'
 		],
 		deep: [
-			'syncDeployment() は型紙の hash を計算し、getNewReplicaSet() で同じ hash の ReplicaSet を探す。無ければ作り、pod-template-hash のラベルを付ける。今回の hash は xs9gnsnfb だ。',
+			'syncDeployment() は型紙の hash を計算し、getNewReplicaSet() で同じ hash の ReplicaSet を探す。無ければ作り、pod-template-hash のラベルを付ける。今回の hash は v475cz8h8 だ。',
 			'rolloutRolling() は 2 つの手を交互に打つ。新しい方を欲しい数 ＋ maxSurge まで増やす手と、古い方を「Ready の和が欲しい数 − maxUnavailable を割らない」分だけ減らす手だ。',
 			'減らしてよい数は「Pod の総数 − 欲しい数 ＋ maxUnavailable − 新しい方の Ready でない数」だ。新しい Pod が Ready になると 1 になり、Ready でない古い Pod から先に減らす（cleanupUnhealthyReplicas()）。1 GiB の時は新しい Pod が Ready にならず、0 のままだった。',
+			'予約も使う量に近づける。128 MiB のままだと、スケジューラは 182 MiB 使う Pod を 128 MiB と数え、node に詰め込みすぎる。足りなくなった時に追い出されるのも、requests を超えて使う Pod からだ。',
 			'1 GiB の ReplicaSet web-88cks584b も古い型紙として扱われ、0 個に減らされる。Pending の Pod は Ready でないので、先に消される。古い ReplicaSet は 0 個のまま残る。revisionHistoryLimit の 10 個まで、rollout undo の戻り先になる。'
 		]
 	},
@@ -182,17 +183,18 @@ export const s10: Step = {
 	},
 	changes: [
 		{ mark: '~', text: 'limits.memory 128Mi → 256Mi' },
-		{ mark: '+', text: '新しい ReplicaSet web-xs9gnsnfb' },
+		{ mark: '~', text: 'requests.memory 128Mi → 192Mi' },
+		{ mark: '+', text: '新しい ReplicaSet web-v475cz8h8' },
 		{ mark: '~', text: 'Ready 0 → 3 個' }
 	],
 	facts: [
 		{ k: '使う量（ログから）', v: '182 MiB' },
 		{ k: '新しい上限', v: '256 MiB（182 MiB に 74 MiB の余裕）', calc: '182+74' },
-		{ k: '予約', v: '128 MiB のまま' },
+		{ k: '予約', v: '192 MiB（node-1 の空き 828 MiB に入る）' },
 		{ k: '入れ替え', v: '3 回・約 14 秒' }
 	],
 	scene: [
-		{ op: 'move', from: 'you', to: 'api', payload: 'limits 256Mi', kind: 'write' },
+		{ op: 'move', from: 'you', to: 'api', payload: 'limits 256Mi・requests 192Mi', kind: 'write' },
 		{ op: 'move', from: 'api', to: 'ctrl', payload: '型紙が変わった', kind: 'watch' },
 		{ op: 'move', from: 'kl2', to: 'api', payload: 'Ready', kind: 'status' }
 	],
@@ -211,20 +213,20 @@ export const s10: Step = {
 				row('d-web', 0, 'Deployment web', '3 / 3 Ready', 'ok'),
 				row('rs-old', 1, 'ReplicaSet web-6d8f7b9c4', '0 個（戻り先）'),
 				row('rs-big', 1, 'ReplicaSet web-88cks584b', '0 個'),
-				row('rs-new', 1, 'ReplicaSet web-xs9gnsnfb', '3 個・Ready 3', 'ok')
+				row('rs-new', 1, 'ReplicaSet web-v475cz8h8', '3 個・Ready 3', 'ok')
 			]),
-			N1([kl1, row('p-gq5z9', 1, `${NEW}gq5z9`, 'Running・10.244.1.25', 'ok')]),
+			N1([kl1, row('p-8frqg', 1, `${NEW}8frqg`, 'Running・10.244.1.25', 'ok')]),
 			N2([
 				kl2,
-				row('p-62lh6', 1, `${NEW}62lh6`, 'Running・10.244.2.24', 'ok'),
-				row('p-q66kn', 1, `${NEW}q66kn`, 'Running・10.244.2.26', 'ok')
+				row('p-w6vzf', 1, `${NEW}w6vzf`, 'Running・10.244.2.24', 'ok'),
+				row('p-m2sg4', 1, `${NEW}m2sg4`, 'Running・10.244.2.26', 'ok')
 			])
 		],
 		logs: [
 			{
 				t: '10:09:30',
 				src: 'kubectl events',
-				text: 'Normal   ScalingReplicaSet   deployment/web   Scaled up replica set web-xs9gnsnfb to 1'
+				text: 'Normal   ScalingReplicaSet   deployment/web   Scaled up replica set web-v475cz8h8 to 1'
 			},
 			{
 				t: '10:09:44',
@@ -254,12 +256,12 @@ export const s10: Step = {
 			at: 2500,
 			dur: 800,
 			para: 1,
-			do: { op: 'packet', a: 'b_sdep', b: 'b_newrs', label: '型紙 xs9gnsnfb', kind: 'call' }
+			do: { op: 'packet', a: 'b_sdep', b: 'b_newrs', label: '型紙 v475cz8h8', kind: 'call' }
 		},
-		{ at: 3300, dur: 600, para: 1, do: { op: 'enqueue', queue: 'rsq', item: 'xs9gnsnfb 1' } },
+		{ at: 3300, dur: 600, para: 1, do: { op: 'enqueue', queue: 'rsq', item: 'v475cz8h8 1' } },
 		{ at: 3400, dur: 400, para: 1, do: { op: 'board', line: 1 } },
 		{ at: 4100, dur: 600, para: 2, do: { op: 'dequeue', queue: 'rsq', item: '6d8f7b9c4 3' } },
-		{ at: 4700, dur: 600, para: 2, do: { op: 'enqueue', queue: 'rsq', item: 'xs9gnsnfb 3' } },
+		{ at: 4700, dur: 600, para: 2, do: { op: 'enqueue', queue: 'rsq', item: 'v475cz8h8 3' } },
 		{ at: 4800, dur: 400, para: 2, do: { op: 'board', line: 2 } },
 		{ at: 5500, dur: 900, para: 2, do: { op: 'count', metric: 'ready', to: '3 個' } },
 		{ at: 6000, dur: 800, para: 2, do: { op: 'count', metric: 'restarts', to: '0 回' } },
@@ -321,13 +323,13 @@ export const s11: Step = {
 			'上限を予約より上にすると、空いている時は多く使えるが、棟が足りなくなった時に先に追い出される。どちらを選ぶかは、数で決める。'
 		],
 		work: [
-			'node の allocatable は 3,840 MiB だ。requests 128 MiB なら web の Pod は 30 個入るが、256 MiB なら 15 個に減る。予約を倍にすると、同じ数を動かす node の費用も倍になる。',
-			'requests ＝ limits なら QoS は Guaranteed で、oom_score_adj は −997 だ。node の記憶が足りない時も最後に止められる。今の 128Mi / 256Mi は Burstable で、969 から始まる。',
+			'node の allocatable は 3,840 MiB だ。requests 192 MiB なら web の Pod は 20 個入るが、limits と同じ 256 MiB なら 15 個に減る。予約を上げた分だけ、同じ数を動かす node の費用も上がる。',
+			'requests ＝ limits なら QoS は Guaranteed で、oom_score_adj は −997 だ。node の記憶が足りない時も最後に止められる。今の 192Mi / 256Mi は Burstable で、954 から始まる。',
 			'上限を外すと、1 つの Pod の漏れが node の記憶を食べる。memory.available が 100 MiB を割ると、kubelet が Pod を追い出す（Evicted）。上限は、隣の Pod を守る壁でもある。'
 		],
 		deep: [
 			'ComputePodQOS() は、全てのコンテナが CPU と記憶で requests ＝ limits なら Guaranteed にする。どれも無ければ BestEffort、それ以外は Burstable だ。今の web は記憶の requests と limits が違うので Burstable だ。',
-			'GetContainerOOMScoreAdjust() は、Burstable に 1000 − 1000 × requests ÷ 記憶を付ける。記憶 4 GiB・requests 128 MiB では 1000 − 31 ＝ 969 だ。BestEffort の 1000 の次に止められやすい。',
+			'GetContainerOOMScoreAdjust() は、Burstable に 1000 − 1000 × requests ÷ 記憶を付ける。記憶 4 GiB・requests 192 MiB では 1000 − 46 ＝ 954 だ（46.875 を切り捨て）。BestEffort の 1000 の次に止められやすい。',
 			'node の記憶が足りなくなると、kubelet は memory.available が既定の 100 Mi を割った所で追い出しを始める。順は、使う量が requests を超えている Pod から、優先度と超えた量の順だ。',
 			'CPU の limits は CFS の上限（cpu.max）で、超えると止められずに待たされる（throttled）。記憶の limits は超えると止められる。CPU には requests だけ、記憶には requests と limits の 2 つを付ける現場が多い。'
 		]
@@ -337,14 +339,14 @@ export const s11: Step = {
 		text: '予約（requests）は置き場所と追い出しの順を決め、上限（limits）は止める線を決める。両方を数で決め、根拠のログと指標を残す。'
 	},
 	changes: [
-		{ mark: '~', text: '128Mi なら 30 個、256Mi なら 15 個' },
-		{ mark: '+', text: 'QoS：Burstable（oom_score_adj 969）' },
+		{ mark: '~', text: '192Mi なら 20 個、256Mi なら 15 個' },
+		{ mark: '+', text: 'QoS：Burstable（oom_score_adj 954）' },
 		{ mark: '~', text: 'Guaranteed なら −997' }
 	],
 	facts: [
-		{ k: '128 MiB で入る数', v: '30 個（3,840 ÷ 128）', calc: '3840/128' },
+		{ k: '192 MiB で入る数', v: '20 個（3,840 ÷ 192）', calc: '3840/192' },
 		{ k: '256 MiB で入る数', v: '15 個（3,840 ÷ 256）', calc: '3840/256' },
-		{ k: 'Burstable の oom_score_adj', v: '969（1000 − 1000 × 128 ÷ 4,096 の切り捨て）' },
+		{ k: 'Burstable の oom_score_adj', v: '954（1000 − 1000 × 192 ÷ 4,096 の切り捨て）' },
 		{ k: '追い出しの線', v: 'memory.available 100 MiB' }
 	],
 	scene: [{ op: 'move', from: 'sched', to: 'api', payload: '入る数', kind: 'bind' }],
@@ -353,35 +355,35 @@ export const s11: Step = {
 		from: 'sched',
 		to: 'api',
 		kind: 'bind',
-		info: 'requests 128Mi なら node 1 台に 30 個、256Mi なら 15 個'
+		info: 'requests 192Mi なら node 1 台に 20 個、256Mi なら 15 個'
 	},
 	town: '予約を倍にすれば守られるが、1 つの棟に置ける部屋は半分になる',
 	work: 'get pod -o yaml の status.qosClass で QoS を確かめる',
 	ask: {
-		q: 'requests を 128Mi から 256Mi にすると、node 1 台に入る web の数は？',
-		opts: ['30 個のまま', '15 個に減る', '60 個に増える'],
+		q: 'requests を 192Mi から 256Mi にすると、node 1 台に入る web の数は？',
+		opts: ['20 個のまま', '15 個に減る', '30 個に増える'],
 		a: 1,
 		why: '入る数は allocatable ÷ requests。3,840 ÷ 256 ＝ 15。'
 	},
 	inside: {
 		hosts: [
-			cp([row('rs-new', 1, 'ReplicaSet web-xs9gnsnfb', '3 個・Ready 3', 'ok')]),
+			cp([row('rs-new', 1, 'ReplicaSet web-v475cz8h8', '3 個・Ready 3', 'ok')]),
 			N1([
 				kl1,
-				row('p-gq5z9', 1, `${NEW}gq5z9`, 'Burstable・oom_score_adj 969', 'warn'),
+				row('p-8frqg', 1, `${NEW}8frqg`, 'Burstable・oom_score_adj 954', 'warn'),
 				row('n1-free', 1, 'allocatable の残り', '700 MiB')
 			]),
 			N2([
 				kl2,
-				row('p-62lh6', 1, `${NEW}62lh6`, 'Burstable・oom_score_adj 969', 'warn'),
-				row('p-q66kn', 1, `${NEW}q66kn`, 'Burstable・oom_score_adj 969', 'warn')
+				row('p-w6vzf', 1, `${NEW}w6vzf`, 'Burstable・oom_score_adj 954', 'warn'),
+				row('p-m2sg4', 1, `${NEW}m2sg4`, 'Burstable・oom_score_adj 954', 'warn')
 			])
 		]
 	},
 	metrics: { want: '3 個', ready: '3 個' },
 	motion: [
 		{ at: 0, dur: 800, para: 0, do: { op: 'camera', fit: ['sched', 'kl1', 'kl2'] } },
-		{ at: 400, dur: 450, para: 0, do: { op: 'badge', id: 'kl1', text: '128Mi なら 30 個' } },
+		{ at: 400, dur: 450, para: 0, do: { op: 'badge', id: 'kl1', text: '192Mi なら 20 個' } },
 		{
 			at: 1000,
 			dur: 450,
@@ -400,7 +402,7 @@ export const s11: Step = {
 			at: 3000,
 			dur: 450,
 			para: 1,
-			do: { op: 'badge', id: 'b_adj', text: '969（Guaranteed は −997）', tone: 'warn' }
+			do: { op: 'badge', id: 'b_adj', text: '954（Guaranteed は −997）', tone: 'warn' }
 		},
 		{ at: 3100, dur: 400, para: 1, do: { op: 'board', line: 1 } },
 		{ at: 3900, dur: 800, para: 2, do: { op: 'camera', fit: ['kl1', 'kl2', 'api'] } },
@@ -430,11 +432,11 @@ export const s11: Step = {
 	],
 	board: [
 		'入る数 ＝ 3,840 ÷ requests',
-		'Burstable は 969、Guaranteed は −997',
+		'Burstable は 954、Guaranteed は −997',
 		'上限なし → 漏れが node を食べる',
 		'requests と limits を数で決める'
 	],
-	badges: { b_adj: '969（Guaranteed は −997）' },
+	badges: { b_adj: '954（Guaranteed は −997）' },
 	layers: [
 		{
 			id: 'qos',
@@ -458,7 +460,7 @@ export const s12: Step = {
 	lead: 'node が落ちると、約 5 分 40 秒後に Pod が移る',
 	body: [
 		'現場では Pod を直に作らず、Deployment が ReplicaSet を通して持つ。',
-		'node が落ちると、40 秒で NotReady、さらに 300 秒で Pod が移される。'
+		'node が落ちると、40 秒で NotReady、さらに 300 秒で Pod が追い出され、代わりが作られる。'
 	],
 	depth: {
 		intro: [
@@ -473,7 +475,8 @@ export const s12: Step = {
 		deep: [
 			'node のライフサイクルのコントローラは monitorNodeHealth() で 5 秒ごとに node の状態を見る。Lease の更新が 40 秒無いと Ready の条件を Unknown にし、NoExecute の taint を付ける。',
 			'DefaultTolerationSeconds のアドミッションは、Pod に not-ready と unreachable の 300 秒を足す。秒数は defaultNotReadyTolerationSeconds などで決まる。taint-eviction のコントローラが、その秒数の後で Pod を消す。',
-			'消された Pod は ReplicaSet から見ると「消えた」なので、ステップ 4 と同じ道で新しい Pod が作られる。StatefulSet の Pod は名前と巻を持つので、古い Pod が本当に止まったと分かるまで作り直されない。',
+			'追い出された Pod には deletionTimestamp が付くが、kubelet が返事をしないので Terminating のまま残る。ReplicaSet は消す途中の Pod を数えないので、ステップ 4 と同じ道で代わりを作る。StatefulSet の Pod と RWO の巻は、古い Pod が本当に止まったと分かるまで作り直されない。',
+			'止まったと分かる道は 2 つだ。node が戻って kubelet が消すか、taint node.kubernetes.io/out-of-service（v1.28 で GA）を付ける。最後の手は --grace-period=0 --force で消すことだ。確かめずに force で消すと、古い Pod が動いたまま同じ巻に 2 つが書く恐れがある。',
 			'計画した停止（node の更新・drain）では、PodDisruptionBudget で「同時に止めてよい数」を決める。minAvailable: 2 なら、Ready が 2 つを割る追い出しは断られ、drain は 1 つずつ待ちながら進む。'
 		]
 	},
@@ -508,15 +511,15 @@ export const s12: Step = {
 	inside: {
 		hosts: [
 			cp([
-				row('d-web', 0, 'Deployment web', '3 / 3 → 2 / 3', 'warn'),
-				row('rs-new', 1, 'ReplicaSet web-xs9gnsnfb', '3 個（2 個 Ready）', 'warn'),
+				row('d-web', 0, 'Deployment web', 'Ready 3 / 3 → 1 / 3', 'warn'),
+				row('rs-new', 1, 'ReplicaSet web-v475cz8h8', '3 個（1 個 Ready）', 'warn'),
 				row('n-2', 1, 'node node-2', 'NotReady・taint unreachable', 'bad')
 			]),
-			N1([kl1, row('p-gq5z9', 1, `${NEW}gq5z9`, 'Running', 'ok')]),
+			N1([kl1, row('p-8frqg', 1, `${NEW}8frqg`, 'Running', 'ok')]),
 			N2([
 				row('kl-2', 0, 'kubelet（node-2）', '返事が無い', 'bad'),
-				row('p-62lh6', 1, `${NEW}62lh6`, 'Unknown（300 秒後に移る）', 'bad'),
-				row('p-q66kn', 1, `${NEW}q66kn`, 'Unknown（300 秒後に移る）', 'bad')
+				row('p-w6vzf', 1, `${NEW}w6vzf`, 'Running・0/1 Ready=False（300 秒後に追い出し）', 'bad'),
+				row('p-m2sg4', 1, `${NEW}m2sg4`, 'Running・0/1 Ready=False（300 秒後に追い出し）', 'bad')
 			])
 		]
 	},
@@ -574,12 +577,14 @@ export const s12: Step = {
 	badges: { kl2: '300 秒待って移す' },
 	layers: [
 		{
+			id: 'adm',
+			label: 'Pod を書く時（kube-apiserver のアドミッション）',
+			boxes: [{ id: 'b_tol', impl: I.tolerations.name }]
+		},
+		{
 			id: 'nlc',
 			label: 'node の見張り（kube-controller-manager）',
-			boxes: [
-				{ id: 'b_mon', impl: I.monitor.name },
-				{ id: 'b_tol', impl: I.tolerations.name }
-			]
+			boxes: [{ id: 'b_mon', impl: I.monitor.name }]
 		}
 	],
 	impl: [I.monitor, I.tolerations],

@@ -35,7 +35,7 @@ export const s9: Step = {
 			'RACK（RFC 8985）は、送ってからの時間が rack.rtt ＋ reo_wnd を超えた未 ACK を失ったとする。判定は tcp_rack_skb_timeout() だ。reo_wnd は min_rtt の 1/4 だ。並び替えを見ていず SACK が reordering 以上なら、tcp_rack_reo_wnd() は 0 を返す。',
 			'回復の間は PRR が、cwnd ＝ 飛んでいる数 ＋ sndcnt で 1 ACK ごとに送ってよい数を決める。入った直後の cwnd はほぼ 399 だ。CUBIC の ssthresh は cwnd × 717/1024 で 280 になる。回復の終わりの tcp_end_cwnd_reduction() で、cwnd も 280 になる。',
 			'TLP は tcp_schedule_loss_probe() が時計を掛ける。待ちは 2 × srtt に 2 ms（TCP_TIMEOUT_MIN_US）を足した値だ。飛んでいるのが 1 個だけなら、待ちは 2 × srtt ＋ RTO の下限になる。',
-			'RTO は srtt ＋ rttvar_us で、rttvar_us は 4 × rttvar に当たる項だ。この項の下限が 200 ms なので、RTO はおよそ srtt ＋ 200 ms になる（ss の rto:224.5 は 24.5 ＋ 200）。設定は net.ipv4.tcp_rto_min_us（既定 200000）と経路の rto_min。切れると tcp_enter_loss() で cwnd を 1 にし、続けば RTO は倍々で上限 120 秒まで伸びる。'
+			'RTO は srtt ＋ rttvar_us（4 × rttvar に当たる項。下限 200 ms）で、およそ srtt ＋ 200 ms になる。icsk_rto は jiffy で持つので、ss の rto:225 は 24.5 ＋ 200 を 1 ms に切り上げた値だ。設定は net.ipv4.tcp_rto_min_us（既定 200000）と経路の rto_min。切れると tcp_enter_loss() で cwnd を 1 にし、続けば RTO は倍々で上限 120 秒まで伸びる。'
 		]
 	},
 	callout: {
@@ -51,7 +51,7 @@ export const s9: Step = {
 		{ k: 'RACK の待ち', v: '0 ms（SACK 3 個・並び替えを見ていない）' },
 		{ k: '回復の後の cwnd', v: '280 個（400 × 717 ÷ 1,024。PRR で下りる）', calc: '400*717/1024' },
 		{ k: 'TLP の待ち', v: '3 ms（2 × 0.5 ms ＋ 2 ms）', calc: '2*0.5+2' },
-		{ k: 'RTO', v: '200 ms（tcp_rto_min_us の 200,000 µs）', calc: '200000/1000' }
+		{ k: 'RTO', v: '201 ms（srtt 0.5 ＋ 下限 200 ＝ 200.5 ms を 1 ms の jiffy に切り上げ）' }
 	],
 	scene: [
 		{ op: 'move', from: 'app', to: 'sw', payload: 'D1〜D5', kind: 'data' },
@@ -160,15 +160,16 @@ export const s9: Step = {
 			do: { op: 'badge', id: 'b_ack', text: 'RACK：D2 を失った', tone: 'bad' }
 		},
 		{ at: 4900, dur: 400, para: 1, do: { op: 'board', line: 1 } },
-		{ at: 5400, dur: 600, para: 2, do: { op: 'clone', item: 'D2', as: 'D2r' } },
-		{ at: 6000, dur: 400, para: 2, do: { op: 'dequeue', queue: 'rtx', item: 'D2r' } },
+		// tcp_enter_recovery() で ssthresh を先に決めてから、tcp_xmit_retransmit_queue() が送り直す
 		{
-			at: 6100,
+			at: 5350,
 			dur: 450,
 			para: 2,
 			do: { op: 'badge', id: 'b_ack', text: 'ssthresh 280・PRR', tone: 'warn' }
 		},
-		{ at: 6200, dur: 400, para: 2, do: { op: 'board', line: 2 } },
+		{ at: 5700, dur: 600, para: 2, do: { op: 'clone', item: 'D2', as: 'D2r' } },
+		{ at: 6200, dur: 400, para: 2, do: { op: 'dequeue', queue: 'rtx', item: 'D2r' } },
+		{ at: 6300, dur: 400, para: 2, do: { op: 'board', line: 2 } },
 		{ at: 6600, dur: 900, para: 2, do: { op: 'camera', fit: ['app', 'sw', 'peer'] } },
 		{
 			at: 7000,
@@ -212,8 +213,8 @@ export const s9: Step = {
 	board: [
 		'スイッチで D2 だけ落ちる',
 		'SACK：D3〜D5 は届いた → RACK が D2 を失ったと決める',
-		'tcp_retransmit_skb()：D2 を送り直す・ssthresh 280',
-		'後ろが無ければ RTO 200 ms・cwnd 1 から'
+		'tcp_enter_recovery()：ssthresh 280 → tcp_retransmit_skb()：D2 を送り直す',
+		'後ろが無ければ TLP（約 3 ms）。確かめも落ちたら RTO 200 ms・cwnd 1'
 	],
 	badges: { sw: 'あふれて 1 個捨てた', peer: '全部そろった' },
 	layers: [B.tcp(['D1', 'D2', 'D3', 'D4', 'D5']), B.rcv()],
@@ -266,7 +267,7 @@ export const s10: Step = {
 		deep: [
 			'tcp_small_queue_check() の上限は max(2 × truesize, sk_pacing_rate >> 10) だ。pfifo の下（SK_PACING_NONE）では、さらに tcp_limit_output_bytes（既定 1 MiB）との小さい方になる。',
 			'1 本 39 Mbps の流れでは、速さの 1 ms 分は約 5 KB しかない。だから 2 × truesize の約 130 KB が効く。tcp_limit_output_bytes は 1 MiB でも 256 KiB でも 130 KB より上なので効かない。130 KB より下げれば 1 本 1 塊（約 66 KB）まで減るが、256 本でまだ約 17 MB 残る。',
-			'pfifo の上限は既定で txqueuelen（1,000 個）だが、ここでは limit 100000 で作られていた。塊 1 個は約 64 KiB なので、30 MB は 458 個で上限の内に収まり、捨てられない。送信リングは BQL（byte_queue_limits）が NIC を休ませない量に絞る。だから溜まりは、リングでなく qdisc に積もる。',
+			'pfifo の上限は既定で txqueuelen（1,000 個）だが、ここでは limit 100000 で作られていた。qdisc は塊を区切りごとの頭も足した約 68 KB で数える（qdisc_pkt_len_init()）ので、30 MB は 440 個で上限の内に収まる。送信リングは BQL（byte_queue_limits）が NIC を休ませない量に絞る。だから溜まりは、リングでなく qdisc に積もる。',
 			'受信窓 0 では、送る側は tcp_send_probe0() で、番号 snd_una − 1・中身 0 B の確かめの区切りを送る。窓が開いた ACK が来るまで送信キューは減らず、send() は sk_sndbuf で眠る。',
 			'どちらも喪失は無いのに待ちだけが伸びる。再送の数（TcpRetransSegs）が 0 でも遅い時は 3 つを見る。ss -tim の rtt、tc -s qdisc の backlog、tcpdump の win だ。'
 		]
@@ -317,7 +318,7 @@ export const s10: Step = {
 						id: 'd-qdisc',
 						depth: 1,
 						what: 'qdisc pfifo（eth0）',
-						state: 'backlog 30000000b 458p',
+						state: 'backlog 30000000b 440p',
 						tone: 'bad'
 					},
 					{
@@ -496,7 +497,7 @@ export const s11: Step = {
 						id: 'd-qdisc',
 						depth: 1,
 						what: 'qdisc fq（eth0）',
-						state: 'backlog 30000000b 458p',
+						state: 'backlog 30000000b 440p',
 						tone: 'ok'
 					},
 					{ id: 's-limit', depth: 1, what: 'tcp_limit_output_bytes', state: '1048576', tone: 'ok' },
@@ -596,7 +597,7 @@ export const s12: Step = {
 			'Reno の目安（Mathis の式）では、速さ ≈ MSS ÷ RTT × 1.22 ÷ √p だ。RTT 0.5 ms・喪失 1% なら 1,448 B × 8 ÷ 0.5 ms × 12.2 ≈ 283 Mbps になる。CUBIC は Reno より強いが、喪失 1% で桁が落ちることは変わらない。',
 			'BBR v1 の状態は STARTUP（2.885 倍で探る）→ DRAIN → PROBE_BW（8 段の速さ）と進む。10 秒ごとに PROBE_RTT に入り、200 ms の間 cwnd を 4 個に絞る。この間は速さが落ちる。',
 			'BBR は送る速さを持つので、fq か TCP の中のペーシングが要る。BBR は Google の Cardwell らが 2016 年に ACM Queue で発表した。同じ年に Linux 4.9 の tcp_bbr.c として入った。',
-			'塊の大きさは tcp_tso_autosize() が約 1 ms 分に絞る。速さを上げたい時は BIG TCP で 64 KiB の上限を広げる（NIC が対応する時だけ）。ethtool -K で tso を切っても、GSO がソフトで同じ大きさに割って続けて出すので、線の上の突発は減らない。'
+			'塊の大きさは tcp_tso_autosize() が、速さの 1 ms 分に gso_max_size >> (min_rtt >> 9) を足して決める。min_rtt が 512 µs 未満なら塊は 64 KiB だ。速さを上げたい時は BIG TCP で 64 KiB の上限を広げる（NIC が対応する時だけ）。ethtool -K で tso を切っても、GSO がソフトで同じ大きさに割って続けて出すので、線の上の突発は減らない。'
 		]
 	},
 	callout: {
@@ -627,7 +628,7 @@ export const s12: Step = {
 		info: 'CUBIC：喪失 1% で桁が落ちる。BBR：落ちないが他を押しのけうる'
 	},
 	town: '落ちたら減らす運び方と、道の太さを測って運ぶ運び方。どちらも道が混むと得手不得手がある',
-	work: 'sysctl net.ipv4.tcp_congestion_control で今の方式を見る',
+	work: 'ss -ti で流れごとの方式を見る（sysctl の値は新しいソケットの既定）',
 	knobs: ['rtt', 'cwnd', 'loss'],
 	inside: {
 		hosts: [

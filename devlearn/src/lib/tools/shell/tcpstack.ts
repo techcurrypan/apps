@@ -17,7 +17,8 @@ export type TcpWorld = {
 	flows: { count: number; local: string; firstPort: number; peer: string; retrans: number };
 	ssh: { local: string; peer: string };
 };
-export type TcpState = TcpWorld & { handle: number };
+/** cc：今ある流れの輻輳制御。ソケットを作った時の net.ipv4.tcp_congestion_control で決まり、後で sysctl を変えても替わらない */
+export type TcpState = TcpWorld & { handle: number; cc?: string };
 
 const LINE_BPS = 1.25e9; // 10 GbE の 1 秒の B
 const PER_FLOW = 30_000_000 / 256; // 1 本が手元に置く量（TSQ の下限 2 × truesize の内。net-101 ステップ 10）
@@ -51,8 +52,30 @@ const CAP: Record<Qdisc, number> = {
 	bfifo: 1_514_000 // limit は tx_queue_len 1000 × psched_mtu 1514（sch_fifo.c fifo_init()）
 };
 
+const flowCc = (t: TcpState) => t.cc ?? t.sysctl['net.ipv4.tcp_congestion_control'] ?? 'cubic';
+// 書ける輻輳制御の名前（v6.12 の net/ipv4 にある tcp_*.c。無い名前はモジュールが読めず ENOENT）
+const CC_NAMES = [
+	'reno',
+	'cubic',
+	'bbr',
+	'bic',
+	'cdg',
+	'dctcp',
+	'highspeed',
+	'htcp',
+	'hybla',
+	'illinois',
+	'lp',
+	'nv',
+	'scalable',
+	'vegas',
+	'veno',
+	'westwood',
+	'yeah'
+];
+
 export function initialTcp(w: TcpWorld): TcpState {
-	return { ...w, handle: 0x8001 };
+	return { ...w, handle: 0x8001, cc: w.sysctl['net.ipv4.tcp_congestion_control'] ?? 'cubic' };
 }
 
 /**
@@ -60,26 +83,29 @@ export function initialTcp(w: TcpWorld): TcpState {
  * 上限は流れ 1 本ずつ max(2 × truesize, 速さ ÷ 1024) と tcp_limit_output_bytes の小さい方。1 本 39 Mbps では 2 × truesize が効く。
  * 上限を塊 1 個より下げても、手元が 0 の時の 1 個は通る（tcp_small_queue_check() は「超えたら」止める）。溜まりは本数 × 1 本の量
  */
-export function pileOf(t: TcpWorld): number {
-	const lim = Number(t.sysctl['net.ipv4.tcp_limit_output_bytes'] ?? '1048576');
+export function pileOf(t: TcpState): number {
+	// tcp_small_queue_check()（v6.12）：tcp_limit_output_bytes との min を取るのは sk_pacing_status が SK_PACING_NONE の時だけ。
+	// fq は流れに SK_PACING_FQ を、BBR は SK_PACING_NEEDED を付けるので、その下では効かない
+	const paced = t.qdisc === 'fq' || flowCc(t) === 'bbr';
+	const lim = paced ? Infinity : Number(t.sysctl['net.ipv4.tcp_limit_output_bytes'] ?? '1048576');
 	// 手元が上限を「超えたら」止めるので、置ける塊は floor(上限 ÷ truesize) ＋ 1 個。qdisc ではそれぞれ SKB として数える
 	const per = Math.min(PER_FLOW, SKB * (Math.floor(lim / TRUESIZE) + 1));
 	return Math.round(t.flows.count * per);
 }
 /** 手元の行列（qdisc の B）。fq は流れを分けるだけで溜まりは残る。AQM（fq_codel・cake・fq_pie）は目標の待ちを超えた分を捨てる */
-export function backlogOf(t: TcpWorld): number {
+export function backlogOf(t: TcpState): number {
 	return Math.min(pileOf(t), CAP[t.qdisc]);
 }
 /** 溜まりきらずに捨てた塊の数（AQM と大きさの上限。来た順の列では 0） */
-export function droppedOf(t: TcpWorld): number {
+export function droppedOf(t: TcpState): number {
 	return Math.round((pileOf(t) - backlogOf(t)) / SKB);
 }
 /** 写しの流れの RTT（ms）＝ 最小 ＋ 手元の行列 ÷ 線の速さ */
-export function copyRttOf(t: TcpWorld): number {
+export function copyRttOf(t: TcpState): number {
 	return t.minrtt + (backlogOf(t) / LINE_BPS) * 1000;
 }
 /** ssh の RTT（ms）。来た順の列では写しの後ろに並ぶ。流れごとの列（fq・fq_codel・sfq・cake・fq_pie）では新しい流れとして先に出る */
-export function rttOf(t: TcpWorld): number {
+export function rttOf(t: TcpState): number {
 	if (PER_FLOW_QDISC.includes(t.qdisc)) return t.minrtt + 0.1;
 	return copyRttOf(t);
 }
@@ -117,7 +143,7 @@ function copyFlow(t: TcpState, i: number, info: boolean, mem: boolean): string {
 				]
 			: []),
 		'ts sack',
-		t.sysctl['net.ipv4.tcp_congestion_control'] ?? 'cubic',
+		flowCc(t),
 		'wscale:7,7',
 		`rto:${Math.ceil(200 + rtt)}`,
 		`rtt:${fmtMs(rtt)}/${t.qdisc === 'fq_codel' ? '0.412' : '0.398'}`,
@@ -138,7 +164,7 @@ function sshFlow(t: TcpState, info: boolean, mem: boolean): string {
 	const fields = [
 		...(mem ? ['skmem:(r0,rb131072,t0,tb87040,f0,w0,o0,bl0,d0)'] : []),
 		'ts sack',
-		t.sysctl['net.ipv4.tcp_congestion_control'] ?? 'cubic',
+		flowCc(t),
 		'wscale:7,7',
 		`rto:${Math.ceil(200 + rtt)}`,
 		`rtt:${fmtMs(rtt)}/${rtt > 2 ? '0.31' : '0.1'}`,
@@ -255,6 +281,11 @@ export const sysctl: Cmd<unknown> = (s, args) => {
 		if (write || value !== undefined) {
 			if (s.user !== 'root') {
 				err += `sysctl: permission denied on key "${name}"\n`;
+				continue;
+			}
+			if (name === 'net.ipv4.tcp_congestion_control' && !CC_NAMES.includes(value ?? '')) {
+				err += `sysctl: setting key "${name}": No such file or directory
+`;
 				continue;
 			}
 			sys = { ...sys, [name]: value ?? '' };

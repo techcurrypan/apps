@@ -32,7 +32,7 @@ export const s5: Step = {
 		deep: [
 			'v1.31 の PriorityQueue は 3 つの列を持つ。activeQ は今すぐ試す列、backoffQ は失敗の後に 1 秒から倍に最大 10 秒待つ列だ。unschedulablePods は入る所が無い Pod の列で、最長 5 分で戻す。',
 			'schedulePod() は findNodesThatFitPod() で Filter を通す。prioritizeNodes() は各プラグインの点を重みつきで足す。5,000 台の集まりでは、既定で全体の 10%（50% − 5,000 ÷ 125）を調べた所で打ち切る。',
-			'fitsRequest() は requests だけを足し、limits と今の使用量は見ない。node の allocatable 3,840 MiB から、置かれた Pod の requests の和を引いた残りと比べる。7xk2p の 128 MiB は消す途中でも、node-1 から引かれなくなった。',
+			'fitsRequest() は requests だけを足し、limits と今の使用量は見ない。node の allocatable 3,840 MiB から、置かれた Pod の requests の和を引いた残りと比べる。消す途中の 7xk2p の 128 MiB は、本当に消えて RemovePod() が呼ばれるまで node-1 の和に残る。3,012 MiB にはこの分も入っている。',
 			'記憶の点は（空き ÷ allocatable）× 100 で、置いた後の空きで計る。node-1 は 700 ÷ 3,840 で 18 点、node-2 は 572 ÷ 3,840 で 14 点だ。CPU の点と NodeResourcesBalancedAllocation の点も足す。',
 			'決まると、手元の写しに「node-1 に置いた」と仮に書き（assume）、次の Pod の計算へ進む。bind は別の goroutine で進む。DefaultBinder の Bind() が pods/binding を POST し、API サーバが spec.nodeName を書く。'
 		]
@@ -47,7 +47,11 @@ export const s5: Step = {
 		{ mark: '+', text: 'Scheduled の出来事' }
 	],
 	facts: [
-		{ k: 'node-1 の空き', v: '828 MiB（3,840 − 3,012）', calc: '3840-3012' },
+		{
+			k: 'node-1 の空き',
+			v: '828 MiB（3,840 − 3,012。消す途中の 7xk2p を含む）',
+			calc: '3840-3012'
+		},
 		{ k: 'node-2 の空き', v: '700 MiB（3,840 − 3,140）', calc: '3840-3140' },
 		{ k: '記憶の点', v: '18 点（700 ÷ 3,840 × 100）', calc: '700/3840*100' },
 		{ k: 'backoffQ の待ち', v: '1 秒から倍に、最大 10 秒' }
@@ -386,7 +390,7 @@ export const s7: Step = {
 	},
 	callout: {
 		type: 'warn',
-		text: '終わり 137 は「SIGKILL で止まった」だけを意味する。理由が OOMKilled でない 137 は、猶予を過ぎた停止や手で止めた時にも出る。'
+		text: '137 は「SIGKILL で止まった」だけを意味する。OOMKilled は OOM killer の印で、limits 未満で出たら node 全体の不足を dmesg で疑う。'
 	},
 	changes: [
 		{ mark: '-', text: '87cwj のコンテナが止められた' },
@@ -546,14 +550,14 @@ export const s8: Step = {
 		],
 		work: [
 			'1 回目は待たずに起こし直す。また落ちると、kubelet は次を 10 秒待たせる。待ちは 10 → 20 → 40 → 80 → 160 秒と倍に伸び、300 秒で頭打ちになる。',
-			'待っている間、コンテナの state は Waiting・理由 CrashLoopBackOff だ。get pods の RESTARTS は「6 (39s ago)」のように、回数と最後に起こしてからの時間を出す。',
-			'3 つとも Ready でないので、Service web の EndpointSlice の番地は 0 個になり、入口は 503 を返す。Pod 自体は在るので、ReplicaSet は何もしない。'
+			'待っている間、コンテナの state は Waiting・理由 CrashLoopBackOff だ。get pods の RESTARTS は「6 (39s ago)」のように、回数と最後に落ちた時（FinishedAt）からの時間を出す。',
+			'3 つとも Ready でない。Service web の EndpointSlice には 3 つの番地が ready: false で載り、使える番地は 0 個になる。入口は 503 を返す。Pod 自体は在るので、ReplicaSet は何もしない。'
 		],
 		deep: [
-			'SyncPod() の中の doBackOff() は、Pod の名前・名前空間・UID・コンテナの名前・型紙の hash を鍵に、待ちの表を引く。最後に終わった時刻から待ちが過ぎていなければ ErrCrashLoopBackOff を返し、起こさない。',
+			'SyncPod() の中の doBackOff() は、getStableKey() の鍵で待ちの表を引く。鍵は Pod の名前・名前空間・UID・コンテナの名前と、コンテナの定義の hash（HashContainer()）だ。最後に落ちた時刻（FinishedAt）から待ちが過ぎていなければ ErrCrashLoopBackOff を返し、起こさない。',
 			'待ちの表は client-go の flowcontrol.Backoff だ。初めは 10 秒（backOffPeriod）、上限は 300 秒（MaxContainerBackOff）。IsInBackOffSince() が待ちの中かを答え、Next() が待ちを倍にする。',
 			'最後に更新してから 600 秒（上限の 2 倍）落ちなければ、表の行は古いと見なされ、次の失敗は 10 秒から数え直す。公式文書は「10 分動けば待ちを戻す」と書く。',
-			'kubelet は 1 秒ごとの見直しのたびに doBackOff() を通る。そのたびに BackOff の出来事が数え上がり、describe の「x40」になる。pod_workers.go は「Error syncing pod, skipping」を E の行で残す。'
+			'doBackOff() を通るのは Pod の同期が走る時だけだ（PLEG の出来事・Pod の更新・ワークキューの期限）。待ちだけで止まった同期は、SyncPod() がエラーにしない。次の同期は見直しの間隔（--sync-frequency 既定 1 分）か次の出来事なので、実際の間隔は待ちより長く出ることがある。待ちの中の同期ごとに BackOff の出来事が 1 つ記され、E の行は出ない（-v=3 で Back-off の行が出る）。'
 		]
 	},
 	callout: {
@@ -563,7 +567,7 @@ export const s8: Step = {
 	changes: [
 		{ mark: '~', text: '待ち 0 → 10 → 20 秒' },
 		{ mark: '~', text: 'STATUS が CrashLoopBackOff' },
-		{ mark: '-', text: 'EndpointSlice の番地 0 個' }
+		{ mark: '-', text: '使える番地 0 個（3 つとも ready: false）' }
 	],
 	facts: [
 		{ k: '待ちの並び', v: '10・20・40・80・160・300 秒' },
@@ -589,7 +593,7 @@ export const s8: Step = {
 		hosts: [
 			cp([
 				row('rs-old', 1, 'ReplicaSet web-6d8f7b9c4', '3 個・Ready 0'),
-				row('ep-web', 1, 'EndpointSlice web-…', '番地 0 個', 'bad')
+				row('ep-web', 1, 'EndpointSlice web-…', '番地 3 つ・どれも ready: false', 'bad')
 			]),
 			N1([
 				kl1,
@@ -603,7 +607,7 @@ export const s8: Step = {
 			{
 				t: '10:06:39',
 				src: 'kubelet',
-				text: 'E1119 10:06:39.118702 1873 pod_workers.go:1301] "Error syncing pod, skipping" err="… CrashLoopBackOff: back-off 20s …"'
+				text: 'I1119 10:06:39.118702 1873 kuberuntime_manager.go:1445] "Back-off restarting failed container" err="back-off 20s …"'
 			},
 			{
 				t: '10:06:39',

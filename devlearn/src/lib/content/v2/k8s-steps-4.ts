@@ -24,19 +24,19 @@ export const s13: Step = {
 			'kubectl get pods -n shop で STATUS と RESTARTS を見る。「CrashLoopBackOff・6 (39s ago)」なら落ちて待っている。Pending なら置き場所、ImagePullBackOff ならイメージの問題だ。',
 			'kubectl describe pod で Last State を読む。「Terminated・Reason OOMKilled・Exit Code 137」なら上限、「Error・Exit Code 1」ならプログラムの失敗だ。Limits と Requests も同じ画面にある。',
 			'logs --previous で落ちる前の最後の行を読む。SIGKILL ではエラーの行が残らず、「96 MiB of 182 MiB」で途切れる。',
-			'get events は 1 時間分しか残らない。REASON（BackOff・FailedScheduling）と回数（x40）で止まった所を見る。'
+			'get events は 1 時間分しか残らない。REASON（BackOff・FailedScheduling）と回数（x9）で止まった所を見る。'
 		],
 		deep: [
 			'get pods の STATUS は、コンテナの state の理由をそのまま出す。Waiting なら CrashLoopBackOff など、Terminated なら OOMKilled・Error が出る。phase の Running とは別の物を出している。',
-			'describe の Events は、その Pod に関わる出来事だけを、同じ物をまとめて「x40 over 6m4s」と出す。BackOff の数は、kubelet が待ちの中で起こすのを見送った回数だ。落ちた回数は RESTARTS で読む。',
-			'kubectl logs は kubelet の /containerLogs を通して、node のファイルを読む。道は /var/log/pods/<名前空間>_<名前>_<UID>/<コンテナ>/<回数>.log だ。--previous は 1 つ前の回数のファイルだ。2 回以上前は node に入らないと読めない。',
+			'describe の Events は、その Pod に関わる出来事だけを、同じ物をまとめて「x9 over 6m9s」と出す。BackOff の数は、kubelet が待ちの中で起こすのを見送った回数だ。落ちた回数は RESTARTS で読む。',
+			'kubectl logs は kubelet の /containerLogs を通して、node のファイルを読む。道は /var/log/pods/<名前空間>_<名前>_<UID>/<コンテナ>/<回数>.log だ。--previous は 1 つ前の回数のファイルだ。止まったコンテナは 1 つしか残らない（MaxPerPodContainerCount 1）ので、2 回以上前のログは node からも消える。',
 			'events は API サーバの --event-ttl（既定 1 時間）で消える。後で調べるには、events を集める仕組み（kubernetes-event-exporter など）で貯めておく。',
 			'kubectl top pod は metrics-server が要る。無い集まりでは「Metrics API not available」になる。使う量は、ログか、node の cgroup の memory.peak で確かめる。'
 		]
 	},
 	callout: {
 		type: 'tip',
-		text: 'CrashLoopBackOff を見たら、まず describe の Last State と logs --previous。今のコンテナは待っていてログが無い。'
+		text: 'まず describe の Last State と logs。待ちの間は --previous 無しでも落ちた回のログが出る。起こし直した後は今の回に替わるので --previous を付ける。'
 	},
 	changes: [
 		{ mark: '+', text: 'STATUS・RESTARTS で症状を分ける' },
@@ -46,7 +46,7 @@ export const s13: Step = {
 	facts: [
 		{ k: 'events が残る長さ', v: '1 時間（--event-ttl の既定）' },
 		{ k: '--previous で読める', v: '1 つ前の回だけ' },
-		{ k: 'まとめた出来事', v: 'x40 over 6m4s' },
+		{ k: 'まとめた出来事', v: 'x9 over 6m9s' },
 		{ k: '絞るまで', v: '命令 4 つ・約 5 分' }
 	],
 	scene: [
@@ -153,7 +153,7 @@ export const s13: Step = {
 			at: 6100,
 			dur: 450,
 			para: 3,
-			do: { op: 'badge', id: 'you', text: 'BackOff x40', tone: 'warn' }
+			do: { op: 'badge', id: 'you', text: 'BackOff x9', tone: 'warn' }
 		},
 		{ at: 6200, dur: 400, para: 3, do: { op: 'board', line: 3 } }
 	],
@@ -169,9 +169,9 @@ export const s13: Step = {
 		'get pods：CrashLoopBackOff・6 回',
 		'describe：OOMKilled・137・Limits 128Mi',
 		'logs --previous：96 of 182 MiB で終わる',
-		'get events：BackOff x40'
+		'get events：BackOff x9'
 	],
-	badges: { you: 'BackOff x40', api: 'OOMKilled・137' },
+	badges: { you: 'BackOff x9', api: 'OOMKilled・137' },
 	refs: [
 		'k8s-debug-pod',
 		'kubectl-describe',
@@ -199,7 +199,7 @@ export const s14: Step = {
 		],
 		work: [
 			'誤解 1「消せば直る」。消すと ReplicaSet が同じ型紙の Pod を作り、同じ 5 秒で落ちる。正しくは「数は戻るが理由は残る。Last State とログで理由を見る」。',
-			'誤解 2「137 はアプリが返した」。137 は 128 ＋ 9 で、外から SIGKILL で止められた印だ。正しくは「理由の欄が OOMKilled なら上限、無ければ猶予切れや手の停止」。',
+			'誤解 2「137 はアプリが返した」。137 は 128 ＋ 9 で、外から SIGKILL で止められた印だ。OOMKilled は OOM killer に止められた印で、limits に届かずに止まったなら node 全体の不足を疑う。dmesg の Memory cgroup out of memory か Out of memory で分ける。',
 			'誤解 3「requests は使ってよい上限」。requests は node の空きから引く予約で、置き場所と追い出しの順を決める。止める線は limits だ。1 分の説明と、後輩への問い 2 つを下に置く。'
 		],
 		deep: [
@@ -297,7 +297,7 @@ export const s15: Step = {
 		work: [
 			'kubectl の DELETE は API サーバで確かめられ、etcd の版を 1 つ進める。変化は watch で配られ、informer がワークキューに鍵を入れる。',
 			'ReplicaSet コントローラは差 −1 を見て Pod を作り、スケジューラは requests が入る node に bind する。kubelet は CRI で起こし、cgroup に上限を書く。',
-			'上限 128 MiB を 182 MiB が超えて OOMKilled（137）、待ちが 10 秒から倍の CrashLoopBackOff になった。使う量を測って上限 256Mi に直すと、3 つが Ready になった。'
+			'上限 128 MiB を 182 MiB が超えて OOMKilled（137）、待ちが 10 秒から倍の CrashLoopBackOff になった。使う量を測って上限 256Mi・予約 192Mi に直すと、3 つが Ready になった。'
 		],
 		deep: [
 			'書く道は DeleteResource() → GuaranteedUpdate() だ。届く道は ListAndWatch() → HandleDeltas() だ。埋める道は syncReplicaSet() → manageReplicas() → ScheduleOne() → Bind() だ。',

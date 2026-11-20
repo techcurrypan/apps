@@ -123,7 +123,7 @@ export function judgeShell(
 		if (want.tcp.rttBelow !== undefined) {
 			const r = t ? Math.round(rttOf(t) * 1000) / 1000 : null;
 			items.push({
-				label: '写しの流れの RTT',
+				label: 'ssh の RTT',
 				want: `${want.tcp.rttBelow} ms 未満`,
 				got: r === null ? '（無い）' : `${r} ms`,
 				ok: r !== null && r < want.tcp.rttBelow

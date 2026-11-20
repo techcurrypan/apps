@@ -215,7 +215,7 @@ export const s2: Step = {
 			'v1.31 の DeleteResource() が DELETE を受け、本文の DeleteOptions を読む。validating のアドミッションを渡して、rest の Delete へ進む。Pod の Delete は registry の Store が受け持つ。',
 			'Store は BeforeDelete() で、猶予つきで消すかを決める。猶予があれば updateForGracefulDeletionAndFinalizers() が書く。書くのは deletionTimestamp と deletionGracePeriodSeconds: 30 だ。この時の知らせは DELETED ではなく MODIFIED だ。',
 			'書き込みは etcd3 の store の GuaranteedUpdate() が行う。今の版を読み、「mod_revision が読んだ版と同じなら書く」という 1 つの Txn で書く。負ければ読み直して繰り返すので、2 人が同時に直しても片方が消えない。',
-			'kubelet はコンテナを止めると、猶予 0 の DELETE をもう一度送る。この時に鍵が消え、知らせは DELETED になる。kubectl delete はその DELETED を待ってから「deleted」と出す。',
+			'kubelet はコンテナを止めると、猶予 0 の DELETE をもう一度送る。この時に鍵が消え、知らせは DELETED になる。kubectl delete は最初の DELETE が通った時に「deleted」と出す。その後 --wait=true（既定）で、DELETED が来るまで待ってから戻る。',
 			'etcd と直に話すのは API サーバだけだ。コントローラも kubelet も、API サーバの watch と書き込みだけを使う。だから認可と監査の記録が 1 か所にまとまる。'
 		]
 	},

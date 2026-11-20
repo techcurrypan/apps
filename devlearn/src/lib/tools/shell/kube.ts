@@ -62,6 +62,12 @@ const STEP = 5; // kubectl 1 回で進む秒
 const BACKOFF = [0, 10, 20, 40, 80, 160, 300];
 /** k 回起こし直した後に落ちた時、次に起こすまでの秒 */
 export const backoffAt = (k: number) => BACKOFF[Math.min(k, BACKOFF.length - 1)];
+// doBackOff を通るのは Pod の同期が走る時だけ。落ちた時の PLEG の出来事（ContainerDied）で 1 回、
+// 待ちだけで止まった同期はエラーにならない（kubelet.go SyncPod）ので、その後は見直し（--sync-frequency 既定 1 分。
+// pod_workers.go completeWork）ごとに 1 回。本物はゆらぎ（最大 1.5 倍）が付くが、模擬は決まった 60 秒で数える
+const RESYNC = 60;
+/** 長さ w 秒の待ちの間に、待ちの中で同期が走って BackOff を記す回数 */
+const syncsIn = (w: number) => 1 + Math.floor(Math.max(0, w - 1) / RESYNC);
 
 export function initialK8s(w: K8sWorld): K8sState {
 	const base = Date.parse(w.deploy.created);
@@ -249,11 +255,11 @@ export function podView(k: K8sState, p: KPod): PodView {
 				lastCrash: p.created + crash,
 				runStart: p.created + s,
 				runs: k2 + 1,
-				backoffTicks: ticks + (k2 === 0 ? 0 : Math.floor(waited / 10) + 1),
+				backoffTicks: ticks + (k2 === 0 ? 0 : syncsIn(waited + 1)),
 				state: k2 === 0 ? 'terminated' : 'waiting'
 			};
 		}
-		if (k2 > 0) ticks += Math.floor(backoffAt(k2) / 10) + 1;
+		if (k2 > 0) ticks += syncsIn(backoffAt(k2));
 		k2++;
 		s = next;
 	}
@@ -262,9 +268,11 @@ const live = (k: K8sState) =>
 	k.pods.filter((p) => p.created <= k.now && (p.gone ?? Infinity) > k.now);
 
 // ---- 置き場所（スケジューラの「空きの多い node」） ----
+// 消す途中の Pod の requests は、kubelet が止めて本当に消える（スケジューラの RemovePod）まで node の勘定に残る
+const HOLD = 2;
 function freeOf(k: K8sState, node: K8sNode, at: number): number {
 	const used = k.pods
-		.filter((p) => p.node === node.name && p.created <= at && (p.gone ?? Infinity) > at)
+		.filter((p) => p.node === node.name && p.created <= at && (p.gone ?? Infinity) + HOLD > at)
 		.reduce((a, p) => a + (mebi(rsOf(k, p.rs).memReq) ?? 0), 0);
 	return node.allocMi - node.usedMi - used;
 }
@@ -624,7 +632,7 @@ function podEvents(k: K8sState, p: KPod): Ev[] {
 		const firstB = p.created + START + RUN + backoffAt(0) + RUN;
 		e.push({
 			first: firstB,
-			last: Math.max(firstB, k.now - ((k.now - v.lastCrash) % 10)),
+			last: Math.max(firstB, k.now - ((k.now - v.lastCrash) % RESYNC)),
 			count: v.backoffTicks,
 			type: 'Warning',
 			reason: 'BackOff',
