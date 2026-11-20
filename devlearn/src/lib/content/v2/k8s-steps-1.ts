@@ -209,14 +209,14 @@ export const s2: Step = {
 		work: [
 			'kubectl は DELETE /api/v1/namespaces/shop/pods/web-6d8f7b9c4-7xk2p を送る。道は 6443 番の HTTPS だ。API サーバは認証・認可（RBAC）・アドミッションの順に確かめる。',
 			'Pod は直ぐには消えない。猶予 30 秒（terminationGracePeriodSeconds）の印として、metadata.deletionTimestamp を書く。kubelet がコンテナを止め、止めた後で本当に消す。',
-			'書き込みは etcd の鍵 /registry/pods/shop/web-6d8f7b9c4-7xk2p に入る。etcd の版（revision）が 81,407 から 81,408 に進み、これがその Pod の resourceVersion になる。'
+			'etcd の鍵 /registry/pods/shop/<名前> に書くと、版が 81,408 に進み resourceVersion になる。etcd は過半数（台数 ÷ 2 の切り捨て ＋ 1）に写って確定する。3 台は 1 台、5 台は 2 台まで壊れても書け、過半数を割ると書けない。'
 		],
 		deep: [
 			'v1.31 の DeleteResource() が DELETE を受け、本文の DeleteOptions を読む。validating のアドミッションを渡して、rest の Delete へ進む。Pod の Delete は registry の Store が受け持つ。',
 			'Store は BeforeDelete() で、猶予つきで消すかを決める。猶予があれば updateForGracefulDeletionAndFinalizers() が書く。書くのは deletionTimestamp と deletionGracePeriodSeconds: 30 だ。この時の知らせは DELETED ではなく MODIFIED だ。',
 			'書き込みは etcd3 の store の GuaranteedUpdate() が行う。今の版を読み、「mod_revision が読んだ版と同じなら書く」という 1 つの Txn で書く。負ければ読み直して繰り返すので、2 人が同時に直しても片方が消えない。',
 			'kubelet はコンテナを止めると、猶予 0 の DELETE をもう一度送る。この時に鍵が消え、知らせは DELETED になる。kubectl delete は最初の DELETE が通った時に「deleted」と出す。その後 --wait=true（既定）で、DELETED が来るまで待ってから戻る。',
-			'etcd と直に話すのは API サーバだけだ。コントローラも kubelet も、API サーバの watch と書き込みだけを使う。だから認可と監査の記録が 1 か所にまとまる。'
+			'etcd と直に話すのは API サーバだけだ。etcd の中では Raft のリーダーが Txn を項目として各台に写し、今の任期の項目が過半数に写った時に確定する。前の任期の項目は過半数にあるだけでは確定とせず、後ろの項目と一緒に確定する。台数を 4 台にしても過半数は 3 で、壊れてよい数は 3 台と同じ 1 台のままだ。'
 		]
 	},
 	callout: {
@@ -233,7 +233,8 @@ export const s2: Step = {
 		{ k: 'HTTPS の番', v: '6443 番' },
 		{ k: '確かめの段', v: '3 段（認証・認可・アドミッション）' },
 		{ k: '猶予', v: '30 秒（terminationGracePeriodSeconds の既定）' },
-		{ k: 'etcd の版', v: '81,408（81,407 ＋ 1）', calc: '81407+1' }
+		{ k: 'etcd の版', v: '81,408（81,407 ＋ 1）', calc: '81407+1' },
+		{ k: 'etcd 5 台の過半数', v: '3 台（壊れてよいのは 2 台）', calc: '5-2' }
 	],
 	scene: [
 		{ op: 'move', from: 'you', to: 'api', payload: 'DELETE', kind: 'write' },
