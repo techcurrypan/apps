@@ -161,6 +161,10 @@ function sshFlow(t: TcpState, info: boolean, mem: boolean): string {
 	if (!info) return head;
 	const rtt = rttOf(t);
 	const send = (10 * MSS * 8) / (rtt / 1000);
+	// qdisc を替えた後（handle が 8001: でない）は、替えてから約 1 秒、ssh が 30 回打鍵して返事を受けた所とする。
+	// RTT の標本は新しく ACK された区切りからしか取れず（tcp_ack_update_rtt）、srtt は 1/8 の平滑なので、
+	// 24.5 ms から 0.6 ms へ下りるには 25 個ほどの標本が要る。数を進めずに rtt だけを変えると本物では起きない出力になる
+	const n = t.handle !== 0x8001 ? 30 : 0;
 	const fields = [
 		...(mem ? ['skmem:(r0,rb131072,t0,tb87040,f0,w0,o0,bl0,d0)'] : []),
 		'ts sack',
@@ -169,10 +173,10 @@ function sshFlow(t: TcpState, info: boolean, mem: boolean): string {
 		`rto:${Math.ceil(200 + rtt)}`,
 		`rtt:${fmtMs(rtt)}/${rtt > 2 ? '0.31' : '0.1'}`,
 		'ato:40 mss:1448 pmtu:1500 rcvmss:536 advmss:1448',
-		'cwnd:10 bytes_sent:184320 bytes_acked:184320 bytes_received:36864 segs_out:2210 segs_in:1630 data_segs_out:1180 data_segs_in:640',
-		`send ${bw(send)}bps lastsnd:12 lastrcv:12 lastack:12`,
-		`pacing_rate ${bw(send * 2)}bps delivery_rate 1.2Mbps delivered:1181`,
-		'app_limited busy:1200ms',
+		`cwnd:10 bytes_sent:${184320 + n * 52} bytes_acked:${184320 + n * 52} bytes_received:${36864 + n * 36} segs_out:${2210 + n * 2} segs_in:${1630 + n * 2} data_segs_out:${1180 + n} data_segs_in:${640 + n}`,
+		`send ${bw(send)}bps lastsnd:${n ? 8 : 12} lastrcv:${n ? 8 : 12} lastack:${n ? 8 : 12}`,
+		`pacing_rate ${bw(send * 2)}bps delivery_rate 1.2Mbps delivered:${1181 + n}`,
+		`app_limited busy:${1200 + n}ms`,
 		`rcv_space:14480 rcv_ssthresh:64088 minrtt:${t.minrtt}`
 	];
 	return `${head}\t ${fields.join(' ')}\n`;

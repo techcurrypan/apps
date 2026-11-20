@@ -93,7 +93,8 @@ export const net101: Lesson = {
 		setup: { world: 'tcp' },
 		success: {
 			tcp: {
-				qdisc: ['fq', 'fq_codel'],
+				// 流れごとに列を分ける qdisc なら ssh の待ちは直る（tcpstack.ts PER_FLOW_QDISC と同じ。査読 2026-11-20）
+				qdisc: ['fq', 'fq_codel', 'cake', 'fq_pie', 'sfq'],
 				rttBelow: 2
 			}
 		},

@@ -220,7 +220,7 @@ export const s9: Step = {
 	layers: [B.tcp(['D1', 'D2', 'D3', 'D4', 'D5']), B.rcv()],
 	impl: [
 		I.wxSoft,
-		I.tx,
+		I.txSoft,
 		I.v4rcv,
 		I.est,
 		I.ack,
@@ -266,7 +266,7 @@ export const s10: Step = {
 		],
 		deep: [
 			'tcp_small_queue_check() の上限は max(2 × truesize, sk_pacing_rate >> 10) だ。pfifo の下（SK_PACING_NONE）では、さらに tcp_limit_output_bytes（既定 1 MiB）との小さい方になる。',
-			'1 本 39 Mbps の流れでは、速さの 1 ms 分は約 5 KB しかない。だから 2 × truesize の約 130 KB が効く。tcp_limit_output_bytes は 1 MiB でも 256 KiB でも 130 KB より上なので効かない。130 KB より下げれば 1 本 1 塊（約 66 KB）まで減るが、256 本でまだ約 17 MB 残る。',
+			'1 本 39 Mbps の流れでは速さの 1 ms 分は約 5 KB なので、2 × truesize の約 130 KB が効く。tcp_limit_output_bytes は 1 MiB でも 256 KiB でも 130 KB より上なので効かない。塊 1 個の truesize（約 66 KB）より下げれば 1 本 1 塊になるが、256 本でまだ約 17 MB 残る。止めるのは手元が上限を超えた時だけで、66〜130 KB の間では 2 個目も置く。',
 			'pfifo の上限は既定で txqueuelen（1,000 個）だが、ここでは limit 100000 で作られていた。qdisc は塊を区切りごとの頭も足した約 68 KB で数える（qdisc_pkt_len_init()）ので、30 MB は 440 個で上限の内に収まる。送信リングは BQL（byte_queue_limits）が NIC を休ませない量に絞る。だから溜まりは、リングでなく qdisc に積もる。',
 			'受信窓 0 では、送る側は tcp_send_probe0() で、番号 snd_una − 1・中身 0 B の確かめの区切りを送る。窓が開いた ACK が来るまで送信キューは減らず、send() は sk_sndbuf で眠る。',
 			'どちらも喪失は無いのに待ちだけが伸びる。再送の数（TcpRetransSegs）が 0 でも遅い時は 3 つを見る。ss -tim の rtt、tc -s qdisc の backlog、tcpdump の win だ。'
@@ -332,7 +332,7 @@ export const s10: Step = {
 						id: 'c-ssh',
 						depth: 1,
 						what: 'TCP 10.0.0.5:22 → 10.0.0.77:51022',
-						state: 'rtt 24.6 ms',
+						state: 'rtt 24.5 ms',
 						tone: 'warn'
 					}
 				]
@@ -459,7 +459,7 @@ export const s11: Step = {
 	},
 	callout: {
 		type: 'tip',
-		text: 'tcp_limit_output_bytes を 256 KiB に下げても溜まりは減らず、130 KB より下げても 256 本で約 17 MB 残る。効く手は qdisc を替えること。'
+		text: 'tcp_limit_output_bytes を 256 KiB に下げても溜まりは減らず、塊 1 個の truesize（約 66 KB）より下げても 256 本で約 17 MB 残る。効く手は qdisc を替えること。'
 	},
 	changes: [
 		{ mark: '~', text: 'qdisc pfifo → fq（流れごとの列）' },
@@ -505,7 +505,7 @@ export const s11: Step = {
 						id: 'c-ssh',
 						depth: 1,
 						what: 'TCP 10.0.0.5:22 → 10.0.0.77:51022',
-						state: 'rtt 0.5 ms',
+						state: 'rtt 0.6 ms',
 						tone: 'ok'
 					}
 				]
@@ -595,7 +595,7 @@ export const s12: Step = {
 		deep: [
 			'CUBIC（RFC 9438）は、喪失の時の cwnd を W_max とし、W(t) = C × (t − K)^3 ＋ W_max で戻す。C は 0.4、β は Linux で 717/1024 ≈ 0.7 だ。RTT によらず時間で戻るので、RTT の違う流れの間でも公平に近い。',
 			'Reno の目安（Mathis の式）では、速さ ≈ MSS ÷ RTT × 1.22 ÷ √p だ。RTT 0.5 ms・喪失 1% なら 1,448 B × 8 ÷ 0.5 ms × 12.2 ≈ 283 Mbps になる。CUBIC は Reno より強いが、喪失 1% で桁が落ちることは変わらない。',
-			'BBR v1 の状態は STARTUP（2.885 倍で探る）→ DRAIN → PROBE_BW（8 段の速さ）と進む。10 秒ごとに PROBE_RTT に入り、200 ms の間 cwnd を 4 個に絞る。この間は速さが落ちる。',
+			'BBR v1 の状態は STARTUP（2.885 倍で探る）→ DRAIN → PROBE_BW（8 段の速さ）と進む。min_rtt が 10 秒更新されないと PROBE_RTT に入り、200 ms の間 cwnd を 4 個に絞る。この間は速さが落ちる。',
 			'BBR は送る速さを持つので、fq か TCP の中のペーシングが要る。BBR は Google の Cardwell らが 2016 年に ACM Queue で発表した。同じ年に Linux 4.9 の tcp_bbr.c として入った。',
 			'塊の大きさは tcp_tso_autosize() が、速さの 1 ms 分に gso_max_size >> (min_rtt >> 9) を足して決める。min_rtt が 512 µs 未満なら塊は 64 KiB だ。速さを上げたい時は BIG TCP で 64 KiB の上限を広げる（NIC が対応する時だけ）。ethtool -K で tso を切っても、GSO がソフトで同じ大きさに割って続けて出すので、線の上の突発は減らない。'
 		]

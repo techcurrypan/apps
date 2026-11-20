@@ -422,13 +422,13 @@ export const s4: Step = {
 			'tcp_sendmsg_locked() はプロセスの文脈で動き、データを skb に写して sk_write_queue に並べる。1 個に詰める量（size_goal）は 31,856 B だ。A が満ちると tcp_push_one() を呼ぶ。',
 			'tcp_write_xmit() は送信キューの先頭を覗き、6 つの関所を見る。ペーシング・cwnd・受信窓・Nagle・TSO の待ち・TSQ だ。',
 			'cwnd は 10 個だ。ただし tcp_cwnd_test() は 1 つの塊を cwnd の半分の 5 個までにする。受信窓は SYN-ACK の 65,160 B で通る。',
-			'22 個の A は 5 個分を超えるので、tso_fragment() が A1（7,240 B）を切って送る。続けて B（31,856 B）と C（1,824 B）を写す。最後の tcp_push() が A の残りから A2（7,240 B）を切って送り、A3（17,376 B）が残る。'
+			'A は 5 個分を超えるので、tso_fragment() が A1（7,240 B）を切って送る。B が満ちると、預けた量が窓の半分を超えて強制の push（forced_push()）になり、A の残りから A2（7,240 B）を送る。C を写した後の tcp_push() は cwnd が尽きて何も送らない。'
 		],
 		deep: [
 			'size_goal は tcp_send_mss() から tcp_xmit_size_goal() で決まる。tcp_bound_to_half_wnd() が、相手が見せた最大の窓 65,160 B の半分 32,580 B に切る。1,448 B の倍数に丸めて 22 個分、31,856 B だ。足りなくなると tcp_stream_alloc_skb() で次の skb を取り、tcp_skb_entail() で列の後ろにつなぐ。',
 			'データは sk_page_frag() のページに写され、skb の frags に並ぶ。sk_wmem_queued が sk_sndbuf の 87,040 B を超えると sk_stream_wait_memory() で眠る。今回は 65,536 B と頭書きの分で上限の内に収まり、待たずに戻る。',
-			'v6.12 の tcp_write_xmit() は、まず tcp_pacing_check() と tcp_cwnd_test() を見る。tcp_cwnd_test() は「cwnd − 飛んでいる数」と「cwnd ÷ 2（1 以上）」の小さい方を返す。次に受信窓の tcp_snd_wnd_test() を見る。1 区切りなら tcp_nagle_test()、2 区切り以上なら tcp_tso_should_defer() だ（push_one では見ない）。',
-			'送ってよい量が決まると tcp_mss_split_point() で切る位置を決め、tso_fragment() で skb を割る。skb が cwnd の残りより小さい時は、tcp_grow_skb() が次の skb から足りない分を移す（2 往復目で使う）。最後に tcp_small_queue_check()（TSQ）で手元の行列を見て、tcp_transmit_skb() へ進む。sendmsg の最後の tcp_push() は、A1 の写しがまだ手元に居れば autocork で、A1 の送り終えまで送りを持ち越す。',
+			'v6.12 の tcp_write_xmit() は、まず tcp_pacing_check() と tcp_cwnd_test() を見る。tcp_cwnd_test() は「cwnd − 飛んでいる数」と「cwnd ÷ 2（1 以上）」の小さい方を返す。次に tcp_grow_skb() で足りない分を足し、受信窓の tcp_snd_wnd_test() を見る。1 区切りなら tcp_nagle_test()、2 区切り以上なら tcp_tso_should_defer() で、push_one の A1 では見ない。',
+			'決まった量を tso_fragment() で割り、TSQ を見て tcp_transmit_skb() へ進む。forced_push() は、write_seq − pushed_seq が相手の最大の窓の半分を超えると真になる。B が満ちた時は 63,712 B ＞ 32,580 B で、__tcp_push_pending_frames() が A2 を送る。A2 は tcp_tso_should_defer() を通るが、窓 ÷ 3（tso_win_divisor）が 7,240 B より小さく、待たない。',
 			'tcp_pacing_check() が待たせるのは、fq の無い BBR のように TCP が自分でペーシングする時だけだ。Nagle は MSS（1,448 B）より小さい区切りを止める。止めるのは、未 ACK の小さい区切りが 1 つ以上ある間だけだ（Minshall の変形。tcp_minshall_check()）。この帳簿では、最後の 376 B は C の後ろの断片で、C ごと 2 個として送られる。'
 		]
 	},
@@ -438,7 +438,7 @@ export const s4: Step = {
 	},
 	changes: [
 		{ mark: '+', text: 'skb A・B（31,856 B）と C（1,824 B）' },
-		{ mark: '~', text: 'A から A1・A2（7,240 B ずつ）を切る' },
+		{ mark: '~', text: 'A から A1、B が満ちて強制の push で A2（7,240 B ずつ）' },
 		{ mark: '~', text: '送ってよい数 10 個を使い切る' }
 	],
 	facts: [
@@ -454,7 +454,7 @@ export const s4: Step = {
 		from: 'app',
 		to: 'app',
 		kind: 'kernel',
-		info: 'tcp_push_one：cwnd 10 の半分で A から A1（5 個）を切る'
+		info: 'tcp_push_one で A1、forced_push で A2（5 個ずつ）'
 	},
 	town: '帳場は荷を 3 箱にまとめて出口の棚に置き、今日運べる 10 箱分だけを台車に載せる',
 	work: 'ss -tim の notsent が送信キューに残った量、cwnd が関所の数',
@@ -479,7 +479,7 @@ export const s4: Step = {
 						state: 'ESTABLISHED'
 					},
 					{ id: 'q-wq', depth: 2, what: 'sk_write_queue', state: 'A3 17,376・B 31,856・C 1,824' },
-					{ id: 's-cwnd', depth: 2, what: 'snd_cwnd', state: '10（飛んでいる数 0）' }
+					{ id: 's-cwnd', depth: 2, what: 'snd_cwnd', state: '10（飛んでいる数 0。A1 を見た時）' }
 				]
 			}
 		]
@@ -517,7 +517,7 @@ export const s4: Step = {
 			at: 6300,
 			dur: 700,
 			para: 3,
-			do: { op: 'split', item: 'A 31856', into: ['A1 7240', 'A2 7240', 'A3 17376'] }
+			do: { op: 'split', item: 'A 31856', into: ['A1 7240', 'A 24616'] }
 		},
 		{
 			at: 6400,
@@ -527,23 +527,35 @@ export const s4: Step = {
 		},
 		{ at: 7100, dur: 400, para: 3, do: { op: 'board', line: 3 } },
 		{ at: 7200, dur: 600, para: 3, do: { op: 'dequeue', queue: 'wq', item: 'A1 7240' } },
-		{ at: 7600, dur: 500, para: 3, do: { op: 'enqueue', queue: 'wq', item: 'B 31856' } },
-		{ at: 7900, dur: 500, para: 3, do: { op: 'enqueue', queue: 'wq', item: 'C 1824' } },
-		{ at: 8400, dur: 400, para: 3, do: { op: 'board', line: 4 } },
-		{ at: 8500, dur: 600, para: 3, do: { op: 'dequeue', queue: 'wq', item: 'A2 7240' } }
+		{ at: 7900, dur: 500, para: 3, do: { op: 'enqueue', queue: 'wq', item: 'B 31856' } },
+		{
+			at: 8500,
+			dur: 450,
+			para: 3,
+			do: { op: 'badge', id: 'b_sendmsg', text: 'forced_push：63,712 ＞ 32,580', tone: 'warn' }
+		},
+		{ at: 8600, dur: 400, para: 3, do: { op: 'board', line: 4 } },
+		{
+			at: 9100,
+			dur: 700,
+			para: 3,
+			do: { op: 'split', item: 'A 24616', into: ['A2 7240', 'A3 17376'] }
+		},
+		{ at: 9900, dur: 600, para: 3, do: { op: 'dequeue', queue: 'wq', item: 'A2 7240' } },
+		{ at: 10600, dur: 500, para: 3, do: { op: 'enqueue', queue: 'wq', item: 'C 1824' } }
 	],
 	loop: [
 		{ at: 0, dur: 600, do: { op: 'peek', queue: 'wq', item: 'A3 17376' } },
 		{ at: 900, dur: 600, do: { op: 'peek', queue: 'wq', item: 'B 31856' } }
 	],
 	board: [
-		'ペーシング：cubic と fq では TCP は待たない。受信窓 65,160 B → 通る',
-		'cwnd 10 − 飛んでいる 0、半分は 5 → 1 塊 5 個',
-		'TSO の待ち：push_one なので見ない。TSQ：0 B → 通る',
-		'A を割り、A1 の 5 個が進む',
-		'最後の tcp_push()：A2 の 5 個（autocork なら A1 の送り終えの後）'
+		'ペーシング：cubic と fq では TCP は待たない',
+		'cwnd 10 − 飛んでいる 0、半分は 5 → 1 塊 5 個。受信窓 65,160 B → 通る',
+		'TSO の待ち：A1 は push_one で見ない（A2 は窓 ÷ 3 で通る）。TSQ：0 B',
+		'A が満ちて tcp_push_one()：A を割り、A1 の 5 個が進む',
+		'B が満ちて forced_push：A2 の 5 個。最後の tcp_push() は何もしない'
 	],
-	badges: { b_wx: '5 個ずつ 2 回・残り 36 個' },
+	badges: { b_wx: '5 個ずつ 2 回・残り 36 個', b_sendmsg: 'forced_push：63,712 ＞ 32,580' },
 	layers: [B.sys([]), B.tcp([])],
 	impl: [I.sendto, I.sendmsg, I.push, I.wx, I.tx, I.nagle, I.defer, I.tsqCheck],
 	refs: ['linux-tcp', 'linux-tcp-output', 'linux-socket', 'rfc6928'],

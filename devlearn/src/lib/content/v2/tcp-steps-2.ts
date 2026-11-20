@@ -168,13 +168,13 @@ export const s6: Step = {
 		],
 		work: [
 			'__dev_queue_xmit() は写しを qdisc の fq に入れる。fq は流れごとに列を分け、skb に書かれた送る時刻（EDT）の順に出す。A1 と A2 の 10 個は接続の最初の 10 区切りなので、時刻を待たずにすぐ出る。',
-			'11 個目からは、TCP が送る速さに合わせて時刻を後ろへずらす。送る速さは cwnd 10 × 1,448 B ÷ 0.5 ms の 2 倍で 57.9 MB/s。直後は貸し（credit）で半分の 62.5 µs 後だ。',
-			'fq に溜まった量（backlog）は tc -s qdisc で見え、今は 0 B だ。fq から出た写しは ixgbe_xmit_frame_ring() が送信リングの記述子に載せる。ixgbe の既定は 512 個だ。',
+			'11 個目からは送る速さで時刻を後ろへずらす。速さは cwnd 10 × 1,448 B ÷ 0.5 ms の 2 倍で 57.9 MB/s。A2 の後は 125 µs から空き 14 µs を引いて約 111 µs 進むが、次の塊は ACK の後なので待たない。',
+			'backlog は tc -s qdisc で見え、今は 0 B だ。fq から出た写しは ixgbe_xmit_frame_ring() が送信リング（既定 512 個）の記述子に載せる。',
 			'ixgbe_tso() が「MSS 1,448 で割れ」という記述子を書き、NIC が 7,240 B を 5 枚に割る。1 枚は 1,448 ＋ 32 ＋ 20 ＋ 14 ＝ 1,514 B だ。'
 		],
 		deep: [
 			'fq_enqueue() は skb->tstamp を見て fq_skb_cb(skb)->time_to_send に写す。時刻が今より 10 秒（horizon）以上先なら捨てる。流れの列は時刻の順に並び、fq_dequeue() は時刻の来た流れだけを Deficit Round Robin（1 回 2 × MTU）で回す。',
-			'TCP は送るたびに tcp_update_skb_after_send() を呼ぶ。tcp_wstamp_ns を len ÷ sk_pacing_rate だけ進める。ただし data_segs_out が 10 未満の間は進めない（最初の 10 区切りはペーシングしない）。空いていた時間の分は、len_ns の半分までを貸し（credit）として引く（EDT の方式）。',
+			'送るたびに tcp_update_skb_after_send() が tcp_wstamp_ns を len ÷ sk_pacing_rate 進める。data_segs_out が 10 未満の間は進めない（最初の 10 区切りはペーシングしない）。前の出してよい時刻から今までの空きは、len_ns の半分までを貸し（credit）として引く（EDT の方式）。待ちが効くのは、ACK を受けて続けて出す塊の 2 個目からだ（ステップ 7）。',
 			'sk_pacing_rate は tcp_update_pacing_rate() が決める。元は cwnd × MSS ÷ srtt だ。cwnd が ssthresh の半分より小さい間は tcp_pacing_ss_ratio の 200% を掛ける。それ以外は tcp_pacing_ca_ratio の 120% だ。',
 			'fq_codel は流れごとに列を分けるが、時刻ではなく、列に居た時間が 5 ms（target）を 100 ms（interval）超え続けたら捨てる。Ubuntu などは systemd が既定の qdisc を fq_codel にする。',
 			'TSO の大きさは tcp_tso_autosize() が決める。元は sk_pacing_rate の 1/1024（約 1 ms 分）で、min_rtt に応じた足し分を加える。上限は gso_max_size の 64 KiB だ。RTT 0.5 ms では min_rtt >> 9 が 0 になり、64 KiB の塊まで許される。'
@@ -195,7 +195,11 @@ export const s6: Step = {
 			v: '57.9 MB/s（2 × 10 × 1,448 B ÷ 0.5 ms）',
 			calc: '2*10*1448/0.0005/1000000'
 		},
-		{ k: '次の塊の時刻', v: '62.5 µs 後（7,240 B ÷ 57.9 MB/s の半分）', calc: '7240/57.92/2' },
+		{
+			k: '次の塊の時刻',
+			v: '111 µs 後（7,240 B ÷ 57.9 MB/s − 空き 14 µs）',
+			calc: '7240/57.92-14'
+		},
 		{ k: 'フレーム 1 枚', v: '1,514 B（1,448 ＋ 32 ＋ 20 ＋ 14）', calc: '1448+32+20+14' },
 		{ k: 'フレームの数', v: '5 枚（7,240 B ÷ 1,448 B）。A2 と合わせて 10 枚', calc: '7240/1448' }
 	],
@@ -236,7 +240,7 @@ export const s6: Step = {
 			{
 				t: '10:15:01.010200',
 				src: 'tcpdump',
-				text: '10:15:01.010200 IP 10.0.0.5.43210 > 10.0.0.9.9000: Flags [.], seq 1:7241, ack 1, win 502, options [nop,nop,TS val 3010 ecr 5000], length 7240'
+				text: '10:15:01.010200 IP 10.0.0.5.43210 > 10.0.0.9.9000: Flags [P.], seq 1:7241, ack 1, win 502, options [nop,nop,TS val 3010 ecr 5000], length 7240'
 			},
 			{
 				t: '10:15:01.010214',
@@ -261,7 +265,7 @@ export const s6: Step = {
 			at: 2000,
 			dur: 450,
 			para: 1,
-			do: { op: 'badge', id: 'b_dev', text: '次の塊は +125 µs', tone: 'warn' }
+			do: { op: 'badge', id: 'b_dev', text: '時刻 +111 µs（ACK の後は待たない）', tone: 'warn' }
 		},
 		{ at: 2100, dur: 400, para: 1, do: { op: 'board', line: 1 } },
 		{ at: 2800, dur: 900, para: 2, do: { op: 'camera', fit: ['b_dev', 'b_drv', 'b_tso'] } },
@@ -297,11 +301,11 @@ export const s6: Step = {
 	],
 	board: [
 		'fq_enqueue()：最初の 10 個は時刻＝今',
-		'11 個目から len ÷ 57.9 MB/s ずつ後ろ',
+		'A2 の後：tcp_wstamp_ns を約 111 µs 進める',
 		'ixgbe_xmit_frame_ring()：記述子に載せる',
 		'TSO：7,240 B → 1,514 B × 5 枚'
 	],
-	badges: { b_dev: '次の塊は +125 µs' },
+	badges: { b_dev: '時刻 +111 µs（ACK の後は待たない）' },
 	layers: [B.ip(), B.qd([]), B.drv([], [])],
 	impl: [I.ipq, I.neigh, I.devq, I.fqEnq, I.fqDeq, I.direct, I.drv, I.tso],
 	refs: [
@@ -324,25 +328,25 @@ export const s7: Step = {
 	lead: '割り込み → softirq → tcp_ack() → 次の 20 個',
 	body: [
 		'ACK は割り込みで知らされ、softirq の NAPI が取り出して TCP へ渡す。',
-		'tcp_ack() が A1・A2 を再送キューから外し、cwnd を 20 にして次を送らせる。'
+		'tcp_ack() が A1・A2 を順に外し、cwnd を 15・20 にして次を送らせる。'
 	],
 	depth: {
 		intro: [
-			'store-1 は 10 枚をまとめて受け取り、「14,480 B まで受け取った」という ACK を 1 つ返す。0.5 ms 後、それが app-1 の NIC に着く。',
-			'NIC は CPU を呼び、カーネルは ACK を TCP まで運ぶ。TCP は控えの A1 と A2 を捨て、次は 20 個を送ってよいと決める。'
+			'store-1 は 5 枚ずつを 1 個にまとめて受け取り、「7,240 B まで」「14,480 B まで」の ACK を 2 つ返す。0.5 ms 後、それが app-1 の NIC に着く。',
+			'NIC は CPU を呼び、カーネルは ACK を TCP まで運ぶ。TCP は控えの A1 と A2 を順に捨て、送ってよい数を 15、20 と増やす。'
 		],
 		work: [
-			'store-1 の側では、続けて着いた 10 枚を GRO が 14,480 B の 1 個の skb にまとめる。TCP はまとめた 1 個に ACK を 1 つ返す。',
+			'store-1 の GRO は PSH の付いた区切りで流し出すので、7,240 B の skb が 2 個になる。始めの quickack の間なので、1 個ごとに ACK を返す。',
 			'app-1 の NIC は割り込みを上げる。hardirq の ixgbe_msix_clean_rings() は napi_schedule だけをして、すぐ戻る。取り出しは softirq の net_rx_action() が ixgbe_poll() を呼んで行う。',
 			'ACK は napi_gro_receive() に入るが、データの無い ACK はまとめない。8 個ずつ束ねて ip_list_rcv() から tcp_v4_rcv() へ渡る。',
-			'tcp_rcv_established() から tcp_ack() が呼ばれ、tcp_clean_rtx_queue() が A1・A2 を外して解放する。未 ACK は 0 個、cwnd は 10 から 20 へ増え、tcp_write_xmit() へ戻る。'
+			'tcp_ack() の tcp_clean_rtx_queue() が A1 を外し、cwnd は 15 になる。A3 から 7 個を送る。2 つ目の ACK で A2 を外して cwnd 20、残りの 13 個を送る。'
 		],
 		deep: [
 			'NAPI は割り込みのたびに 1 個ずつ取らず、softirq の中で一度に最大 64 個（weight）を取る。net_rx_action() の 1 回の持ち分は netdev_budget の 300 個か、2 jiffy（HZ=1000 なら 2 ms）までだ。残れば次の softirq か ksoftirqd に回す。',
-			'tcp_gro_receive() は、ack の番号・選択肢・旗が同じで、番号が続く区切りだけをまとめる（ack_seq を比べる）。ACK だけの区切りは中身が 0 B なので len < mss で flush され、1 個ずつ上へ渡る。',
+			'tcp_gro_receive() は、ack の番号・選択肢・旗が同じで番号が続く区切りだけをまとめ、PSH の付いた区切りで流し出す。送り手の TSO は PSH を塊の最後の区切りにだけ残す。だから受け手では 5 枚ずつの 2 個になる。ACK だけの区切りは中身が 0 B で、1 個ずつ上へ渡る。',
 			'tcp_v4_rcv() はソケットを引き、持ち主のプロセスが使っていなければ（!sock_owned_by_user）tcp_v4_do_rcv() へ進む。使用中なら tcp_add_backlog() で backlog に置き、持ち主が release_sock() で後から処理する。',
 			'tcp_ack() は snd_una を進め、tcp_clean_rtx_queue() で再送キューの先頭から ACK された skb を外す。skb に残した送った時刻から RTT の標本を取り（tcp_ack_update_rtt()）、cong_avoid を呼ぶ。時刻の印（TS-ECR）は、再送で送った時刻が使えない時の代わりだ。',
-			'スロースタートの間、tcp_slow_start() は cwnd に ACK された数（10）を足す。最後に tcp_data_snd_check() から tcp_push_pending_frames() を経て tcp_write_xmit() へ戻る。1 つの塊は cwnd 20 の半分の 10 個までなので、A3 の 12 個から 10 個（14,480 B）を切って送る。残り 2 個（2,896 B）に tcp_grow_skb() が B の頭 11,584 B を移し、もう 1 つの 14,480 B にして送る。'
+			'cwnd は 15、quota は min(15 − 5, 15 ÷ 2) ＝ 7 個で A3 から 10,136 B を切る。残り 5 個は cwnd の残り 3 個に入らず、tcp_tso_should_defer() が待たせる。2 つ目の ACK で cwnd は 20 になる。tcp_grow_skb() が残り 5 個に B の頭 5 個を足した 14,480 B と、B の 3 個（4,344 B）を送る。'
 		]
 	},
 	callout: {
@@ -351,26 +355,26 @@ export const s7: Step = {
 	},
 	changes: [
 		{ mark: '-', text: 'A1・A2 が再送キューから消えた' },
-		{ mark: '~', text: 'cwnd 10 → 20 個' },
-		{ mark: '+', text: 'A3 から 10 個、残り ＋ B の頭で 10 個を送る' }
+		{ mark: '~', text: 'cwnd 10 → 15 → 20 個' },
+		{ mark: '+', text: '10,136・14,480・4,344 B の 3 回で 20 個を送る' }
 	],
 	facts: [
 		{ k: 'ACK の大きさ', v: '66 B（Ethernet 14・IP 20・TCP 32）', calc: '14+20+32' },
 		{ k: 'cwnd', v: '20 個（10 ＋ ACK された 10）', calc: '10+10' },
-		{ k: '次に送る量', v: '28,960 B（14,480 B の塊 2 つ。20 × 1,448 B）', calc: '20*1448' },
+		{ k: '次に送る量', v: '28,960 B（10,136 ＋ 14,480 ＋ 4,344。20 × 1,448 B）', calc: '20*1448' },
 		{ k: 'NAPI の 1 回', v: '最大 64 個（weight）' }
 	],
 	scene: [
-		{ op: 'move', from: 'peer', to: 'sw', payload: 'ACK 14481', kind: 'ack' },
-		{ op: 'move', from: 'sw', to: 'app', payload: 'ACK 14481', kind: 'ack' }
+		{ op: 'move', from: 'peer', to: 'sw', payload: 'ACK 7241・14481', kind: 'ack' },
+		{ op: 'move', from: 'sw', to: 'app', payload: 'ACK 7241・14481', kind: 'ack' }
 	],
 	log: {
 		t: '0.0105s',
 		from: 'peer',
 		to: 'app',
 		kind: 'ack',
-		info: 'ACK 14481（10 個分）。A1・A2 を外し、cwnd 20',
-		size: '66 B'
+		info: 'ACK 7241・14481（5 個ずつ）。A1・A2 を外し、cwnd 15 → 20',
+		size: '132 B（66 B × 2）'
 	},
 	town: '届いた知らせが帳場に着くと、控えを捨て、次は 20 箱を出してよいことになる',
 	work: 'ss -tim の cwnd が 10 → 20 → 40 と増え、unacked が減るのを見る',
@@ -383,8 +387,14 @@ export const s7: Step = {
 				addr: '10.0.0.5',
 				rows: [
 					conn,
-					{ id: 'q-rtx', depth: 2, what: 'tcp_rtx_queue', state: '0 個' },
-					{ id: 's-cwnd', depth: 2, what: 'snd_cwnd', state: '20（飛んでいる数 0）' },
+					{
+						id: 'q-rtx',
+						depth: 2,
+						what: 'tcp_rtx_queue',
+						state: 'A3a・A3b・B1（20 個）',
+						tone: 'warn'
+					},
+					{ id: 's-cwnd', depth: 2, what: 'snd_cwnd', state: '20（飛んでいる数 20）' },
 					{ id: 'q-wq', depth: 2, what: 'sk_write_queue', state: 'B 20,272・C 1,824' }
 				]
 			}
@@ -393,26 +403,37 @@ export const s7: Step = {
 			{
 				t: '10:15:01.010712',
 				src: 'tcpdump',
-				text: '10:15:01.010712 IP 10.0.0.9.9000 > 10.0.0.5.43210: Flags [.], ack 14481, win 502, options [nop,nop,TS val 5010 ecr 3010], length 0'
+				text: '10:15:01.010712 IP 10.0.0.9.9000 > 10.0.0.5.43210: Flags [.], ack 7241, win 502, options [nop,nop,TS val 5010 ecr 3010], length 0'
+			},
+			{
+				t: '10:15:01.010726',
+				src: 'tcpdump',
+				text: '10:15:01.010726 IP 10.0.0.9.9000 > 10.0.0.5.43210: Flags [.], ack 14481, win 502, options [nop,nop,TS val 5010 ecr 3010], length 0'
 			}
 		]
 	},
-	metrics: { cwnd: '20 個', rtx: '0 個' },
+	metrics: { cwnd: '20 個', rtx: '20 個' },
 	motion: [
 		{ at: 0, dur: 800, para: 0, do: { op: 'camera', fit: ['app', 'sw', 'peer'] } },
-		{ at: 300, dur: 450, para: 0, do: { op: 'badge', id: 'peer', text: 'GRO：10 枚 → 1 個' } },
+		{ at: 300, dur: 450, para: 0, do: { op: 'badge', id: 'peer', text: 'GRO：5 枚 → 1 個 × 2' } },
 		{
 			at: 700,
 			dur: 900,
 			para: 0,
-			do: { op: 'packet', a: 'peer', b: 'sw', label: 'ACK 14481', kind: 'ack' }
+			do: { op: 'packet', a: 'peer', b: 'sw', label: 'ACK 7241', kind: 'ack' }
 		},
 		{ at: 800, dur: 400, para: 0, do: { op: 'board', line: 0 } },
 		{
 			at: 1600,
 			dur: 900,
 			para: 1,
-			do: { op: 'packet', a: 'sw', b: 'b_irq', label: 'ACK', kind: 'ack' }
+			do: { op: 'packet', a: 'sw', b: 'b_irq', label: 'ACK 7241', kind: 'ack' }
+		},
+		{
+			at: 1700,
+			dur: 900,
+			para: 0,
+			do: { op: 'packet', a: 'peer', b: 'sw', label: 'ACK 14481', kind: 'ack' }
 		},
 		{ at: 2500, dur: 900, para: 1, do: { op: 'camera', fit: ['b_irq', 'b_poll', 'b_gro'] } },
 		{ at: 2600, dur: 400, para: 1, do: { op: 'context', to: 'hardirq', at: 'b_irq' } },
@@ -424,61 +445,93 @@ export const s7: Step = {
 		},
 		{ at: 3700, dur: 400, para: 1, do: { op: 'context', to: 'softirq', at: 'b_poll' } },
 		{ at: 3800, dur: 400, para: 1, do: { op: 'board', line: 1 } },
-		{ at: 4200, dur: 500, para: 2, do: { op: 'enqueue', queue: 'gro', item: 'ACK 14481' } },
-		{ at: 4700, dur: 600, para: 2, do: { op: 'peek', queue: 'gro', item: 'ACK 14481' } },
+		{ at: 4200, dur: 500, para: 2, do: { op: 'enqueue', queue: 'gro', item: 'ACK 7241' } },
+		{ at: 4500, dur: 500, para: 2, do: { op: 'enqueue', queue: 'gro', item: 'ACK 14481' } },
 		{ at: 4800, dur: 400, para: 2, do: { op: 'board', line: 2 } },
-		{ at: 5400, dur: 400, para: 2, do: { op: 'dequeue', queue: 'gro', item: 'ACK 14481' } },
+		{ at: 5200, dur: 400, para: 2, do: { op: 'dequeue', queue: 'gro', item: 'ACK 7241' } },
 		{ at: 5500, dur: 900, para: 2, do: { op: 'camera', fit: ['b_v4', 'b_est', 'b_ack'] } },
 		{
 			at: 5700,
 			dur: 700,
 			para: 2,
-			do: { op: 'packet', a: 'b_gro', b: 'b_v4', label: 'ACK', kind: 'ack' }
+			do: { op: 'packet', a: 'b_gro', b: 'b_v4', label: 'ACK 7241', kind: 'ack' }
 		},
 		{
 			at: 6400,
 			dur: 600,
 			para: 3,
-			do: { op: 'packet', a: 'b_v4', b: 'b_est', label: 'ACK', kind: 'ack' }
+			do: { op: 'packet', a: 'b_v4', b: 'b_est', label: 'ACK 7241', kind: 'ack' }
 		},
 		{
 			at: 7000,
 			dur: 600,
 			para: 3,
-			do: { op: 'packet', a: 'b_est', b: 'b_ack', label: 'ACK', kind: 'ack' }
+			do: { op: 'packet', a: 'b_est', b: 'b_ack', label: 'ACK 7241', kind: 'ack' }
 		},
 		{ at: 7600, dur: 900, para: 3, do: { op: 'camera', fit: ['b_ack', 'b_wx', 'b_tx'] } },
 		{ at: 7900, dur: 500, para: 3, do: { op: 'dequeue', queue: 'rtx', item: 'A1 7240' } },
-		{ at: 8100, dur: 500, para: 3, do: { op: 'dequeue', queue: 'rtx', item: 'A2 7240' } },
-		{ at: 8100, dur: 800, para: 3, do: { op: 'count', metric: 'rtx', to: '0 個' } },
-		{ at: 8600, dur: 800, para: 3, do: { op: 'count', metric: 'cwnd', to: '20 個' } },
-		{ at: 8700, dur: 400, para: 3, do: { op: 'board', line: 3 } },
 		{
-			at: 9400,
-			dur: 700,
+			at: 8100,
+			dur: 450,
+			para: 3,
+			do: { op: 'badge', id: 'b_ack', text: 'cwnd 10 → 15', tone: 'ok' }
+		},
+		{ at: 8200, dur: 400, para: 3, do: { op: 'board', line: 3 } },
+		{
+			at: 8700,
+			dur: 600,
 			para: 3,
 			do: { op: 'packet', a: 'b_ack', b: 'b_wx', label: 'tcp_data_snd_check', kind: 'call' }
 		},
-		{ at: 10100, dur: 400, para: 3, do: { op: 'context', to: 'softirq', at: 'b_wx' } },
+		{ at: 9300, dur: 400, para: 3, do: { op: 'context', to: 'softirq', at: 'b_wx' } },
 		{
-			at: 10300,
-			dur: 700,
-			para: 3,
-			do: { op: 'split', item: 'A3 17376', into: ['A3a 14480', 'A3b 2896'] }
-		},
-		{
-			at: 10900,
+			at: 9500,
 			dur: 600,
 			para: 3,
-			do: { op: 'split', item: 'B 31856', into: ['B頭 11584', 'B 20272'] }
+			do: { op: 'split', item: 'A3 17376', into: ['A3a 10136', 'A3b 7240'] }
 		},
 		{
-			at: 11500,
+			at: 10100,
 			dur: 600,
 			para: 3,
-			do: { op: 'merge', items: ['A3b 2896', 'B頭 11584'], into: 'A3b 14480' }
+			do: { op: 'move', item: 'A3a 10136', from: 'wq', to: 'rtx' }
 		},
-		{ at: 10400, dur: 400, para: 3, do: { op: 'board', line: 4 } }
+		{
+			at: 10700,
+			dur: 450,
+			para: 3,
+			do: { op: 'badge', id: 'b_wx', text: 'A3b：cwnd の残り 3 個 → 待つ', tone: 'warn' }
+		},
+		{ at: 11300, dur: 500, para: 3, do: { op: 'dequeue', queue: 'rtx', item: 'A2 7240' } },
+		{ at: 11500, dur: 800, para: 3, do: { op: 'count', metric: 'cwnd', to: '20 個' } },
+		{ at: 11600, dur: 400, para: 3, do: { op: 'board', line: 4 } },
+		{
+			at: 12100,
+			dur: 600,
+			para: 3,
+			do: { op: 'split', item: 'B 31856', into: ['B頭 7240', 'B 24616'] }
+		},
+		{
+			at: 12700,
+			dur: 600,
+			para: 3,
+			do: { op: 'merge', items: ['A3b 7240', 'B頭 7240'], into: 'A3b 14480' }
+		},
+		{
+			at: 13300,
+			dur: 600,
+			para: 3,
+			do: { op: 'move', item: 'A3b 14480', from: 'wq', to: 'rtx' }
+		},
+		{
+			at: 13900,
+			dur: 600,
+			para: 3,
+			do: { op: 'split', item: 'B 24616', into: ['B1 4344', 'B 20272'] }
+		},
+		{ at: 14500, dur: 600, para: 3, do: { op: 'move', item: 'B1 4344', from: 'wq', to: 'rtx' } },
+		{ at: 14600, dur: 800, para: 3, do: { op: 'count', metric: 'rtx', to: '20 個' } },
+		{ at: 10500, dur: 600, para: 3, do: { op: 'pulse', id: 'b_tx' } }
 	],
 	loop: [
 		// 最後の寄りの中で流す（留まる間も図の中で流れが続く。LS-M4・D1）
@@ -492,13 +545,13 @@ export const s7: Step = {
 		{ at: 1600, dur: 600, do: { op: 'pulse', id: 'b_wx' } }
 	],
 	board: [
-		'store-1：GRO で 10 枚 → 1 個、ACK を 1 つ',
+		'store-1：PSH で GRO が流し出し 5 枚 → 1 個 × 2、ACK 2 つ',
 		'hardirq：napi_schedule だけして戻る',
 		'softirq：ixgbe_poll → GRO（ACK はまとめない）',
-		'tcp_ack()：A1・A2 を外し、cwnd 10 → 20',
-		'A3 から 10 個、残り 2 個 ＋ B の頭で 10 個'
+		'ACK 7241：A1 を外し cwnd 15。A3 から 7 個、残り 5 個は待つ',
+		'ACK 14481：A2 を外し cwnd 20。grow で 14,480 B、B から 4,344 B'
 	],
-	badges: { peer: 'GRO：10 枚 → 1 個', b_wx: '10 個ずつ 2 つ（softirq）' },
+	badges: { peer: 'GRO：5 枚 → 1 個 × 2', b_wx: '10,136・14,480・4,344 B（softirq）' },
 	layers: [
 		B.sys(['A3 17376', 'B 31856', 'C 1824']),
 		B.tcp(['A1 7240', 'A2 7240']),
