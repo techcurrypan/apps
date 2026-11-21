@@ -198,4 +198,42 @@ describe('TCP の出口の模擬', () => {
 		expect(d.out).toMatch(/^qdisc bfifo 8003: root refcnt 2 limit 1514000b\n/);
 		expect(d.out).toContain(' backlog 1514000b 22p requeues 0\n');
 	});
+	it('qdisc を替えると古い qdisc の溜まりは捨てられ、写しの流れは TLP で送り直す（qdisc_graft → qdisc_reset。査読 2026-11-21）', () => {
+		const n = (out: string, name: string) =>
+			Number(new RegExp(`^${name} +(\\d+)`, 'm').exec(out)?.[1] ?? 'NaN');
+		const r = outs([
+			'nstat -az TcpRetransSegs TcpExtTCPLossProbes',
+			'sudo tc qdisc replace dev eth0 root fq',
+			'nstat -az TcpRetransSegs TcpExtTCPLossProbes',
+			'ss -tim dst 10.0.0.9 | head -3',
+			'sudo tc qdisc replace dev eth0 root fq_codel',
+			'nstat -az TcpRetransSegs',
+			'tc -s qdisc show dev eth0'
+		]);
+		expect(n(r[0].out, 'TcpRetransSegs')).toBe(1);
+		expect(n(r[0].out, 'TcpExtTCPLossProbes')).toBe(0);
+		// pfifo の 30 MB（約 20,718 区切り）を捨て、256 本の流れが 1 本ずつ TLP を送る
+		expect(n(r[2].out, 'TcpRetransSegs')).toBe(1 + Math.round(30_000_000 / 1448));
+		expect(n(r[2].out, 'TcpExtTCPLossProbes')).toBe(256);
+		expect(r[3].out).toContain(
+			` retrans:0/${Math.round((1 + Math.round(30_000_000 / 1448)) / 256)} `
+		);
+		// fq_codel に替えると、fq の溜まりも捨て、さらに fq_codel が捨てた塊（1 個 45 区切り）も送り直す
+		const dropped = Number(/dropped (\d+)/.exec(r[6].out)?.[1]);
+		expect(dropped).toBeGreaterThan(0);
+		expect(n(r[5].out, 'TcpRetransSegs')).toBe(
+			1 + 2 * Math.round(30_000_000 / 1448) + dropped * 45
+		);
+	});
+	it('ssh の RTT：替えた後は標本 60 個で 0.6 ms 台へ下りる（tcp_rtt_estimator）。fq_pie の tupdate は HZ=1000 で 15ms', () => {
+		const r = outs([
+			'sudo tc qdisc replace dev eth0 root fq',
+			'ss -tim dst 10.0.0.77',
+			'sudo tc qdisc replace dev eth0 root fq_pie',
+			'tc qdisc show dev eth0'
+		]);
+		expect(r[1].out).toContain(' data_segs_out:1240 ');
+		expect(r[1].out).toContain(' delivered:1241 ');
+		expect(r[3].out).toContain(' tupdate 15ms ');
+	});
 });

@@ -307,7 +307,7 @@ const B = {
 	rx: (gro: string[]) =>
 		band('rx', 'softirq（NET_RX）：NAPI と GRO', [
 			box('b_poll', I.poll),
-			box('b_gro', I.gro, [q('gro', 'GRO の束', gro)])
+			box('b_gro', I.gro, [q('gro', '上へ渡す列（GRO・rx_list）', gro)])
 		]),
 	rcv: () =>
 		band('rcv', 'TCP の受け取り', [box('b_v4', I.v4rcv), box('b_est', I.est), box('b_ack', I.ack)]),

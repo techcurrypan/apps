@@ -123,10 +123,11 @@ export const s5: Step = {
 		{ at: 5100, dur: 400, para: 2, do: { op: 'board', line: 2 } },
 		{ at: 5700, dur: 900, para: 3, do: { op: 'camera', fit: ['b_sendmsg', 'b_wx', 'b_tx'] } },
 		{ at: 6200, dur: 700, para: 3, do: { op: 'move', item: 'A1 7240', from: 'wq', to: 'rtx' } },
-		{ at: 6300, dur: 800, para: 3, do: { op: 'count', metric: 'rtx', to: '10 個' } },
-		{ at: 6400, dur: 400, para: 3, do: { op: 'board', line: 3 } },
-		{ at: 6600, dur: 800, para: 3, do: { op: 'count', metric: 'wq', to: '51,056 B' } },
-		{ at: 7000, dur: 700, para: 3, do: { op: 'move', item: 'A2 7240', from: 'wq', to: 'rtx' } }
+		{ at: 7000, dur: 700, para: 3, do: { op: 'move', item: 'A2 7240', from: 'wq', to: 'rtx' } },
+		// A1・A2 の両方が移ってから数える
+		{ at: 7750, dur: 800, para: 3, do: { op: 'count', metric: 'rtx', to: '10 個' } },
+		{ at: 7800, dur: 400, para: 3, do: { op: 'board', line: 3 } },
+		{ at: 8250, dur: 800, para: 3, do: { op: 'count', metric: 'wq', to: '51,056 B' } }
 	],
 	loop: [
 		// 最後の寄り（送信キューと再送キュー）の中で流す
@@ -435,6 +436,12 @@ export const s7: Step = {
 			para: 0,
 			do: { op: 'packet', a: 'peer', b: 'sw', label: 'ACK 14481', kind: 'ack' }
 		},
+		{
+			at: 2550,
+			dur: 900,
+			para: 1,
+			do: { op: 'packet', a: 'sw', b: 'b_irq', label: 'ACK 14481', kind: 'ack' }
+		},
 		{ at: 2500, dur: 900, para: 1, do: { op: 'camera', fit: ['b_irq', 'b_poll', 'b_gro'] } },
 		{ at: 2600, dur: 400, para: 1, do: { op: 'context', to: 'hardirq', at: 'b_irq' } },
 		{
@@ -502,35 +509,64 @@ export const s7: Step = {
 			para: 3,
 			do: { op: 'badge', id: 'b_wx', text: 'A3b：cwnd の残り 3 個 → 待つ', tone: 'warn' }
 		},
-		{ at: 11300, dur: 500, para: 3, do: { op: 'dequeue', queue: 'rtx', item: 'A2 7240' } },
-		{ at: 11500, dur: 800, para: 3, do: { op: 'count', metric: 'cwnd', to: '20 個' } },
-		{ at: 11600, dur: 400, para: 3, do: { op: 'board', line: 4 } },
+		// 2 本目の ACK も 1 個のまま上へ渡り、tcp_ack() に届いてから A2 を外す
 		{
-			at: 12100,
+			at: 11200,
+			dur: 900,
+			para: 3,
+			do: { op: 'camera', fit: ['b_gro', 'b_v4', 'b_est', 'b_ack'] }
+		},
+		{ at: 11400, dur: 400, para: 3, do: { op: 'dequeue', queue: 'gro', item: 'ACK 14481' } },
+		{
+			at: 11800,
+			dur: 600,
+			para: 3,
+			do: { op: 'packet', a: 'b_gro', b: 'b_v4', label: 'ACK 14481', kind: 'ack' }
+		},
+		{
+			at: 12400,
+			dur: 600,
+			para: 3,
+			do: { op: 'packet', a: 'b_v4', b: 'b_est', label: 'ACK 14481', kind: 'ack' }
+		},
+		{
+			at: 13000,
+			dur: 600,
+			para: 3,
+			do: { op: 'packet', a: 'b_est', b: 'b_ack', label: 'ACK 14481', kind: 'ack' }
+		},
+		{ at: 13600, dur: 900, para: 3, do: { op: 'camera', fit: ['b_ack', 'b_wx', 'b_tx'] } },
+		{ at: 13800, dur: 500, para: 3, do: { op: 'dequeue', queue: 'rtx', item: 'A2 7240' } },
+		{ at: 14000, dur: 800, para: 3, do: { op: 'count', metric: 'cwnd', to: '20 個' } },
+		{ at: 14100, dur: 400, para: 3, do: { op: 'board', line: 4 } },
+		{
+			at: 14600,
 			dur: 600,
 			para: 3,
 			do: { op: 'split', item: 'B 31856', into: ['B頭 7240', 'B 24616'] }
 		},
 		{
-			at: 12700,
+			at: 15200,
 			dur: 600,
 			para: 3,
 			do: { op: 'merge', items: ['A3b 7240', 'B頭 7240'], into: 'A3b 14480' }
 		},
 		{
-			at: 13300,
+			at: 15800,
 			dur: 600,
 			para: 3,
 			do: { op: 'move', item: 'A3b 14480', from: 'wq', to: 'rtx' }
 		},
 		{
-			at: 13900,
+			at: 16400,
 			dur: 600,
 			para: 3,
 			do: { op: 'split', item: 'B 24616', into: ['B1 4344', 'B 20272'] }
 		},
-		{ at: 14500, dur: 600, para: 3, do: { op: 'move', item: 'B1 4344', from: 'wq', to: 'rtx' } },
-		{ at: 14600, dur: 800, para: 3, do: { op: 'count', metric: 'rtx', to: '20 個' } },
+		{ at: 17000, dur: 600, para: 3, do: { op: 'move', item: 'B1 4344', from: 'wq', to: 'rtx' } },
+		{ at: 17100, dur: 800, para: 3, do: { op: 'count', metric: 'rtx', to: '20 個' } },
+		// 送りを続ける所へ戻って留まる（続く流れはここで流れる）
+		{ at: 18000, dur: 800, para: 3, do: { op: 'camera', fit: ['b_wx', 'b_tx'] } },
 		{ at: 10500, dur: 600, para: 3, do: { op: 'pulse', id: 'b_tx' } }
 	],
 	loop: [

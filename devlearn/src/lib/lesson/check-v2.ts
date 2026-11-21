@@ -181,12 +181,16 @@ export function checkV2(l: Lesson, add: Add, opt: V2Options = {}): void {
 			if (t === null || Math.abs(t - sum) > 1e-6)
 				add(32, w, `合計 ${mv.total} が各段の和 ${sum} と合わない`);
 		}
-		for (const c of mo)
-			if (c.do.op === 'count' && mv[c.do.metric] !== undefined && mv[c.do.metric] !== c.do.to)
+		// 指標ごとに、時刻の一番遅い数え上げがステップの値と合うこと（途中の値を段ごとに数えるのはよい）
+		const lastCount = new Map<string, Extract<Cue['do'], { op: 'count' }>>();
+		for (const c of [...mo].sort((x, y) => x.at - y.at))
+			if (c.do.op === 'count') lastCount.set(c.do.metric, c.do);
+		for (const d of lastCount.values())
+			if (mv[d.metric] !== undefined && mv[d.metric] !== d.to)
 				add(
 					32,
 					w,
-					`数え上げ「${c.do.metric}」の行き先 ${c.do.to} が、ステップの値 ${mv[c.do.metric]} と違う`
+					`最後の数え上げ「${d.metric}」の行き先 ${d.to} が、ステップの値 ${mv[d.metric]} と違う`
 				);
 		// 34（refs）
 		for (const r of s.refs ?? [])

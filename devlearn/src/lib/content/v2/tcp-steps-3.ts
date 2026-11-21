@@ -22,7 +22,7 @@ export const s9: Step = {
 	depth: {
 		intro: [
 			'スイッチの待ち行列があふれ、D1〜D5 のうち D2 だけが捨てられた。store-1 には D1 と D3〜D5 が届き、「D2 が抜けている」と ACK で知らせる。',
-			'app-1 は控えの D2 を送り直す。ここまで 1 往復と少し、0.6 ms ほどで直る。'
+			'app-1 は控えの D2 を送り直す。D2 が着くと、先に届いていた後ろの D401 までも、まとめて受け取ったことになる。ここまで 1 往復と少し、0.6 ms ほどで直る。'
 		],
 		work: [
 			'store-1 は「725,449 番の手前まで受け取った」という ACK を、SACK（どこが届いたか）付きで返す。D3〜D5 の 3 個分だ。受け取り側の GRO が 3 個をまとめると、tcpdump では 1 本に見える。',
@@ -33,7 +33,7 @@ export const s9: Step = {
 		deep: [
 			'tcp_ack() の中の tcp_fastretrans_alert() が回復に入るかを決める。RACK を使う時、tcp_time_to_recover() は lost_out（失ったと決めた数）を見る。RFC 5681 の重複 ACK 3 つの決まりも、RACK の中の近道として残る（TCP_RACK_NO_DUPTHRESH で切れる）。',
 			'RACK（RFC 8985）は、送ってからの時間が rack.rtt ＋ reo_wnd を超えた未 ACK を失ったとする。判定は tcp_rack_skb_timeout() だ。reo_wnd は min_rtt の 1/4 だ。並び替えを見ていず SACK が reordering 以上なら、tcp_rack_reo_wnd() は 0 を返す。',
-			'回復の間は PRR が、cwnd ＝ 飛んでいる数 ＋ sndcnt で 1 ACK ごとに送ってよい数を決める。入った直後の cwnd はほぼ 399 だ。CUBIC の ssthresh は cwnd × 717/1024 で 280 になる。回復の終わりの tcp_end_cwnd_reduction() で、cwnd も 280 になる。',
+			'回復の間は PRR が、cwnd ＝ 飛んでいる数 ＋ sndcnt で 1 ACK ごとに送ってよい数を決める。入った直後は、飛んでいる 396 個（400 − SACK 3 − 失った 1）＋ sndcnt 3 で cwnd は 399 だ。CUBIC の ssthresh は cwnd × 717/1024 で 280 になる。回復の終わりの tcp_end_cwnd_reduction() で、cwnd も 280 になる。',
 			'TLP は tcp_schedule_loss_probe() が時計を掛ける。待ちは 2 × srtt に 2 ms（TCP_TIMEOUT_MIN_US）を足した値だ。飛んでいるのが 1 個だけなら、待ちは 2 × srtt ＋ RTO の下限になる。',
 			'RTO は srtt ＋ rttvar_us（4 × rttvar に当たる項。下限 200 ms）で、およそ srtt ＋ 200 ms になる。icsk_rto は jiffy で持つので、ss の rto:225 は 24.5 ＋ 200 を 1 ms に切り上げた値だ。設定は net.ipv4.tcp_rto_min_us（既定 200000）と経路の rto_min。切れると tcp_enter_loss() で cwnd を 1 にし、続けば RTO は倍々で上限 120 秒まで伸びる。'
 		]
@@ -105,9 +105,14 @@ export const s9: Step = {
 				text: '10:15:06.000640 IP 10.0.0.5.43210 > 10.0.0.9.9000: Flags [.], seq 725449:726897, ack 1, win 502, options [nop,nop,TS val 8000 ecr 10000], length 1448'
 			},
 			{
+				t: '10:15:06.001100',
+				src: 'tcpdump',
+				text: '10:15:06.001100 IP 10.0.0.9.9000 > 10.0.0.5.43210: Flags [.], ack 725449, win 502, options [nop,nop,TS val 10001 ecr 8000,nop,nop,sack 1 {726897:1304649}], length 0'
+			},
+			{
 				t: '10:15:06.001150',
 				src: 'tcpdump',
-				text: '10:15:06.001150 IP 10.0.0.9.9000 > 10.0.0.5.43210: Flags [.], ack 731241, win 502, options [nop,nop,TS val 10001 ecr 8000], length 0'
+				text: '10:15:06.001150 IP 10.0.0.9.9000 > 10.0.0.5.43210: Flags [.], ack 1304649, win 502, options [nop,nop,TS val 10001 ecr 8000], length 0'
 			}
 		]
 	},
@@ -187,18 +192,24 @@ export const s9: Step = {
 			at: 8600,
 			dur: 800,
 			para: 3,
-			do: { op: 'packet', a: 'peer', b: 'sw', label: 'ACK 731241', kind: 'ack' }
+			do: { op: 'packet', a: 'peer', b: 'sw', label: 'ACK 1304649', kind: 'ack' }
 		},
-		{ at: 8700, dur: 450, para: 3, do: { op: 'badge', id: 'peer', text: '全部そろった' } },
+		{
+			at: 8700,
+			dur: 450,
+			para: 3,
+			do: { op: 'badge', id: 'peer', text: '穴が埋まった（D401 まで）' }
+		},
 		{
 			at: 9400,
 			dur: 800,
 			para: 3,
-			do: { op: 'packet', a: 'sw', b: 'app', label: 'ACK 731241', kind: 'ack' }
+			do: { op: 'packet', a: 'sw', b: 'app', label: 'ACK 1304649', kind: 'ack' }
 		},
-		{ at: 9100, dur: 800, para: 3, do: { op: 'count', metric: 'cwnd', to: '280 個' } },
-		{ at: 9500, dur: 800, para: 3, do: { op: 'count', metric: 'rtx', to: '280 個' } },
-		{ at: 9600, dur: 400, para: 3, do: { op: 'board', line: 3 } }
+		{ at: 9600, dur: 400, para: 3, do: { op: 'board', line: 3 } },
+		// 回復の終わりは ACK を受けた時（tcp_end_cwnd_reduction）なので、着いてから数える
+		{ at: 10250, dur: 800, para: 3, do: { op: 'count', metric: 'cwnd', to: '280 個' } },
+		{ at: 10600, dur: 800, para: 3, do: { op: 'count', metric: 'rtx', to: '280 個' } }
 	],
 	loop: [
 		{ at: 0, dur: 800, do: { op: 'packet', a: 'app', b: 'sw', label: 'D2', kind: 'data' } },
@@ -216,7 +227,7 @@ export const s9: Step = {
 		'tcp_enter_recovery()：ssthresh 280 → tcp_retransmit_skb()：D2 を送り直す',
 		'後ろが無ければ TLP（約 3 ms）。確かめも落ちたら RTO 200 ms・cwnd 1'
 	],
-	badges: { sw: 'あふれて 1 個捨てた', peer: '全部そろった' },
+	badges: { sw: 'あふれて 1 個捨てた', peer: '穴が埋まった（D401 まで）' },
 	layers: [B.tcp(['D1', 'D2', 'D3', 'D4', 'D5']), B.rcv()],
 	impl: [
 		I.wxSoft,
@@ -345,9 +356,9 @@ export const s10: Step = {
 				text: '10:15:07.000100 IP 10.0.0.9.9000 > 10.0.0.5.43210: Flags [.], ack 412880001, win 0, options [nop,nop,TS val 11000 ecr 9000], length 0'
 			},
 			{
-				t: '10:15:07.200300',
+				t: '10:15:07.225300',
 				src: 'tcpdump',
-				text: '10:15:07.200300 IP 10.0.0.5.43210 > 10.0.0.9.9000: Flags [.], ack 1, win 502, options [nop,nop,TS val 9200 ecr 11000], length 0'
+				text: '10:15:07.225300 IP 10.0.0.5.43210 > 10.0.0.9.9000: Flags [.], ack 1, win 502, options [nop,nop,TS val 9225 ecr 11000], length 0'
 			}
 		]
 	},
@@ -446,12 +457,12 @@ export const s11: Step = {
 		work: [
 			'sudo tc qdisc replace dev eth0 root fq で替える。この機械は ethtool -L eth0 combined 1 で送り口を 1 つにしてあるので、root に 1 つ置けばよい。',
 			'fq は流れごとに列を持ち、空から来た新しい流れを先に出す。ssh の区切りは数百 B で、写しの 256 列の 1 巡（約 0.6 ms）を待たずに出る。',
-			'写しの 256 本は、fq の中で溜まったままだ。送る速さが線を超える間は時刻を過ぎた荷が並び、写しの RTT は約 24 ms のまま残る。',
+			'替えた時に、pfifo に積んでいた 440 個・約 30 MB は捨てられる。写しの流れは TLP で気づいて送り直し、再送の数が一度跳ねる。その後、TSQ の上限まで fq に約 30 MB が積み直り、写しの RTT は約 24 ms のまま残る。',
 			'溜まりそのものを削るなら fq_codel を選ぶ。列に居た時間が 5 ms を 100 ms 超え続けると捨て、写しの流れに cwnd を下げさせる。'
 		],
 		deep: [
 			'fq は流れ（ソケット、または 5 つ組の hash）ごとに列を持つ。fq_dequeue() は新しい流れの列を先に回し、時刻の来た列を Deficit Round Robin で 1 回 3,028 B ずつ回す。1 つの流れは 100 個、全体は 10,000 個まで積める。',
-			'__tcp_transmit_skb() は skb の時刻に tcp_wstamp_ns（出してよい時刻）を書き、fq はその時刻まで待たせる。RTT はこの時刻から測るが、時刻を過ぎても線が空かずに待つ分は RTT に入る。',
+			'__tcp_transmit_skb() は skb の時刻に tcp_wstamp_ns（出してよい時刻）を書き、fq はその時刻まで待たせる。RTT はこの時刻から測るが、時刻を過ぎても線が空かずに待つ分は RTT に入る。tc qdisc replace は古い qdisc を qdisc_reset() で空にし、積んだ約 20,700 区切りは線に出ず消える。256 本の流れは TLP（2 × 24.5 ＋ 2 ≒ 51 ms）で送り直すので、替えた直後の再送の山は fq のせいではない。',
 			'TCP はペーシングの速さ sk_pacing_rate を cwnd と srtt から決め、fq はそれを守るだけだ。BBR は fq が無くても SK_PACING_NEEDED として、TCP の中の hrtimer（tcp_pace_kick()）で同じことをする。',
 			'fq_codel の CoDel は、列の頭の区切りが居た時間を見る。target 5 ms を interval 100 ms の間超え続けると、捨て始める。次に捨てるまでの間は interval ÷ √捨てた数 で縮める（CoDel の決まり。RFC 8289）。',
 			'/etc/sysctl.d/ に net.core.default_qdisc=fq を書くと、起きた時の既定が決まる（tc の替えは再起動で消える）。ただし今ある装置には効かない。送り口が多い NIC で root に fq を 1 つ置くと、全ての口が 1 つの錠を取り合う。tc qdisc replace dev eth0 root mq で作り直し、各口に既定を付ける。'
@@ -464,7 +475,8 @@ export const s11: Step = {
 	changes: [
 		{ mark: '~', text: 'qdisc pfifo → fq（流れごとの列）' },
 		{ mark: '~', text: 'ssh の RTT 24.5 → 0.6 ms' },
-		{ mark: '~', text: '写しの 30 MB は残る（削るのは fq_codel）' }
+		{ mark: '-', text: 'pfifo の 30 MB は替えた時に捨てられる' },
+		{ mark: '~', text: '写しは fq に積み直る（削るのは fq_codel）' }
 	],
 	facts: [
 		{ k: 'DRR の 1 巡', v: '775,168 B（256 列 × 3,028 B）', calc: '256*3028' },
@@ -481,7 +493,7 @@ export const s11: Step = {
 		from: 'app',
 		to: 'sw',
 		kind: 'data',
-		info: 'fq に替えた。ssh の RTT 0.6 ms。写しの backlog 30 MB は残る'
+		info: 'fq に替えた。pfifo の 30 MB は捨てられ、写しは fq に積み直る。ssh は 0.6 ms'
 	},
 	town: '出口の行列を行き先ごとに分けた。急ぎの小包は自分の列ですぐ出る',
 	work: 'tc qdisc replace dev eth0 root fq と sysctl.d の default_qdisc',
@@ -522,31 +534,48 @@ export const s11: Step = {
 			do: { op: 'badge', id: 'b_wx', text: 'SK_PACING_FQ：時刻を書く' }
 		},
 		{ at: 500, dur: 400, para: 0, do: { op: 'board', line: 0 } },
+		// 替えた時：古い pfifo は qdisc_reset() で空になり、積んでいた荷は線に出ずに消える
 		{ at: 900, dur: 450, para: 0, do: { op: 'dequeue', queue: 'qpf', item: 'C1 64K' } },
-		{ at: 1300, dur: 450, para: 0, do: { op: 'dequeue', queue: 'qpf', item: 'C2 64K' } },
-		{ at: 1700, dur: 450, para: 0, do: { op: 'dequeue', queue: 'qpf', item: 'C3 64K' } },
-		{ at: 2100, dur: 450, para: 1, do: { op: 'enqueue', queue: 'qfq', item: 'F1 64K' } },
-		{ at: 2200, dur: 400, para: 1, do: { op: 'board', line: 1 } },
-		{ at: 2500, dur: 450, para: 1, do: { op: 'enqueue', queue: 'qfq', item: 'F2 64K' } },
-		{ at: 2900, dur: 450, para: 1, do: { op: 'enqueue', queue: 'qfq', item: 'ssh 120B' } },
-		{ at: 3400, dur: 1000, para: 2, do: { op: 'count', metric: 'rtt', to: '0.6 ms' } },
-		{ at: 3600, dur: 400, para: 2, do: { op: 'board', line: 2 } },
+		{ at: 1200, dur: 450, para: 0, do: { op: 'dequeue', queue: 'qpf', item: 'C2 64K' } },
+		{ at: 1500, dur: 450, para: 0, do: { op: 'dequeue', queue: 'qpf', item: 'C3 64K' } },
+		{ at: 1800, dur: 450, para: 0, do: { op: 'dequeue', queue: 'qpf', item: 'C4 64K' } },
 		{
-			at: 4600,
+			at: 2000,
+			dur: 450,
+			para: 2,
+			do: { op: 'badge', id: 'b_dev', text: 'qdisc_reset：440 個を捨てた', tone: 'bad' }
+		},
+		{ at: 2100, dur: 600, para: 2, do: { op: 'count', metric: 'qd', to: '0 B' } },
+		{ at: 2800, dur: 450, para: 1, do: { op: 'enqueue', queue: 'qfq', item: 'ssh 120B' } },
+		{ at: 2900, dur: 400, para: 1, do: { op: 'board', line: 1 } },
+		{ at: 3400, dur: 1000, para: 1, do: { op: 'count', metric: 'rtt', to: '0.6 ms' } },
+		{ at: 3600, dur: 400, para: 1, do: { op: 'board', line: 2 } },
+		// 写しは TLP で送り直し、TSQ の上限まで fq に積み直る
+		{
+			at: 4000,
+			dur: 700,
+			para: 2,
+			do: { op: 'packet', a: 'b_wx', b: 'b_dev', label: 'TLP で送り直し', kind: 'retx' }
+		},
+		{ at: 4700, dur: 450, para: 2, do: { op: 'enqueue', queue: 'qfq', item: 'F1 64K' } },
+		{ at: 5100, dur: 450, para: 2, do: { op: 'enqueue', queue: 'qfq', item: 'F2 64K' } },
+		{ at: 5500, dur: 900, para: 2, do: { op: 'count', metric: 'qd', to: '30,000,000 B' } },
+		{
+			at: 6600,
 			dur: 700,
 			para: 3,
 			do: { op: 'packet', a: 'b_dev', b: 'b_drv', label: 'ssh（別の列）', kind: 'data' }
 		},
 		{
-			at: 4700,
+			at: 6700,
 			dur: 450,
 			para: 3,
 			do: { op: 'badge', id: 'b_dev', text: 'ssh は別の列・0.6 ms' }
 		},
-		{ at: 4800, dur: 400, para: 3, do: { op: 'board', line: 3 } },
-		{ at: 5400, dur: 600, para: 3, do: { op: 'move', item: 'ssh 120B', from: 'qfq', to: 'ring' } },
-		{ at: 6100, dur: 600, para: 3, do: { op: 'move', item: 'F1 64K', from: 'qfq', to: 'ring' } },
-		{ at: 6800, dur: 400, para: 3, do: { op: 'board', line: 4 } }
+		{ at: 6800, dur: 400, para: 3, do: { op: 'board', line: 3 } },
+		{ at: 7400, dur: 600, para: 3, do: { op: 'move', item: 'ssh 120B', from: 'qfq', to: 'ring' } },
+		{ at: 8100, dur: 600, para: 3, do: { op: 'move', item: 'F1 64K', from: 'qfq', to: 'ring' } },
+		{ at: 8800, dur: 400, para: 3, do: { op: 'board', line: 4 } }
 	],
 	loop: [
 		{ at: 0, dur: 500, do: { op: 'peek', queue: 'qfq', item: 'F2 64K' } },

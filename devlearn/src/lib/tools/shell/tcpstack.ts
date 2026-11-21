@@ -18,7 +18,14 @@ export type TcpWorld = {
 	ssh: { local: string; peer: string };
 };
 /** cc：今ある流れの輻輳制御。ソケットを作った時の net.ipv4.tcp_congestion_control で決まり、後で sysctl を変えても替わらない */
-export type TcpState = TcpWorld & { handle: number; cc?: string };
+export type TcpState = TcpWorld & {
+	handle: number;
+	cc?: string;
+	/** qdisc を替えた時に捨てた区切りの数（qdisc_graft → qdisc_reset。線に出ずに消え、TCP が送り直す） */
+	reset?: number;
+	/** 替えた時に送った確かめ（TLP）の数。後ろを失った流れ 1 本ごとに 1 個 */
+	probes?: number;
+};
 
 const LINE_BPS = 1.25e9; // 10 GbE の 1 秒の B
 const PER_FLOW = 30_000_000 / 256; // 1 本が手元に置く量（TSQ の下限 2 × truesize の内。net-101 ステップ 10）
@@ -151,7 +158,7 @@ function copyFlow(t: TcpState, i: number, info: boolean, mem: boolean): string {
 		`cwnd:${cwnd} ssthresh:${Math.round(cwnd * 0.7)}`,
 		`send ${bw(send)}bps`,
 		`pacing_rate ${bw(send * 1.2)}bps delivery_rate ${bw(rate * 8)}bps`,
-		`busy:9000ms unacked:${cwnd} retrans:0/${f.retrans}`,
+		`busy:9000ms unacked:${cwnd} retrans:0/${Math.round(retransOf(t) / f.count)}`,
 		`rcv_space:14480 rcv_ssthresh:64088 notsent:${notsent} minrtt:${t.minrtt}`
 	];
 	return `${head}\t ${fields.join(' ')}\n`;
@@ -161,10 +168,10 @@ function sshFlow(t: TcpState, info: boolean, mem: boolean): string {
 	if (!info) return head;
 	const rtt = rttOf(t);
 	const send = (10 * MSS * 8) / (rtt / 1000);
-	// qdisc を替えた後（handle が 8001: でない）は、替えてから約 1 秒、ssh が 30 回打鍵して返事を受けた所とする。
-	// RTT の標本は新しく ACK された区切りからしか取れず（tcp_ack_update_rtt）、srtt は 1/8 の平滑なので、
-	// 24.5 ms から 0.6 ms へ下りるには 25 個ほどの標本が要る。数を進めずに rtt だけを変えると本物では起きない出力になる
-	const n = t.handle !== 0x8001 ? 30 : 0;
+	// qdisc を替えた後（handle が 8001: でない）は、替えてから ssh が 60 回打鍵して返事を受けた所とする。
+	// RTT の標本は ACK 1 本につき高々 1 個（tcp_ack_update_rtt）で、srtt は 1/8、mdev は下がる時 1/32 の平滑なので、
+	// 24.5 ms（rttvar 0.31）から 0.6 ms 台へ下りるには約 50 個の標本が要る（30 個では 1.03 ms、60 個で 0.608 / 0.016）
+	const n = t.handle !== 0x8001 ? 60 : 0;
 	const fields = [
 		...(mem ? ['skmem:(r0,rb131072,t0,tb87040,f0,w0,o0,bl0,d0)'] : []),
 		'ts sack',
@@ -232,7 +239,7 @@ function qdiscText(t: TcpState): string {
 		case 'cake':
 			return `qdisc cake ${h} root refcnt 2 bandwidth unlimited diffserv3 triple-isolate nonat nowash no-ack-filter split-gso rtt 100ms raw overhead 0 \n${sent}`;
 		case 'fq_pie':
-			return `qdisc fq_pie ${h} root refcnt 2 limit 10240p flows 1024 target 15ms tupdate 16ms alpha 2 beta 20 quantum 1514b memory_limit 32Mb ecn_prob 10\n${sent}`;
+			return `qdisc fq_pie ${h} root refcnt 2 limit 10240p flows 1024 target 15ms tupdate 15ms alpha 2 beta 20 quantum 1514b memory_limit 32Mb ecn_prob 10\n${sent}`;
 		case 'bfifo':
 			return `qdisc bfifo ${h} root refcnt 2 limit 1514000b\n${sent}`;
 		case 'mq':
@@ -259,7 +266,16 @@ export const tc: Cmd<unknown> = (s, args) => {
 		if (!QDISCS.includes(kind as Qdisc))
 			return fail(s, 'Error: Specified qdisc kind is unknown.\n', 2);
 		if (verb === 'add') return fail(s, 'Error: Exclusivity flag on, cannot modify.\n', 2);
-		const next: TcpState = { ...t, qdisc: kind as Qdisc, handle: t.handle + 1 };
+		// 替えると、古い qdisc に積んでいた荷は捨てられる（v6.12 sch_api.c qdisc_graft の dev_deactivate → qdisc_reset）。
+		// どの写しの流れも送った後ろを失うので、TLP（2 × srtt ＋ 2 ms）で気づいて送り直す
+		const lost = Math.round(backlogOf(t) / MSS);
+		const next: TcpState = {
+			...t,
+			qdisc: kind as Qdisc,
+			handle: t.handle + 1,
+			reset: (t.reset ?? 0) + lost,
+			probes: (t.probes ?? 0) + (lost > 0 ? t.flows.count : 0)
+		};
 		return ok({ ...s, tcp: next }, '');
 	}
 	return fail(s, `Command "${verb}" is unknown, try "tc qdisc help".\n`, 1);
@@ -301,10 +317,15 @@ export const sysctl: Cmd<unknown> = (s, args) => {
 };
 
 // ---- nstat ----
+/** 塊 1 個の区切りの数（SKB の 68,130 B は 45 × (1,448 ＋ 頭 66 B)） */
+const SEGS_PER_SKB = Math.round(SKB / (MSS + 66));
+/** 送り直した区切りの数：初めからの数 ＋ 替えた時に捨てた分 ＋ AQM が捨てた塊の区切り */
+export const retransOf = (t: TcpState): number =>
+	t.flows.retrans + (t.reset ?? 0) + droppedOf(t) * SEGS_PER_SKB;
 const COUNTERS = (t: TcpState): Record<string, number> => ({
-	TcpRetransSegs: t.flows.retrans,
+	TcpRetransSegs: retransOf(t),
 	TcpExtTCPTimeouts: 0,
-	TcpExtTCPLossProbes: 0,
+	TcpExtTCPLossProbes: t.probes ?? 0,
 	TcpOutSegs: 741812,
 	TcpExtTCPSackRecovery: t.flows.retrans
 });

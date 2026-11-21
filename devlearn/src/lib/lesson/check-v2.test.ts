@@ -117,6 +117,16 @@ describe('検査 26〜40（第 2 版）', () => {
 			do: { op: 'count', metric: 'q', to: '7 個' }
 		};
 		expect(nums(b)).toContain(32);
+		// 途中の数え上げ（積み上がる途中の値）はよい。最後の数え上げがステップの値と合えば通る
+		const c = validV2();
+		const last = c.explain[2].motion![3];
+		c.explain[2].motion!.splice(3, 0, {
+			at: last.at - 10,
+			dur: 5,
+			para: last.para,
+			do: { op: 'count', metric: 'q', to: '7 個' }
+		});
+		expect(nums(c)).not.toContain(32);
 	});
 	it('33：学べること 4〜7・全てに ✓', () => {
 		const a = validV2();
