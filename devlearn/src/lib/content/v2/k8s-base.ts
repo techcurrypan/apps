@@ -1,6 +1,6 @@
 // 見本 2（k8s-101）の材料：出典・関数の名前・層の図の箱・中身の板の行。本文は lessons/k8s-101.ts。
 // 関数・構造体・設定の名前は、Kubernetes v1.31.0・Linux v6.12・containerd v1.7.22 の tag のソースで確かめた（npm run impl:verify。2026-11-19）。
-// 場面：名前空間 shop の Deployment web（3 つ。記憶の上限 128Mi）。node-1（10.0.1.11）と node-2（10.0.1.12）、空きは 700 MiB ずつ。
+// 場面：名前空間 shop の Deployment web（3 つ。記憶の上限 128Mi）。node-1（10.0.1.11）と node-2（10.0.1.12）、空きは node-1 が 828 MiB・node-2 が 700 MiB（requests の和を引いた分）。
 // 品物の一覧を読み込むと 182 MiB 使うので、3 つとも OOMKilled を繰り返して CrashLoopBackOff になっている。
 import type { Host, HostRow, Impl, ImplContext, Layer, Queue, Source } from '../../lesson/types.ts';
 

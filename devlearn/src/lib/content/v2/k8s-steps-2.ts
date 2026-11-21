@@ -203,7 +203,7 @@ export const s6: Step = {
 			'computePodActions() は、サンドボックスを作り直すか、どのコンテナを殺し・起こすかを決める。落ちたコンテナを起こし直す時は、先に doBackOff() で待ちの表を見る（ステップ 8）。',
 			'startContainer() はイメージがあるかを確かめる（Pulled）。generateLinuxContainerResources() が、記憶の上限と CPU の重みを CRI の形に写す。CreateContainer() と StartContainer() を containerd に送る。containerd は shim を通して runc を起こす。',
 			'cpu 100m は shares 102 だ。cgroup v2 では 1 ＋（102 − 2）× 9,999 ÷ 262,142 を切り捨てて cpu.weight 4 になる。Burstable の Pod は /kubepods.slice/kubepods-burstable.slice の下に入る。',
-			'Relist() は 1 秒ごとに全てのコンテナの状態を問い、前と比べて出来事を作る。v1.31 の既定は、この問い直す PLEG だ。containerd の出来事を受ける Evented PLEG は alpha で、既定で切られている。'
+			'Relist() は 1 秒ごとに全てのコンテナの状態を問い、前と比べて出来事を作る。v1.31 の既定はこの PLEG で、Evented PLEG は alpha で切られている。ログの「SyncLoop (PLEG): event for pod」は klog.V(2) の行で、-v=2 以上の時だけ出る。本物の行には event={"ID","Type","Data"} も付き、Type が出来事の種類、Data が 64 桁のコンテナの ID だ。'
 		]
 	},
 	callout: {
@@ -405,7 +405,7 @@ export const s7: Step = {
 		],
 		deep: [
 			'ページを確保するたびに try_charge_memcg() が cgroup の勘定に足す。memory.max を超えると、まず cgroup の中の記憶を取り戻す（reclaim）。それでも足りないと mem_cgroup_out_of_memory() を呼ぶ。',
-			'mem_cgroup_out_of_memory() は、その cgroup の中だけで、oom_badness() の点が最も高いプロセスを選ぶ。点は使っている記憶のページ数に oom_score_adj の分を足して決まり、oom_kill_process() が SIGKILL を送る。',
+			'mem_cgroup_out_of_memory() は、その cgroup の中だけで、oom_badness() の点が最も高いプロセスを選ぶ。点は使っている記憶のページ数に oom_score_adj の分を足して決まり、oom_kill_process() が SIGKILL を送る。dmesg の行には shmem-rss・UID・pgtables・oom_score_adj も並ぶ。requests 128Mi の web の oom_score_adj は 1000 − 31 ＝ 969 だ。',
 			'cgroup v2 の memory.events の oom_kill が 1 増える。containerd は cgroup の出来事を見張る。TaskOOM を受けた handleEvent() が、そのコンテナの理由を OOMKilled にする。',
 			'v1.28 から、cgroup v2 の node では kubelet が memory.oom.group を 1 にする。cgroup の中の 1 つが選ばれると、中の全てのプロセスがまとめて止まり、半分だけ生き残る壊れ方をしない。',
 			'Pod の phase は Running のままで、コンテナの state だけが Terminated（OOMKilled・137）になる。1 回目は待たずに起こし直すので、RESTARTS は 1 になり、2 秒後にまた読み込みが始まる。'
@@ -673,19 +673,26 @@ export const s8: Step = {
 		{ at: 4700, dur: 800, para: 1, do: { op: 'count', metric: 'wait', to: '20 秒' } },
 		{ at: 4800, dur: 800, para: 1, do: { op: 'count', metric: 'restarts', to: '2 回' } },
 		{ at: 5000, dur: 800, para: 2, do: { op: 'camera', fit: ['b_next2', 'kl1', 'api'] } },
+		// 起こした回もまた落ちる。次の 20 秒はこの死から数える
 		{
 			at: 5400,
+			dur: 450,
+			para: 2,
+			do: { op: 'badge', id: 'kl1', text: 'また落ちた（ContainerDied・137）', tone: 'bad' }
+		},
+		{
+			at: 5950,
 			dur: 800,
 			para: 2,
 			do: { op: 'packet', a: 'kl1', b: 'api', label: 'BackOff', kind: 'status', stall: true }
 		},
 		{
-			at: 6300,
+			at: 6850,
 			dur: 450,
 			para: 2,
 			do: { op: 'badge', id: 'api', text: 'Ready の番地 0 個', tone: 'bad' }
 		},
-		{ at: 6400, dur: 400, para: 2, do: { op: 'board', line: 3 } },
+		{ at: 6950, dur: 400, para: 2, do: { op: 'board', line: 3 } },
 		{ at: 1100, dur: 700, para: 0, do: { op: 'pulse', id: 'b_dbo' } },
 		{ at: 3100, dur: 700, para: 1, do: { op: 'pulse', id: 'b_ibo' } },
 		{ at: 4500, dur: 700, para: 1, do: { op: 'pulse', id: 'b_next2' } }

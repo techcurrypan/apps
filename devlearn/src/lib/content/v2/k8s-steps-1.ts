@@ -569,7 +569,7 @@ export const s4: Step = {
 		deep: [
 			'syncReplicaSet() は最初に SatisfiedExpectations() を見る。約束した作成・削除が全て watch で見えたか、約束から 5 分（ExpectationsTimeout）経っていれば、数え直してよい。',
 			'manageReplicas() は差が負なら作る。1 回に作るのは最大 500 個（burstReplicas）で、slowStartBatch() が 1・2・4・8 … と倍に増やして並べて作る。途中で失敗すると残りを作らず、作らなかった数を expectations から引く。',
-			'POST /api/v1/namespaces/shop/pods は createHandler() に入り、mutating のアドミッションを通る。ServiceAccount の巻（kube-api-access-jrps5）と、node が落ちても 300 秒待つ tolerations が足される。etcd3 の Create() が新しい鍵を書く。',
+			'POST /api/v1/namespaces/shop/pods は createHandler() に入り、mutating のアドミッションを通る。ServiceAccount の巻（kube-api-access-cz4xs）と、node が落ちても 300 秒待つ tolerations が足される。etcd3 の Create() が新しい鍵を書く。',
 			'Pod の ownerReferences には ReplicaSet web-6d8f7b9c4（controller: true）が入る。印があるので、同じラベルを持つ別の ReplicaSet はこの Pod を数えない。ReplicaSet を消すと、ガベージコレクタが印をたどって Pod も消す。',
 			'最後に calculateStatus() で replicas・readyReplicas・availableReplicas を数え、status を書く。Pod が 1 つも Ready にならないので、readyReplicas は 0 のままだ。'
 		]

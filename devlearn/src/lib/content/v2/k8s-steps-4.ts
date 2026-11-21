@@ -24,13 +24,13 @@ export const s13: Step = {
 			'kubectl get pods -n shop で STATUS と RESTARTS を見る。「CrashLoopBackOff・6 (39s ago)」なら落ちて待っている。Pending なら置き場所、ImagePullBackOff ならイメージの問題だ。',
 			'kubectl describe pod で Last State を読む。「Terminated・Reason OOMKilled・Exit Code 137」なら上限、「Error・Exit Code 1」ならプログラムの失敗だ。Limits と Requests も同じ画面にある。',
 			'logs --previous で落ちる前の最後の行を読む。SIGKILL ではエラーの行が残らず、「96 MiB of 182 MiB」で途切れる。',
-			'get events は 1 時間分しか残らない。REASON（BackOff・FailedScheduling）と回数（x35）で止まった所を見る。'
+			'get events は 1 時間分しか残らない。REASON（BackOff・FailedScheduling）と回数（x30）で止まった所を見る。'
 		],
 		deep: [
 			'get pods の STATUS は、コンテナの state の理由をそのまま出す。Waiting なら CrashLoopBackOff など、Terminated なら OOMKilled・Error が出る。phase の Running とは別の物を出している。',
-			'describe の Events は、その Pod に関わる出来事だけを、同じ物をまとめて「x35 over 6m4s」と出す。BackOff の数は、kubelet が待ちの中で起こすのを見送った回数だ。数は kubelet の手元で数え、API に届く更新は間引かれて遅れる（1 つの Pod に 25 件の後は 5 分に 1 件）。落ちた回数は RESTARTS で読む。',
+			'describe の Events は同じ出来事をまとめ「62s (x30 over 6m4s)」と出す。数は kubelet の手元で数えるが、API への更新は client-go の events_cache.go で間引かれる。Pod ごとに 25 件、その後は 300 秒に 1 件だ。7xk2p は手元で BackOff 35 だが、API には x30 で止まり、Age も遅れる。',
 			'kubectl logs は kubelet の /containerLogs を通して、node のファイルを読む。道は /var/log/pods/<名前空間>_<名前>_<UID>/<コンテナ>/<回数>.log だ。--previous は 1 つ前の回数のファイルだ。止まったコンテナは 1 つしか残らない（MaxPerPodContainerCount 1）ので、2 回以上前のログは node からも消える。',
-			'events は API サーバの --event-ttl（既定 1 時間）で消える。後で調べるには、events を集める仕組み（kubernetes-event-exporter など）で貯めておく。',
+			'get events は kubectl が並べ替えず、API が返す名前（<物の名前>.<16 進の時刻>）の順に出る。時刻の順は --sort-by=.lastTimestamp か kubectl events で見る。events は --event-ttl（既定 1 時間）で消えるので、kubernetes-event-exporter などで貯めておく。',
 			'kubectl top pod は metrics-server が要る。上限で止められた回の memory.peak は上限と同じ数しか出ず、起こし直すと cgroup も新しくなる。本当の量は、上限を一時的に上げた 1 つの Pod の memory.peak か、アプリのヒープの指標で測る。このログが 182 MiB と総量を書くのは特別な場合だ。'
 		]
 	},
@@ -46,7 +46,7 @@ export const s13: Step = {
 	facts: [
 		{ k: 'events が残る長さ', v: '1 時間（--event-ttl の既定）' },
 		{ k: '--previous で読める', v: '1 つ前の回だけ' },
-		{ k: 'まとめた出来事', v: 'x35 over 6m4s' },
+		{ k: 'まとめた出来事（API に届いた数）', v: 'BackOff x30 over 6m4s・手元では 35' },
 		{ k: '絞るまで', v: '命令 4 つ・約 5 分' }
 	],
 	scene: [
@@ -159,7 +159,7 @@ export const s13: Step = {
 			at: 6600,
 			dur: 450,
 			para: 3,
-			do: { op: 'badge', id: 'you', text: 'BackOff x35', tone: 'warn' }
+			do: { op: 'badge', id: 'you', text: 'BackOff x30（手元 35）', tone: 'warn' }
 		},
 		{ at: 6700, dur: 400, para: 3, do: { op: 'board', line: 3 } }
 	],
@@ -175,9 +175,9 @@ export const s13: Step = {
 		'get pods：CrashLoopBackOff・6 回',
 		'describe：OOMKilled・137・Limits 128Mi',
 		'logs --previous：96 of 182 MiB で終わる',
-		'get events：BackOff x35'
+		'get events：BackOff x30（間引き後）'
 	],
-	badges: { you: 'BackOff x35', api: 'OOMKilled・137' },
+	badges: { you: 'BackOff x30（手元 35）', api: 'OOMKilled・137' },
 	refs: [
 		'k8s-debug-pod',
 		'kubectl-describe',

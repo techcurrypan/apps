@@ -195,7 +195,7 @@ export const k8s101: Lesson = {
 				note: 'API サーバ・etcd・コントローラ・スケジューラ',
 				members: ['api', 'etcd', 'ctrl', 'sched']
 			},
-			{ label: 'node-1', note: '空き 700 MiB', members: ['kl1'] },
+			{ label: 'node-1', note: '空き 828 MiB', members: ['kl1'] },
 			{ label: 'node-2', note: '空き 700 MiB', members: ['kl2'] }
 		],
 		links: [

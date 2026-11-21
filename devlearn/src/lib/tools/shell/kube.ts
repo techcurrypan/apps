@@ -51,7 +51,9 @@ export type K8sState = {
 	cur: string;
 	pods: KPod[];
 	seq: number; // 作った Pod の数（名前と番地を決める）
-	rollout?: { at: number; stuck: boolean };
+	rollout?: { at: number; stuck: boolean; done?: number };
+	/** 入れ替えで Deployment コントローラが ReplicaSet の数を変えた記録（ScalingReplicaSet の出来事）。from が無いのは作った時 */
+	scales?: { at: number; rs: string; to: number; from?: number }[];
 };
 
 const START = 2; // 起きるまで（イメージは node にある）
@@ -304,7 +306,8 @@ const VALUED = new Set([
 	'container',
 	'l',
 	'selector',
-	'timeout'
+	'timeout',
+	'sort-by'
 ]);
 const ALIAS: Record<string, string> = {
 	namespace: 'n',
@@ -364,7 +367,7 @@ function target(pos: string[]): [string | undefined, string | undefined] {
 
 // ---- kubectl ----
 const MOCK_NOTE = (what: string) =>
-	`（模擬の kubectl は get・describe pod・logs・delete pod・set resources・rollout status を扱う。${what} は扱わない）\n`;
+	`（模擬の kubectl は get・describe pod・logs・delete pod・set resources・rollout status・events を扱う。${what} は扱わない）\n`;
 const TOP = [
 	'annotate',
 	'api-resources',
@@ -454,6 +457,12 @@ export const kubectl: Cmd<unknown> = (s, args) => {
 	switch (verb) {
 		case 'get':
 			return tick(s, k, get(k, a, here, ns));
+		case 'events':
+			return tick(
+				s,
+				k,
+				here ? eventTable(k, 'time', 'last') : { out: `No events found in ${ns} namespace.\n` }
+			);
 		case 'describe': {
 			const [kind, name] = target(a.pos);
 			if (kind !== 'pods') return fail(s, MOCK_NOTE(`describe ${a.pos[0] ?? ''}`), 1);
@@ -572,13 +581,88 @@ function get(
 		return { out: table(rows) };
 	}
 	if (kind === 'events') {
-		const ev = eventsOf(k);
-		if (ev.length === 0) return empty;
-		const rows = [['LAST SEEN', 'TYPE', 'REASON', 'OBJECT', 'MESSAGE']];
-		for (const e of ev) rows.push([human(k.now - e.last), e.type, e.reason, e.obj, e.msg]);
-		return { out: table(rows) };
+		if (!here) return empty;
+		const by = a.flags.get('sort-by');
+		if (by && !/^\{?\.(lastTimestamp|firstTimestamp|metadata\.creationTimestamp)\}?$/.test(by))
+			return { err: MOCK_NOTE(`--sort-by=${by}`), code: 1 };
+		return eventTable(k, by ? 'time' : 'name', /first|creation/.test(by ?? '') ? 'first' : 'last');
 	}
 	return { err: `error: the server doesn't have a resource type "${a.pos[0]}"\n`, code: 1 };
+}
+
+/**
+ * 出来事の表。get events は kubectl が並べ替えず、API サーバが返す名前の順（etcd の鍵の順）。
+ * 出来事の名前は「<物の名前>.<作った時の UnixNano の 16 進>」（client-go の record/event.go）。
+ * --sort-by と kubectl events は時刻の古い順
+ */
+function eventTable(k: K8sState, order: 'name' | 'time', key: 'first' | 'last') {
+	const ev = eventsOf(k);
+	if (ev.length === 0) return { out: `No resources found in ${k.w.ns} namespace.\n` };
+	const base = BigInt(Date.parse(k.w.deploy.created)) * 1000000n;
+	const nameOf = (e: Ev) =>
+		`${e.obj.split('/')[1]}.${(base + BigInt(e.first) * 1000000000n).toString(16)}`;
+	const sorted =
+		order === 'name'
+			? [...ev].sort((x, y) => (nameOf(x) < nameOf(y) ? -1 : nameOf(x) > nameOf(y) ? 1 : 0))
+			: [...ev].sort((x, y) => x[key] - y[key]);
+	const rows = [['LAST SEEN', 'TYPE', 'REASON', 'OBJECT', 'MESSAGE']];
+	for (const e of sorted) rows.push([human(k.now - e.last), e.type, e.reason, e.obj, e.msg]);
+	return { out: table(rows) };
+}
+
+// ---- kubelet の出来事と、API に届くまでの間引き ----
+const KUBELET_MSG: Record<string, (k: K8sState) => string> = {
+	Pulled: (k) => `Container image "${k.w.deploy.image}" already present on machine`,
+	Created: () => 'Created container web',
+	Started: () => 'Started container web'
+};
+/** kubelet が手元で記す出来事（作ってからの秒）。起こすたびに Pulled・Created・Started、待ちの中の同期ごとに BackOff */
+export function kubeletOccurrences(k: K8sState, p: KPod): { at: number; reason: string }[] {
+	const out: { at: number; reason: string }[] = [];
+	// 消した Pod は、消した時までしか記さない
+	const t = Math.min(k.now, p.gone ?? Infinity) - p.created;
+	if (!p.node || !oomOf(k, rsOf(k, p.rs))) {
+		if (p.node && t >= START)
+			for (const reason of ['Pulled', 'Created', 'Started']) out.push({ at: START, reason });
+		return out;
+	}
+	let s = START;
+	for (let k2 = 0; s <= t; k2++) {
+		for (const reason of ['Pulled', 'Created', 'Started']) out.push({ at: s, reason });
+		const crash = s + RUN;
+		const next = crash + backoffAt(k2);
+		// 1 回目に落ちた時は待たずに起こす。2 回目からは、落ちた時と 10 秒ごとの同期で BackOff を記す
+		if (k2 > 0)
+			for (let at = crash; at < next && at <= t; at += RESYNC) out.push({ at, reason: 'BackOff' });
+		s = next;
+	}
+	return out;
+}
+/**
+ * client-go v1.31.0 tools/record/events_cache.go の間引き：鍵（出した者・node・対象の物。理由は含まない）ごとに
+ * 25 個の札（defaultSpamBurst）を持ち、300 秒に 1 つ戻る（defaultSpamQPS 1/300）。手元の数（count）は先に増え
+ * （eventObserve）、札が無い時は API への更新を落とす。API に残るのは、最後に通った時の数と時刻
+ */
+export function throughSpamFilter(
+	occ: { at: number; reason: string }[]
+): { reason: string; first: number; last: number; count: number }[] {
+	const BURST = 25;
+	const PER = 300;
+	let tokens = BURST;
+	let prev = occ[0]?.at ?? 0;
+	const local = new Map<string, { first: number; count: number }>();
+	const api = new Map<string, { reason: string; first: number; last: number; count: number }>();
+	for (const o of occ) {
+		tokens = Math.min(BURST, tokens + (o.at - prev) / PER);
+		prev = o.at;
+		const l = local.get(o.reason) ?? { first: o.at, count: 0 };
+		l.count++;
+		local.set(o.reason, l);
+		if (tokens < 1) continue;
+		tokens -= 1;
+		api.set(o.reason, { reason: o.reason, first: l.first, last: o.at, count: l.count });
+	}
+	return [...api.values()];
 }
 
 // ---- 出来事（events） ----
@@ -593,7 +677,6 @@ type Ev = {
 	msg: string;
 };
 function podEvents(k: K8sState, p: KPod): Ev[] {
-	const v = podView(k, p);
 	const e: Ev[] = [];
 	const obj = `pod/${p.name}`;
 	if (!p.node) {
@@ -618,28 +701,21 @@ function podEvents(k: K8sState, p: KPod): Ev[] {
 		'default-scheduler',
 		`Successfully assigned ${k.w.ns}/${p.name} to ${p.node}`
 	);
-	if (v.runs > 0) {
-		const first = p.created + START;
-		const last = v.runStart ?? first;
-		const d = k.w.deploy;
-		for (const [reason, msg] of [
-			['Pulled', `Container image "${d.image}" already present on machine`],
-			['Created', 'Created container web'],
-			['Started', 'Started container web']
-		])
-			e.push({ first, last, count: v.runs, type: 'Normal', reason, obj, from: 'kubelet', msg });
-	}
-	if (v.backoffTicks > 0 && v.lastCrash !== null) {
-		const firstB = p.created + START + RUN + backoffAt(0) + RUN;
+	// kubelet の出来事（Pulled・Created・Started・BackOff）は、client-go の間引き（events_cache.go）を通って API に届く
+	for (const x of throughSpamFilter(kubeletOccurrences(k, p))) {
+		const msg =
+			x.reason === 'BackOff'
+				? `Back-off restarting failed container web in pod ${p.name}_${k.w.ns}(${uid(p)})`
+				: KUBELET_MSG[x.reason](k);
 		e.push({
-			first: firstB,
-			last: Math.max(firstB, k.now - ((k.now - v.lastCrash) % RESYNC)),
-			count: v.backoffTicks,
-			type: 'Warning',
-			reason: 'BackOff',
+			first: p.created + x.first,
+			last: p.created + x.last,
+			count: x.count,
+			type: x.reason === 'BackOff' ? 'Warning' : 'Normal',
+			reason: x.reason,
 			obj,
 			from: 'kubelet',
-			msg: `Back-off restarting failed container web in pod ${p.name}_${k.w.ns}(${uid(p)})`
+			msg
 		});
 	}
 	return e;
@@ -648,23 +724,33 @@ const uid = (p: KPod) => {
 	const h = (n: number) => fnv(`${p.name}/${n}`).toString(16).padStart(8, '0');
 	return `${h(1)}-${h(2).slice(0, 4)}-4${h(3).slice(0, 3)}-a${h(4).slice(0, 3)}-${h(5)}${h(6).slice(0, 4)}`;
 };
+/** ScalingReplicaSet（sync.go：作った時は「to N」、増減は「Scaled up|down … to N from M」） */
+function scaleEv(dep: string, at: number, hash: string, to: number, from?: number): Ev {
+	const name = `${dep}-${hash}`;
+	const msg =
+		from === undefined
+			? `Scaled up replica set ${name} to ${to}`
+			: `Scaled ${to > from ? 'up' : 'down'} replica set ${name} to ${to} from ${from}`;
+	return {
+		first: at,
+		last: at,
+		count: 1,
+		type: 'Normal',
+		reason: 'ScalingReplicaSet',
+		obj: `deployment/${dep}`,
+		from: 'deployment-controller',
+		msg
+	};
+}
 function eventsOf(k: K8sState): Ev[] {
 	const d = k.w.deploy;
 	const out: Ev[] = [];
 	for (const rs of k.rss) {
 		const pods = k.pods.filter((p) => p.rs === rs.hash && p.created <= k.now);
-		const n = pods.length;
-		if (n === 0) continue;
-		out.push({
-			first: rs.created,
-			last: rs.created,
-			count: 1,
-			type: 'Normal',
-			reason: 'ScalingReplicaSet',
-			obj: `deployment/${d.name}`,
-			from: 'deployment-controller',
-			msg: `Scaled up replica set ${d.name}-${rs.hash} to ${rs.hash === k.cur && k.rollout?.stuck ? 1 : d.replicas}`
-		});
+		if (pods.length === 0) continue;
+		// 入れ替えの前からある ReplicaSet は、作った時に欲しい数まで増やした出来事を出す
+		if (!(k.scales ?? []).some((x) => x.rs === rs.hash && x.from === undefined))
+			out.push(scaleEv(d.name, rs.created, rs.hash, d.replicas));
 		for (const p of pods)
 			out.push({
 				first: p.created,
@@ -690,17 +776,31 @@ function eventsOf(k: K8sState): Ev[] {
 				msg: `Deleted pod: ${p.name}`
 			});
 	}
+	for (const x of (k.scales ?? []).filter(
+		(x) => x.at <= k.now && !(x.from === undefined && x.to === 0)
+	))
+		out.push(scaleEv(d.name, x.at, x.rs, x.to, x.from));
 	for (const p of k.pods.filter((x) => x.created <= k.now)) out.push(...podEvents(k, p));
 	return out.sort((x, y) => x.first - y.first);
 }
 
 // ---- describe pod ----
+/** コンテナの ID（containerd は 64 桁の 16 進）。Pod の名前と起こした回から決める */
+export const containerId = (pod: string, n: number) => {
+	let h = `${pod}#${n}`;
+	let out = '';
+	// 前の 8 桁を次の種にして続ける（似た名前でも並びが似ないように）
+	for (let i = 0; i < 8; i++) {
+		h = fnv(`${h}:${i}:${out}`).toString(16).padStart(8, '0');
+		out += h;
+	}
+	return out;
+};
 function describePod(k: K8sState, p: KPod): string {
 	const d = k.w.deploy;
 	const rs = rsOf(k, p.rs);
 	const v = podView(k, p);
-	const cid = (n: number) =>
-		`containerd://${fnv(`${p.name}#${n}`).toString(16).padStart(8, '0')}${fnv(`${p.name}@${n}`).toString(16).padStart(8, '0')}`;
+	const cid = (n: number) => `containerd://${containerId(p.name, n)}`;
 	const vol = `kube-api-access-${safe(fnv(p.name), 5)}`;
 	const L: string[] = [];
 	L.push(`Name:\t${p.name}`, `Namespace:\t${k.w.ns}`, 'Priority:\t0', 'Service Account:\tdefault');
@@ -887,8 +987,17 @@ function setResources(s: ShellState<unknown>, k: K8sState, a: Args): R {
  * 新しい Pod を 1 つ作り、それが Ready になってから古い Pod を 1 つ消す。を 3 回。
  * 新しい Pod が Ready にならない（落ちる・Pending）なら、1 つ目で止まり、古い Pod は残る
  */
+/**
+ * 入れ替え（Deployment コントローラ v1.31.0 の rolling.go・sync.go）を、決まった手順で 1 手ずつ進める。
+ * 1 回の同期は 1 手だけ：新しい ReplicaSet を増やす（reconcileNewReplicaSet。総数の上限は欲しい数 ＋ maxSurge 1）か、
+ * 古い ReplicaSet を減らす（reconcileOldReplicaSets。減らしてよい数 ＝ 総数 − (欲しい数 − maxUnavailable 0) − 新しい方の Ready でない数。
+ * 先に Ready でない Pod を、作った順の古い ReplicaSet から片づける cleanupUnhealthyReplicas）。どちらも無ければ、新しい Pod が Ready になるのを待つ
+ */
 function rollTo(k: K8sState, memReq: string, memLimit: string): K8sState {
 	const d = k.w.deploy;
+	const R = d.replicas;
+	const SURGE = 1;
+	const UNAVAIL = 0;
 	const same = k.rss.find((r) => r.memReq === memReq && r.memLimit === memLimit);
 	const rev = Math.max(...k.rss.map((r) => r.rev)) + 1;
 	const rs: KRs = same
@@ -901,24 +1010,110 @@ function rollTo(k: K8sState, memReq: string, memLimit: string): K8sState {
 				rev
 			};
 	let k2: K8sState = { ...k, rss: [...k.rss.filter((r) => r.hash !== rs.hash), rs], cur: rs.hash };
-	const old = live(k2).filter((p) => p.rs !== rs.hash);
+	const scales = [...(k.scales ?? [])];
+	const at = (t: number) => k2.pods.filter((p) => p.created <= t && (p.gone ?? Infinity) > t);
+	const avail = (p: KPod, t: number) =>
+		p.node !== null && !oomOf(k2, rsOf(k2, p.rs)) && t - p.created >= START;
 	let t = k.now;
-	const first = newPod(k2, rs, t);
-	k2 = first.k;
-	const ok1 = first.pod.node !== null && !oomOf(k2, rs);
-	if (!ok1) return { ...k2, rollout: { at: k.now, stuck: true } };
-	for (let i = 0; i < old.length; i++) {
-		t += START + 1;
-		k2 = {
-			...k2,
-			pods: k2.pods.map((p) => (p === old[i] || p.name === old[i].name ? { ...p, gone: t } : p))
-		};
-		if (i < Math.max(0, d.replicas - 1)) k2 = newPod(k2, rs, t).k;
+	let created = !!same;
+	let stuck = false;
+	for (let guard = 0; guard < 60; guard++) {
+		const pods = at(t);
+		const mine = pods.filter((p) => p.rs === rs.hash);
+		const total = pods.length;
+		// 新しい ReplicaSet を増やす
+		const up = Math.max(0, Math.min(R + SURGE - total, R - mine.length));
+		if (up > 0 || !created) {
+			for (let i = 0; i < up; i++) k2 = newPod(k2, rs, t).k;
+			if (!created) {
+				// 作った時に 0 個なら出来事は出ない（sync.go getNewReplicaSet は数が 1 以上の時だけ記す）。作ったことだけ残す
+				scales.push({ at: t, rs: rs.hash, to: up });
+			} else scales.push({ at: t, rs: rs.hash, to: mine.length + up, from: mine.length });
+			created = true;
+			if (up > 0) continue;
+		}
+		// 古い ReplicaSet を減らす（作った順）
+		const olds = k2.rss
+			.filter((r) => r.hash !== rs.hash)
+			.map((r) => ({ r, ps: pods.filter((p) => p.rs === r.hash) }))
+			.filter((x) => x.ps.length > 0)
+			.sort((a, b) => a.r.created - b.r.created);
+		if (olds.length === 0 && mine.length >= R) break;
+		const newUnavail = mine.filter((p) => !avail(p, t)).length;
+		let down = total - (R - UNAVAIL) - newUnavail;
+		let did = false;
+		for (const { r, ps } of olds) {
+			if (down <= 0) break;
+			const bad = rankForDelete(
+				k2,
+				ps.filter((p) => !avail(p, t)),
+				t
+			).slice(0, down);
+			if (bad.length === 0) continue;
+			const gone = new Set(bad.map((p) => p.name));
+			k2 = { ...k2, pods: k2.pods.map((p) => (gone.has(p.name) ? { ...p, gone: t } : p)) };
+			scales.push({ at: t, rs: r.hash, to: ps.length - bad.length, from: ps.length });
+			down -= bad.length;
+			did = true;
+		}
+		if (did) continue;
+		// Ready の古い Pod を減らす（scaleDownOldReplicaSetsForRollingUpdate：減らしてよい数 ＝ Ready の数 − (欲しい数 − maxUnavailable)）
+		let spare = pods.filter((p) => avail(p, t)).length - (R - UNAVAIL);
+		for (const { r, ps } of olds) {
+			if (spare <= 0) break;
+			const n = Math.min(spare, ps.length);
+			const gone = new Set(
+				rankForDelete(k2, ps, t)
+					.slice(0, n)
+					.map((p) => p.name)
+			);
+			k2 = { ...k2, pods: k2.pods.map((p) => (gone.has(p.name) ? { ...p, gone: t } : p)) };
+			scales.push({ at: t, rs: r.hash, to: ps.length - n, from: ps.length });
+			spare -= n;
+			did = true;
+		}
+		if (did) continue;
+		// 待つ：新しい Pod が Ready になる時へ進む。なる物が無ければ止まった入れ替え
+		const next = mine
+			.filter((p) => !avail(p, t) && p.node !== null && !oomOf(k2, rs))
+			.map((p) => p.created + START);
+		if (next.length === 0) {
+			stuck = true;
+			break;
+		}
+		t = Math.min(...next);
 	}
-	return { ...k2, rollout: { at: k.now, stuck: false } };
+	return { ...k2, scales, rollout: { at: k.now, stuck, done: stuck ? undefined : t } };
+}
+/** ReplicaSet が消す Pod の順（controller.ActivePods の並びの要点）：置き場所の無い物 → Ready でない物 → 起こし直しの多い物 → 新しい物 */
+function rankForDelete(k: K8sState, ps: KPod[], t: number): KPod[] {
+	const at = { ...k, now: t };
+	return [...ps].sort(
+		(a, b) =>
+			Number(a.node !== null) - Number(b.node !== null) ||
+			Number(podView(at, a).ready) - Number(podView(at, b).ready) ||
+			podView(at, b).restarts - podView(at, a).restarts ||
+			b.created - a.created
+	);
 }
 
 // ---- rollout status ----
+/** 時刻 t の Deployment の状態を、rollout status の 1 行にする（更新済みの数 → 片づけ待ちの古い数 → 使える数 の順に見る） */
+function statusLine(k: K8sState, t: number): string {
+	const d = k.w.deploy;
+	const at = { ...k, now: t };
+	const alive = k.pods.filter((p) => p.created <= t && (p.gone ?? Infinity) > t);
+	const updated = alive.filter((p) => p.rs === k.cur).length;
+	const available = alive.filter((p) => podView(at, p).ready).length;
+	const w = `Waiting for deployment "${d.name}" rollout to finish: `;
+	if (updated < d.replicas)
+		return `${w}${updated} out of ${d.replicas} new replicas have been updated...\n`;
+	if (alive.length > updated)
+		return `${w}${alive.length - updated} old replicas are pending termination...\n`;
+	if (available < updated)
+		return `${w}${available} of ${updated} updated replicas are available...\n`;
+	return `deployment "${d.name}" successfully rolled out\n`;
+}
 function rolloutStatus(s: ShellState<unknown>, k: K8sState, a: Args): R {
 	const [sub, ...pos] = a.pos;
 	if (sub !== 'status') return fail(s, MOCK_NOTE(`rollout ${sub ?? ''}`), 1);
@@ -932,10 +1127,29 @@ function rolloutStatus(s: ShellState<unknown>, k: K8sState, a: Args): R {
 		`Waiting for deployment "${d.name}" rollout to finish: ${n} of ${d.replicas} updated replicas are available...\n`;
 	const ready = () => live(k).filter((p) => p.rs === k.cur && podView(k, p).ready).length;
 	if (!k.rollout?.stuck) {
-		const end = Math.max(k.now, (k.rollout?.at ?? 0) + (START + 1) * d.replicas);
+		const end = Math.max(k.now, k.rollout?.done ?? k.now);
+		if (!k.rollout) {
+			let out = '';
+			for (let n = ready(); n < d.replicas; n++) out += msg(n);
+			return tick(s, k, { out: out + `deployment "${d.name}" successfully rolled out\n` });
+		}
+		// watch の知らせごとに、その時の状態を DeploymentStatusViewer（kubectl v1.31 rollout_status.go）の順で読む。同じ行が続く時は 1 行
+		const times = [
+			k.now,
+			...(k.scales ?? []).map((x) => x.at),
+			...k.pods.map((p) => p.created + START)
+		]
+			.filter((t) => t >= k.now && t <= end)
+			.sort((x, y) => x - y);
 		let out = '';
-		for (let n = ready(); n < d.replicas; n++) out += msg(n);
-		out += `deployment "${d.name}" successfully rolled out\n`;
+		let prev = '';
+		for (const t of new Set(times)) {
+			const line = statusLine(k, t);
+			if (line !== prev) out += line;
+			prev = line;
+			if (line.startsWith('deployment ')) break;
+		}
+		if (!prev.startsWith('deployment ')) out += `deployment "${d.name}" successfully rolled out\n`;
 		return tick(s, k, { out }, end - k.now);
 	}
 	// 止まった入れ替え：待つ。--timeout が切れるか、進みの期限（progressDeadlineSeconds 600）を超えると失敗

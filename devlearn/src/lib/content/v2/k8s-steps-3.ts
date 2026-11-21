@@ -168,14 +168,14 @@ export const s10: Step = {
 		work: [
 			'kubectl logs web-6d8f7b9c4-87cwj -n shop --previous は、止められる前のコンテナのログを出す。最後の行の「catalog cache 96 MiB of 182 MiB loaded」で、使う量が 182 MiB と分かる。',
 			'set resources で --limits=memory=256Mi と --requests=memory=192Mi を付けて直す。型紙が変わるので、Deployment は新しい ReplicaSet web-v475cz8h8 を作る。',
-			'maxSurge 1 個・maxUnavailable 0 個なので、新しい Pod を 1 つ作り、Ready になるたびに古い Pod を 1 つ減らす。3 回の入れ替えで、14 秒ほどで 3 つとも Running・Ready になる。'
+			'maxSurge 1・maxUnavailable 0 なので、Pod は 4 個まで、Ready は 3 個を割らない。今は古い 3 個と Pending の 1 個で枠が無い。そこで古い Pod を 1 つ減らしてから新しい Pod を作り、Ready になるたびに次へ進む。約 6 秒で 3 つとも Ready になり、Pending の Pod は最後に消える。'
 		],
 		deep: [
 			'syncDeployment() は型紙の hash を計算し、getNewReplicaSet() で同じ hash の ReplicaSet を探す。無ければ作り、pod-template-hash のラベルを付ける。今回の hash は v475cz8h8 だ。',
-			'rolloutRolling() は 2 つの手を交互に打つ。新しい方を欲しい数 ＋ maxSurge まで増やす手と、古い方を「Ready の和が欲しい数 − maxUnavailable を割らない」分だけ減らす手だ。',
-			'減らしてよい数は「Pod の総数 − 欲しい数 ＋ maxUnavailable − 新しい方の Ready でない数」だ。新しい Pod が Ready になると 1 になり、Ready でない古い Pod から先に減らす（cleanupUnhealthyReplicas()）。1 GiB の時は新しい Pod が Ready にならず、0 のままだった。',
+			'rolloutRolling() は 2 つの手を打つ。新しい方を増やす reconcileNewReplicaSet() と、古い方を減らす reconcileOldReplicaSets() だ。今は Pending の Pod が surge の枠を使うので、NewRSNewReplicas() は 4 − 4 ＝ 0 個と出す。新しい ReplicaSet は 0 個で作られ、その時は「Scaled up」の出来事が出ない。',
+			'減らしてよい数は「Pod の総数 − 欲しい数 ＋ maxUnavailable − 新しい方の Ready でない数」だ。今は 4 − 3 ＋ 0 − 0 ＝ 1 で、Ready でない古い Pod を 1 つ減らす（cleanupUnhealthyReplicas()）。その後の同期で、空いた枠に新しい Pod を 1 つ作る。1 GiB の時は新しい Pod が Ready にならず、この数は 0 のままだった。',
 			'予約も使う量に近づける。128 MiB のままだと、スケジューラは 182 MiB 使う Pod を 128 MiB と数え、node に詰め込みすぎる。足りなくなった時に追い出されるのも、requests を超えて使う Pod からだ。',
-			'1 GiB の ReplicaSet web-88cks584b も古い型紙として扱われ、0 個に減らされる。Pending の Pod は Ready でないので、先に消される。古い ReplicaSet は 0 個のまま残る。revisionHistoryLimit の 10 個まで、rollout undo の戻り先になる。'
+			'1 GiB の ReplicaSet web-88cks584b も古い型紙になる。古い ReplicaSet は作った順に並べ（ReplicaSetsByCreationTimestamp）、古い方から減らす。だから 6d8f7b9c4 が先に 3 → 2 → 1 → 0 と減り、Pending の mkxdg は最後に消える。0 個の ReplicaSet は revisionHistoryLimit の 10 個まで残り、rollout undo の戻り先になる。'
 		]
 	},
 	callout: {
@@ -192,7 +192,7 @@ export const s10: Step = {
 		{ k: '使う量（ログから）', v: '182 MiB' },
 		{ k: '新しい上限', v: '256 MiB（182 MiB に 74 MiB の余裕）', calc: '182+74' },
 		{ k: '予約', v: '192 MiB（node-1 の空き 828 MiB に入る）' },
-		{ k: '入れ替え', v: '3 回・約 14 秒' }
+		{ k: '入れ替え', v: '4 手・約 6 秒（Ready まで 1 個 2 秒）' }
 	],
 	scene: [
 		{ op: 'move', from: 'you', to: 'api', payload: 'limits 256Mi・requests 192Mi', kind: 'write' },
@@ -200,7 +200,7 @@ export const s10: Step = {
 		{ op: 'move', from: 'kl2', to: 'api', payload: 'Ready', kind: 'status' }
 	],
 	log: {
-		t: '10:09:44.000',
+		t: '10:09:36.000',
 		from: 'you',
 		to: 'api',
 		kind: 'write',
@@ -218,21 +218,31 @@ export const s10: Step = {
 			]),
 			N1([
 				kl1,
-				row('p-8frqg', 1, `${NEW}8frqg`, 'Running・10.244.1.24', 'ok'),
+				row('p-w6vzf', 1, `${NEW}w6vzf`, 'Running・10.244.1.25', 'ok'),
 				row('p-m2sg4', 1, `${NEW}m2sg4`, 'Running・10.244.1.26', 'ok')
 			]),
-			N2([kl2, row('p-w6vzf', 1, `${NEW}w6vzf`, 'Running・10.244.2.25', 'ok')])
+			N2([kl2, row('p-cx4sr', 1, `${NEW}cx4sr`, 'Running・10.244.2.27', 'ok')])
 		],
 		logs: [
 			{
 				t: '10:09:30',
 				src: 'kubectl events',
-				text: 'Normal   ScalingReplicaSet   deployment/web   Scaled up replica set web-v475cz8h8 to 1'
+				text: 'Normal   ScalingReplicaSet   deployment/web   Scaled down replica set web-6d8f7b9c4 to 2 from 3'
 			},
 			{
-				t: '10:09:44',
+				t: '10:09:30',
+				src: 'kubectl events',
+				text: 'Normal   ScalingReplicaSet   deployment/web   Scaled up replica set web-v475cz8h8 to 1 from 0'
+			},
+			{
+				t: '10:09:34',
 				src: 'kubectl events',
 				text: 'Normal   ScalingReplicaSet   deployment/web   Scaled down replica set web-6d8f7b9c4 to 0 from 1'
+			},
+			{
+				t: '10:09:36',
+				src: 'kubectl events',
+				text: 'Normal   ScalingReplicaSet   deployment/web   Scaled down replica set web-88cks584b to 0 from 1'
 			}
 		]
 	},
@@ -240,39 +250,85 @@ export const s10: Step = {
 	motion: [
 		{ at: 0, dur: 800, para: 0, do: { op: 'camera', fit: ['you', 'api', 'kl1'] } },
 		{
-			at: 400,
-			dur: 800,
+			at: 300,
+			dur: 700,
 			para: 0,
-			do: { op: 'packet', a: 'kl1', b: 'api', label: 'logs --previous', kind: 'status' }
+			do: { op: 'packet', a: 'you', b: 'api', label: 'logs --previous', kind: 'status' }
 		},
 		{
-			at: 1200,
-			dur: 800,
+			at: 1000,
+			dur: 700,
+			para: 0,
+			do: { op: 'packet', a: 'api', b: 'kl1', label: '/containerLogs', kind: 'status' }
+		},
+		{
+			at: 1700,
+			dur: 700,
+			para: 0,
+			do: { op: 'packet', a: 'kl1', b: 'api', label: '1.log の最後', kind: 'status' }
+		},
+		{
+			at: 2400,
+			dur: 700,
 			para: 0,
 			do: { op: 'packet', a: 'api', b: 'you', label: '182 MiB', kind: 'status' }
 		},
-		{ at: 1300, dur: 400, para: 0, do: { op: 'board', line: 0 } },
-		{ at: 2100, dur: 800, para: 1, do: { op: 'camera', fit: ['b_sdep', 'b_roll', 'b_newrs'] } },
+		{ at: 2500, dur: 400, para: 0, do: { op: 'board', line: 0 } },
+		{ at: 3200, dur: 800, para: 1, do: { op: 'camera', fit: ['b_sdep', 'b_roll', 'b_newrs'] } },
 		{
-			at: 2500,
+			at: 3600,
 			dur: 800,
 			para: 1,
-			do: { op: 'packet', a: 'b_sdep', b: 'b_newrs', label: '型紙 v475cz8h8', kind: 'call' }
+			do: { op: 'packet', a: 'b_sdep', b: 'b_newrs', label: '型紙 v475cz8h8（0 個）', kind: 'call' }
 		},
-		{ at: 3300, dur: 600, para: 1, do: { op: 'enqueue', queue: 'rsq', item: 'v475cz8h8 1' } },
-		{ at: 3400, dur: 400, para: 1, do: { op: 'board', line: 1 } },
-		{ at: 4100, dur: 600, para: 2, do: { op: 'dequeue', queue: 'rsq', item: '6d8f7b9c4 3' } },
-		{ at: 4700, dur: 600, para: 2, do: { op: 'enqueue', queue: 'rsq', item: 'v475cz8h8 3' } },
-		{ at: 4800, dur: 400, para: 2, do: { op: 'board', line: 2 } },
-		{ at: 5500, dur: 900, para: 2, do: { op: 'count', metric: 'ready', to: '3 個' } },
-		{ at: 6000, dur: 800, para: 2, do: { op: 'count', metric: 'restarts', to: '0 回' } },
+		{ at: 4400, dur: 500, para: 1, do: { op: 'enqueue', queue: 'rsq', item: 'v475cz8h8 0' } },
+		{ at: 4500, dur: 400, para: 1, do: { op: 'board', line: 1 } },
+		// 1 手目：枠が無いので、先に古い方を 1 つ減らし、新しい方を 1 つ増やす
+		{ at: 5100, dur: 450, para: 2, do: { op: 'dequeue', queue: 'rsq', item: '6d8f7b9c4 3' } },
+		{ at: 5500, dur: 450, para: 2, do: { op: 'enqueue', queue: 'rsq', item: '6d8f7b9c4 2' } },
+		{ at: 5900, dur: 450, para: 2, do: { op: 'dequeue', queue: 'rsq', item: 'v475cz8h8 0' } },
+		{ at: 6300, dur: 450, para: 2, do: { op: 'enqueue', queue: 'rsq', item: 'v475cz8h8 1' } },
+		{ at: 6400, dur: 400, para: 2, do: { op: 'board', line: 2 } },
 		{
-			at: 6500,
+			at: 6800,
+			dur: 450,
+			para: 2,
+			do: { op: 'badge', id: 'b_newrs', text: 'Ready 1 / 3', tone: 'warn' }
+		},
+		// 2 手目・3 手目：Ready になるたびに 1 組ずつ
+		{ at: 7300, dur: 450, para: 2, do: { op: 'dequeue', queue: 'rsq', item: '6d8f7b9c4 2' } },
+		{ at: 7700, dur: 450, para: 2, do: { op: 'enqueue', queue: 'rsq', item: '6d8f7b9c4 1' } },
+		{ at: 8100, dur: 450, para: 2, do: { op: 'dequeue', queue: 'rsq', item: 'v475cz8h8 1' } },
+		{ at: 8500, dur: 450, para: 2, do: { op: 'enqueue', queue: 'rsq', item: 'v475cz8h8 2' } },
+		{
+			at: 8900,
+			dur: 450,
+			para: 2,
+			do: { op: 'badge', id: 'b_newrs', text: 'Ready 2 / 3', tone: 'warn' }
+		},
+		{ at: 9400, dur: 450, para: 2, do: { op: 'dequeue', queue: 'rsq', item: '6d8f7b9c4 1' } },
+		{ at: 9800, dur: 450, para: 2, do: { op: 'enqueue', queue: 'rsq', item: '6d8f7b9c4 0' } },
+		{ at: 10200, dur: 450, para: 2, do: { op: 'dequeue', queue: 'rsq', item: 'v475cz8h8 2' } },
+		{ at: 10600, dur: 450, para: 2, do: { op: 'enqueue', queue: 'rsq', item: 'v475cz8h8 3' } },
+		// 最後に Pending の Pod を片づけ、3 つ目が Ready になる
+		{ at: 11000, dur: 450, para: 2, do: { op: 'dequeue', queue: 'rsq', item: '88cks584b 1' } },
+		{ at: 11400, dur: 450, para: 2, do: { op: 'enqueue', queue: 'rsq', item: '88cks584b 0' } },
+		{ at: 11500, dur: 350, para: 2, do: { op: 'count', metric: 'pending', to: '0 個' } },
+		{ at: 11900, dur: 600, para: 2, do: { op: 'count', metric: 'ready', to: '3 個' } },
+		{ at: 12300, dur: 600, para: 2, do: { op: 'count', metric: 'restarts', to: '0 回' } },
+		{
+			at: 12950,
+			dur: 400,
+			para: 2,
+			do: { op: 'badge', id: 'b_newrs', text: 'Ready 3 / 3', tone: 'ok' }
+		},
+		{
+			at: 13000,
 			dur: 450,
 			para: 2,
 			do: { op: 'badge', id: 'b_roll', text: '3 / 3 Ready', tone: 'ok' }
 		},
-		{ at: 6600, dur: 400, para: 2, do: { op: 'board', line: 3 } }
+		{ at: 13500, dur: 400, para: 2, do: { op: 'board', line: 3 } }
 	],
 	loop: [
 		// 最後の寄りの中で流す（留まる間も図の中で流れが続く。LS-M4・D1）
@@ -291,10 +347,10 @@ export const s10: Step = {
 	board: [
 		'logs --previous：182 MiB 使う',
 		'set resources：上限 256Mi',
-		'rolloutRolling()：1 つずつ入れ替え',
+		'rolloutRolling()：古い方を減らしてから 1 つずつ',
 		'3 / 3 Ready、入口が戻る'
 	],
-	badges: { b_roll: '3 / 3 Ready', kl1: 'Running', kl2: 'Running' },
+	badges: { b_roll: '3 / 3 Ready', b_newrs: 'Ready 3 / 3', kl1: 'Running', kl2: 'Running' },
 	layers: [B.dep(['6d8f7b9c4 3', '88cks584b 1'])],
 	impl: [I.syncDeploy, I.rolling, I.newRS],
 	refs: [
@@ -325,12 +381,13 @@ export const s11: Step = {
 		],
 		work: [
 			'node の allocatable は 3,840 MiB だ。requests 192 MiB なら web の Pod は 20 個入るが、limits と同じ 256 MiB なら 15 個に減る。予約を上げた分だけ、同じ数を動かす node の費用も上がる。',
-			'cpu と記憶の両方で requests ＝ limits なら QoS は Guaranteed で、oom_score_adj は −997 だ。今の web は cpu の limits が無いので、記憶を 256Mi / 256Mi にそろえても Burstable のまま 954 だ。',
+			'cpu と記憶の両方で requests ＝ limits なら QoS は Guaranteed で、oom_score_adj は −997 だ。今の web は cpu の limits が無いので、記憶だけそろえても Burstable のままだ。',
 			'上限を外すと、1 つの Pod の漏れが node の記憶を食べる。memory.available が 100 MiB を割ると、kubelet が Pod を追い出す（Evicted）。上限は、隣の Pod を守る壁でもある。'
 		],
 		deep: [
 			'ComputePodQOS() は、全てのコンテナが CPU と記憶で requests ＝ limits なら Guaranteed にする。どれも無ければ BestEffort、それ以外は Burstable だ。今の web は cpu に limits が無いので、記憶をそろえても Burstable だ。',
 			'GetContainerOOMScoreAdjust() は、Burstable に 1000 − 1000 × requests ÷ 記憶を付ける。記憶 4 GiB・requests 192 MiB では 1000 − 46 ＝ 954 だ（46.875 を切り捨て）。BestEffort の 1000 の次に止められやすい。',
+			'記憶を 256Mi / 256Mi にそろえても、cpu に limits が無いので Burstable のままだ。oom_score_adj は 1000 − 62 ＝ 938 になる（62.5 を切り捨て）。',
 			'node の記憶が足りなくなると、kubelet は memory.available が既定の 100 Mi を割った所で追い出しを始める。順は、使う量が requests を超えている Pod から、優先度と超えた量の順だ。',
 			'CPU の limits は CFS の上限（cpu.max）で、超えると止められずに待たされる（throttled）。記憶の limits は超えると止められる。CPU には requests だけ、記憶には requests と limits の 2 つを付ける現場が多い。'
 		]
@@ -371,11 +428,11 @@ export const s11: Step = {
 			cp([row('rs-new', 1, 'ReplicaSet web-v475cz8h8', '3 個・Ready 3', 'ok')]),
 			N1([
 				kl1,
-				row('p-8frqg', 1, `${NEW}8frqg`, 'Burstable・oom_score_adj 954', 'warn'),
+				row('p-w6vzf', 1, `${NEW}w6vzf`, 'Burstable・oom_score_adj 954', 'warn'),
 				row('p-m2sg4', 1, `${NEW}m2sg4`, 'Burstable・oom_score_adj 954', 'warn'),
 				row('n1-free', 1, 'allocatable の残り', '700 MiB')
 			]),
-			N2([kl2, row('p-w6vzf', 1, `${NEW}w6vzf`, 'Burstable・oom_score_adj 954', 'warn')])
+			N2([kl2, row('p-cx4sr', 1, `${NEW}cx4sr`, 'Burstable・oom_score_adj 954', 'warn')])
 		]
 	},
 	metrics: { want: '3 個', ready: '3 個' },
@@ -515,12 +572,12 @@ export const s12: Step = {
 			]),
 			N1([
 				kl1,
-				row('p-8frqg', 1, `${NEW}8frqg`, 'Running', 'ok'),
+				row('p-w6vzf', 1, `${NEW}w6vzf`, 'Running', 'ok'),
 				row('p-m2sg4', 1, `${NEW}m2sg4`, 'Running', 'ok')
 			]),
 			N2([
 				row('kl-2', 0, 'kubelet（node-2）', '返事が無い', 'bad'),
-				row('p-w6vzf', 1, `${NEW}w6vzf`, 'Running・0/1 Ready=False（300 秒後に追い出し）', 'bad')
+				row('p-cx4sr', 1, `${NEW}cx4sr`, 'Running・0/1 Ready=False（300 秒後に追い出し）', 'bad')
 			])
 		]
 	},
