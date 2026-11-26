@@ -90,7 +90,7 @@
 					<Pod x={100} y={880} s={0.8} state="ready" name="web-a" />
 					<Pod x={260} y={880} s={0.8} state="create" name="web-b" />
 					<Pod x={420} y={880} s={0.8} state="dead" name="web-c" />
-					<Frame x={610} y={950} w={190} d={120} name="<module>" />
+					<Frame x={585} y={945} w={190} d={120} name="<module>" />
 					<Frame x={900} y={985} w={190} d={120} name="フレーム add()" current id="frame" />
 					<!-- 5 段目 -->
 					<List x={200} y={1160} vals={['1', '2', '3']} cap={5} newIdx={2} id="list" />
