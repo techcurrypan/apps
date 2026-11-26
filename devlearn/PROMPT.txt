@@ -12,7 +12,8 @@ CI の設定はリポジトリの根の `.github/workflows/` に置く（ここ�
   5. docs/progress/ の最新           どこまで終わったか
 
 【段に入る前に必ず読む】
-  段 2 以降        : docs/explanation-standard.md   説明の中身の基準（最重要）
+  全ての段          : docs/mastery-standard.md       到達点（前提ゼロ → 本を出版できるプロ）。D-25（最重要）
+  段 2 以降        : docs/explanation-standard.md   説明の中身の基準（最重要。第 10〜12 章：言葉・言葉をそろえるステップ・本に出せる正確さ）
   段 3 カリキュラム : docs/content-sources.md        問題の出典の決まり
   段 4 ゲーム設計  : docs/game-design-brief.md      ゲーム設計の依頼書
   段 5 画面設計    : docs/screen-design-brief.md    画面設計の依頼書
@@ -23,20 +24,27 @@ CI の設定はリポジトリの根の `.github/workflows/` に置く（ここ�
                      docs/game-design.md            段 4 の設計と第 15 章「街」
   段 9 接続        : docs/screen-design.md          第 3 章と第 10 章（画面の行き来）
   段 9-2 街の中    : docs/learn-standard.md         街の上に重ねるレッスンの板も全項目を満たす（LS-C4）
-  段 10-R 学習画面 : docs/learn-standard.md         学習画面の水準 第 2 版（最重要。D-23）
+  段 10-P learn11  : docs/learn-standard.md         第 15〜21 章（学習画面の第 3 版。最重要。D-25）
+                     docs/prototype/learn/README.md learn11 の節（作りの元と移し方）
+                     docs/prototype/learn/learn11.html を手元のブラウザで開き、#tcp #k8s #mem #stat の全ステップ・4 つの使い方・マウスを乗せた時を自分の目で見る
+  段 10-R 学習画面 : docs/learn-standard.md         学習画面の水準 第 3 版（第 1〜14 章と第 15〜21 章。最重要。D-23・D-25）
                      docs/explanation-standard.md   2.3（第 2 版の形）・第 3 章（検査 26〜40）・第 9 章（査読）
                      docs/curriculum-standard.md    深さとカリキュラムの水準（D-23）
                      docs/screen-design.md          第 11 章（レッスン画面 第 2 版）
                      docs/prototype/learn/README.md 学習画面の試作（下限）と、本番へ移すときに直す物
                      https://designed-to-scale.vercel.app/ 参考サイト。手元の Chrome で開いて動きを見る（原理だけ。写さない）
-  段 10-C・10-D    : docs/curriculum-standard.md    カリキュラムの水準（全項目を満たす）
+  段 10-C・10-D    : docs/curriculum-standard.md    カリキュラムの水準（全項目。第 7〜9 章：段 0 の base・本の設計図・段 4・5 の課題）
+                     docs/mastery-standard.md       段 0〜5・証拠・書く分野 wrt・測り方 MS-1〜MS-5
+  段 10-W 書く道   : docs/mastery-standard.md       第 3〜6 章（wrt・本の総合演習・採点表・原稿の机）
   段 10 本文       : docs/curriculum.md             レッスンの一覧と、各レッスンの実戦の形
                      docs/tools.md                  道具と、本物の出力の取り方
   段 11 MCP        : docs/free-services.md          Worker を通る要求の無料枠
   段 10 本文       : docs/content-sources.md        問題の出典の決まり
 
 【毎回まず】
-  docs/decisions.md の「利用者の指摘」を読む。未対応（[ ]）があれば、今の段より先にそれを直し、
+  1. 公開が止まっていないか確かめる（CLAUDE.md 第 4 章・D-24）。公開 URL の一番下の「配信：」と origin/main の最新コミットが違う、
+     または GitHub Actions の最新の Deploy devlearn が失敗なら、何より先に直して公開を通す
+  2. docs/decisions.md の「利用者の指摘」を読む。未対応（[ ]）があれば、今の段より先にそれを直し、
   直したら [x] にして、どう直したかを 1 行書き添える
 
 【やること】
