@@ -339,6 +339,17 @@ function nodesOf(s: BuildState, map: TownMap): Pt[] {
 	for (const r of s.roads) for (const p of [r.a, r.b]) if (!has(p)) ns.push(p);
 	return ns;
 }
+/** 道を引き始めてよい交差点か（15.12）：引いた道の端か、建った完成図の建物（建ち始めを含む）から NODE_OPEN_M 以内 */
+export const NODE_OPEN_M = 60;
+function nodeOpen(s: BuildState, map: TownMap, p: Pt): boolean {
+	if (s.standing.some((x) => !x.lesson)) return true;
+	for (const r of s.roads) for (const q of [r.a, r.b]) if (q.x === p.x && q.z === p.z) return true;
+	const ids = new Set(s.standing.map((x) => x.id));
+	return map.buildings.some(
+		(b) =>
+			ids.has(b.id) && Math.hypot((b.x0 + b.x1) / 2 - p.x, (b.z0 + b.z1) / 2 - p.z) <= NODE_OPEN_M
+	);
+}
 function nearNode(ns: readonly Pt[], x: number, z: number, r: number): Pt | null {
 	let best: Pt | null = null,
 		bd = r;
@@ -375,6 +386,8 @@ export function roadPlan(s: BuildState, map: TownMap, a: SnapPt, p: Pt): RoadPla
 	const L = Math.hypot(b.x - a.x, b.z - a.z);
 	const res: RoadPlan = { a, b, L, cost: Math.round(L * COST.roadPerM), ok: true, why: '' };
 	const no = (why: string) => ({ ...res, ok: false, why });
+	if (a.node && !nodeOpen(s, map, a))
+		return no('まだ道の無い交差点。近くに建物が建つと使える（レッスンに合格すると建つ）');
 	if (L < 20) return no('短すぎる（20 m 以上）');
 	if (L > 400) return no('長すぎる（400 m まで）');
 	const ux = (b.x - a.x) / L,

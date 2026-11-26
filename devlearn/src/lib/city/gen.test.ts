@@ -23,12 +23,17 @@ const sha = (a: Float32Array) =>
 describe('街の形（gen.ts）', () => {
 	const src = readFileSync('docs/prototype/src/gen.js', 'utf8');
 	const proto = new Function(src + '\n;return generateCity();')() as ProtoCity;
+	/** 升の番号を付けない形（試作と比べる。空き地から見せる升は areas.test.ts） */
+	const same = generateCity({ areas: false });
 	const mine = generateCity();
 
 	it('動かない物・水・夜の光だまりの形が試作と同じ', () => {
-		expect(sha(mine.G)).toBe(sha(proto.G));
+		expect(sha(same.G)).toBe(sha(proto.G));
+		expect(sha(same.W)).toBe(sha(proto.W));
+		expect(sha(same.GL)).toBe(sha(proto.GL));
+		// 升の番号を付けても、頂点の位置と色は同じ（id の欄だけが変わる。縦の道は交差点で切る）
 		expect(sha(mine.W)).toBe(sha(proto.W));
-		expect(sha(mine.GL)).toBe(sha(proto.GL));
+		expect(mine.GL.length).toBe(proto.GL.length);
 	});
 
 	it('建物・区画・目印の建物・交差点が試作と同じ', () => {

@@ -55,6 +55,7 @@ import {
 import { mapOf, type FeatKey } from '../game/map.ts';
 import { fieldName } from '../content/fields.ts';
 import { loadProgress } from '../progress.ts';
+import { AREA_BASE, AREA_COUNT, areaOf, FAR_N, FAR_ROOT, FAR_W, revealedAreas } from './areas.ts';
 import { TITLES } from '../game/data.ts';
 import { frameSeconds } from './time.ts';
 import { gainedLessons, gainNotices, KNOWN_KEY, parseKnown } from '../game/learn.ts';
@@ -344,6 +345,23 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 	// hide reserved buildings. 完成図の建物も、学んで建つまで隠す（空き地から。15.12）
 	for (const b of city.B) E.setData(b.id, 0, 0, 0, 0);
 	const BY_ID = new Map(city.B.map((b) => [b.id, b] as const));
+	// 道・歩道・木・街灯も、建った物の近くの升だけを見せる（areas.ts）。北と西へ出る道は町の端まで育つと見える
+	for (let k = 0; k < AREA_COUNT; k++) E.setData(AREA_BASE + k, 0, 0, 0, 0);
+	E.setData(FAR_N, 0, 0, 0, 0);
+	E.setData(FAR_W, 0, 0, 0, 0);
+	/** 見せている升（一度見せたら隠さない） */
+	const shown = new Set<number>();
+	/** 立ち上がっている升（実時間で 0 → 1） */
+	const rising: { id: number; p: number }[] = [];
+	/** 車・人を描いてよい所か（見せた升の上、または東の入口の道） */
+	function seen(x: number, z: number): boolean {
+		const a = areaOf(x, z);
+		if (a !== null) return shown.has(a);
+		if (x >= 240) return true;
+		if (z <= -240) return shown.has(FAR_N);
+		if (x <= -240) return shown.has(FAR_W);
+		return true;
+	}
 
 	// ---------------- state ----------------
 	// 時計は状態（src/lib/game/clock.ts の整数の分）。描画のための端数（frac）だけをここで持つ（段 8-2b）
@@ -728,6 +746,7 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 	function buildDyn() {
 		const g = DYN.reset();
 		for (const c of cars) {
+			if (!seen(c.x, c.z)) continue;
 			const yb = 0.05;
 			if (c.type === 'bus') {
 				rbox(g, c.x, c.z, c.h, -5.6, 5.6, 2.5, yb + 0.35, yb + 3.1, c.col, {
@@ -755,6 +774,7 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 		}
 		for (const p of peds) {
 			const [x, z, a] = pedPos(p);
+			if (!seen(x, z)) continue;
 			const y = city.BH;
 			const k = 0.06 * Math.abs(Math.sin(p.bob));
 			rbox(g, x, z, a, -0.15, 0.15, 0.36, y, y + p.h * 0.5, p.legs, { ao: 0.8 });
@@ -1682,6 +1702,38 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 			}
 		}
 	}
+	/** 建った物（建ち始めを含む）・区画の建物・引いた道の近くの升を見せる（15.12） */
+	function revealAreas(instant = false) {
+		const pts: { x: number; z: number }[] = [];
+		for (const x of ts.build.standing) {
+			const b = BY_ID.get(x.id);
+			if (b) pts.push({ x: cx(b), z: cz(b) });
+		}
+		for (const p of ts.build.placed) {
+			const b = builtOf(p);
+			pts.push({ x: cx(b), z: cz(b) });
+		}
+		for (const rd of ts.build.roads) pts.push(rd.a, rd.b);
+		const ids = revealedAreas(pts);
+		for (const [id, x, z] of FAR_ROOT) {
+			const a = areaOf(x, z);
+			if (a !== null && ids.has(a)) ids.add(id);
+		}
+		for (const id of ids) {
+			if (shown.has(id)) continue;
+			shown.add(id);
+			if (instant || RM) E.setData(id, 0, 0, 0, 255);
+			else rising.push({ id, p: 0 });
+		}
+	}
+	/** 升の立ち上がり（見た目だけ。0.9 秒） */
+	function areaProgress(dt: number) {
+		for (const r of rising) {
+			r.p = Math.min(1, r.p + dt / 0.9);
+			E.setData(r.id, 0, 0, 0, Math.round(255 * (1 - Math.pow(1 - r.p, 3))));
+		}
+		for (let i = rising.length - 1; i >= 0; i--) if (rising[i].p >= 1) rising.splice(i, 1);
+	}
 	/** 学んで建った完成図の建物の高さ（ゲーム内の時刻で進む。15.12） */
 	const riseOf = new Map<number, number>();
 	function standingProgress() {
@@ -1762,6 +1814,7 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 			}
 		}
 		if (built) {
+			revealAreas();
 			rebuildBuilt();
 			lotMarkers();
 			sfxNote();
@@ -1836,6 +1889,7 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 			ts = r.state;
 			log.push({ at, action: a });
 			onEvents(r.events);
+			if (a.type === 'road') revealAreas();
 			renderHUD();
 			persist();
 			if (ui.pick && !(S.tool === 'road' && S.roadStart)) refreshPick();
@@ -2845,6 +2899,7 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 			if (constructions[i].p >= 1) constructions.splice(i, 1);
 		placedProgress();
 		standingProgress();
+		areaProgress(dtR);
 		// render
 		const hour = S.minute / 60;
 		const L = lightAt(hour);
@@ -3013,6 +3068,7 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 		const d = ui.dialog;
 		if (d && d.kind === 'req') openReq(d.id, true);
 	}
+	revealAreas(true);
 	growFromProgress();
 	checkGained();
 	on(window, 'focus', () => {

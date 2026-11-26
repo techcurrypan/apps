@@ -1,4 +1,5 @@
 // 街の形をプログラムで作る（地形・道・区画・建物の種類・木・港・電柱・信号）。
+import { FAR_N, FAR_W, tagAreas } from './areas.ts';
 // 試作 docs/prototype/src/gen.js を TypeScript に移した物（段 8-2a）。処理は変えていない。型を付けただけ。
 // ---- Procedural city generator (all shapes made here; no external assets) ----
 
@@ -825,7 +826,9 @@ export type Feat = {
 type BlockOpt = { empty?: (L: LotRect) => boolean; apt?: number };
 
 // ---------- the city ----------
-export function generateCity() {
+/** areas が false なら、試作と同じ形（升の番号を付けず、縦の道を 1 本の面で描く。比べるテスト用） */
+export function generateCity(o: { areas?: boolean } = {}) {
+	const areas = o.areas !== false;
 	const r = mulberry(20261110);
 	const pick = <T>(a: readonly T[]): T => a[Math.floor(r() * a.length)];
 	const G = new Geo(1 << 20); // static world
@@ -924,6 +927,8 @@ export function generateCity() {
 			);
 		}
 
+	/** ここまでが地形。この後の id 0 の三角形は升の番号を持つ（空き地から。areas.ts） */
+	const terrainEnd = G.n;
 	// --- roads ---
 	const XS = [-240, -160, -80, 0, 80, 160, 240],
 		ZS = [-240, -160, -80, 0, 80, 160];
@@ -948,10 +953,18 @@ export function generateCity() {
 		);
 	for (const x of XS) {
 		const w = wX(x);
-		asph(x - w / 2, -240 - wZ(-240) / 2, x + w / 2, 160 + wZ(160) / 2);
+		if (!areas) asph(x - w / 2, -240 - wZ(-240) / 2, x + w / 2, 160 + wZ(160) / 2);
 		for (let k = 0; k < ZS.length - 1; k++) {
 			const za = ZS[k] + wZ(ZS[k]) / 2,
 				zb = ZS[k + 1] - wZ(ZS[k + 1]) / 2;
+			// 交差点ごとに切る（升ごとに見せるため。1 本の長い面にしない）
+			if (areas)
+				asph(
+					x - w / 2,
+					k === 0 ? ZS[0] - wZ(ZS[0]) / 2 : ZS[k],
+					x + w / 2,
+					k === ZS.length - 2 ? ZS[k + 1] + wZ(ZS[k + 1]) / 2 : ZS[k + 1]
+				);
 			roadSegs.push({ a: [x, ZS[k]], b: [x, ZS[k + 1]], w });
 			if (x === 0) {
 				mark(x - 0.35, za + 3, x - 0.15, zb - 3, C.yline);
@@ -1052,9 +1065,20 @@ export function generateCity() {
 	for (let x = 249; x <= 1250; x += 10) outE.push([x, 0 + 30 * Math.sin((x - 249) * 0.005)]);
 	const outW: number[][] = [];
 	for (let x = -249; x >= -1250; x -= 10) outW.push([x, -60 * Math.sin((x + 249) * 0.003)]);
+	const nStart = G.n;
 	terrainRoad([[0, -249], ...outN], 11);
+	const eStart = G.n;
 	terrainRoad([[249, 0], ...outE], 11);
+	const wStart = G.n;
 	terrainRoad([[-249, 0], ...outW], 11);
+	const wEnd = G.n;
+	// 外へ出る道：東（畑へ）は始まりから見える入口。北と西は町の端まで育つと見える（areas.ts）
+	if (areas)
+		for (const [a, b, id] of [
+			[nStart, eStart, FAR_N],
+			[wStart, wEnd, FAR_W]
+		])
+			for (let v = a; v < b; v++) G.a[v * 12 + 10] = id;
 
 	// --- blocks ---
 	const blocks: Block[] = [];
@@ -3233,6 +3257,11 @@ export function generateCity() {
 		z1: b.z1 - 1.2
 	}));
 
+	if (areas) {
+		tagAreas(G.a, terrainEnd, eStart);
+		tagAreas(G.a, wEnd, G.n);
+		tagAreas(GL.a, 0, GL.n);
+	}
 	return {
 		G: G.out(),
 		W: GW.out(),

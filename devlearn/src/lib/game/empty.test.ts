@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { START_MINUTE } from './clock.ts';
 import { CLIENTS } from './desk.ts';
 import { townMap } from './map.ts';
-import { lotOrder, pop } from './build.ts';
+import { lotOrder, pop, roadPlan } from './build.ts';
 import {
 	applyTown,
 	blueprintOrder,
@@ -104,6 +104,21 @@ describe('学ぶと育つ（T-10・G-14）', () => {
 		expect(applyTown(one, { type: 'zone', lot: order[1], kind: 'home' }, map, null).ok).toBe(false);
 		const two = run(learn(one, 'net-102').state, T + 120);
 		expect(applyTown(two, { type: 'zone', lot: order[1], kind: 'home' }, map, null).ok).toBe(true);
+	});
+});
+
+describe('道は、建った物の近くの交差点からだけ引ける（15.12）', () => {
+	it('空き地では町の端の交差点から引けない。理由を返す', () => {
+		const s = startTown(1, map);
+		const p = roadPlan(s.build, map, { x: 249, z: -80, node: true }, { x: 400, z: -80 });
+		expect(p.ok).toBe(false);
+		expect(p.why).toContain('建物が建つと');
+	});
+	it('完成図が全て建った街では引ける', () => {
+		const s = startTown(1, map, 1, { full: true });
+		expect(roadPlan(s.build, map, { x: 249, z: -80, node: true }, { x: 400, z: -80 }).ok).toBe(
+			true
+		);
 	});
 });
 
