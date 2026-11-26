@@ -102,8 +102,12 @@ async function main() {
 		// 学習へ：地図へ行ける
 		await openWith(tab, FAILED);
 		await clickText(tab, '.modal .opt', '学習へ');
-		await sleep(1500);
-		const path = await tab.eval<string>('location.pathname');
+		// 地図はレッスンの一覧を読むので、移るまで数秒かかることがある
+		let path = '';
+		for (let i = 0; i < 20 && path !== '/map'; i++) {
+			await sleep(500);
+			path = await tab.eval<string>('location.pathname');
+		}
 		check('学習へ：地図へ移った', path === '/map', path);
 		// 古い保存：「新しい街で始める」が出て、押すと遊び方の板（はじめての街）になる
 		await openWith(tab, OLD);
