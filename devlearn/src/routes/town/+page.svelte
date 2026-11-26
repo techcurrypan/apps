@@ -395,32 +395,38 @@
 					<header>
 						<div>
 							<span class="kick">はじめに</span>
-							<h2>みなと町の町長になった</h2>
-							<span class="who">港の小さな町を、町の人の声を聞きながら育てる</span>
+							<h2>まだ何も無い港の空き地</h2>
+							<span class="who">学ぶほど町が育ち、住む人の声が届く</span>
 						</div>
 					</header>
 					<ol class="intro">
 						<li>
-							<b>要望が届く</b><span
-								>毎朝 8:00 に町の人が困りごとを持ってくる。街の上に <em>!</em> が出る</span
+							<b>学ぶと建つ</b><span
+								>レッスンに合格すると、学んだ分野の建物と家が建ち、住む人が移って来る</span
 							>
 						</li>
 						<li>
-							<b>学んだ手で原因を絞る</b><span
-								>候補 4
-								つから原因を見つけて直す。学んでいなくても、様子を聞く・頼み込む・手探りで直す・外に頼む、で片付く</span
+							<b>住む人から要望が届く</b><span
+								>住む人が来た次の朝 8:00 から、困りごとが届く。街の上に <em>!</em> が出る</span
 							>
 						</li>
 						<li>
-							<b>応えると街が変わる</b><span
-								>学んだ手で直すと、その分野の仕組みの建物が建ち、地下の流れになる。外に頼むと中身の見えない箱が建つ</span
+							<b>学んだ手で応える</b><span
+								>原因を絞って直す。学んでいなくても、様子を聞く・頼み込む・手探り・外に頼む、で片付く</span
 							>
 						</li>
 					</ol>
 					<div class="opts">
-						<button type="button" class="opt good" onclick={() => game?.startIntro()}
+						<a class="opt good" href={resolve('/map')}
 							><span
-								><strong>町を見て回る</strong><small
+								><strong>最初のレッスンへ</strong><small
+									>地図から選ぶ。合格すると最初の家が建つ</small
+								></span
+							><b>→</b></a
+						>
+						<button type="button" class="opt" onclick={() => game?.startIntro()}
+							><span
+								><strong>空き地を見て回る</strong><small
 									>左ドラッグで移動、右ドラッグで回転、ホイールでズーム</small
 								></span
 							><b>▶</b></button

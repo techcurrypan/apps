@@ -23,7 +23,7 @@ describe('レッスンと街の手', () => {
 
 	it('知らせ：増えた手が効く受付中の要望を、依頼主と症状の言葉で出す', () => {
 		// 種 1 の 2 日目の朝に、町内会長の『…』（G06。候補に c-uncommitted）が届く
-		const s = tickTown(startTown(1, map), T + 24 * 60 + 60, map).state;
+		const s = tickTown(startTown(1, map, 1, { full: true }), T + 24 * 60 + 60, map).state;
 		const n = gainNotices(s, ['git-001']);
 		expect(n).toHaveLength(1);
 		expect(n[0].lesson).toBe('git-001');
@@ -33,7 +33,7 @@ describe('レッスンと街の手', () => {
 	});
 
 	it('知らせ：効く要望が無くても、増えた手は知らせる（要望の数は 0）', () => {
-		const s = startTown(1, map);
+		const s = startTown(1, map, 1, { full: true });
 		const n = gainNotices(s, ['git-001']);
 		expect(n).toHaveLength(1);
 		expect(n[0].requests).toEqual([]);

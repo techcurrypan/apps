@@ -148,12 +148,39 @@ export const DAYS_PER_CHAPTER = 7;
 const prefix = (chapter: Chapter, freeRound: number) =>
 	chapter === 'free' ? `f${freeRound}` : `w${chapter}`;
 
-export function newRequests(seed: number, chapter: Chapter, freeRound: number, day: number): Req[] {
+/**
+ * 届く数と、届いてよい症状（15.12）。first を満たす物を先に、無ければ second を満たす物を選ぶ。
+ * 届き方の並び（7.1）は変えず、選べない物を飛ばして次を見る
+ */
+export type Pick = {
+	count: number;
+	first: (g: GroupRow) => boolean;
+	second: (g: GroupRow) => boolean;
+};
+
+function choose(G: readonly GroupRow[], from: number, p: Pick | undefined): GroupRow | null {
+	if (!p) return G[from % G.length];
+	for (const ok of [p.first, p.second])
+		for (let j = 0; j < G.length; j++) {
+			const g = G[(from + j) % G.length];
+			if (ok(g)) return g;
+		}
+	return null;
+}
+
+export function newRequests(
+	seed: number,
+	chapter: Chapter,
+	freeRound: number,
+	day: number,
+	pick?: Pick
+): Req[] {
 	const G = chapter === 'free' ? GROUPS : GROUPS.filter((g) => g.week === chapter);
 	const out: Req[] = [];
-	for (let k = 0; k < 3; k++) {
+	for (let k = 0; k < (pick ? Math.min(3, pick.count) : 3); k++) {
 		const i = 3 * (day - 1) + k + (chapter === 'free' ? 21 * (freeRound - 1) : 0);
-		const g = G[(seed + i) % G.length];
+		const g = choose(G, seed + i, pick);
+		if (!g) continue;
 		const m = g.causes.length;
 		const t = (seed + 11 * i) % m;
 		const four = new Set([0, 1, 2, 3].map((j) => g.causes[(t + j) % m]));
@@ -218,7 +245,8 @@ const put = (d: DeskState, r: Req): DeskState => ({
 /** 朝 8:00：外に頼んだ物が片付く → 期限切れ → 再発 → 新しい要望 3 件 */
 export function morning(
 	desk: DeskState,
-	day: number
+	day: number,
+	pick?: Pick
 ): { desk: DeskState; changes: Change[]; boxes: FeatKey[] } {
 	const ch: Change[] = [];
 	const boxes: FeatKey[] = [];
@@ -270,7 +298,7 @@ export function morning(
 			});
 			d = bump(d, SAT.recur, `${title(r)}が再び起きた`, ch, back.id);
 		}
-	const fresh = newRequests(d.seed, d.chapter, d.freeRound, day);
+	const fresh = newRequests(d.seed, d.chapter, d.freeRound, day, pick);
 	for (const r of fresh)
 		ch.push({ what: 'arrive', request: r.id, why: `${CLIENTS[r.group].who}：${title(r)}` });
 	d = { ...d, requests: [...d.requests, ...fresh] };

@@ -21,7 +21,7 @@ import { START_MINUTE } from './clock.ts';
 
 const map = townMap();
 const T = START_MINUTE;
-const fresh = (): BuildState => startBuild(map, 600);
+const fresh = (): BuildState => startBuild(map, 600, true);
 
 describe('街づくりの状態（game-design.md 15.5・15.6）', () => {
 	it('始まりは試作の街のまま（人口 2,358、働く場所 3,441、空き区画 9）', () => {

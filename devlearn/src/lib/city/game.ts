@@ -21,6 +21,8 @@ import {
 	readSave,
 	replayTown,
 	SAVE_VERSION,
+	pendingLessons,
+	standingRise,
 	startTown as startTownState,
 	tickTown,
 	type TownAction,
@@ -53,6 +55,7 @@ import {
 import { mapOf, type FeatKey } from '../game/map.ts';
 import { fieldName } from '../content/fields.ts';
 import { loadProgress } from '../progress.ts';
+import { TITLES } from '../game/data.ts';
 import { frameSeconds } from './time.ts';
 import { gainedLessons, gainNotices, KNOWN_KEY, parseKnown } from '../game/learn.ts';
 import { SUMMARY_KEY } from '../learn/prefs.ts';
@@ -338,8 +341,9 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 		return m;
 	};
 
-	// hide reserved buildings
-	for (const b of city.B) if (b.hidden) E.setData(b.id, 0, 0, 0, 0);
+	// hide reserved buildings. 完成図の建物も、学んで建つまで隠す（空き地から。15.12）
+	for (const b of city.B) E.setData(b.id, 0, 0, 0, 0);
+	const BY_ID = new Map(city.B.map((b) => [b.id, b] as const));
 
 	// ---------------- state ----------------
 	// 時計は状態（src/lib/game/clock.ts の整数の分）。描画のための端数（frac）だけをここで持つ（段 8-2b）
@@ -1155,6 +1159,11 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 			const t = (now - p.startedAt) / BUILD_MIN;
 			if (t < 1) list.push({ b: builtOf(p), p: Math.max(0, t) });
 		}
+		for (const x of ts.build.standing) {
+			const t = (now - x.startedAt) / BUILD_MIN;
+			const b = BY_ID.get(x.id);
+			if (t < 1 && b) list.push({ b, p: Math.max(0, t) });
+		}
 		return list;
 	}
 	const constructions: Construction[] = [];
@@ -1673,6 +1682,25 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 			}
 		}
 	}
+	/** 学んで建った完成図の建物の高さ（ゲーム内の時刻で進む。15.12） */
+	const riseOf = new Map<number, number>();
+	function standingProgress() {
+		const now = ts.minute + frac;
+		let done = false;
+		for (const x of ts.build.standing) {
+			const r = Math.round(255 * standingRise(ts.build, x.id, now));
+			if (riseOf.get(x.id) === r) continue;
+			riseOf.set(x.id, r);
+			E.setData(x.id, 0, 0, 0, r);
+			if (r === 255) done = true;
+		}
+		if (done) applyInfoColors();
+	}
+	/** 学習の記録のうち、街にまだ映していない合格を、修了の順に当てる（D-27 の 2） */
+	function growFromProgress() {
+		if (STILL && !learnedOverride) return;
+		for (const lesson of pendingLessons(ts, [...learned()])) act({ type: 'learn', lesson });
+	}
 	// ---------------- requests ----------------
 	/** 1 日の始まり（8:00）の数。17:00 の日報に使う */
 	let dayStart = { clientSat: ts.desk.clientSat, money: ts.build.money, done: 0 };
@@ -1684,7 +1712,22 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 			infra = false;
 		for (const e of evs) {
 			if (e.type === 'grown') built = true;
-			else if (e.type === 'hour' && e.hour === MORNING / 60) {
+			else if (e.type === 'learned') {
+				const t = TITLES[e.lesson] ?? e.lesson;
+				const b = BY_ID.get(e.ids[0]);
+				if (b) floater(cx(b), (b.h || 8) + 4, cz(b), `「${t}」を学んで建った`, 'good');
+				const homes = e.ids.reduce(
+					(n, id) => n + (MAP.buildings.find((x) => x.id === id)?.residents ?? 0),
+					0
+				);
+				toast(
+					`「${t}」を学んで ${e.ids.length} 棟が建ち始めた`,
+					`足場から 1 時間で建ち終える${homes ? ` ・ 住む人 +${homes}` : ''}`,
+					'learn',
+					b ? [['見に行く', () => flyTo(cx(b), cz(b), 120), 'pri']] : []
+				);
+				built = true;
+			} else if (e.type === 'hour' && e.hour === MORNING / 60) {
 				dayStart = { clientSat: ts.desk.clientSat, money: ts.build.money, done: doneCount() };
 			} else if (e.type === 'hour' && e.hour === 17) dayReport(e.at);
 			else if (e.type === 'day') reqs = true;
@@ -2801,6 +2844,7 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 		for (let i = constructions.length - 1; i >= 0; i--)
 			if (constructions[i].p >= 1) constructions.splice(i, 1);
 		placedProgress();
+		standingProgress();
 		// render
 		const hour = S.minute / 60;
 		const L = lightAt(hour);
@@ -2951,6 +2995,7 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 		} catch {
 			/* 覚えておけなくても遊べる */
 		}
+		growFromProgress();
 		const gained = gainedLessons(known, done);
 		if (!gained.length) return;
 		for (const id of gained) freshLessons.add(id);
@@ -2968,8 +3013,15 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 		const d = ui.dialog;
 		if (d && d.kind === 'req') openReq(d.id, true);
 	}
+	growFromProgress();
 	checkGained();
-	on(window, 'focus', () => checkGained());
+	on(window, 'focus', () => {
+		growFromProgress();
+		checkGained();
+	});
+	const onStorage = () => growFromProgress();
+	window.addEventListener('storage', onStorage);
+	offs.push(() => window.removeEventListener('storage', onStorage));
 	const onHide = () => persist();
 	window.addEventListener('pagehide', onHide);
 	offs.push(() => window.removeEventListener('pagehide', onHide));

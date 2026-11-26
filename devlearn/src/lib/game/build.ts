@@ -41,8 +41,11 @@ export type LedgerRow = {
 	/** 毎時の収支をまとめた行（何時間ぶんか） */ hours?: number;
 	day?: number;
 };
+/** 完成図（gen の街）の建物のうち、建った物（15.12）。lesson はそれを建てた合格 */
+export type Standing = { id: number; startedAt: number; lesson: string };
 export type BuildState = {
 	money: number;
+	standing: Standing[];
 	lots: Lot[];
 	placed: Placed[];
 	roads: Road[];
@@ -51,9 +54,16 @@ export type BuildState = {
 };
 export type Result = { ok: boolean; why: string; state: BuildState };
 
-export function startBuild(map: TownMap, money: number): BuildState {
+/** 完成図の建物（仕組みの建物の場所＝隠れた建物を除く） */
+export const blueprint = (map: TownMap) => map.buildings.filter((b) => !b.hidden);
+
+/** full は完成図が全て建った街（段 4 の仕組みを試すテストの土台）。既定は空き地（15.12） */
+export function startBuild(map: TownMap, money: number, full = false): BuildState {
 	return {
 		money,
+		standing: full
+			? blueprint(map).map((b) => ({ id: b.id, startedAt: -BUILD_MIN, lesson: '' }))
+			: [],
 		lots: map.lots.map((l) => ({ ...l, taken: false })),
 		placed: [],
 		roads: [],
@@ -68,17 +78,45 @@ function ledger(s: BuildState, minute: number, text: string, v: number): LedgerR
 
 export const isDone = (p: Placed, minute: number) => minute >= p.startedAt + BUILD_MIN;
 
+/** 建ち終えた完成図の建物の番号 */
+export function doneIds(s: BuildState, minute: number): Set<number> {
+	const out = new Set<number>();
+	for (const x of s.standing) if (minute >= x.startedAt + BUILD_MIN) out.add(x.id);
+	return out;
+}
 export function pop(s: BuildState, map: TownMap, minute: number): number {
+	const ids = doneIds(s, minute);
 	let n = 0;
-	for (const b of map.buildings) n += b.residents;
+	for (const b of map.buildings) if (ids.has(b.id)) n += b.residents;
 	for (const p of s.placed) if (isDone(p, minute)) n += p.residents;
 	return n;
 }
 export function jobs(s: BuildState, map: TownMap, minute: number): number {
+	const ids = doneIds(s, minute);
 	let n = 0;
-	for (const b of map.buildings) n += b.jobs;
+	for (const b of map.buildings) if (ids.has(b.id)) n += b.jobs;
 	for (const p of s.placed) if (isDone(p, minute)) n += p.jobs;
 	return n;
+}
+/** 完成図の区画の開く順：広場の掲示板から近い順（同じ距離は番号の順。15.12） */
+const lotCache = new WeakMap<TownMap, number[]>();
+export function lotOrder(map: TownMap): number[] {
+	const hit = lotCache.get(map);
+	if (hit) return hit;
+	const o = map.feat.board;
+	const d = (i: number) => Math.hypot(map.lots[i].cx - o.x, map.lots[i].cz - o.z);
+	const out = map.lots.map((_, i) => i).sort((a, b) => d(a) - d(b) || a - b);
+	lotCache.set(map, out);
+	return out;
+}
+/** 完成図の区画が開いたか（建ち終えた合格 1 本ごとに、lotOrder の順に 1 つ。15.12）。引いた道の区画はいつも開いている */
+export function lotOpen(s: BuildState, map: TownMap, lot: number, minute: number): boolean {
+	if (lot >= map.lots.length) return true;
+	const passes = new Set(
+		s.standing.filter((x) => minute >= x.startedAt + BUILD_MIN && x.lesson).map((x) => x.lesson)
+	).size;
+	const full = s.standing.some((x) => !x.lesson);
+	return full || lotOrder(map).indexOf(lot) < passes;
 }
 
 /** 需要（15.5。試作の式）。sat は町の満足度（0〜100） */
@@ -94,7 +132,11 @@ export function demand(s: BuildState, map: TownMap, sat: number, minute: number)
 	};
 }
 
+/** 完成図が全て建った時の町の施設の維持費（毎時）。建った割合で掛ける（15.12） */
 export const UPKEEP = 70;
+export function upkeep(s: BuildState, map: TownMap, minute: number): number {
+	return Math.floor((doneIds(s, minute).size * UPKEEP) / blueprint(map).length);
+}
 const fmt = (n: number) => n.toLocaleString('en-US');
 
 /** 1 時間ごとの収支の内訳（15.5） */
@@ -104,9 +146,10 @@ export function incomeParts(s: BuildState, map: TownMap, minute: number): [strin
 		j = jobs(s, map, minute);
 	const parts: [string, number][] = [
 		[`住民税（人口 ${fmt(p)} × 0.02）`, Math.floor(p * 0.02)],
-		[`店と会社の税（働く場所 ${fmt(j)} × 0.01）`, Math.floor(j * 0.01)],
-		['町の施設の維持費', -UPKEEP]
+		[`店と会社の税（働く場所 ${fmt(j)} × 0.01）`, Math.floor(j * 0.01)]
 	];
+	const u = upkeep(s, map, minute);
+	if (u > 0) parts.push(['町の施設の維持費', -u]);
 	if (roadLen > 0)
 		parts.push([
 			`引いた道路の維持費（${Math.round(roadLen) / 1000} km）`,
@@ -173,7 +216,7 @@ function spawn(
 /** 空き区画を押した：住宅地・商業地の指定、または公園 */
 export function placeLot(
 	s: BuildState,
-	_map: TownMap,
+	map: TownMap,
 	lot: number,
 	tool: ZoneKind | 'park',
 	minute: number,
@@ -181,6 +224,12 @@ export function placeLot(
 ): Result {
 	const L = s.lots[lot];
 	if (!L || L.taken) return { ok: false, why: 'そこは空き区画ではない', state: s };
+	if (!lotOpen(s, map, lot, minute))
+		return {
+			ok: false,
+			why: 'まだ開いていない区画。近くに建物が建つと開く（レッスンに合格すると建つ）',
+			state: s
+		};
 	if (tool === 'park') {
 		if (s.money < COST.park)
 			return { ok: false, why: '資金が足りない（必要 ¥' + COST.park + '）', state: s };

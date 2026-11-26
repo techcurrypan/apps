@@ -11,8 +11,13 @@ import {
 	workFrom,
 	type ClockEvent
 } from './clock.ts';
+import { MOVES } from './data.ts';
+import type { GroupRow } from './data-parse.ts';
 import {
+	blueprint,
+	BUILD_MIN,
 	bulldoze,
+	doneIds,
 	demand as demandOf,
 	hourly,
 	income as incomeOf,
@@ -41,7 +46,8 @@ import {
 	type DeskAction,
 	type DeskCtx,
 	type DeskState,
-	type Grade
+	type Grade,
+	type Pick
 } from './desk.ts';
 import {
 	addNear,
@@ -56,8 +62,32 @@ import type { FeatKey, TownMap } from './map.ts';
 
 export const START_MONEY = 600;
 /** 町の格（15.7）。人口がこの数に届くと上がる */
-export const RANKS = [2450, 2600, 2800];
-export const RANK_NAMES = ['小さな港町', '港町', 'にぎわう港町', '港の市'];
+/** 町の格が上がる人口（15.12。k 番目の値で RANK_NAMES[k + 1] になる） */
+export const RANKS = [1, 150, 800, 1600, 2450, 2800];
+export const RANK_NAMES = ['空き地', '集落', '村', '小さな港町', '港町', 'にぎわう港町', '港の市'];
+/** 人口からの格（下がらない格の、その時の値） */
+export const rankOf = (p: number) => {
+	let k = 0;
+	while (k < RANKS.length && p >= RANKS[k]) k++;
+	return k;
+};
+/** 1 回の合格で建つ完成図の建物（15.12） */
+export const FIRST_GROW = 3;
+export const GROW = 2;
+/** 仕組みの建物を持つ分野（15.4） */
+export const SYSTEM_FIELDS = [
+	'git',
+	'db',
+	'sec',
+	'net',
+	'prg',
+	'lnx',
+	'ctr',
+	'cld',
+	'ci',
+	'ai',
+	'sta'
+];
 export const RANK_REWARD = 300;
 export const BOX_MAX = 3;
 
@@ -85,6 +115,10 @@ export type TownState = {
 	boxes: Box[];
 	rank: number;
 	chapters: ChapterLog[];
+	/** 合格したレッスン（合格の順。15.12） */
+	passed: string[];
+	/** 章が始まったか（最初の住民が来た次の朝から。15.12） */
+	started: boolean;
 };
 
 export type TownAction =
@@ -94,6 +128,8 @@ export type TownAction =
 	| { type: 'bulldoze'; id: number }
 	/** 失敗した章を閉じて、次の朝から次の章へ進む（D-27 の 5。失敗は chapters に残る） */
 	| { type: 'continue' }
+	/** レッスンに合格した（完成図の建物が建つ。15.12） */
+	| { type: 'learn'; lesson: string }
 	| DeskAction;
 
 export type TownEvent =
@@ -104,18 +140,20 @@ export type TownEvent =
 	| { type: 'system'; field: string; at: number }
 	| { type: 'link'; field: string; client: FeatKey; at: number }
 	| { type: 'box'; client: FeatKey; at: number }
-	| { type: 'chapter'; chapter: Chapter; freeRound: number; at: number };
+	| { type: 'chapter'; chapter: Chapter; freeRound: number; at: number }
+	| { type: 'learned'; lesson: string; ids: number[]; at: number };
 
 /** 保存する物：種と、打てた手の記録と、時計の今（15.9） */
 export type TownSave = {
-	version: 1;
+	/** SAVE_VERSION */
+	version: number;
 	seed: number;
 	now: number;
 	actions: { at: number; action: TownAction }[];
 };
 
 /** 今の保存の形（形を変えたら上げる。古い保存は読まずに「新しい街で始める」。D-27 の 6） */
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;
 
 /** 保存を読む。無ければ null、今の形でなければ 'old' */
 export function readSave(raw: string | null, seed: number): TownSave | 'old' | null {
@@ -163,7 +201,8 @@ export function happyAt(s: TownState, map: TownMap, id: number): number {
 
 /** 満足度を数える建物（見えている物。建つ途中・隠れた仕組みの建物・公園を除く） */
 export function countedIds(s: TownState, map: TownMap): number[] {
-	const ids = map.buildings.filter((b) => !b.hidden).map((b) => b.id);
+	const done = doneIds(s.build, s.minute);
+	const ids = map.buildings.filter((b) => !b.hidden && done.has(b.id)).map((b) => b.id);
 	for (const p of s.build.placed) if (p.kind !== 'park' && isDone(p, s.minute)) ids.push(p.id);
 	return ids;
 }
@@ -181,7 +220,7 @@ export function avgHappy(s: TownState, map: TownMap): number {
 		if (!b) continue;
 		t += happyOf(baseHappy(s.seed, id), parkBonus(center(b), ps), s.satDelta[id] ?? 0);
 	}
-	return t / ids.length;
+	return ids.length ? t / ids.length : 60;
 }
 
 export const demand = (s: TownState, map: TownMap) =>
@@ -192,22 +231,123 @@ export const population = (s: TownState, map: TownMap) => pop(s.build, map, s.mi
 
 // ---------------- 始まり ----------------
 
-/** 始まりの街。chapter は章から始める見積もり（15.8）のためだけに使う（画面は 1 章から） */
-export function startTown(seed: number, map: TownMap, chapter: Chapter = 1): TownState {
+/**
+ * 始まりの街。既定は空き地（15.12）。chapter は章から始める見積もり（15.8）のためだけに使う（画面は 1 章から）。
+ * full は完成図が全て建ち、章が始まった街（段 4 の仕組みを試すテストの土台）
+ */
+export function startTown(
+	seed: number,
+	map: TownMap,
+	chapter: Chapter = 1,
+	o: { full?: boolean } = {}
+): TownState {
+	const build = startBuild(map, START_MONEY, !!o.full);
 	const s: TownState = {
 		version: 1,
 		seed,
 		minute: START_MINUTE,
 		chapterStart: START_MINUTE,
-		build: startBuild(map, START_MONEY),
+		build,
 		desk: startDesk(seed, chapter, chapter === 'free' ? 1 : 0),
 		satDelta: {},
 		systems: [],
 		boxes: [],
-		rank: 0,
-		chapters: []
+		rank: rankOf(pop(build, map, START_MINUTE)),
+		chapters: [],
+		passed: [],
+		started: !!o.full
 	};
 	return onMorning(s, map, START_MINUTE, []);
+}
+
+// ---------------- 完成図と、学ぶと建つ物（15.12） ----------------
+
+const orderCache = new WeakMap<TownMap, number[]>();
+/** 完成図の建物の建つ順：広場の掲示板から近い順（同じ距離は番号の順） */
+export function blueprintOrder(map: TownMap): number[] {
+	const hit = orderCache.get(map);
+	if (hit) return hit;
+	const o = map.feat.board;
+	const d = (b: { x0: number; z0: number; x1: number; z1: number }) =>
+		Math.hypot((b.x0 + b.x1) / 2 - o.x, (b.z0 + b.z1) / 2 - o.z);
+	const out = blueprint(map)
+		.slice()
+		.sort((a, b) => d(a) - d(b) || a.id - b.id)
+		.map((b) => b.id);
+	orderCache.set(map, out);
+	return out;
+}
+
+/** 原因を直せる手の分野（レッスン ID の頭） */
+const FIX_FIELDS = new Map<string, Set<string>>();
+for (const m of MOVES)
+	for (const c of m.fixes) {
+		const f = FIX_FIELDS.get(c) ?? new Set<string>();
+		f.add(m.lesson.split('-')[0]);
+		FIX_FIELDS.set(c, f);
+	}
+export const fieldOf = (lesson: string) => lesson.split('-')[0];
+
+/** 朝に届く数と中身（15.12） */
+export function requestPick(s: TownState, map: TownMap, at: number): Pick {
+	const p = pop(s.build, map, at);
+	const done = doneIds(s.build, at);
+	const fields = new Set(s.passed.map(fieldOf));
+	const here = (g: GroupRow) => done.has(map.feat[CLIENTS[g.id].at].id);
+	const known = (g: GroupRow) =>
+		g.causes.some((c) => [...(FIX_FIELDS.get(c) ?? [])].some((f) => fields.has(f)));
+	return {
+		count: p <= 0 ? 0 : p < 200 ? 1 : p < 800 ? 2 : 3,
+		first: (g) => here(g) && known(g),
+		second: here
+	};
+}
+
+/** 学習の記録（修了の順）のうち、街にまだ映していないレッスン（15.12。街を開いた時・戻った時に learn の手で当てる） */
+export function pendingLessons(s: TownState, done: readonly string[]): string[] {
+	const have = new Set(s.passed);
+	return done.filter((id) => !have.has(id));
+}
+
+/** 完成図の建物の高さ（0〜1。描画用）。建ち始めから 15 分は足場だけ、その後 45 分で立ち上がる（区画の建物と同じ） */
+export function standingRise(b: BuildState, id: number, minute: number): number {
+	const x = b.standing.find((y) => y.id === id);
+	if (!x) return 0;
+	const t = Math.max(0, Math.min(1, (minute - x.startedAt) / BUILD_MIN));
+	const e = t < 0.25 ? 0 : (t - 0.25) / 0.75;
+	return 1 - Math.pow(1 - e, 3);
+}
+
+function learnLesson(s: TownState, map: TownMap, lesson: string): ApplyResult {
+	if (s.passed.includes(lesson))
+		return { ok: false, why: 'このレッスンで建つ物は、もう建った', state: s, events: [] };
+	const at = s.minute;
+	const have = new Set(s.build.standing.map((x) => x.id));
+	const rest = blueprintOrder(map).filter((id) => !have.has(id));
+	const first = s.passed.length === 0;
+	const pick = rest.slice(0, first ? FIRST_GROW : GROW);
+	const res = (id: number) => (map.buildings.find((b) => b.id === id)?.residents ?? 0) > 0;
+	if (first && pick.length && !pick.some(res)) {
+		const home = rest.find(res);
+		if (home !== undefined) pick[pick.length - 1] = home;
+	}
+	const ev: TownEvent[] = [{ type: 'learned', lesson, ids: pick, at }];
+	const field = fieldOf(lesson);
+	let systems = s.systems;
+	if (SYSTEM_FIELDS.includes(field) && !systems.some((x) => x.field === field)) {
+		systems = [...systems, { field, builtAt: at, links: [] }];
+		ev.push({ type: 'system', field, at });
+	}
+	const build: BuildState = {
+		...s.build,
+		standing: [...s.build.standing, ...pick.map((id) => ({ id, startedAt: at, lesson }))]
+	};
+	return {
+		ok: true,
+		why: '',
+		state: { ...s, build, systems, passed: [...s.passed, lesson] },
+		events: ev
+	};
 }
 
 // ---------------- 依頼主の満足度の動きを、建物に映す ----------------
@@ -231,12 +371,14 @@ function onHour(s: TownState, map: TownMap, at: number, ev: TownEvent[]): TownSt
 	if (r.grown.length) ev.push({ type: 'grown', ids: r.grown.map((p) => p.id), at });
 	let st: TownState = { ...s, build: r.state };
 	const p = pop(st.build, map, at);
-	let rank = st.rank;
-	while (rank < RANKS.length && p >= RANKS[rank]) rank++;
+	const rank = Math.max(st.rank, rankOf(p));
 	for (let k = st.rank + 1; k <= rank; k++) {
 		st = {
 			...st,
-			build: pay(st.build, at, `町の格が「${RANK_NAMES[k]}」に上がった（人口 ${p}）`, RANK_REWARD)
+			build:
+				k === 1
+					? st.build
+					: pay(st.build, at, `町の格が「${RANK_NAMES[k]}」に上がった（人口 ${p}）`, RANK_REWARD)
 		};
 		ev.push({ type: 'rank', rank: k, at });
 	}
@@ -245,6 +387,12 @@ function onHour(s: TownState, map: TownMap, at: number, ev: TownEvent[]): TownSt
 
 function onMorning(s: TownState, map: TownMap, at: number, ev: TownEvent[]): TownState {
 	let st = s;
+	if (!st.started) {
+		// 住民が来るまで、章も要望も始まらない（15.12）
+		if (pop(st.build, map, at) <= 0) return st;
+		st = { ...st, started: true, chapterStart: at };
+		ev.push({ type: 'chapter', chapter: st.desk.chapter, freeRound: st.desk.freeRound, at });
+	}
 	if (st.desk.result === 'passed') {
 		st = {
 			...st,
@@ -254,7 +402,11 @@ function onMorning(s: TownState, map: TownMap, at: number, ev: TownEvent[]): Tow
 		};
 		ev.push({ type: 'chapter', chapter: st.desk.chapter, freeRound: st.desk.freeRound, at });
 	}
-	const m = morning(st.desk, Math.floor((at - st.chapterStart) / MIN_PER_DAY) + 1);
+	const m = morning(
+		st.desk,
+		Math.floor((at - st.chapterStart) / MIN_PER_DAY) + 1,
+		requestPick(st, map, at)
+	);
 	const satDelta = spread({ ...st, desk: m.desk }, map, m.changes);
 	let boxes = st.boxes;
 	for (const client of m.boxes) {
@@ -269,6 +421,7 @@ function onMorning(s: TownState, map: TownMap, at: number, ev: TownEvent[]): Tow
 }
 
 function onClose(s: TownState, at: number, ev: TownEvent[]): TownState {
+	if (!s.started) return s;
 	const day = Math.floor((at - s.chapterStart) / MIN_PER_DAY) + 1;
 	const c = closeDay(s.desk, day);
 	if (!c.changes.length) return s;
@@ -321,7 +474,8 @@ const isDesk = (a: TownAction): a is DeskAction =>
 	a.type !== 'park' &&
 	a.type !== 'road' &&
 	a.type !== 'bulldoze' &&
-	a.type !== 'continue';
+	a.type !== 'continue' &&
+	a.type !== 'learn';
 
 /** 次の 8:00（今が 8:00 ちょうどなら今） */
 const nextMorning = (minute: number) => {
@@ -351,6 +505,7 @@ export function applyTown(
 	learned: ReadonlySet<string> | null
 ): ApplyResult {
 	const fail = (why: string): ApplyResult => ({ ok: false, why, state: s, events: [] });
+	if (a.type === 'learn') return learnLesson(s, map, a.lesson);
 	if (a.type === 'continue') {
 		if (s.desk.result !== 'failed') return fail('続けるのは、章に失敗した時だけ');
 		// 街・学んで建った物・記録はそのまま。次の朝 8:00 が次の章の 1 日目

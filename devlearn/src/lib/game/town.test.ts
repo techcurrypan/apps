@@ -8,10 +8,13 @@ import {
 	avgHappy,
 	chapterDay,
 	happyAt,
+	RANK_NAMES,
 	readSave,
 	replayTown,
+	SAVE_VERSION,
 	startTown,
 	tickTown,
+	type TownSave,
 	type TownState
 } from './town.ts';
 
@@ -20,7 +23,7 @@ const T = START_MINUTE;
 const DAY = 24 * 60;
 const NONE = new Set<string>();
 const ALL = new Set(MOVES.map((m) => m.lesson));
-const s0 = () => startTown(1, map);
+const s0 = () => startTown(1, map, 1, { full: true });
 const run = (s: TownState, to: number) => tickTown(s, to, map);
 
 describe('街の始まり（game-design.md 15.2・15.5）', () => {
@@ -154,18 +157,20 @@ describe('朝と締めと章（15.2・15.7）', () => {
 	});
 
 	it('「続ける」を含む記録は、当て直しで同じ状態になる（15.9）', () => {
-		const f = run(s0(), T + 10 * DAY).state;
+		// 空き地から、学んで住民を呼び、何もせずに章を失敗させてから続ける（15.12）
+		const lessons = [...new Set(MOVES.map((m) => m.lesson))].slice(0, 40);
+		const actions: TownSave['actions'] = lessons.map((lesson) => ({
+			at: T,
+			action: { type: 'learn', lesson }
+		}));
+		let f = startTown(1, map);
+		for (const a of actions) f = applyTown(f, a.action, map, null).state;
+		f = run(f, T + 12 * DAY).state;
+		expect(f.desk.result).toBe('failed');
 		const c = applyTown(f, { type: 'continue' }, map, NONE).state;
-		const live = run(c, T + 7 * DAY).state;
-		const re = replayTown(
-			{
-				version: 1,
-				seed: 1,
-				now: T + 7 * DAY,
-				actions: [{ at: f.minute, action: { type: 'continue' } }]
-			},
-			map
-		).state;
+		const live = run(c, T + 14 * DAY).state;
+		actions.push({ at: f.minute, action: { type: 'continue' } });
+		const re = replayTown({ version: 2, seed: 1, now: T + 14 * DAY, actions }, map).state;
 		expect(re).toEqual(live);
 	});
 
@@ -201,7 +206,9 @@ describe('朝と締めと章（15.2・15.7）', () => {
 		for (let i = 0; i < s.build.lots.length; i++)
 			s = applyTown(s, { type: 'zone', lot: i, kind: kind(i) }, map, NONE).state;
 		const out = run(s, T + 4 * DAY); // 5 日目の締めより前
-		expect(out.state.rank).toBe(1);
+		// 完成図の街（2,358 人）は「港町」。2,450 人で「にぎわう港町」（15.12）
+		expect(RANK_NAMES[s.rank]).toBe('港町');
+		expect(RANK_NAMES[out.state.rank]).toBe('にぎわう港町');
 		const ev = out.events.find((e) => e.type === 'rank');
 		expect(ev).toBeDefined();
 		const row = out.state.build.ledger.find((l) => l.text.includes('町の格'));
@@ -243,7 +250,7 @@ function playDay(s0: TownState): TownState {
 }
 
 describe('保存の読み込み（D-27 の 6）', () => {
-	const ok = { version: 1, seed: 7, now: T, actions: [] };
+	const ok = { version: SAVE_VERSION, seed: 7, now: T, actions: [] };
 	it('今の形の保存は読む', () => {
 		expect(readSave(JSON.stringify(ok), 7)).toEqual(ok);
 	});

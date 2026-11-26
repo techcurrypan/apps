@@ -7,6 +7,8 @@ import {
 	applyTown,
 	avgHappy,
 	chapterDay,
+	population,
+	RANK_NAMES,
 	startTown,
 	tickTown,
 	type TownAction,
@@ -65,7 +67,7 @@ function step(s: TownState, L: Set<string>): TownState | null {
 
 function playChapter(seed: number, ch: number, mode: Mode) {
 	const L = learnedFor(ch, mode);
-	let s = startTown(seed, map, ch as 1);
+	let s = startTown(seed, map, ch as 1, { full: true });
 	let outs = 0;
 	for (let d = 0; d < 7; d++) {
 		s = tickTown(s, T + d * DAY + 60, map).state; // その日の 9:00
@@ -143,9 +145,78 @@ describe('学ばない道の見積もり（game-design.md 15.8 の表と同じ�
 	it('何もしない：全ての種で 5 日目の締めで失敗する', () => {
 		for (const ch of [1, 2, 3, 4])
 			for (const seed of SEEDS) {
-				const s = tickTown(startTown(seed, map, ch as 1), T + 10 * DAY, map).state;
+				const s = tickTown(startTown(seed, map, ch as 1, { full: true }), T + 10 * DAY, map).state;
 				expect(s.desk.result, `${ch} 章 種 ${seed}`).toBe('failed');
 				expect(chapterDay(s)).toBe(5);
 			}
+	});
+});
+
+// 空き地から（15.12・D-27 の 7。8-R の手順 5）。遊び方は上と同じ。違いは、街を空き地から始め、
+// 毎朝 9:00 にレッスンを every 日ごとに 1 本（MOVES の順）合格し、合格した物だけを学んだ手として使うこと。
+// 章に失敗したら「続ける」。29 日目の 17:00 まで流す
+const ORDER = [...new Set(MOVES.map((m) => m.lesson))];
+function grow(seed: number, every: number) {
+	let s = startTown(seed, map);
+	const L = new Set<string>();
+	let outs = 0;
+	for (let d = 0; d < 29; d++) {
+		s = tickTown(s, T + d * DAY + 60, map).state;
+		const next = ORDER[L.size];
+		if (every && d % every === 0 && next) {
+			const r = applyTown(s, { type: 'learn', lesson: next }, map, null);
+			if (r.ok) {
+				s = r.state;
+				L.add(next);
+			}
+		}
+		for (let k = 0; k < 40; k++) {
+			const n = step(s, L);
+			if (!n) break;
+			s = n;
+		}
+		for (const r of s.desk.requests)
+			if (r.status === 'open' && r.due <= chapterDay(s)) {
+				const x = applyTown(s, { type: 'outsource', request: r.id }, map, L);
+				if (x.ok) {
+					s = x.state;
+					outs++;
+				}
+			}
+		s = tickTown(s, T + d * DAY + 9 * 60, map).state;
+		if (s.desk.result === 'failed') s = applyTown(s, { type: 'continue' }, map, L).state;
+	}
+	return {
+		pop: population(s, map),
+		rank: RANK_NAMES[s.rank],
+		money: s.build.money,
+		results: s.chapters.map((c) => c.result),
+		outs
+	};
+}
+
+describe('空き地から、学ぶと育つ道の見積もり（15.12）', () => {
+	it('学ばない：29 日たっても空き地のまま。住民 0・資金 600・章は始まらず、失敗もしない', () => {
+		for (const seed of SEEDS)
+			expect(grow(seed, 0)).toEqual({ pop: 0, rank: '空き地', money: 600, results: [], outs: 0 });
+	});
+	it('2 日に 1 本：人口 210 の「村」。4 章を合格で締め、失敗しない', () => {
+		for (const seed of SEEDS) {
+			const g = grow(seed, 2);
+			expect(g.pop).toBe(210);
+			expect(g.rank).toBe('村');
+			expect(g.results).toEqual(['passed', 'passed', 'passed', 'passed']);
+			expect(g.money).toBeGreaterThan(11000);
+		}
+	});
+	it('毎日 1 本：人口 433 の「村」。4 章を合格で締め、外に頼むのは 1 件', () => {
+		for (const seed of SEEDS) {
+			const g = grow(seed, 1);
+			expect(g.pop).toBe(433);
+			expect(g.rank).toBe('村');
+			expect(g.results).toEqual(['passed', 'passed', 'passed', 'passed']);
+			expect(g.outs).toBe(1);
+			expect(g.money).toBeGreaterThan(17000);
+		}
 	});
 });

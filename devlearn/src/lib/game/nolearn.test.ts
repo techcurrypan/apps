@@ -12,7 +12,9 @@ import {
 	type TownState
 } from './town.ts';
 
-// 段 9 の完成条件 4：学習の進みがゲームの必須条件になっていない。修了 0 本で、1 章から自由の章まで全ての章が遊べる
+// 段 9 の完成条件 4：学習の進みがゲームの必須条件になっていない（B-2）。
+// 空き地から（15.12）：最初の 1 本に合格して住民が来た後は、学んだ手を 1 つも使わずに、1 章から自由の章まで全ての章が遊べる。
+// 1 本も合格しなければ街は空き地のままで、詰まりも失敗もしない（empty.test.ts）
 const map = townMap();
 const DAY = 24 * 60;
 const none = new Set<string>();
@@ -39,13 +41,18 @@ function step(s: TownState): TownState | null {
 	return null;
 }
 
-describe('修了 0 本で全ての章が遊べる', () => {
+describe('最初の 1 本の後は、学んだ手を使わずに全ての章が遊べる', () => {
 	for (const seed of [0, 1, 2, 3, 7])
 		it(`種 ${seed}：1 章から 4 章を通り、自由の章に入る。失敗しない`, () => {
-			let s = startTown(seed, map);
+			let s = applyTown(
+				startTown(seed, map),
+				{ type: 'learn', lesson: 'net-101' },
+				map,
+				null
+			).state;
 			const seen = new Set<string>();
 			for (let day = 0; day < 60 && s.desk.chapter !== 'free'; day++) {
-				const d0 = T + day * DAY;
+				const d0 = T + (day + 1) * DAY; // 章 1 は最初の住民が来た次の朝から
 				s = tickTown(s, d0 + 60, map).state;
 				seen.add(String(s.desk.chapter));
 				// どの受付中の要望にも、学ばずに打てる手が必ずある（勤務の初め）
