@@ -115,6 +115,13 @@ async function main() {
 		await clickText(tab, '.toast button', '見に行く');
 		await sleep(2500);
 		await tab.shot(`${SHOT}scaffold.png`);
+		// 画面の真ん中（見に行った建物）を Enter で選ぶと、札に「○○を学んで建った」
+		await tab.eval(`document.querySelector('#view')?.focus()`);
+		await tab.key('Enter');
+		await sleep(600);
+		const info = await tab.eval<string>(`document.querySelector('.info')?.textContent ?? ''`);
+		check('建物の札：「○○」を学んで建った', /を学んで建った/.test(info), info.slice(0, 80));
+		await tab.key('Escape');
 		// 次の朝：家が建ち終え、住民が来て、要望が届く
 		await tab.key('n');
 		await sleep(400);

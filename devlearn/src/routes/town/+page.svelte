@@ -256,6 +256,7 @@
 				</dl>
 				{#if ui.info.voice}<p class="voice">「{ui.info.voice}」</p>{/if}
 				{#if ui.info.player}<p class="note">あなたが建てた建物</p>{/if}
+				{#if ui.info.learned}<p class="note">「{ui.info.learned}」を学んで建った</p>{/if}
 			</section>
 		{/if}
 		{#if ui.view === 'infra'}

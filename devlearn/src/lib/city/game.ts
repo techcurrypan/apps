@@ -107,6 +107,8 @@ export type InfoView = {
 	happy: number;
 	voice: string;
 	player: boolean;
+	/** 学んで建った完成図の建物なら、そのレッスンの題（G-14 の札） */
+	learned?: string;
 };
 export type LedgerRow = { t: string; text: string; v: number };
 export type BudgetView = { parts: [string, number][]; income: number; ledger: LedgerRow[] };
@@ -793,6 +795,19 @@ export function startTown(
 			rbox(g, x, z, a, -0.12, 0.12, 0.24, y + p.h * 0.84 + k, y + p.h + k, HX('#e0b593'), {
 				ao: 1
 			});
+		}
+		for (const m of movers) {
+			const u = Math.max(0, Math.min(1, m.t / 6));
+			if (m.t < 0 || u >= 1) continue;
+			const x = m.x + (m.tx - m.x) * u,
+				z = m.z + (m.tz - m.z) * u;
+			const a = Math.atan2(m.tz - m.z, m.tx - m.x);
+			const y = city.BH;
+			const k = 0.05 * Math.abs(Math.sin(m.t * 9));
+			rbox(g, x, z, a, -0.15, 0.15, 0.36, y, y + 0.85, HX('#3b4a5c'), { ao: 0.8 });
+			rbox(g, x, z, a, -0.17, 0.17, 0.46, y + 0.85, y + 1.45 + k, HX('#d9824b'), { ao: 0.9 });
+			rbox(g, x, z, a, -0.12, 0.12, 0.24, y + 1.45 + k, y + 1.72 + k, HX('#e0b593'), { ao: 1 });
+			rbox(g, x, z, a, 0.2, 0.75, 0.5, y + 1.0 + k, y + 1.5 + k, HX('#c9a06a'), { ao: 0.9 });
 		}
 		for (const b of boats) {
 			const bx = b.x as number,
@@ -1753,11 +1768,35 @@ export function startTown(
 		for (const x of ts.build.standing) {
 			const r = Math.round(255 * standingRise(ts.build, x.id, now));
 			if (riseOf.get(x.id) === r) continue;
+			const was = riseOf.get(x.id);
 			riseOf.set(x.id, r);
 			E.setData(x.id, 0, 0, 0, r);
-			if (r === 255) done = true;
+			if (r === 255) {
+				done = true;
+				const b = BY_ID.get(x.id);
+				// 見ている間に建ち終えた家には、住む人が荷物を持って引っ越して来る（G-14）
+				if (b && was !== undefined && b.residents > 0) {
+					moveIn(b);
+					floater(cx(b), (b.h || 8) + 3, cz(b), `+${b.residents} 人 引っ越して来た`, 'good');
+				}
+			}
 		}
 		if (done) applyInfoColors();
+	}
+	/** 学んで建った建物の、そのレッスンの題（無ければ undefined） */
+	function lessonOf(id: number): string | undefined {
+		const x = ts.build.standing.find((y) => y.id === id);
+		return x?.lesson ? (titleOf(x.lesson) ?? TITLES[x.lesson] ?? x.lesson) : undefined;
+	}
+	/** 引っ越して来る人（荷物を運んで、建ち終えた家へ歩く。見た目だけ。実時間で 12 秒） */
+	const movers: { x: number; z: number; tx: number; tz: number; t: number }[] = [];
+	function moveIn(b: AnyB) {
+		const x = cx(b),
+			z = cz(b);
+		for (let k = 0; k < 3; k++) {
+			const a = (k / 3) * Math.PI * 2 + b.id;
+			movers.push({ x: x + Math.cos(a) * 26, z: z + Math.sin(a) * 26, tx: x, tz: z, t: -k * 0.8 });
+		}
 	}
 	/** 学習の記録のうち、街にまだ映していない合格を、修了の順に当てる（D-27 の 2） */
 	function growFromProgress() {
@@ -1814,8 +1853,11 @@ export function startTown(
 				const r = BOX_SPOT[e.client];
 				if (r) floater(cx(r), Y + 8, cz(r), '業者の箱', '');
 				built = infra = true;
-			} else if (e.type === 'system') built = infra = true;
-			else if (e.type === 'link') infra = true;
+			} else if (e.type === 'system') {
+				built = infra = true;
+				// 学んで建つ仕組みの建物は、足場と砂ぼこりの中から建つ（G-14）
+				if (evs.some((x) => x.type === 'learned')) construct(systemB(e.field));
+			} else if (e.type === 'link') infra = true;
 			else if (e.type === 'desk') {
 				reqs = infra = true;
 				const arrive = e.changes.filter((c) => c.what === 'arrive');
@@ -2468,7 +2510,8 @@ export function startTown(
 			jobs: b.jobs || 0,
 			happy: h,
 			voice: v,
-			player: 'player' in b
+			player: 'player' in b,
+			learned: lessonOf(b.id)
 		};
 	}
 
@@ -2923,6 +2966,8 @@ export function startTown(
 		placedProgress();
 		standingProgress();
 		areaProgress(dtR);
+		for (const m of movers) m.t += dtR;
+		for (let i = movers.length - 1; i >= 0; i--) if (movers[i].t > 12) movers.splice(i, 1);
 		// render
 		const hour = S.minute / 60;
 		const L = lightAt(hour);
