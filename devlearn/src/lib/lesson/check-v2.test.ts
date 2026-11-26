@@ -15,7 +15,8 @@ const opt = (l: Lesson): V2Options => ({
 	},
 	solutions: {
 		[l.id]: { pass: ['a', 'b', 'c', 'd', 'e'], wrong: [], alt: ['a', 'b', 'c', 'd', 'f'] }
-	}
+	},
+	done: new Set([l.id])
 });
 
 function run(l: Lesson, o: V2Options = opt(l)) {
@@ -171,6 +172,23 @@ describe('検査 26〜40（第 2 版）', () => {
 		const ob = opt(b);
 		ob.reviews![b.id].items[3] = '不合格（数が違う）';
 		expect(nums(b, ob)).toContain(38);
+		const c = validV2();
+		expect(nums(c, { ...opt(c), reviews: {} })).toContain(38);
+	});
+	it('38：仕上がりの表に無いレッスン（査読の途中）には当てない', () => {
+		const a = validV2();
+		expect(nums(a, { ...opt(a), reviews: {}, done: new Set() })).not.toContain(38);
+		const b = validV2();
+		const ob = opt(b);
+		b.explain[0].title = '直した';
+		expect(nums(b, { ...ob, done: new Set(['other-001']) })).not.toContain(38);
+	});
+	it('38：表を渡さなければ v2-done.ts の表を使う', async () => {
+		const { V2_DONE } = await import('./v2-done.ts');
+		const a = validV2();
+		const o: V2Options = { ...opt(a), reviews: {} };
+		delete o.done;
+		expect(nums(a, o).includes(38)).toBe(V2_DONE.has(a.id));
 	});
 	it('39：段 3・4 の中身は impl 3 つ・layers・出典は版の tag', () => {
 		const a = validV2();

@@ -3,6 +3,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { SOLUTIONS } from '../../src/lib/content/solutions.ts';
 import type { Review } from '../../src/lib/lesson/check-v2.ts';
+import { V2_DONE } from '../../src/lib/lesson/v2-done.ts';
 import { V2_FIELDS, V2_LESSONS } from '../../src/lib/lesson/v2-scope.ts';
 import { checkAll } from '../../src/lib/lesson/check.ts';
 import { INSIDE_FIELDS } from '../../src/lib/lesson/inside-fields.ts';
@@ -61,12 +62,13 @@ export function report(lessons: readonly Lesson[]): { ok: boolean; lines: string
 		solutions: SOLUTIONS
 	});
 	const v2 = [...V2_LESSONS, ...V2_FIELDS].join('・') || '無し';
+	const done = [...V2_DONE].join('・') || '無し';
 	const inside = lessons.filter((l) => l.explain.some((s) => s.inside)).length;
 	if (problems.length === 0)
 		return {
 			ok: true,
 			lines: [
-				`content:check: レッスン ${lessons.length} 本を 40 項目で検査した（中身の板を持つ物 ${inside} 本。検査 16・20 を当てる分野：${[...INSIDE_FIELDS].join('・') || '無し'}。検査 26〜40 を当てる物：${v2}）。落ちた物は無い`
+				`content:check: レッスン ${lessons.length} 本を 40 項目で検査した（中身の板を持つ物 ${inside} 本。検査 16・20 を当てる分野：${[...INSIDE_FIELDS].join('・') || '無し'}。検査 26〜40 を当てる物：${v2}。検査 38 を当てる仕上がりの物：${done}）。落ちた物は無い`
 			]
 		};
 	return {

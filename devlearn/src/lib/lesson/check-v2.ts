@@ -4,6 +4,7 @@
 import { charCount, sentences } from './check.ts';
 import { lessonHash } from './hash.ts';
 import type { Cue, Lesson, Step, StepKind } from './types.ts';
+import { V2_DONE } from './v2-done.ts';
 
 type Add = (check: number, where: string, message: string) => void;
 
@@ -15,6 +16,8 @@ export type V2Options = {
 	reviews?: Readonly<Record<string, Review>>;
 	/** 実戦の解き方（pass：合格まで、alt：もう 1 つの正しい道） */
 	solutions?: Readonly<Record<string, { pass: unknown; wrong: unknown; alt?: unknown }>>;
+	/** 仕上がりの表（検査 38 を当てるレッスン）。省くと v2-done.ts の V2_DONE */
+	done?: ReadonlySet<string>;
 };
 
 const NEED: [StepKind, number][] = [
@@ -272,7 +275,8 @@ export function checkV2(l: Lesson, add: Add, opt: V2Options = {}): void {
 		add(37, 'check', '場面の問いを 2 問以上にする');
 	if (ck.filter((c) => c.kind === 'number').length < 1)
 		add(37, 'check', '数の問いを 1 問以上にする');
-	// 38
+	// 38（仕上がりの表にあるレッスンだけ。D-24 の 3）
+	if (!(opt.done ?? V2_DONE).has(l.id)) return;
 	const rv = opt.reviews?.[l.id];
 	if (!rv) add(38, 'review', `専門家の査読の記録（src/lib/content/reviews/${l.id}.json）が無い`);
 	else {
