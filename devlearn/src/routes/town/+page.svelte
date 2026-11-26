@@ -7,6 +7,7 @@
 	import { shortCommit } from '#lib/build-info.ts';
 	import { lessons } from '#lib/content/lessons.ts';
 	const lessonIds = new Set(lessons.map((l) => l.id));
+	const titles = new Map(lessons.map((l) => [l.id, l.title]));
 
 	const ui = $state(newTownUi());
 	let canvas = $state<HTMLCanvasElement>();
@@ -18,7 +19,7 @@
 	onMount(() => {
 		if (!canvas || !markers || !floaters) return;
 		const still = location.hash.includes('still');
-		game = startTown({ canvas, markers, floaters }, ui, still);
+		game = startTown({ canvas, markers, floaters }, ui, still, (id) => titles.get(id));
 		return () => game?.dispose();
 	});
 

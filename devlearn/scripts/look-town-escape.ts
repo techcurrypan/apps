@@ -1,13 +1,23 @@
 // D-27 の 5・6、city-standard.md S-6：街のどの板にも閉じ込められないことを、公開 URL で確かめる（CI では走らせない）。
 //   npx tsx scripts/look-town-escape.ts [街の URL の根]
-// 失敗した章の保存（何もせず 10 日進めた街）と、古い形の保存を置いて開き、
+// 失敗した章の保存（下の FAILED）と、古い形の保存を置いて開き、
 // ×・Esc・板の外・「続ける」・「学習へ」・「新しい街で始める」で抜けられ、時計がまた進むことを見る。
 import { START_MINUTE } from '../src/lib/game/clock.ts';
+import { MOVES } from '../src/lib/game/data.ts';
+import { SAVE_VERSION } from '../src/lib/game/town.ts';
 import { openChrome, sleep, type Tab } from './lib/cdp.ts';
 
 const base = (process.argv[2] ?? 'https://devlearn.techcurrybread.workers.dev').replace(/\/$/, '');
 const DAY = 24 * 60;
-const FAILED = JSON.stringify({ version: 1, seed: 1, now: START_MINUTE + 10 * DAY, actions: [] });
+// 空き地から（15.12）：1 日目の朝に 40 本合格して住民を呼び、何もせず 12 日進めた街（章 1 が失敗する。town.test.ts と同じ）
+const FAILED = JSON.stringify({
+	version: SAVE_VERSION,
+	seed: 1,
+	now: START_MINUTE + 12 * DAY,
+	actions: [...new Set(MOVES.map((m) => m.lesson))]
+		.slice(0, 40)
+		.map((lesson) => ({ at: START_MINUTE, action: { type: 'learn', lesson } }))
+});
 const OLD = JSON.stringify({ version: 0, seed: 1, now: START_MINUTE, actions: [] });
 
 let bad = 0;

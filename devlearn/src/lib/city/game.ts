@@ -315,7 +315,13 @@ type StillHooks = {
 	__ready?: boolean;
 };
 
-export function startTown(layers: Layers, ui: TownUi, still: boolean) {
+/** titleOf：レッスンの題（「○○を学んで建った」の札。無ければ ID） */
+export function startTown(
+	layers: Layers,
+	ui: TownUi,
+	still: boolean,
+	titleOf: (id: string) => string | undefined = () => undefined
+) {
 	const canvas = layers.canvas;
 	let E: Engine;
 	let noGL = false;
@@ -1765,7 +1771,7 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 		for (const e of evs) {
 			if (e.type === 'grown') built = true;
 			else if (e.type === 'learned') {
-				const t = TITLES[e.lesson] ?? e.lesson;
+				const t = titleOf(e.lesson) ?? TITLES[e.lesson] ?? e.lesson;
 				const b = BY_ID.get(e.ids[0]);
 				if (b) floater(cx(b), (b.h || 8) + 4, cz(b), `「${t}」を学んで建った`, 'good');
 				const homes = e.ids.reduce(
@@ -1784,7 +1790,11 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 			} else if (e.type === 'hour' && e.hour === 17) dayReport(e.at);
 			else if (e.type === 'day') reqs = true;
 			else if (e.type === 'rank') {
-				toast('町の格が上がった', `「${RANK_NAMES[e.rank]}」になった ・ 報酬 ¥300`, 'learn');
+				toast(
+					'町の格が上がった',
+					`「${RANK_NAMES[e.rank]}」になった${e.rank > 1 ? ' ・ 報酬 ¥300' : ' ・ 最初の住む人が来た'}`,
+					'learn'
+				);
 				sfxNote();
 			} else if (e.type === 'chapter') {
 				toast(
@@ -1828,6 +1838,8 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 			applyInfoColors();
 		}
 		if (evs.length) renderHUD();
+		// ゲーム内の 1 時間ごとにも保存する（窓を閉じた時の pagehide が来なくても、時計の今が残る）
+		if (evs.some((e) => e.type === 'hour')) persist();
 	}
 	/** 17:00 の日報：その日に動いた数と理由（15.2） */
 	function dayReport(at: number) {
