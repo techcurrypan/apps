@@ -358,8 +358,39 @@
 	</div>
 
 	{#if ui.dialog}
-		<div class="modal">
-			{#if ui.dialog.kind === 'intro'}
+		<!-- 板の外を押すと閉じる（S-6・D-27 の 5）。キーでは Esc -->
+		<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
+		<div
+			class="modal"
+			data-testid="modal"
+			onclick={(e) => {
+				if (e.target === e.currentTarget) game?.dismiss();
+			}}
+		>
+			{#if ui.dialog.kind === 'fresh'}
+				<div class="card" role="dialog" aria-modal="true" aria-label="新しい街で始める">
+					<header>
+						<span class="av big">↺</span>
+						<div>
+							<span class="kick">保存の形が変わった</span>
+							<h2>新しい街で始める</h2>
+						</div>
+					</header>
+					<p class="quote">
+						前の版で遊んだ街の保存は、今の街では読めない。街は空き地から新しく始まる。学んだレッスンの記録は消えない。
+					</p>
+					<div class="opts">
+						<button type="button" class="opt good" onclick={() => game?.freshTown()}
+							><span><strong>新しい街で始める</strong><small>学んだ記録はそのまま</small></span><b
+								>▶</b
+							></button
+						>
+						<a class="opt" href={resolve('/map')}
+							><span><strong>学習へ</strong><small>地図からレッスンを選ぶ</small></span><b>→</b></a
+						>
+					</div>
+				</div>
+			{:else if ui.dialog.kind === 'intro'}
 				<div class="card" role="dialog" aria-modal="true" aria-label="はじめに">
 					<header>
 						<div>
@@ -405,6 +436,9 @@
 							<span class="kick">章の締め</span>
 							<h2>{d.title}</h2>
 						</div>
+						<button class="x" type="button" aria-label="閉じる" onclick={() => game?.dismiss()}
+							>×</button
+						>
 					</header>
 					<p class="quote">{d.body}</p>
 					<div class="opts">
@@ -414,6 +448,19 @@
 								></button
 							>
 						{:else}
+							<button type="button" class="opt good" onclick={() => game?.continueChapter()}
+								><span
+									><strong>続ける</strong><small
+										>街も学んで建った建物もそのまま、明日の朝から次の章へ</small
+									></span
+								><b>▶</b></button
+							>
+							<a class="opt" href={resolve('/map')}
+								><span
+									><strong>学習へ</strong><small>学んだ手が増えると、次の章で要望に応えやすい</small
+									></span
+								><b>→</b></a
+							>
 							{#each d.days as x (x.minute)}
 								<button type="button" class="opt" onclick={() => game?.restartAt(x.minute)}
 									><span

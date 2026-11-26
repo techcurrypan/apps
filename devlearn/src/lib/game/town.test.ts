@@ -8,6 +8,8 @@ import {
 	avgHappy,
 	chapterDay,
 	happyAt,
+	readSave,
+	replayTown,
 	startTown,
 	tickTown,
 	type TownState
@@ -128,6 +130,45 @@ describe('朝と締めと章（15.2・15.7）', () => {
 		]);
 	});
 
+	it('失敗しても「続ける」で次の章へ進める。失敗は記録に残り、時計はまた進む（D-27 の 5・S-6）', () => {
+		const f = run(s0(), T + 10 * DAY).state;
+		expect(f.desk.result).toBe('failed');
+		const sys = [{ field: 'net', builtAt: T, links: [] }];
+		const r = applyTown({ ...f, systems: sys }, { type: 'continue' }, map, NONE);
+		expect(r.ok).toBe(true);
+		const c = r.state;
+		expect(c.desk.result).toBe('playing');
+		expect(c.desk.chapter).toBe(2);
+		expect(c.chapters).toEqual(f.chapters);
+		expect(c.systems).toEqual(sys); // 学んで建った物は消えない
+		expect(c.build).toBe(f.build);
+		// 次の朝 8:00 が新しい章の 1 日目で、要望が届く
+		const m = run(c, T + 5 * DAY).state;
+		expect(m.minute).toBe(T + 5 * DAY);
+		expect(chapterDay(m)).toBe(1);
+		expect(m.desk.requests.length).toBe(3);
+	});
+
+	it('遊んでいる章では「続ける」は打てない', () => {
+		expect(applyTown(s0(), { type: 'continue' }, map, NONE).ok).toBe(false);
+	});
+
+	it('「続ける」を含む記録は、当て直しで同じ状態になる（15.9）', () => {
+		const f = run(s0(), T + 10 * DAY).state;
+		const c = applyTown(f, { type: 'continue' }, map, NONE).state;
+		const live = run(c, T + 7 * DAY).state;
+		const re = replayTown(
+			{
+				version: 1,
+				seed: 1,
+				now: T + 7 * DAY,
+				actions: [{ at: f.minute, action: { type: 'continue' } }]
+			},
+			map
+		).state;
+		expect(re).toEqual(live);
+	});
+
 	it('学ばない遊び方（様子を聞く → 頼み込む → 手探り、残りは外に頼む）で 7 日目に合格し、次の章が始まる', () => {
 		let s = s0();
 		for (let d = 0; d < 7; d++) {
@@ -200,3 +241,19 @@ function playDay(s0: TownState): TownState {
 		}
 	return s;
 }
+
+describe('保存の読み込み（D-27 の 6）', () => {
+	const ok = { version: 1, seed: 7, now: T, actions: [] };
+	it('今の形の保存は読む', () => {
+		expect(readSave(JSON.stringify(ok), 7)).toEqual(ok);
+	});
+	it('保存が無ければ null（はじめての人）', () => {
+		expect(readSave(null, 7)).toBeNull();
+	});
+	it('形の違う・壊れた・種の違う保存は old（「新しい街で始める」を出す）', () => {
+		expect(readSave(JSON.stringify({ ...ok, version: 0 }), 7)).toBe('old');
+		expect(readSave(JSON.stringify({ ...ok, seed: 8 }), 7)).toBe('old');
+		expect(readSave('{', 7)).toBe('old');
+		expect(readSave(JSON.stringify({ ...ok, actions: 3 }), 7)).toBe('old');
+	});
+});

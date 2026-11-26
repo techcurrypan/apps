@@ -4,6 +4,7 @@
 import {
 	clockOf,
 	MIN_PER_DAY,
+	MORNING,
 	slotsLeft,
 	START_MINUTE,
 	tick,
@@ -91,6 +92,8 @@ export type TownAction =
 	| { type: 'park'; lot: number }
 	| { type: 'road'; a: SnapPt; b: Pt }
 	| { type: 'bulldoze'; id: number }
+	/** 失敗した章を閉じて、次の朝から次の章へ進む（D-27 の 5。失敗は chapters に残る） */
+	| { type: 'continue' }
 	| DeskAction;
 
 export type TownEvent =
@@ -110,6 +113,22 @@ export type TownSave = {
 	now: number;
 	actions: { at: number; action: TownAction }[];
 };
+
+/** 今の保存の形（形を変えたら上げる。古い保存は読まずに「新しい街で始める」。D-27 の 6） */
+export const SAVE_VERSION = 1;
+
+/** 保存を読む。無ければ null、今の形でなければ 'old' */
+export function readSave(raw: string | null, seed: number): TownSave | 'old' | null {
+	if (!raw) return null;
+	try {
+		const v = JSON.parse(raw) as Partial<TownSave> | null;
+		if (v && v.version === SAVE_VERSION && v.seed === seed && Array.isArray(v.actions))
+			return v as TownSave;
+	} catch {
+		/* 壊れた保存は古い物と同じに扱う */
+	}
+	return 'old';
+}
 
 export type ApplyResult = {
 	ok: boolean;
@@ -298,7 +317,18 @@ export function tickTown(
 // ---------------- 手 ----------------
 
 const isDesk = (a: TownAction): a is DeskAction =>
-	a.type !== 'zone' && a.type !== 'park' && a.type !== 'road' && a.type !== 'bulldoze';
+	a.type !== 'zone' &&
+	a.type !== 'park' &&
+	a.type !== 'road' &&
+	a.type !== 'bulldoze' &&
+	a.type !== 'continue';
+
+/** 次の 8:00（今が 8:00 ちょうどなら今） */
+const nextMorning = (minute: number) => {
+	const d = Math.floor((minute - MORNING) / MIN_PER_DAY);
+	const m = d * MIN_PER_DAY + MORNING;
+	return m >= minute ? m : m + MIN_PER_DAY;
+};
 
 /** 要望の手を打つときに渡す物 */
 export function deskCtx(s: TownState): DeskCtx {
@@ -321,8 +351,18 @@ export function applyTown(
 	learned: ReadonlySet<string> | null
 ): ApplyResult {
 	const fail = (why: string): ApplyResult => ({ ok: false, why, state: s, events: [] });
+	if (a.type === 'continue') {
+		if (s.desk.result !== 'failed') return fail('続けるのは、章に失敗した時だけ');
+		// 街・学んで建った物・記録はそのまま。次の朝 8:00 が次の章の 1 日目
+		return {
+			ok: true,
+			why: '',
+			state: { ...s, desk: nextDesk(s.desk), chapterStart: nextMorning(s.minute) },
+			events: []
+		};
+	}
 	if (s.desk.result === 'failed')
-		return fail('この章は終わった。章の初めか、選んだ時点からやり直す');
+		return fail('この章は終わった。「続ける」で次の章へ進むか、選んだ時点からやり直す');
 	if (isDesk(a)) return deskMove(s, a, map, learned);
 	switch (a.type) {
 		case 'zone':

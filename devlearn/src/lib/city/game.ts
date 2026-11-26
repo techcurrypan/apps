@@ -18,7 +18,9 @@ import {
 	population,
 	RANK_NAMES,
 	RANKS,
+	readSave,
 	replayTown,
+	SAVE_VERSION,
 	startTown as startTownState,
 	tickTown,
 	type TownAction,
@@ -145,7 +147,7 @@ export type ResultDialog = {
 	body: string;
 	days: { label: string; minute: number }[];
 };
-export type Dialog = null | { kind: 'intro' } | ReqDialog | ResultDialog;
+export type Dialog = null | { kind: 'intro' } | { kind: 'fresh' } | ReqDialog | ResultDialog;
 /** キーボードだけで道具を使う一覧（screen-design.md 10.6） */
 export type PickView = { title: string; items: string[]; sel: number; plan: string };
 export type Goals = {
@@ -372,22 +374,32 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 	/** 打てた手の記録（何分目に・何をした。game-design.md 15.9）。任意の時点はここから作り直す */
 	let log: TownSave['actions'] = [];
 	let restored = false;
+	/** 古い形の保存があった（読まずに「新しい街で始める」を出す。D-27 の 6） */
+	let oldSave = false;
 	if (!still) {
 		try {
-			const raw = localStorage.getItem(TOWN_KEY);
-			const sv = raw ? (JSON.parse(raw) as TownSave) : null;
-			if (sv && sv.version === 1 && sv.seed === SEED && Array.isArray(sv.actions)) {
+			const sv = readSave(localStorage.getItem(TOWN_KEY), SEED);
+			if (sv === 'old') oldSave = true;
+			else if (sv) {
 				ts = replayTown(sv, MAP).state;
 				log = sv.actions.slice();
 				restored = true;
 			}
 		} catch {
 			/* 読めない記録は使わない */
+			oldSave = true;
 		}
 	}
-	const save = (): TownSave => ({ version: 1, seed: SEED, now: ts.minute, actions: log.slice() });
+	const save = (): TownSave => ({
+		version: SAVE_VERSION,
+		seed: SEED,
+		now: ts.minute,
+		actions: log.slice()
+	});
+	/** 新しい街で始める時は、閉じる前に古い保存を書き戻さない */
+	let wiped = false;
 	function persist() {
-		if (still) return;
+		if (still || wiped) return;
 		try {
 			localStorage.setItem(TOWN_KEY, JSON.stringify(save()));
 			// 学習画面の上の帯に出す数（LS-A1）
@@ -1746,7 +1758,11 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 			kind: 'result',
 			passed,
 			title: passed ? `章の合格 ・ 評価「${ts.desk.grade}」` : 'この章は失敗',
-			body: c.why + (passed ? '。明日の朝 8:00 から次の章が始まる' : '。時計は止まった'),
+			body:
+				c.why +
+				(passed
+					? '。明日の朝 8:00 から次の章が始まる'
+					: '。「続ける」で、街も学んで建った建物もそのまま、明日の朝 8:00 から次の章へ進む（この章は不合格として残る）'),
 			days: passed ? [] : days
 		};
 		S.prevSpeed = passed ? S.speed || 1 : 0;
@@ -1755,7 +1771,7 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 	/** 手の記録を、その時点の前で切って作り直す（巻き戻し。15.7・段 4 の 12 章） */
 	function restartAt(minute: number) {
 		const cut: TownSave = {
-			version: 1,
+			version: SAVE_VERSION,
 			seed: SEED,
 			now: minute,
 			actions: log.filter((a) => a.at < minute)
@@ -2191,6 +2207,34 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 		ui.dialog = null;
 		setSpeed(S.prevSpeed || 1);
 	}
+	/** 失敗した章を閉じて次の章へ（D-27 の 5）。学んだ記録と建物は残る */
+	function continueChapter() {
+		if (ts.desk.result === 'failed') {
+			const r = act({ type: 'continue' });
+			if (r.ok)
+				toast('次の章へ', '明日の朝 8:00 から次の章が始まる。この章は不合格として残った', '');
+		}
+		ui.dialog = null;
+		setSpeed(1);
+	}
+	/** どの板も、×・Esc・板の外で閉じる（S-6・D-27 の 5） */
+	function dismiss() {
+		const d = ui.dialog;
+		if (!d) return;
+		if (d.kind === 'result' && !d.passed) continueChapter();
+		else if (d.kind === 'fresh') freshTown();
+		else closeDlg();
+	}
+	/** 古い保存を捨てて、新しい街で始める（学んだ記録は別の所にあり、消さない） */
+	function freshTown() {
+		wiped = true;
+		try {
+			localStorage.removeItem(TOWN_KEY);
+		} catch {
+			/* 消せなくても読み直す */
+		}
+		location.reload();
+	}
 	/** 板の手を打つ。片付いたら板を閉じ、街の変化を見せる（G-5） */
 	function doMove(key: number) {
 		const a = moveList[key];
@@ -2444,7 +2488,7 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 			clampCam();
 		}
 		if (e.key === 'Escape') {
-			if (ui.dialog && ui.dialog.kind !== 'result') closeDlg();
+			if (ui.dialog) dismiss();
 			else {
 				setTool('select');
 				select(null);
@@ -2627,6 +2671,7 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 			openReq,
 			doMove,
 			closeDlg,
+			dismiss,
 			ui,
 			setLearned: (ids: string[] | null) => (learnedOverride = ids ? new Set(ids) : null),
 			nextMorning,
@@ -2870,7 +2915,11 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 	setView('ground');
 	renderReqs();
 	renderHUD();
-	if (!STILL && !restored) {
+	if (!STILL && oldSave) {
+		ui.dialog = { kind: 'fresh' };
+		S.prevSpeed = 1;
+		setSpeed(0);
+	} else if (!STILL && !restored) {
 		ui.dialog = { kind: 'intro' };
 		S.prevSpeed = 1;
 		setSpeed(0);
@@ -2950,6 +2999,9 @@ export function startTown(layers: Layers, ui: TownUi, still: boolean) {
 		setView,
 		openReq,
 		closeDlg,
+		dismiss,
+		continueChapter,
+		freshTown,
 		doMove,
 		restartAt,
 		replayChange,
