@@ -22,6 +22,9 @@
 	import Sphere from '#lib/ui/scene/kit/Sphere.svelte';
 	import Token from '#lib/ui/scene/kit/Token.svelte';
 	import Var from '#lib/ui/scene/kit/Var.svelte';
+	import Clock from '#lib/ui/scene/label/Clock.svelte';
+	import Note from '#lib/ui/scene/label/Note.svelte';
+	import Num from '#lib/ui/scene/label/Num.svelte';
 	import Tag from '#lib/ui/scene/label/Tag.svelte';
 
 	const schemes = ['light', 'dark'] as const;
@@ -40,7 +43,7 @@
 		{#each schemes as sc (sc)}
 			<section class="dl-scene-{sc}" data-scheme={sc}>
 				<svg
-					viewBox="0 0 1000 1500"
+					viewBox="0 0 1000 1480"
 					role="img"
 					aria-label="部品の一覧（{sc === 'light' ? '明るい' : '暗い'}配色）"
 				>
@@ -140,6 +143,12 @@
 							{ text: 'fd', color: '#f0a252', note: '番号札', row: 1 }
 						]}
 					/>
+					<!-- 7 段目：札（label/） -->
+					<Tag x={110} y={1440} text="sk_write_queue" dot="var(--dl-obj-teal)" />
+					<Note x={360} y={1440} text="send() は 40 µs で戻る" />
+					<Num x={520} y={1440} text="cwnd 10" />
+					<Num x={630} y={1440} text="参照 2" tone="orange" />
+					<Clock x={750} y={1440} label="200 ms 後" />
 				</svg>
 			</section>
 		{/each}
@@ -167,7 +176,7 @@
 	}
 	svg {
 		width: 1000px;
-		height: 1500px;
+		height: 1480px;
 		display: block;
 	}
 </style>
