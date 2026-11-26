@@ -68,7 +68,7 @@
 				text={title}
 				size={12.5}
 				{uik}
-				color="var(--dl-text-muted)"
+				color="var(--dl-ink)"
 			/>{/if}
 		{#if children}{@render children()}{/if}
 	</g>

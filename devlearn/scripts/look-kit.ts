@@ -8,7 +8,7 @@ import { PROTO_SHIM } from './lib/learn3-measure.ts';
 import { openChrome, sleep, type Tab } from './lib/cdp.ts';
 
 const base = (process.argv[2] ?? 'https://devlearn.techcurrybread.workers.dev').replace(/\/$/, '');
-const OUT = 'docs/progress/shots/phase-10-P';
+const OUT = process.env.KIT_OUT ?? 'docs/progress/shots/phase-10-P';
 const PROTO = pathToFileURL(resolve('docs/prototype/learn/learn11.html')).href;
 /** 比べる場面（learn-standard.md 15.1）。ステップは 1 から */
 const SCENES: [string, string, number][] = [
@@ -44,6 +44,9 @@ async function main() {
 			await tab.go(`${PROTO}#${lesson}-still`);
 			await sleep(1500);
 			await tab.eval(PROTO_SHIM);
+			// 同じファイルで # だけ変えても読み直さないので、題は試作の中の関数で替える
+			await tab.eval(`window.__l3.lesson(${JSON.stringify(lesson)})`);
+			await sleep(800);
 			await tab.eval(`window.__l3.go(${step - 1})`);
 			await sleep(3500);
 			await tab.shot(`${OUT}/proto-${name}-${lesson}-${step}.png`);

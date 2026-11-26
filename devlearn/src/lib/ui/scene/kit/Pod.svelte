@@ -57,7 +57,7 @@
 			{x}
 			y={y - lift - h + 5 * uik}
 			text={name}
-			size={R > 30 ? 13 : 12}
+			size={R > 30 ? 14 : 13}
 			{uik}
 			weight={800}
 			anchor="middle"

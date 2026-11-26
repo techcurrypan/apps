@@ -47,8 +47,8 @@
 		stroke: var(--dl-ink);
 	}
 	.bd.dark {
-		fill: #15171c;
-		stroke: #2b2f37;
+		fill: var(--dl-card-dark);
+		stroke: var(--dl-card-dark-edge);
 	}
 	text {
 		font-family: var(--dl-font-code);

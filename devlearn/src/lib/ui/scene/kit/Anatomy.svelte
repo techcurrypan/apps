@@ -39,8 +39,8 @@
 		width={laid.W + 40 * uik}
 		height={sz + 28 * uik}
 		rx={12 * uik}
-		fill="#15171c"
-		style:stroke="var(--dl-ink)"
+		style:fill="var(--dl-card-dark)"
+		style:stroke="var(--dl-card-dark-edge)"
 		stroke-width={1.6 * uik}
 	/>
 	{#each laid.out as p, i (i)}

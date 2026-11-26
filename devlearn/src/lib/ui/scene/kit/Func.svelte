@@ -61,6 +61,9 @@
 			text-anchor="middle"
 			style:font-size="{26 * s}px"
 			font-weight="800"
+			paint-order="stroke"
+			style:stroke={edge(tone)}
+			stroke-width={1.2 * s}
 			style:fill={edge(tone)}>{glyph}</text
 		>
 	{/if}

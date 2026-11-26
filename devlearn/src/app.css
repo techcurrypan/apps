@@ -173,6 +173,9 @@ button:disabled {
 	--dl-obj-teal: #1f8f8f;
 	--dl-obj-yellow: #d9a21b;
 	--dl-obj-gray: #8a877f;
+	/* 暗い札（端末の出力・式の分解）の地。暗い配色では背景より明るくして見分ける */
+	--dl-card-dark: #15171c;
+	--dl-card-dark-edge: #1d1f24;
 }
 @media (prefers-color-scheme: dark) {
 	:root:not([data-theme='light']) {
@@ -180,6 +183,8 @@ button:disabled {
 		--dl-scene-pn: #1c1f24;
 		--dl-scene-bg: #14161a;
 		--dl-scene-grid: rgba(200, 200, 220, 0.06);
+		--dl-card-dark: #2b3039;
+		--dl-card-dark-edge: #5b6372;
 	}
 }
 :root[data-theme='dark'],
@@ -188,9 +193,13 @@ button:disabled {
 	--dl-scene-pn: #1c1f24;
 	--dl-scene-bg: #14161a;
 	--dl-scene-grid: rgba(200, 200, 220, 0.06);
+	--dl-card-dark: #2b3039;
+	--dl-card-dark-edge: #5b6372;
 }
 :root[data-theme='light'] .dl-scene-dark {
 	--dl-ink: #ecebe6;
 	--dl-scene-pn: #1c1f24;
 	--dl-scene-bg: #14161a;
+	--dl-card-dark: #2b3039;
+	--dl-card-dark-edge: #5b6372;
 }

@@ -26,6 +26,7 @@
 	import Note from '#lib/ui/scene/label/Note.svelte';
 	import Num from '#lib/ui/scene/label/Num.svelte';
 	import Tag from '#lib/ui/scene/label/Tag.svelte';
+	import Halo from '#lib/ui/scene/label/Halo.svelte';
 
 	const schemes = ['light', 'dark'] as const;
 	let hov = $state('');
@@ -43,7 +44,7 @@
 		{#each schemes as sc (sc)}
 			<section class="dl-scene-{sc}" data-scheme={sc}>
 				<svg
-					viewBox="0 0 1000 1480"
+					viewBox="-70 0 1140 1860"
 					role="img"
 					aria-label="部品の一覧（{sc === 'light' ? '明るい' : '暗い'}配色）"
 				>
@@ -73,7 +74,7 @@
 					{@render name(450, 490, 'ring')}
 					<Nic x={700} y={400} id="nic" />
 					{@render name(700, 490, 'nic')}
-					<Hex x={900} y={400} glyph="⇉" s={0.7} id="hex" />
+					<Hex x={900} y={400} glyph="⇉" s={0.85} id="hex" />
 					{@render name(900, 490, 'hex')}
 					<!-- 3 段目 -->
 					<Db x={120} y={660} id="db" />
@@ -89,32 +90,32 @@
 					<Pod x={100} y={880} s={0.8} state="ready" name="web-a" />
 					<Pod x={260} y={880} s={0.8} state="create" name="web-b" />
 					<Pod x={420} y={880} s={0.8} state="dead" name="web-c" />
-					<Frame x={740} y={930} name="フレーム add()" current id="frame" />
+					<Frame x={790} y={960} name="フレーム add()" current id="frame" />
 					<!-- 5 段目 -->
-					<List x={200} y={1080} vals={['1', '2', '3']} cap={5} newIdx={2} id="list" />
-					{@render name(200, 1170, 'list（容量 5）')}
-					<Var x={480} y={1080} name="a" id="var" />
-					<Var x={580} y={1080} name="b" />
-					<Var x={680} y={1080} name="c" />
-					{@render name(580, 1170, 'var')}
-					<Token x={800} y={1080} label="A1" />
-					<Token x={860} y={1080} label="A1′" kind="clone" />
-					<Token x={920} y={1080} label="ACK" kind="ack" />
-					<Packet x={820} y={1140} />
-					<Packet x={860} y={1140} kind="drop" />
-					{@render name(860, 1185, 'token・packet')}
+					<List x={200} y={1160} vals={['1', '2', '3']} cap={5} newIdx={2} id="list" />
+					{@render name(200, 1250, 'list（容量 5）')}
+					<Var x={450} y={1170} name="a" id="var" />
+					<Var x={560} y={1170} name="b" />
+					<Var x={670} y={1170} name="c" />
+					{@render name(560, 1250, 'var')}
+					<Token x={800} y={1160} label="A1" />
+					<Token x={860} y={1160} label="A1′" kind="clone" />
+					<Token x={920} y={1160} label="ACK" kind="ack" />
+					<Packet x={820} y={1220} />
+					<Packet x={860} y={1220} kind="drop" />
+					{@render name(860, 1265, 'token・packet')}
 					<!-- 6 段目：板・棒・球・札・式の分解 -->
-					<Panel x={30} y={1220} w={420} h={130} tone="orange" title="平均の分布" id="panel">
+					<Panel x={30} y={1300} w={420} h={130} tone="orange" title="平均の分布" id="panel">
 						{#each [20, 45, 80, 110, 90, 55, 30, 12] as h, i (i)}
-							<Bar x={60 + i * 44} y={1335} w={30} {h} />
+							<Bar x={60 + i * 44} y={1415} w={30} {h} />
 						{/each}
 					</Panel>
 					{#each [0, 1, 2, 3, 4, 5] as i (i)}
-						<Sphere x={500 + i * 22} y={1250} />
+						<Sphere x={500 + i * 22} y={1330} />
 					{/each}
 					<Card
 						x={490}
-						y={1280}
+						y={1360}
 						w={190}
 						lines={[
 							'ss -tim',
@@ -124,7 +125,7 @@
 					/>
 					<Card
 						x={700}
-						y={1220}
+						y={1300}
 						w={270}
 						dark
 						lines={[
@@ -133,22 +134,33 @@
 							{ text: 'web-2  0/1  OOMKilled', color: '#ff8a8a' }
 						]}
 					/>
+					<!-- 式の分解（言葉をそろえる。第 18.1）：式を全て大きく書き、部分 3 つを意味の札と結ぶ -->
 					<Anatomy
-						x={830}
-						y={1360}
-						size={20}
+						x={700}
+						y={1640}
 						parts={[
 							{ text: 'send', color: '#6ea0ff', note: '送る' },
 							{ text: '(' },
-							{ text: 'fd', color: '#f0a252', note: '番号札', row: 1 }
+							{ text: 'fd', color: '#f0a252', note: '番号札', row: 1 },
+							{ text: ', ' },
+							{ text: 'buf', color: '#5fd0a0', note: '送る中身の置き場', row: 2 },
+							{ text: ', ' },
+							{ text: '65536', color: '#e7c35a', note: 'バイト数' },
+							{ text: ')' }
 						]}
 					/>
+					<!-- 名前の札と下の説明の 2 段（試作の物の札と同じ形） -->
+					<Tag x={160} y={1620} text="kube-apiserver" dot="var(--dl-obj-teal)" />
+					<Halo x={160} y={1646} text="ただ 1 つの入口" size={12.5} anchor="middle" weight={700} />
+					<!-- 板の段の色（母集団・標本・平均） -->
+					<Panel x={30} y={1680} w={120} h={60} tone="teal" title="母集団" />
+					<Panel x={170} y={1680} w={120} h={60} tone="blue" title="標本" />
 					<!-- 7 段目：札（label/） -->
-					<Tag x={110} y={1440} text="sk_write_queue" dot="var(--dl-obj-teal)" />
-					<Note x={360} y={1440} text="send() は 40 µs で戻る" />
-					<Num x={520} y={1440} text="cwnd 10" />
-					<Num x={630} y={1440} text="参照 2" tone="orange" />
-					<Clock x={750} y={1440} label="200 ms 後" />
+					<Tag x={110} y={1520} text="sk_write_queue" dot="var(--dl-obj-teal)" />
+					<Note x={360} y={1520} text="send() は 40 µs で戻る" />
+					<Num x={520} y={1520} text="cwnd 10" />
+					<Num x={630} y={1520} text="参照 2" tone="orange" />
+					<Clock x={750} y={1520} label="200 ms 後" />
 				</svg>
 			</section>
 		{/each}
@@ -157,14 +169,14 @@
 
 <style>
 	main {
-		max-width: 2080px;
+		max-width: 2360px;
 		margin: 0 auto;
 		padding: 16px;
 	}
 	/* 図の 1 単位を画面の 1px にする（字の大きさを本番の図と同じにして比べる） */
 	.pair {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, 1016px);
+		grid-template-columns: repeat(auto-fit, 1156px);
 		gap: 16px;
 		justify-content: center;
 	}
@@ -175,8 +187,9 @@
 		color: var(--dl-ink);
 	}
 	svg {
-		width: 1000px;
-		height: 1480px;
+		/* 図の 1 単位 ＝ 画面の 1px（viewBox と同じ大きさ） */
+		width: 1140px;
+		height: 1860px;
 		display: block;
 	}
 </style>
