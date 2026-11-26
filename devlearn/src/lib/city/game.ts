@@ -159,6 +159,8 @@ export type Goals = {
 	daysLeft: number;
 	rankNext: number | null;
 	rankName: string;
+	/** 章が始まったか（最初の住む人が来た次の朝から。15.12） */
+	started: boolean;
 };
 
 export type TownUi = {
@@ -217,7 +219,7 @@ export function newTownUi(): TownUi {
 		chapter: '第 1 章',
 		day: 1,
 		slots: 8,
-		goals: { clientSat: 50, daysLeft: 7, rankNext: null, rankName: '' },
+		goals: { clientSat: 50, daysLeft: 7, rankNext: null, rankName: '', started: false },
 		systems: [],
 		pick: null
 	};
@@ -854,6 +856,7 @@ export function startTown(
 		for (const sg of city.signals) {
 			const gx = greenX(sg.n);
 			sg.cs.forEach(([px, pz], k) => {
+				if (!seen(px, pz)) return;
 				const on = k < 2 ? gx : !gx;
 				box(
 					g,
@@ -871,6 +874,7 @@ export function startTown(
 		// flags
 		if (city.FEAT.flags)
 			for (const [fx, fy, fz] of city.FEAT.flags) {
+				if (!seen(fx, fz)) continue;
 				const t = TIME * 3;
 				const pts: number[][] = [];
 				for (let k = 0; k <= 4; k++)
@@ -1844,6 +1848,7 @@ export function startTown(
 	}
 	/** 17:00 の日報：その日に動いた数と理由（15.2） */
 	function dayReport(at: number) {
+		if (!ts.started) return;
 		const d = ts.desk.clientSat - dayStart.clientSat;
 		const m = ts.build.money - dayStart.money;
 		toast(
@@ -2102,7 +2107,11 @@ export function startTown(
 		ui.demand = demand();
 		const day = Math.max(1, chapterDay(ts));
 		const c = ts.desk.chapter;
-		ui.chapter = c === 'free' ? `自由の章 ${ts.desk.freeRound}` : `第 ${c} 章`;
+		ui.chapter = !ts.started
+			? '章の前'
+			: c === 'free'
+				? `自由の章 ${ts.desk.freeRound}`
+				: `第 ${c} 章`;
 		ui.day = day;
 		ui.slots = slotsLeft(ts.minute);
 		const p = ui.pop;
@@ -2110,7 +2119,8 @@ export function startTown(
 			clientSat: ts.desk.clientSat,
 			daysLeft: Math.max(0, DAYS_PER_CHAPTER - day),
 			rankNext: ts.rank < RANKS.length ? RANKS[ts.rank] - p : null,
-			rankName: RANK_NAMES[ts.rank]
+			rankName: RANK_NAMES[ts.rank],
+			started: ts.started
 		};
 		if (ui.budgetOpen) renderBudget();
 	}
@@ -3032,6 +3042,13 @@ export function startTown(
 		S.prevSpeed = 1;
 		setSpeed(0);
 	} else if (!STILL && !restored) {
+		// 空き地の始まりは、海と岸と東の入口の道が入るよう引いて見せる（見た目だけ）
+		if (!ts.build.standing.length) {
+			cam.v.dist = 620;
+			cam.v.pitch = 0.62;
+			cam.v.tx = 60;
+			cam.v.tz = 40;
+		}
 		ui.dialog = { kind: 'intro' };
 		S.prevSpeed = 1;
 		setSpeed(0);

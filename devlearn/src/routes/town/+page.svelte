@@ -153,16 +153,25 @@
 		</div>
 		<section class="goals" aria-label="次の目標">
 			<h4>次の目標</h4>
-			<p>
-				依頼主の満足度 <b>{ui.goals.clientSat}</b>
-				<small>（合格 40 ・ 良 70 ・ 優 90）</small><br />章の締めまで あと {ui.goals.daysLeft} 日
-			</p>
-			<div class="meter wide">
-				<i
-					class={ui.goals.clientSat >= 70 ? 'good' : ui.goals.clientSat >= 40 ? 'mid' : 'bad'}
-					style:width="{ui.goals.clientSat}%"
-				></i>
-			</div>
+			{#if ui.goals.started}
+				<p>
+					依頼主の満足度 <b>{ui.goals.clientSat}</b>
+					<small>（合格 40 ・ 良 70 ・ 優 90）</small><br />章の締めまで あと {ui.goals.daysLeft} 日
+				</p>
+				<div class="meter wide">
+					<i
+						class={ui.goals.clientSat >= 70 ? 'good' : ui.goals.clientSat >= 40 ? 'mid' : 'bad'}
+						style:width="{ui.goals.clientSat}%"
+					></i>
+				</div>
+			{:else}
+				<p>
+					<b>最初のレッスンに合格する</b><br /><small
+						>合格すると最初の家が建ち、住む人が来る。その次の朝から章が始まり、要望が届く</small
+					>
+				</p>
+				<p><a href={resolve('/map')}>地図からレッスンを選ぶ →</a></p>
+			{/if}
 			<p>
 				{#if ui.goals.rankNext !== null}次の町の格まで 人口 あと {fmt(
 						Math.max(0, ui.goals.rankNext)
