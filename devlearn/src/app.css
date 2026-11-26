@@ -155,3 +155,42 @@ button:disabled {
 	clip-path: inset(50%);
 	white-space: nowrap;
 }
+
+/* 学習画面 第 3 版の図（learn-standard.md 第 16.2・17 章）。値は試作 learn11 の色を初めの値にした。
+   部品は --dl-ink（輪郭と字）・--dl-scene-pn（図の地と札）・--dl-scene-bg・--dl-obj-*（物の色）だけを使う。
+   .dl-scene-light・.dl-scene-dark は一覧の頁（/kit）で明暗を並べるため。 */
+:root,
+.dl-scene-light {
+	--dl-ink: #1d1f24;
+	--dl-scene-pn: #fffdf8;
+	--dl-scene-bg: #f4f1ea;
+	--dl-scene-grid: rgba(120, 110, 90, 0.1);
+	--dl-obj-blue: #3b7ddd;
+	--dl-obj-orange: #e0892b;
+	--dl-obj-green: #2f9e6b;
+	--dl-obj-red: #d64545;
+	--dl-obj-purple: #7a4cc2;
+	--dl-obj-teal: #1f8f8f;
+	--dl-obj-yellow: #d9a21b;
+	--dl-obj-gray: #8a877f;
+}
+@media (prefers-color-scheme: dark) {
+	:root:not([data-theme='light']) {
+		--dl-ink: #ecebe6;
+		--dl-scene-pn: #1c1f24;
+		--dl-scene-bg: #14161a;
+		--dl-scene-grid: rgba(200, 200, 220, 0.06);
+	}
+}
+:root[data-theme='dark'],
+.dl-scene-dark {
+	--dl-ink: #ecebe6;
+	--dl-scene-pn: #1c1f24;
+	--dl-scene-bg: #14161a;
+	--dl-scene-grid: rgba(200, 200, 220, 0.06);
+}
+:root[data-theme='light'] .dl-scene-dark {
+	--dl-ink: #ecebe6;
+	--dl-scene-pn: #1c1f24;
+	--dl-scene-bg: #14161a;
+}

@@ -8,7 +8,7 @@
 2. `docs/prototype/learn/README.md` の learn11 の節。作りの元 `learn11-src/core.js` の 48〜130 行（slab・tag・drawObj・部品）と 300〜380 行（言葉・再生）
 3. この頁の「10-P」の表（下）と「測る道具の結果」。`decisions.md`「自分で決めたこと」の 2026-11-26 の 3 項（窓口 `__l3`・型ごとの線・試作の欠け）
 4. `explanation-standard.md` 第 10・11 章（手順 7 の言葉の仕組みに入る時）
-5. 次は手順 3（部品集 `src/lib/ui/scene/kit/` と `/kit` の頁）。手順 2 の `src/lib/ui/scene/iso.ts` を使う
+5. 次は手順 3 の判定（`/kit` を公開 URL で撮り、試作の同じ部品と並べて判定者 2 人に「≥」まで比べさせる）と手順 4（札と字の大きさ・`UIK`）。部品は `src/lib/ui/scene/kit/`、札は `label/`
 
 ## 10-P　試作 learn11 を本番に移す（D-25。2026-11-26 に始めた。進行中）
 
@@ -19,7 +19,7 @@
 | 0 公開を通す | 済（公開 URL の「配信：0b4bc1a」＝ origin/main の最新。Actions の Deploy devlearn 成功） | — |
 | 1 測る道具（`--scene`・`--loop`・`--hover`・`--terms`・`--perf`）。試作で通り、本番で落ちる | 済（下の「測る道具の結果」） | この実行のコミット |
 | 2 等角の計算 `src/lib/ui/scene/iso.ts` | 済（単体テスト 10 本） | この実行のコミット |
-| 3 部品集 `kit/` と `/kit` の頁 | 未 | |
+| 3 部品集 `kit/` と `/kit` の頁 | 作った（20 部品 ＋ 共通 6。明暗。判定者 2 人の比べは未） | この実行のコミット |
 | 4 札と字の大きさ `label/`（UIK） | 未 | |
 | 5 構図と移り変わり `learn/scene/layout.ts` | 未 | |
 | 6 再生（繰り返し・一時停止・速さ・数え上げ・線の点） | 未 | |
