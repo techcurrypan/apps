@@ -44,7 +44,7 @@
 		{#each schemes as sc (sc)}
 			<section class="dl-scene-{sc}" data-scheme={sc}>
 				<svg
-					viewBox="-70 0 1140 1860"
+					viewBox="-70 0 1140 2020"
 					role="img"
 					aria-label="部品の一覧（{sc === 'light' ? '明るい' : '暗い'}配色）"
 				>
@@ -65,23 +65,23 @@
 					{@render name(370, 245, 'func（青）')}
 					<Func x={620} y={150} tone="orange" glyph="⚡" />
 					{@render name(620, 245, 'func（橙）')}
-					<Block x={870} y={150} glyph="⌖" id="block" />
+					<Block x={870} y={150} glyph="↻" id="block" />
 					{@render name(870, 245, 'block')}
 					<!-- 2 段目 -->
 					<Queue x={160} y={400} clock id="queue" />
 					{@render name(160, 490, 'queue')}
 					<Ring x={450} y={400} id="ring" />
 					{@render name(450, 490, 'ring')}
-					<Nic x={700} y={400} id="nic" />
-					{@render name(700, 490, 'nic')}
-					<Hex x={900} y={400} glyph="⇉" s={0.85} id="hex" />
-					{@render name(900, 490, 'hex')}
+					<Nic x={680} y={400} id="nic" />
+					{@render name(680, 490, 'nic')}
+					<Hex x={940} y={400} glyph="⇉" s={0.85} id="hex" />
+					{@render name(940, 490, 'hex')}
 					<!-- 3 段目 -->
 					<Db x={120} y={660} id="db" />
 					{@render name(120, 740, 'db')}
-					<Platform x={430} y={650} w={260} d={170} id="platform" />
-					<Pod x={400} y={630} s={0.45} state="ready" name="web-1" label="" />
-					<Pod x={470} y={665} s={0.45} state="dead" name="web-2" label="" />
+					<Platform x={430} y={650} w={300} d={190} id="platform" />
+					<Pod x={385} y={630} s={0.62} state="ready" name="web-1" />
+					<Pod x={485} y={670} s={0.62} state="dead" name="web-2" />
 					{@render name(430, 760, 'platform と pod')}
 					<Platform x={760} y={650} w={220} d={150} down />
 					<Pod x={760} y={650} s={0.45} state="paper" label="" />
@@ -90,20 +90,21 @@
 					<Pod x={100} y={880} s={0.8} state="ready" name="web-a" />
 					<Pod x={260} y={880} s={0.8} state="create" name="web-b" />
 					<Pod x={420} y={880} s={0.8} state="dead" name="web-c" />
-					<Frame x={790} y={960} name="フレーム add()" current id="frame" />
+					<Frame x={610} y={950} w={190} d={120} name="<module>" />
+					<Frame x={900} y={985} w={190} d={120} name="フレーム add()" current id="frame" />
 					<!-- 5 段目 -->
 					<List x={200} y={1160} vals={['1', '2', '3']} cap={5} newIdx={2} id="list" />
 					{@render name(200, 1250, 'list（容量 5）')}
-					<Var x={450} y={1170} name="a" id="var" />
-					<Var x={560} y={1170} name="b" />
-					<Var x={670} y={1170} name="c" />
-					{@render name(560, 1250, 'var')}
-					<Token x={800} y={1160} label="A1" />
-					<Token x={860} y={1160} label="A1′" kind="clone" />
-					<Token x={920} y={1160} label="ACK" kind="ack" />
-					<Packet x={820} y={1220} />
-					<Packet x={860} y={1220} kind="drop" />
-					{@render name(860, 1265, 'token・packet')}
+					<Var x={430} y={1170} name="a" id="var" />
+					<Var x={575} y={1170} name="b" />
+					<Var x={720} y={1170} name="c" />
+					{@render name(575, 1250, 'var')}
+					<Token x={850} y={1160} label="A1" />
+					<Token x={910} y={1160} label="A1′" kind="clone" />
+					<Token x={970} y={1160} label="ACK" kind="ack" />
+					<Packet x={870} y={1220} />
+					<Packet x={910} y={1220} kind="drop" />
+					{@render name(910, 1265, 'token・packet')}
 					<!-- 6 段目：板・棒・球・札・式の分解 -->
 					<Panel x={30} y={1300} w={420} h={130} tone="orange" title="平均の分布" id="panel">
 						{#each [20, 45, 80, 110, 90, 55, 30, 12] as h, i (i)}
@@ -153,6 +154,10 @@
 					<Tag x={160} y={1620} text="kube-apiserver" dot="var(--dl-obj-teal)" />
 					<Halo x={160} y={1646} text="ただ 1 つの入口" size={12.5} anchor="middle" weight={700} />
 					<!-- 板の段の色（母集団・標本・平均） -->
+					<!-- 強めた状態（主役の物の下の台を物の色で淡く塗る） -->
+					<Func x={200} y={1880} tone="blue" glyph="ƒ" hl />
+					<Func x={450} y={1880} tone="orange" glyph="⚡" hl />
+					<Tag x={325} y={1975} text="強めた func（主役）" size={14} />
 					<Panel x={30} y={1680} w={120} h={60} tone="teal" title="母集団" />
 					<Panel x={170} y={1680} w={120} h={60} tone="blue" title="標本" />
 					<!-- 7 段目：札（label/） -->
@@ -189,7 +194,7 @@
 	svg {
 		/* 図の 1 単位 ＝ 画面の 1px（viewBox と同じ大きさ） */
 		width: 1140px;
-		height: 1860px;
+		height: 2020px;
 		display: block;
 	}
 </style>

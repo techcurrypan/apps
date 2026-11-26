@@ -6,7 +6,7 @@
 	import Halo from '../label/Halo.svelte';
 	import Base from './Base.svelte';
 	import Solid from './Solid.svelte';
-	import { edge, type Tone } from './paint';
+	import { type Tone } from './paint';
 	type Props = {
 		x: number;
 		y: number;
@@ -45,11 +45,11 @@
 		x={tp[0]}
 		y={tp[1] - 18 * uik}
 		text={name}
-		size={15}
+		size={16}
 		{uik}
 		weight={800}
 		anchor="middle"
 		mono
-		color={edge(t)}
+		color="var(--dl-ink)"
 	/>
 </Base>
