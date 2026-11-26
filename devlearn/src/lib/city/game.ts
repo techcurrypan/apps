@@ -351,6 +351,9 @@ export function startTown(
 	// hide reserved buildings. 完成図の建物も、学んで建つまで隠す（空き地から。15.12）
 	for (const b of city.B) E.setData(b.id, 0, 0, 0, 0);
 	const BY_ID = new Map(city.B.map((b) => [b.id, b] as const));
+	// 仕組みの建物・業者の箱の番号と形の置き場（buildInfra が始まりに使うので先に置く）
+	const FIELD_ORDER = Object.keys(SYSTEM_SPOT);
+	const extraCache = new Map<string, Built>();
 	// 道・歩道・木・街灯も、建った物の近くの升だけを見せる（areas.ts）。北と西へ出る道は町の端まで育つと見える
 	for (let k = 0; k < AREA_COUNT; k++) E.setData(AREA_BASE + k, 0, 0, 0, 0);
 	E.setData(FAR_N, 0, 0, 0, 0);
@@ -1242,8 +1245,6 @@ export function startTown(
 	}
 	const builtList = () => ts.build.placed.map(builtOf);
 	// 仕組みの建物（試作の街に無い 8 分野）と業者の箱。状態の systems・boxes を読んで描くだけ
-	const FIELD_ORDER = Object.keys(SYSTEM_SPOT);
-	const extraCache = new Map<string, Built>();
 	function spotB(
 		key: string,
 		id: number,
