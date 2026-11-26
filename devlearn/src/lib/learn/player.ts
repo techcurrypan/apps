@@ -16,10 +16,13 @@ export const start = (): Clock => ({ t: 0, playing: true, speed: 1, loops: 0 });
 export const togglePlay = (c: Clock): Clock => ({ ...c, playing: !c.playing });
 export const replay = (c: Clock): Clock => ({ ...c, t: 0, playing: true });
 
+/** 描画の 1 コマの間（ms）を、進めてよい長さにそろえる（タブを隠した後に飛ばない）。画面は tick の前にこれを通す */
+export const frameDt = (dt: number) => Math.min(MAX_DT, Math.max(0, dt));
+
 /** dt（ms）だけ進める。dur はステップの動きの長さ */
 export function tick(c: Clock, dt: number, dur: number, o: { reduce?: boolean } = {}): Clock {
 	if (!c.playing) return c;
-	const d = Math.min(MAX_DT, dt) * c.speed * (o.reduce ? 6 : 1);
+	const d = dt * c.speed * (o.reduce ? 6 : 1);
 	const t = c.t + d;
 	if (t > dur + LOOP_GAP) return { ...c, t: 0, loops: c.loops + 1 };
 	return { ...c, t };

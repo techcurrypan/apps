@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { COUNT_MS, LOOP_GAP, countAt, flowAt, start, tick, togglePlay, type Clock } from './player';
+import {
+	COUNT_MS,
+	LOOP_GAP,
+	countAt,
+	flowAt,
+	frameDt,
+	start,
+	tick,
+	togglePlay,
+	type Clock
+} from './player';
 
 describe('繰り返し再生（LS3-M1）', () => {
 	it('ステップの動きが終わると 2.6 秒置いて最初から流し直す', () => {
@@ -26,7 +36,8 @@ describe('繰り返し再生（LS3-M1）', () => {
 		expect(tick({ ...start(), speed: 0.5 }, 100, 5000).t).toBe(50);
 	});
 	it('1 コマが長くても（タブを隠した後など）60 ms までしか進めない', () => {
-		expect(tick(start(), 5000, 99999).t).toBe(60);
+		expect(tick(start(), frameDt(5000), 99999).t).toBe(60);
+		expect(frameDt(-5)).toBe(0);
 	});
 	it('動きを減らす設定では、動きを 6 倍速で終わらせる（止まった形を早く見せる）', () => {
 		expect(tick(start(), 50, 5000, { reduce: true }).t).toBe(300);

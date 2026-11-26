@@ -33,7 +33,12 @@ export function sceneAt(
 		const to = placeOf(v);
 		const p = prev?.[id];
 		const from = p ? placeOf(p) : { x: to.x, y: to.y + RISE, s: to.s * SHRINK, op: 0 };
-		out[id] = { x: lerp(from.x, to.x, k), y: lerp(from.y, to.y, k), s: lerp(from.s, to.s, k), op: lerp(from.op, to.op, k) };
+		out[id] = {
+			x: lerp(from.x, to.x, k),
+			y: lerp(from.y, to.y, k),
+			s: lerp(from.s, to.s, k),
+			op: lerp(from.op, to.op, k)
+		};
 	}
 	if (prev && k < 1)
 		for (const [id, v] of Object.entries(prev)) {
