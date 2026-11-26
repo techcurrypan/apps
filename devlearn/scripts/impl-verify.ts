@@ -10,9 +10,22 @@ const CACHE = join(import.meta.dirname, '..', '.cache', 'impl');
 async function source(url: string): Promise<string> {
 	const file = join(CACHE, url.replace(/^https:\/\/raw\.githubusercontent\.com\//, ''));
 	if (existsSync(file)) return readFileSync(file, 'utf8');
-	const r = await fetch(url);
-	if (!r.ok) throw new Error(`${r.status} ${url}`);
-	const t = await r.text();
+	// 取得先の一時的な失敗（429・5xx・通信の切れ）で公開が止まらないよう、1・2・4 秒おいて 4 回まで取り直す（D-24）
+	let t: string;
+	for (let k = 0; ; k++) {
+		try {
+			const r = await fetch(url);
+			if (r.ok) {
+				t = await r.text();
+				break;
+			}
+			if (r.status < 500 && r.status !== 429) throw new Error(`${r.status} ${url}`);
+			if (k >= 3) throw new Error(`${r.status} ${url}`);
+		} catch (e) {
+			if (k >= 3 || /^\d{3} /.test((e as Error).message)) throw e;
+		}
+		await new Promise((ok) => setTimeout(ok, 1000 * 2 ** k));
+	}
 	mkdirSync(dirname(file), { recursive: true });
 	writeFileSync(file, t);
 	return t;
