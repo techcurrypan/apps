@@ -17,13 +17,14 @@ const check = (name: string, ok: boolean, detail = '') => {
 };
 
 async function openWith(tab: Tab, save: string | null) {
-	await tab.go(`${base}/town`);
+	// 街の画面は閉じる時に保存を書き戻すので、街ではない頁で置く
+	await tab.go('about:blank');
+	await tab.go(`${base}/terms`);
 	await tab.eval(
 		save === null
 			? `localStorage.removeItem('devlearn.town')`
 			: `localStorage.setItem('devlearn.town', ${JSON.stringify(save)})`
 	);
-	await tab.go('about:blank');
 	await tab.go(`${base}/town`);
 	for (let i = 0; i < 100; i++) {
 		await sleep(100);
@@ -56,6 +57,7 @@ const clock = (tab: Tab) =>
 async function failedExit(tab: Tab, how: string, act: () => Promise<unknown>) {
 	await openWith(tab, FAILED);
 	check(`${how}：失敗の保存を開くと「章の結果」の板が出る`, (await dialog(tab)) === '章の結果');
+	if (how === '続ける') await tab.shot('docs/progress/shots/phase-8r-failed-panel.png');
 	await act();
 	await sleep(800);
 	const d = await dialog(tab);
@@ -64,8 +66,11 @@ async function failedExit(tab: Tab, how: string, act: () => Promise<unknown>) {
 	const cont = !!s?.actions.some((a) => a.action.type === 'continue');
 	check(`${how}：記録に「続ける」が残った（次の章へ進んだ）`, cont);
 	const c0 = await clock(tab);
-	await sleep(2500);
-	const c1 = await clock(tab);
+	let c1 = c0;
+	for (let i = 0; i < 10 && c1 === c0; i++) {
+		await sleep(1000);
+		c1 = await clock(tab);
+	}
 	check(`${how}：時計がまた進む`, c0 !== c1, `${c0} → ${c1}`);
 	// 開き直しても、もう閉じ込められない
 	await tab.go('about:blank');

@@ -461,15 +461,18 @@
 									></span
 								><b>→</b></a
 							>
-							{#each d.days as x (x.minute)}
-								<button type="button" class="opt" onclick={() => game?.restartAt(x.minute)}
-									><span
-										><strong>{x.label}やり直す</strong><small
-											>その時点より後の手（道や区画も）は無くなる</small
-										></span
-									><b>↺</b></button
-								>
-							{/each}
+							<details class="redo">
+								<summary>やり直す（選んだ時だけ。その時点より後の手は無くなる）</summary>
+								{#each d.days as x (x.minute)}
+									<button type="button" class="opt" onclick={() => game?.restartAt(x.minute)}
+										><span
+											><strong>{x.label}やり直す</strong><small
+												>その時点より後の手（道や区画も）は無くなる。学んだ記録は残る</small
+											></span
+										><b>↺</b></button
+									>
+								{/each}
+							</details>
 						{/if}
 					</div>
 				</div>
@@ -1841,5 +1844,19 @@
 			top: 200px;
 			min-width: 0;
 		}
+	}
+	a.opt {
+		color: inherit;
+		text-decoration: none;
+	}
+	.redo {
+		display: grid;
+		gap: 8px;
+	}
+	.redo summary {
+		cursor: pointer;
+		font-size: 13px;
+		color: var(--dl-text-muted, #9aa);
+		padding: 4px 2px;
 	}
 </style>
