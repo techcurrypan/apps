@@ -1,0 +1,318 @@
+{
+ "learn11#tcp": {
+  "1": {
+   "S1": true,
+   "S3": true,
+   "S4": true,
+   "字": true,
+   "はみ出し": true
+  },
+  "2": {
+   "S1": true,
+   "S3": true,
+   "S4": true,
+   "字": true,
+   "はみ出し": true
+  },
+  "3": {
+   "S1": true,
+   "S3": true,
+   "S4": true,
+   "字": true,
+   "はみ出し": true
+  },
+  "4": {
+   "S1": true,
+   "S3": true,
+   "S4": true,
+   "字": true,
+   "はみ出し": true
+  },
+  "5": {
+   "S1": true,
+   "S3": true,
+   "S4": true,
+   "字": true,
+   "はみ出し": true
+  },
+  "6": {
+   "S1": true,
+   "S3": true,
+   "S4": true,
+   "字": true,
+   "はみ出し": true
+  },
+  "7": {
+   "S1": true,
+   "S3": true,
+   "S4": true,
+   "字": true,
+   "はみ出し": true
+  },
+  "8": {
+   "S1": true,
+   "S3": true,
+   "S4": true,
+   "字": true,
+   "はみ出し": true
+  },
+  "9": {
+   "S1": true,
+   "S3": true,
+   "S4": true,
+   "字": true,
+   "はみ出し": true
+  },
+  "10": {
+   "S1": true,
+   "S3": true,
+   "S4": true,
+   "字": true,
+   "はみ出し": true
+  },
+  "11": {
+   "S1": true,
+   "S3": true,
+   "S4": true,
+   "字": true,
+   "はみ出し": true
+  },
+  "12": {
+   "S1": true,
+   "S3": true,
+   "S4": true,
+   "字": true,
+   "はみ出し": true
+  }
+ },
+ "learn11#k8s": {
+  "1": {
+   "S1": "物 2 個（3〜6）",
+   "S3": true,
+   "S4": true,
+   "字": true,
+   "はみ出し": true
+  },
+  "2": {
+   "S1": "物 2 個（3〜6）",
+   "S3": true,
+   "S4": true,
+   "字": true,
+   "はみ出し": true
+  },
+  "3": {
+   "S1": true,
+   "S3": true,
+   "S4": true,
+   "字": true,
+   "はみ出し": true
+  },
+  "4": {
+   "S1": true,
+   "S3": true,
+   "S4": true,
+   "字": true,
+   "はみ出し": true
+  },
+  "5": {
+   "S1": "物 2 個（3〜6）",
+   "S3": true,
+   "S4": true,
+   "字": "「batch-1」11px・「batch-2」11px",
+   "はみ出し": true
+  },
+  "6": {
+   "S1": "物 1 個（3〜6）",
+   "S3": true,
+   "S4": true,
+   "字": true,
+   "はみ出し": true
+  },
+  "7": {
+   "S1": "物 0 個（3〜6）",
+   "S3": true,
+   "S4": true,
+   "字": true,
+   "はみ出し": true
+  },
+  "8": {
+   "S1": "物 2 個（3〜6）",
+   "S3": true,
+   "S4": true,
+   "字": true,
+   "はみ出し": true
+  },
+  "9": {
+   "S1": "物 1 個（3〜6）",
+   "S3": true,
+   "S4": true,
+   "字": true,
+   "はみ出し": true
+  },
+  "10": {
+   "S1": true,
+   "S3": true,
+   "S4": true,
+   "字": true,
+   "はみ出し": true
+  }
+ },
+ "learn11#mem": {
+  "1": {
+   "S1": "物 0 個（1〜6）",
+   "S3": true,
+   "S4": true,
+   "字": true,
+   "はみ出し": true
+  },
+  "2": {
+   "S1": true,
+   "S3": true,
+   "S4": true,
+   "字": true,
+   "はみ出し": true
+  },
+  "3": {
+   "S1": true,
+   "S3": true,
+   "S4": true,
+   "字": true,
+   "はみ出し": true
+  },
+  "4": {
+   "S1": true,
+   "S3": true,
+   "S4": true,
+   "字": true,
+   "はみ出し": true
+  },
+  "5": {
+   "S1": true,
+   "S3": true,
+   "S4": true,
+   "字": true,
+   "はみ出し": true
+  },
+  "6": {
+   "S1": true,
+   "S3": true,
+   "S4": true,
+   "字": true,
+   "はみ出し": true
+  },
+  "7": {
+   "S1": true,
+   "S3": true,
+   "S4": true,
+   "字": true,
+   "はみ出し": true
+  },
+  "8": {
+   "S1": true,
+   "S3": true,
+   "S4": true,
+   "字": true,
+   "はみ出し": true
+  },
+  "9": {
+   "S1": true,
+   "S3": true,
+   "S4": true,
+   "字": true,
+   "はみ出し": true
+  },
+  "10": {
+   "S1": true,
+   "S3": true,
+   "S4": true,
+   "字": true,
+   "はみ出し": true
+  },
+  "11": {
+   "S1": true,
+   "S3": true,
+   "S4": true,
+   "字": true,
+   "はみ出し": true
+  },
+  "12": {
+   "S1": true,
+   "S3": true,
+   "S4": true,
+   "字": "「結ぶ」11.5px・「直す」11.5px・「作る」11.5px",
+   "はみ出し": true
+  }
+ },
+ "learn11#stat": {
+  "1": {
+   "S1": true,
+   "S3": true,
+   "S4": true,
+   "字": "「平均 4」11.5px・「0」11px・「2」11px・「4」11px",
+   "はみ出し": true
+  },
+  "2": {
+   "S1": true,
+   "S3": true,
+   "S4": true,
+   "字": "「平均 4」11.5px・「0」11px・「2」11px・「4」11px",
+   "はみ出し": true
+  },
+  "3": {
+   "S1": true,
+   "S3": true,
+   "S4": true,
+   "字": "「平均 4」11.5px",
+   "はみ出し": true
+  },
+  "4": {
+   "S1": true,
+   "S3": true,
+   "S4": true,
+   "字": "「平均 4」11.5px・「0」11px・「2」11px・「4」11px",
+   "はみ出し": true
+  },
+  "5": {
+   "S1": true,
+   "S3": true,
+   "S4": true,
+   "字": "「平均 4」11.5px・「0」11px・「2」11px・「4」11px",
+   "はみ出し": true
+  },
+  "6": {
+   "S1": true,
+   "S3": true,
+   "S4": true,
+   "字": "「平均 4」11.5px・「0」11px・「2」11px・「4」11px",
+   "はみ出し": "pop・母集団：窓口の待ち時間（指数（右に長い）・平均 ・平均 4"
+  },
+  "7": {
+   "S1": true,
+   "S3": true,
+   "S4": true,
+   "字": "「平均 4」11.5px・「0」11px・「2」11px・「4」11px",
+   "はみ出し": "pop・母集団：窓口の待ち時間（指数（右に長い）・平均 ・平均 4"
+  },
+  "8": {
+   "S1": true,
+   "S3": true,
+   "S4": true,
+   "字": "「平均 4」11.5px・「0」11px・「2」11px・「4」11px",
+   "はみ出し": "pop・母集団：窓口の待ち時間（指数（右に長い）・平均 ・平均 4"
+  },
+  "9": {
+   "S1": true,
+   "S3": true,
+   "S4": true,
+   "字": "「平均 4」11.5px・「0」11px・「2」11px・「4」11px",
+   "はみ出し": "pop・母集団：窓口の待ち時間（指数（右に長い）・平均 ・平均 4"
+  },
+  "10": {
+   "S1": true,
+   "S3": true,
+   "S4": true,
+   "字": "「平均 4」11.5px・「0」11px・「2」11px・「4」11px",
+   "はみ出し": true
+  }
+ }
+}

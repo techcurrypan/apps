@@ -11,6 +11,10 @@ import { join, resolve as res } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { openChrome, sleep, type Tab } from './lib/cdp.ts';
 import { LAYOUT, judgeLayout, motionOf, shootRef, type Layout } from './lib/learn-measure.ts';
+import { FLAGS3, measure3 } from './lib/learn3-run.ts';
+
+// 第 3 版の測り（learn-standard.md 第 21 章 3）：npx tsx scripts/look-learn.ts --scene <proto[:tcp,k8s]|レッスンの ID,…> [公開 URL]
+const FLAG3 = FLAGS3.find((f) => process.argv[2] === f) ?? null;
 
 const FLAG = ['--motion', '--layout', '--ref'].find((f) => process.argv[2] === f) ?? null;
 const argv = FLAG ? process.argv.slice(1) : process.argv;
@@ -18,7 +22,7 @@ const base = (argv[2] ?? 'https://devlearn.techcurrybread.workers.dev').replace(
 const only = !FLAG && argv[3] ? new Set(argv[3].split(',')) : null;
 const outDir = argv[4] ?? 'docs/progress/shots/phase-10-R';
 const PROTO = pathToFileURL(res('docs/prototype/learn/learn10.html')).href;
-mkdirSync(outDir, { recursive: true });
+if (!FLAG3) mkdirSync(outDir, { recursive: true });
 
 type Side = 'proto' | 'prod';
 type Scene = {
@@ -423,5 +427,12 @@ async function measure2(flag: string) {
 	}
 }
 
-if (FLAG) void measure2(FLAG);
+if (FLAG3)
+	void measure3(
+		FLAG3,
+		process.argv[3] ?? 'proto',
+		(process.argv[4] ?? 'https://devlearn.techcurrybread.workers.dev').replace(/\/$/, ''),
+		process.argv[5] ?? 'docs/progress/shots/phase-10-P'
+	).then((bad) => (process.exitCode = bad ? 1 : 0));
+else if (FLAG) void measure2(FLAG);
 else void main();
