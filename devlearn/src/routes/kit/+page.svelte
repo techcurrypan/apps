@@ -109,7 +109,7 @@
 					<Hex x={1040} y={400} glyph="⇉" s={0.85} id="hex" />
 					<Tag x={1040} y={490} text="kube-apiserver" dot="var(--dl-obj-teal)" />
 					<Halo
-						x={950}
+						x={1040}
 						y={516}
 						text="hex・ただ 1 つの入口"
 						size={12.5}
