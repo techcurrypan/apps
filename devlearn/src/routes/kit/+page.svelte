@@ -211,6 +211,11 @@
 					<Func x={200} y={1935} tone="blue" glyph="ƒ" hl />
 					<Func x={450} y={1935} tone="orange" glyph="⚡" hl />
 					<Tag x={325} y={2032} text="強めた func（主役）" size={14} />
+					<!-- 実行の文脈の残り 2 色（hardirq＝赤・その他＝灰。第 17 章 func） -->
+					<Func x={760} y={1950} s={0.8} tone="red" glyph="!" />
+					{@render name(760, 2032, 'func（赤）hardirq')}
+					<Func x={1000} y={1950} s={0.8} tone="gray" glyph="ƒ" />
+					{@render name(1000, 2032, 'func（灰）その他')}
 					<Panel x={30} y={1660} w={170} h={120} tone="teal" title="母集団">
 						{#each [0, 1, 2, 3, 4, 5, 6] as i (i)}
 							<Sphere x={58 + i * 20} y={1748 - (i % 2) * 12} r={9} tone="teal" />
