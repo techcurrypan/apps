@@ -53,14 +53,12 @@
 	}: Props = $props();
 	const list = $derived(drawList(objs, layout, prev, t, { reduce }));
 	const byId = $derived(new Map(list.map((d) => [d.id, d])));
+	const GLYPHED = { func: Func, block: Block, hex: Hex } as const;
 	const PLAIN = {
 		laptop: Laptop,
-		func: Func,
-		block: Block,
 		queue: Queue,
 		ring: Ring,
 		nic: Nic,
-		hex: Hex,
 		db: Db,
 		platform: Platform
 	} as const;
@@ -111,6 +109,20 @@
 					{uik}
 					name={d.name}
 					tone={d.tone}
+					id={d.id}
+					term={d.term}
+				/>
+			{:else if d.kind === 'func' || d.kind === 'block' || d.kind === 'hex'}
+				{@const G = GLYPHED[d.kind]}
+				<G
+					x={d.x}
+					y={d.y}
+					s={d.s}
+					op={d.op}
+					{uik}
+					hl={h}
+					tone={d.tone}
+					glyph={d.glyph}
 					id={d.id}
 					term={d.term}
 				/>
