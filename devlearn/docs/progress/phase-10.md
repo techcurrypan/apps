@@ -2,14 +2,14 @@
 
 状態: **進行中**（10-0 済。**今は 10-P（D-25。learn11 を本番の部品に）**。順は 10-P → 10-B → 10-R → 10-C → 9-2 → 10-D → 10-E → 10-W → 11 → 12。止まらない）
 
-## 次の実行が読む所（10-P。2026-11-27 の 2 回目の実行で更新）
+## 次の実行が読む所（10-P。2026-11-28 の実行で更新）
 
-1. `docs/learn-standard.md` 第 15.1（判定の場面 P-1〜P-9）・第 19 章（4 つの使い方）・第 20 章（移す表）・第 21 章（完成の線）
-2. この頁の「10-P」の表（下）。手順 8 は部品が揃った（/kit の 試す・やってみる・思い出す）。次は手順 9
-3. 手順 9：見本の題（net-101・k8s-101）を `content/v3` の `V3Lesson`（`learn/check-v3.ts`）で書き、`Scene3`・`Tip`・`player.ts`・`learn3/*` で学習画面に並べる。上の帯の 4 つの釦・最後の「次へ」で次の使い方へ（第 19 章）。検査 41〜48 を通す
-4. `explanation-standard.md` 第 10・11 章（言葉）・第 13 章（「はじめて」）・検査 41〜48・57〜62（手順 9 の本文を書く時）
-5. 手順 3 は判定を続ける（下の「手順 3 の判定」。`npx tsx scripts/look-kit.ts` で公開 URL を撮り、作った本人ではない判定者 2 人に頼む。字の大きさの目測は `look-uik.ts --kit` の測りで確かめる）
-6. 公開 URL の確かめの台本：`look-kit.ts`・`look-uik.ts`・`look-lab.ts`・`look-try.ts`・`look-recall.ts`・`look-move.ts`・`look-tip.ts`
+1. `docs/learn-standard.md` 第 15.1（P-1〜P-9）・第 16 章・第 18 章・第 19 章・第 21 章
+2. この頁の「10-P」の表（下）。手順 9 は見本 1（net-101）が `/lesson/net-101` で第 3 版の画面（`ui/learn3/LearnV3.svelte`・データ `content/v3/net-101.ts`）で開く。次は見本 2（k8s-101）を同じ形で（`content/v3/k8s-101.ts`。試作 `learn11-src/k8s.js`、物は platform・pod・hex・db・block。言葉は `content/terms/` に k8s の一覧を作る。試す は `LABS.k8s`、やってみる・思い出す は k8s の模型を足す）
+3. 手順 9 の残り：ステップ固有の札（条件の札・時計・ss の札・文脈の切り替え）を合図に足す、`look-learn.ts --scene/--loop/--hover/--terms` の窓口 `window.__l3` を LearnV3 に持たせて本番で通す（`scripts/lib/learn3-measure.ts` の `PROTO_SHIM` が形の手本）
+4. 手順 10 の判定：`npx tsx scripts/look-v3.ts` で公開 URL を撮り（`v3-net-101-*.png`）、試作の P-1〜P-3・P-8 と比べて判定者 2 人に頼む
+5. 手順 3 は 22 回目の判定の結果を下の表で見て、「<」を直す（`look-kit.ts` で撮る）
+6. `explanation-standard.md` 第 10・11・13 章・検査 41〜48・57〜62（本文を書く時）
 
 ## 10-P　試作 learn11 を本番に移す（D-25。2026-11-26 に始めた。進行中）
 

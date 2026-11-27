@@ -665,6 +665,7 @@
 	}
 	.words dt {
 		font-weight: 700;
+		overflow-wrap: anywhere;
 	}
 	.words dd {
 		margin: 0;
