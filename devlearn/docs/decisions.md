@@ -435,8 +435,9 @@
 - 2026-11-27（10-P 手順 3）部品集に、判定者の指摘で次を足した：灰の `<module>` フレーム（第 17 章「灰（今のフレームは青）」）、強めた func（主役の下の台を物の色で淡く）、名前＋下の説明の 2 段の札、板の 3 色（母集団・標本・平均）。暗い札の地は `--dl-card-dark`（暗い配色では背景より明るい #2b3039）。物の上の名前（var・token）の字は `--dl-ink`。block の記号は ⌖ が書体で小さく出るので ↻ を既定にした。理由：learn-standard.md 第 17 章と 15.1 の判定（試作 learn11 以上）
 - 2026-11-27（10-P 手順 4）字の大きさを画面の上で一定にする作り：図の枠 `src/lib/ui/scene/Stage.svelte` が枠の大きさを測って `uikOf` で UIK を求め、中身に `uik` を渡す（部品と札は字・余白・線の太さに掛ける）。確かめは `/kit` の「字の大きさ」に同じ図を倍率 0.5・1・2（`zoomView`）で描き、`scripts/look-uik.ts` が公開 URL で札の種類ごとの画面の上の px を `getScreenCTM` で測る（範囲は `LABEL_RANGE`：名前 13〜15・説明 12〜13・数 12〜14・線 12〜13・説明の札 12〜15）。理由：learn-standard.md 16.3・第 20 章の表（UIK は枠を測って $derived で）
 - 2026-11-27（10-P 手順 3）判定者が縮んだ撮影から字の大きさを目測して食い違う時（同じ字を 10px と 14px）は、`look-uik.ts --kit` で公開 URL の字を測った値を判定者に渡し、拡大して等倍で見るよう頼む。測った値で否定できる「<」は直さず記録に残す。理由：CLAUDE.md 第 4 章（測りは公開 URL で）・learn-standard.md 0.3（判定者 2 人）
-- 2026-11-27（10-P 手順 7）言葉の一覧の置き場は `src/lib/content/terms/<分野>.ts`（仕様の `src/content/terms/` は、このリポジトリの内容の置き場 `src/lib/content/` に合わせた）。型 `Term` は `src/lib/learn/terms.ts`。英字の書き方は単語の途中では当てない（`tcp_sendmsg` の `send` を言葉にしない）。理由：explanation-standard.md 10.1・learn-standard.md 第 20 章の表（言葉は terms.ts と分野ごとの一覧）
+- 2026-11-27（10-P 手順 7）言葉の一覧の置き場は `src/lib/content/terms/<分野>.ts`（仕様の `src/content/terms/` は、このリポジトリの内容の置き場 `src/lib/content/` に合わせた）。型 `Term` は `src/lib/learn/terms.ts`。英字の書き方は単語の途中では当てない（`tcp_sendmsg` の `send` を言葉にしない）。理由：explanation-standard.md 10.1・learn-standard.md 第 20 章の表（言葉は terms.ts と分野ごとの一覧）
 - 2026-11-27（10-P 手順 5）構図から描く物の並びは `drawList`（奥＝y が小さい物から、同じ y は ID の順）。物の名前の札は物の真下（`NAME_DROP`）、線は物の外枠の手前（`REACH`）で止める。描く部品は `Scene3.svelte`。理由：learn-standard.md 16.1 S2・S4・S6、16.2 K4
+- 2026-11-27（10-P 手順 7）図の吹き出しは `Scene3` が持つ（`terms` を受け取り、`data-term` の物に乗せる・Tab で移ると、その物を 8 浮かせ、`placeTip` で物の上、入らなければ下、枠の中に置く）。吹き出しの中は言葉の見出しと説明 1〜2 文だけ（長い説明・たとえは言葉の一覧の頁へ）。理由：learn-standard.md 18.3 H1・LS3-M4・U-10
 
 ## 未決
 
