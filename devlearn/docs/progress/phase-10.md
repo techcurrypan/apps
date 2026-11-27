@@ -2,14 +2,15 @@
 
 状態: **進行中**（10-0 済。**今は 10-P（D-25。learn11 を本番の部品に）**。順は 10-P → 10-B → 10-R → 10-C → 9-2 → 10-D → 10-E → 10-W → 11 → 12。止まらない）
 
-## 次の実行が読む所（10-P。2026-11-28 の実行で更新）
+## 次の実行が読む所（10-P。2026-11-28 の 2 回目の実行で更新）
 
 1. `docs/learn-standard.md` 第 15.1（P-1〜P-9）・第 16 章・第 18 章・第 19 章・第 21 章
-2. この頁の「10-P」の表（下）。手順 9 は見本 1（net-101）が `/lesson/net-101` で第 3 版の画面（`ui/learn3/LearnV3.svelte`・データ `content/v3/net-101.ts`）で開く。次は見本 2（k8s-101）を同じ形で（`content/v3/k8s-101.ts`。試作 `learn11-src/k8s.js`、物は platform・pod・hex・db・block。言葉は `content/terms/` に k8s の一覧を作る。試す は `LABS.k8s`、やってみる・思い出す は k8s の模型を足す）
-3. 手順 9 の残り：ステップ固有の札（条件の札・時計・ss の札・文脈の切り替え）を合図に足す、`look-learn.ts --scene/--loop/--hover/--terms` の窓口 `window.__l3` を LearnV3 に持たせて本番で通す（`scripts/lib/learn3-measure.ts` の `PROTO_SHIM` が形の手本）
-4. 手順 10 の判定：`npx tsx scripts/look-v3.ts` で公開 URL を撮り（`v3-net-101-*.png`）、試作の P-1〜P-3・P-8 と比べて判定者 2 人に頼む
-5. 手順 3 は 22 回目の判定の結果を下の表で見て、「<」を直す（`look-kit.ts` で撮る）
-6. `explanation-standard.md` 第 10・11・13 章・検査 41〜48・57〜62（本文を書く時）
+2. この頁の「10-P」の表（下）。見本 1（net-101）・見本 2（k8s-101）とも `/lesson/<id>` で第 3 版の画面で開く（`content/v3/`。k8s は言葉 `content/terms/k8s.ts`・やってみる `try-k8s.ts`＋`TryFigureK8s`・思い出す `recall-k8s.ts`＋`RecallFigure` の `set`）
+3. 手順 9 の残り：`prg`（mem）と `sta`（stat）の題を第 3 版で（試作 `learn11-src/mem.js`・`stat.js`。物は frame・var・list・panel・bar・sphere。Scene3 は list・panel・bar・sphere をまだ描かない → 足す）、ステップ固有の札（条件の札・時計・ss の札・ふるいの × と点の札）を合図に足す、`window.__l3` を LearnV3 に持たせて `look-learn.ts --scene/--loop/--hover/--terms` を本番で通す（`scripts/lib/learn3-measure.ts` の `PROTO_SHIM` が形の手本）
+4. `look-v3.ts` の `over`（画面の外に出た要素）：右の欄・やってみる の欄が内側でスクロールしている（net-101 の try 18・k8s-101 の lab 8・try 11）。CLAUDE.md 第 9 章「内側のスクロールを作らない」に当たるかを手順 10 の前に確かめて直す
+5. 手順 10 の判定：`npx tsx scripts/look-v3.ts <URL> <id>` で公開 URL を撮り、試作の P-1〜P-9 と比べて判定者 2 人に頼む
+6. 手順 3 は 24 回目の判定の結果を下の表で見て、「<」を直す（`look-kit.ts` で撮る）
+7. `explanation-standard.md` 第 10・11 章・検査 41〜48（本文を書く時）
 
 ## 10-P　試作 learn11 を本番に移す（D-25。2026-11-26 に始めた。進行中）
 
@@ -26,7 +27,7 @@
 | 6 再生（繰り返し・一時停止・速さ・数え上げ・線の点） | 一部（2026-11-27）：純粋な関数 `learn/player.ts`（`tick`・`countAt`・`flowAt`）はある。線 `learn/scene/wire.ts`（手前で止める・点の位置。単体テスト 5 本）と `kit/Wire.svelte`（矢じり・行き来・点線・流れる点）、`Scene3` の `links`・`flow`。/kit の見本で線の点が流れる。繰り返し・一時停止・速さ・数え上げの画面への組み込みは手順 9 と一緒に | `da254c1` |
 | 7 言葉 `terms.ts`・`content/terms/`・検査 41〜48 | 一部（2026-11-27）：net の言葉の一覧 `src/lib/content/terms/net.ts`（25 語。言葉をそろえるステップの send・fd・buf・バイト・カーネル・NIC・ソケット・システムコール・TCP・ACK と、net-101 の 15 語。出典つき）と検査 43 の単体テスト（80 字以内・1〜2 文・ID が重ならない）。`src/lib/learn/terms.ts`（`Term`・`termIndex`・`markTerms`（長い書き方から・段落で 1 回・英字は単語の途中で当てない）・`firstPerStep`。単体テスト 4 本）。吹き出し（2026-11-27）：`learn/scene/tip.ts`（`placeTip`・`localRect`。単体テスト 6 本）・`label/Tip.svelte`・`Scene3` の `terms`（乗せる・Tab で物が 8 浮き、言葉と説明が出る。外すと消える）。公開 URL の `look-tip.ts` で 4 件とも o（`tip.json`）。検査 41〜48：`learn/check-v3.ts`（単体テスト 11 本）を content:check に足した（当てる物は `content/v3` の `V3_LESSONS`。今は無し。見本は手順 9）。専門語の辞書 `content/terms/jargon.ts`。残り：本文の点線の下線・ステップの番号・使い方の釦・指標・つまみの吹き出し（手順 8・9 の画面と一緒に） | `cbd4417`・`93623ed`・`209ad3b` |
 | 8 4 つの使い方 | 部品はできた（2026-11-27）。**試す**：`learn/lab.ts`・`lab-figure.ts`（単体テスト 21 本）、`learn3/LabPanel`・`LabFigure`（TCP の cwnd の棒・k8s の台と Pod。値で計算し直し育つ動きを繰り返す）。公開 URL の `look-lab.ts` 6 項目 o。**やってみる**：`learn/try3.ts`（履歴・補完・Ctrl+L・やることの ✓。単体テスト 10 本）と `content/v3/try-tcp.ts`（ss・nstat・tc・ethtool・sysctl。出力は本物の形）、`learn3/TryPanel3`・`TryFigure`（qdisc が pfifo_fast→fq、cwnd 9→86 で図が変わる）。公開 URL の `look-try.ts` 9 項目 o。**思い出す**：`learn/recall3.ts`（選ぶ・並べる・図を押す・数・説明・点。単体テスト 12 本）と `content/v3/recall-tcp.ts`（5 問・手帳の 1 枚）、`learn3/RecallPanel3`・`RecallFigure`（押せる置き場が光り、答えると正しい物が緑）。`look-recall.ts` 3 項目。全て /kit に並べた。残り：上の帯の 4 つの釦で行き来・最後の釦で次の使い方へ（手順 9 の学習画面で）、k8s・mem・stat の やってみる・思い出す（手順 9 の見本の題で） | `86cfc14`・`be14be4`・`3442c9e`・`ca7dbe0` |
-| 9 見本の題で並べる | 一部（2026-11-28）：見本 1 `content/v3/net-101.ts`（12 ステップ。言葉をそろえる・式の分解・物 18・線・荷物 `tokens`・指標 5・囲み・変わったこと・中身まで。検査 41〜48 で指摘 0。単体テスト 3 本）。荷物の合図 `learn/scene/cue.ts`（単体テスト 6 本）・右の欄 `learn/view3.ts`（3 本）。学習画面 `ui/learn3/LearnV3.svelte`：上に 4 つの使い方の釦（乗せると説明）・指標の帯（数え上げ・言葉の吹き出し）、左に図（Scene3・繰り返し再生・一時停止・線の点）、右に語り（今の段落が光る・言葉の一覧・初出の言葉・本文の点線の言葉に吹き出し）、下にステップの帯（乗せると種類と題）。最後の「次へ」で 試す → やってみる → 思い出す。`/lesson/net-101` で開く。撮る台本 `scripts/look-v3.ts`。残り：k8s-101 の第 3 版、ステップ固有の札（条件の札・時計・ss の札）、公開 URL の `look-learn.ts --scene/--loop/--hover/--terms` を本番で通す | `b73bcba` |
+| 9 見本の題で並べる | 一部（2026-11-28）：見本 1 `content/v3/net-101.ts`（12 ステップ。言葉をそろえる・式の分解・物 18・線・荷物 `tokens`・指標 5・囲み・変わったこと・中身まで。検査 41〜48 で指摘 0。単体テスト 3 本）。荷物の合図 `learn/scene/cue.ts`（単体テスト 6 本）・右の欄 `learn/view3.ts`（3 本）。学習画面 `ui/learn3/LearnV3.svelte`：上に 4 つの使い方の釦（乗せると説明）・指標の帯（数え上げ・言葉の吹き出し）、左に図（Scene3・繰り返し再生・一時停止・線の点）、右に語り（今の段落が光る・言葉の一覧・初出の言葉・本文の点線の言葉に吹き出し）、下にステップの帯（乗せると種類と題）。最後の「次へ」で 試す → やってみる → 思い出す。`/lesson/net-101` で開く。撮る台本 `scripts/look-v3.ts`。見本 2 `content/v3/k8s-101.ts`（2026-11-28。12 ステップ：言葉をそろえる（`kubectl apply -f web.yaml` の分解）→ 問題 → apply → 数を合わせる → 置き場 → kubelet → watch → OOMKilled → ノードが消える → 上限の決め方 → describe → まとめ。言葉 38 語 `content/terms/k8s.ts`、専門語の辞書に k8s の 19 語。検査 41〜48 で指摘 0。単体テスト 5 本）。やってみる `try-k8s.ts`（get・describe・top・set resources・rollout status。出力は kubectl v1.31 の形）と `TryFigureK8s`（上限 256Mi で web-c が落ちては起き、384Mi で 3 つとも Ready）、思い出す `recall-k8s.ts`（5 問）と `RecallFigure` の k8s の置き場（入口・帳簿・係・ノード）。Pod の状態 `pods`・黙ったノード `down`・台を先に描く（`drawList`。単体テスト）・着いた荷物の受け渡し（`tokensAt`。単体テスト 2 本）。公開 URL（配信 `968c1bc`）の `look-v3.ts` で 12 ステップ・4 つの使い方を撮って目で見た（`v3-k8s-101-*.png`）。残り：mem・stat の題、ステップ固有の札、`window.__l3` と `look-learn.ts` を本番で | `b73bcba`・`968c1bc` |
 | 10 判定（P-1〜P-9、判定者 2 人） | 未 | |
 | 11 見てもらう材料 | 未 | |
 
