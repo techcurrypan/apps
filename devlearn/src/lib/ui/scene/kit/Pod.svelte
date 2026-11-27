@@ -69,7 +69,7 @@
 			{x}
 			y={y + R * 0.6 + 18 * uik}
 			text={lb}
-			size={12.5}
+			size={13}
 			{uik}
 			weight={800}
 			anchor="middle"

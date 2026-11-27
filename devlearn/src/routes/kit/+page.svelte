@@ -77,7 +77,7 @@
 		{#each schemes as sc (sc)}
 			<section class="dl-scene-{sc}" data-scheme={sc}>
 				<svg
-					viewBox="-70 0 1240 2020"
+					viewBox="-70 0 1240 2060"
 					role="img"
 					aria-label="部品の一覧（{sc === 'light' ? '明るい' : '暗い'}配色）"
 				>
@@ -151,6 +151,7 @@
 						{#each [14, 32, 56, 77, 63, 38, 21, 9] as h, i (i)}
 							<Bar x={60 + i * 44} y={1415} w={30} {h} />
 						{/each}
+						<line x1={48} y1={1420} x2={420} y2={1420} class="axis" />
 					</Panel>
 					{#each [0, 1, 2, 3, 4, 5] as i (i)}
 						<Sphere x={500 + i * 22} y={1330} />
@@ -195,23 +196,24 @@
 					<!-- 名前の札と下の説明の 2 段（試作の物の札と同じ形） -->
 					<!-- 板の段の色（母集団・標本・平均） -->
 					<!-- 強めた状態（主役の物の下の台を物の色で淡く塗る） -->
-					<Func x={200} y={1895} tone="blue" glyph="ƒ" hl />
-					<Func x={450} y={1895} tone="orange" glyph="⚡" hl />
-					<Tag x={325} y={1992} text="強めた func（主役）" size={14} />
-					<Panel x={30} y={1670} w={150} h={100} tone="teal" title="母集団">
+					<Func x={200} y={1935} tone="blue" glyph="ƒ" hl />
+					<Func x={450} y={1935} tone="orange" glyph="⚡" hl />
+					<Tag x={325} y={2032} text="強めた func（主役）" size={14} />
+					<Panel x={30} y={1660} w={170} h={120} tone="teal" title="母集団">
 						{#each [0, 1, 2, 3, 4, 5, 6] as i (i)}
-							<Sphere x={50 + i * 18} y={1745 - (i % 2) * 10} r={9} tone="teal" />
+							<Sphere x={58 + i * 20} y={1748 - (i % 2) * 12} r={9} tone="teal" />
 						{/each}
 					</Panel>
-					<Panel x={195} y={1670} w={150} h={100} tone="blue" title="標本">
+					<Panel x={213} y={1660} w={170} h={120} tone="blue" title="標本">
 						{#each [0, 1, 2] as i (i)}
-							<Sphere x={232 + i * 38} y={1740} r={10} />
+							<Sphere x={256 + i * 42} y={1742} r={10} />
 						{/each}
 					</Panel>
-					<Panel x={360} y={1670} w={150} h={100} tone="orange" title="平均">
+					<Panel x={396} y={1660} w={170} h={120} tone="orange" title="平均">
 						{#each [18, 34, 50, 34, 18] as h, i (i)}
-							<Bar x={376 + i * 25} y={1756} w={20} {h} tone="orange" />
+							<Bar x={420 + i * 28} y={1758} w={20} {h} tone="orange" />
 						{/each}
+						<line x1={410} y1={1762} x2={556} y2={1762} class="axis" />
 					</Panel>
 					<!-- 7 段目：札（label/） -->
 					<Tag x={110} y={1520} text="sk_write_queue" dot="var(--dl-obj-teal)" />
@@ -319,6 +321,11 @@
 		background: var(--dl-scene-bg);
 		border-radius: 16px;
 	}
+	.axis {
+		stroke: var(--dl-ink);
+		stroke-width: 1.5;
+		opacity: 0.55;
+	}
 	.zooms {
 		display: grid;
 		grid-template-columns: repeat(3, 460px);
@@ -349,7 +356,7 @@
 	svg {
 		/* 図の 1 単位 ＝ 画面の 1px（viewBox と同じ大きさ） */
 		width: 1240px;
-		height: 2020px;
+		height: 2060px;
 		display: block;
 	}
 </style>

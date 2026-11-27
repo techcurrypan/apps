@@ -44,11 +44,13 @@
 			rrectPts(-100 + i * 52, -30, 44, 60, 9).map((q) => P.at(q[0], q[1], f[2] + 0.5))
 		)
 	);
-	/** 時計は待つ物（先頭の荷物、無ければ一番右の溝）の真上に、縁から細い柱で立てる */
-	const cx = $derived(items.length ? -78 : 78);
-	const cp = $derived(P.at(cx, 0, f[2] + (items.length ? 96 : 74)));
-	const cb = $derived(P.at(cx, 0, f[2] + (items.length ? 71 : 2)));
+	/** 時計は待つ物の印：荷物があれば先頭の荷物の名前の左に、無ければ一番右の溝の上に添える */
 	const itemAt = (i: number) => P.at(-78 + i * 52, 0, f[2]);
+	const cp = $derived.by(() => {
+		if (!items.length) return P.at(78, 0, f[2] + 40);
+		const q = itemAt(0);
+		return [q[0] - 22 * uik, q[1] - 19 * s - 20 * uik] as const;
+	});
 </script>
 
 <Base {x} {y} {s} {uik} w={f[0]} d={f[1]} {tone} {hl} {lift} {op} {id} {term}>
@@ -64,18 +66,9 @@
 	{/each}
 	{#each items as it, i (i)}
 		{@const q = itemAt(i)}
-		<Token x={q[0]} y={q[1] - 12 * s} label={it} scale={0.8 * s} {uik} gap={26} />
+		<Token x={q[0]} y={q[1] - 2 * s} label={it} scale={0.8 * s} {uik} gap={16} />
 	{/each}
 	{#if clock}
-		<line
-			x1={cb[0]}
-			y1={cb[1]}
-			x2={cp[0]}
-			y2={cp[1] + 11 * uik}
-			style:stroke={edge(tone)}
-			stroke-width={1.6 * uik}
-			stroke-dasharray="{3 * uik} {2.5 * uik}"
-		/>
 		<circle
 			cx={cp[0]}
 			cy={cp[1]}
