@@ -226,23 +226,25 @@
 				>
 			{/each}
 		</nav>
-		<dl class="mets">
-			{#each lesson.metrics ?? [] as m (m.key)}
-				<div class="met">
-					<dt>
-						<button
-							type="button"
-							class="mlab"
-							class:tl={!!m.term}
-							class:hov={!m.term}
-							data-tw={m.term}
-							data-d={m.term ? undefined : m.desc}>{m.label}</button
-						>
-					</dt>
-					<dd>{showMetric(m.key)}</dd>
-				</div>
-			{/each}
-		</dl>
+		{#if mode === 'watch'}
+			<dl class="mets">
+				{#each lesson.metrics ?? [] as m (m.key)}
+					<div class="met">
+						<dt>
+							<button
+								type="button"
+								class="mlab"
+								class:tl={!!m.term}
+								class:hov={!m.term}
+								data-tw={m.term}
+								data-d={m.term ? undefined : m.desc}>{m.label}</button
+							>
+						</dt>
+						<dd>{showMetric(m.key)}</dd>
+					</div>
+				{/each}
+			</dl>
+		{/if}
 	</header>
 
 	<div class="main">
@@ -298,7 +300,7 @@
 			{/if}
 		</section>
 
-		<aside class="side">
+		<aside class="side" class:wide={mode === 'try'}>
 			{#if mode === 'watch'}
 				<div class="sbody">
 					<div class="sn">
@@ -381,7 +383,7 @@
 					</button>
 				</div>
 			{:else}
-				<div class="sbody">
+				<div class="sbody" class:fill={mode === 'try'}>
 					{#if mode === 'lab'}
 						<LabPanel
 							lab={LABS[lab]}
@@ -448,7 +450,7 @@
 		display: flex;
 		flex-direction: column;
 		gap: 10px;
-		height: calc(100vh - 60px);
+		height: 100vh;
 		min-height: 720px;
 		padding: 10px 16px;
 		box-sizing: border-box;
@@ -581,6 +583,13 @@
 		border-radius: 18px;
 		background: var(--dl-surface);
 		border: 1px solid var(--dl-border);
+	}
+	/* やってみる は端末を大きく（第 19 章・LS-P5） */
+	.side.wide {
+		flex-basis: 680px;
+	}
+	.fill :global(.out) {
+		height: max(220px, calc(100vh - 560px));
 	}
 	.sbody {
 		flex: 1 1 auto;
@@ -741,6 +750,7 @@
 		opacity: 0.8;
 	}
 	.steps {
+		flex: 0 0 auto;
 		display: flex;
 		gap: 4px;
 		overflow-x: auto;

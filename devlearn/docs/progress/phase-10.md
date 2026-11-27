@@ -26,7 +26,7 @@
 | 6 再生（繰り返し・一時停止・速さ・数え上げ・線の点） | 一部（2026-11-27）：純粋な関数 `learn/player.ts`（`tick`・`countAt`・`flowAt`）はある。線 `learn/scene/wire.ts`（手前で止める・点の位置。単体テスト 5 本）と `kit/Wire.svelte`（矢じり・行き来・点線・流れる点）、`Scene3` の `links`・`flow`。/kit の見本で線の点が流れる。繰り返し・一時停止・速さ・数え上げの画面への組み込みは手順 9 と一緒に | `da254c1` |
 | 7 言葉 `terms.ts`・`content/terms/`・検査 41〜48 | 一部（2026-11-27）：net の言葉の一覧 `src/lib/content/terms/net.ts`（25 語。言葉をそろえるステップの send・fd・buf・バイト・カーネル・NIC・ソケット・システムコール・TCP・ACK と、net-101 の 15 語。出典つき）と検査 43 の単体テスト（80 字以内・1〜2 文・ID が重ならない）。`src/lib/learn/terms.ts`（`Term`・`termIndex`・`markTerms`（長い書き方から・段落で 1 回・英字は単語の途中で当てない）・`firstPerStep`。単体テスト 4 本）。吹き出し（2026-11-27）：`learn/scene/tip.ts`（`placeTip`・`localRect`。単体テスト 6 本）・`label/Tip.svelte`・`Scene3` の `terms`（乗せる・Tab で物が 8 浮き、言葉と説明が出る。外すと消える）。公開 URL の `look-tip.ts` で 4 件とも o（`tip.json`）。検査 41〜48：`learn/check-v3.ts`（単体テスト 11 本）を content:check に足した（当てる物は `content/v3` の `V3_LESSONS`。今は無し。見本は手順 9）。専門語の辞書 `content/terms/jargon.ts`。残り：本文の点線の下線・ステップの番号・使い方の釦・指標・つまみの吹き出し（手順 8・9 の画面と一緒に） | `cbd4417`・`93623ed`・`209ad3b` |
 | 8 4 つの使い方 | 部品はできた（2026-11-27）。**試す**：`learn/lab.ts`・`lab-figure.ts`（単体テスト 21 本）、`learn3/LabPanel`・`LabFigure`（TCP の cwnd の棒・k8s の台と Pod。値で計算し直し育つ動きを繰り返す）。公開 URL の `look-lab.ts` 6 項目 o。**やってみる**：`learn/try3.ts`（履歴・補完・Ctrl+L・やることの ✓。単体テスト 10 本）と `content/v3/try-tcp.ts`（ss・nstat・tc・ethtool・sysctl。出力は本物の形）、`learn3/TryPanel3`・`TryFigure`（qdisc が pfifo_fast→fq、cwnd 9→86 で図が変わる）。公開 URL の `look-try.ts` 9 項目 o。**思い出す**：`learn/recall3.ts`（選ぶ・並べる・図を押す・数・説明・点。単体テスト 12 本）と `content/v3/recall-tcp.ts`（5 問・手帳の 1 枚）、`learn3/RecallPanel3`・`RecallFigure`（押せる置き場が光り、答えると正しい物が緑）。`look-recall.ts` 3 項目。全て /kit に並べた。残り：上の帯の 4 つの釦で行き来・最後の釦で次の使い方へ（手順 9 の学習画面で）、k8s・mem・stat の やってみる・思い出す（手順 9 の見本の題で） | `86cfc14`・`be14be4`・`3442c9e`・`ca7dbe0` |
-| 9 見本の題で並べる | 未 | |
+| 9 見本の題で並べる | 一部（2026-11-28）：見本 1 `content/v3/net-101.ts`（12 ステップ。言葉をそろえる・式の分解・物 18・線・荷物 `tokens`・指標 5・囲み・変わったこと・中身まで。検査 41〜48 で指摘 0。単体テスト 3 本）。荷物の合図 `learn/scene/cue.ts`（単体テスト 6 本）・右の欄 `learn/view3.ts`（3 本）。学習画面 `ui/learn3/LearnV3.svelte`：上に 4 つの使い方の釦（乗せると説明）・指標の帯（数え上げ・言葉の吹き出し）、左に図（Scene3・繰り返し再生・一時停止・線の点）、右に語り（今の段落が光る・言葉の一覧・初出の言葉・本文の点線の言葉に吹き出し）、下にステップの帯（乗せると種類と題）。最後の「次へ」で 試す → やってみる → 思い出す。`/lesson/net-101` で開く。撮る台本 `scripts/look-v3.ts`。残り：k8s-101 の第 3 版、ステップ固有の札（条件の札・時計・ss の札）、公開 URL の `look-learn.ts --scene/--loop/--hover/--terms` を本番で通す | `b73bcba` |
 | 10 判定（P-1〜P-9、判定者 2 人） | 未 | |
 | 11 見てもらう材料 | 未 | |
 
@@ -54,7 +54,8 @@
 | 18（配信 `c928133`） | 18/20（< は platform：札「platform と pod」が台の手前の角に掛かる・frame：名前の札が板の奥の輪郭をまたぐ） | 18/20（< は platform・frame。同じ理由） | frame の名前の札を試作と同じく板の手前の角の真下に 18 離して置き、platform の札を台から離す（`be14be4`） |
 | 19（配信 `3375da0`） | 18/20（< は queue・list：名前の札が台の輪郭に触れる。db もぎりぎり） | 19/20（< は queue：荷物の名前 B・C が約 11px で溝の点線に乗る。数の札も 10〜11px と目測。公開 URL の `look-uik.ts --kit` で測ると B・C・数の札とも 13px。大きさは否定） | queue・db・list の札を台から 12〜16 離す、queue の荷物の名前を箱から 11 上げて点線から離す（次のコミット） |
 | 20（配信 `3442c9e`） | 18/20（< は queue：名前 B・C が溝の点線に乗る・時計が縁に重なる、platform：落ちたノードの台が node-1 の台に重なり、web-2 の × が台の縁に乗る） | 18/20（< は queue：同じ、frame：上に名前の小箱（変数）が立っていない） | 溝の点線を名前の札の 4px 手前で切る（mask）・時計を上げる、落ちたノードを右へ離し web-2 を台の内へ、フレームの上に変数 a・b・c を立てる（次のコミット） |
-| 21 | ROUND21A | ROUND21B | |
+| 21（配信 `5505f3c`） | 18/20（< は db：台が platform の台に約 30px 重なる・platform：node-1 の札が台の外の隙間に浮き db の札に見える） | 18/20（< は frame：a・b の床が重なる・db：台が platform の下に潜る）。備考：時計の数に丸い札が無い | platform を右へ・幅 300 にして db と離し、node-1 を台の手前の角の真下に、frame の a・b を離す（`b73bcba`） |
+| 22 | | | |
 
 - 字の大きさが寄っても引いても 13〜15px か（16.3）の証拠は手順 4（`UIK`）で取る（判定者 B の指摘）
 
