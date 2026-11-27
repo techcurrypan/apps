@@ -1,0 +1,55 @@
+// 専門語の辞書（explanation-standard.md 検査 41）。英字の名前・カタカナの技術語・記号つきの名前。
+// 第 3 版のレッスンの本文・図の名前・指標・式の分解に出たら、そのレッスンの言葉の一覧に要る。
+// 見本の題（TCP・Kubernetes・Python の名前と物・統計の平均のぶれ）から始め、10-D で分野ごとに足す
+export const JARGON: readonly string[] = [
+	// net
+	'send()',
+	'fd',
+	'buf',
+	'ソケット',
+	'システムコール',
+	'カーネル',
+	'NIC',
+	'TCP',
+	'ACK',
+	'skb',
+	'cwnd',
+	'RTT',
+	'MSS',
+	'TSO',
+	'GRO',
+	'NAPI',
+	'softirq',
+	'qdisc',
+	'TSQ',
+	'EDT',
+	'RACK',
+	'RTO',
+	'SACK',
+	'送信キュー',
+	// k8s
+	'Pod',
+	'ノード',
+	'kubectl',
+	'apiserver',
+	'etcd',
+	'scheduler',
+	'kubelet',
+	'replicas',
+	'OOMKilled',
+	'CrashLoopBackOff',
+	'requests',
+	'limits',
+	// prg
+	'リスト',
+	'参照',
+	'フレーム',
+	'ガベージコレクション',
+	// sta
+	'標本',
+	'母集団',
+	'標準偏差',
+	'標準誤差',
+	'正規分布',
+	'信頼区間'
+];

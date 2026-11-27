@@ -9,6 +9,10 @@ import { checkAll } from '../../src/lib/lesson/check.ts';
 import { INSIDE_FIELDS } from '../../src/lib/lesson/inside-fields.ts';
 import type { Lesson } from '../../src/lib/lesson/types.ts';
 import { COMMAND_REFS, commandKeys } from '../../src/lib/practice/refs.ts';
+import { checkV3, type V3Lesson } from '../../src/lib/learn/check-v3.ts';
+import { JARGON } from '../../src/lib/content/terms/jargon.ts';
+import { TERMS } from '../../src/lib/content/terms/index.ts';
+import { V3_LESSONS } from '../../src/lib/content/v3/index.ts';
 
 /** 実戦の解き方で使うコマンド（検査 20） */
 export function usedCommands(lessons: readonly Lesson[]): Map<string, string[]> {
@@ -49,7 +53,10 @@ export function reviewsOf(dir = join(ROOT, 'src/lib/content/reviews')): Record<s
 	return out;
 }
 
-export function report(lessons: readonly Lesson[]): { ok: boolean; lines: string[] } {
+export function report(
+	lessons: readonly Lesson[],
+	v3: readonly V3Lesson[] = V3_LESSONS
+): { ok: boolean; lines: string[] } {
 	if (lessons.length === 0)
 		return { ok: false, lines: ['content:check: レッスンが 0 本。一覧の読み込みを確かめる'] };
 	const refs = Object.fromEntries(Object.entries(COMMAND_REFS).map(([k, v]) => [k, v.url]));
@@ -61,6 +68,12 @@ export function report(lessons: readonly Lesson[]): { ok: boolean; lines: string
 		reviews: reviewsOf(),
 		solutions: SOLUTIONS
 	});
+	// 第 3 版（検査 41〜48）
+	for (const l of v3)
+		checkV3(l, TERMS[l.field] ?? [], JARGON, (check, where, message) =>
+			problems.push({ lessonId: l.id, check, where, message })
+		);
+	const v3ids = v3.map((l) => l.id).join('・') || '無し';
 	const v2 = [...V2_LESSONS, ...V2_FIELDS].join('・') || '無し';
 	const done = [...V2_DONE].join('・') || '無し';
 	const inside = lessons.filter((l) => l.explain.some((s) => s.inside)).length;
@@ -68,7 +81,7 @@ export function report(lessons: readonly Lesson[]): { ok: boolean; lines: string
 		return {
 			ok: true,
 			lines: [
-				`content:check: レッスン ${lessons.length} 本を 40 項目で検査した（中身の板を持つ物 ${inside} 本。検査 16・20 を当てる分野：${[...INSIDE_FIELDS].join('・') || '無し'}。検査 26〜40 を当てる物：${v2}。検査 38 を当てる仕上がりの物：${done}）。落ちた物は無い`
+				`content:check: レッスン ${lessons.length} 本を 48 項目で検査した（中身の板を持つ物 ${inside} 本。検査 16・20 を当てる分野：${[...INSIDE_FIELDS].join('・') || '無し'}。検査 26〜40 を当てる物：${v2}。検査 38 を当てる仕上がりの物：${done}。検査 41〜48 を当てる物：${v3ids}）。落ちた物は無い`
 			]
 		};
 	return {

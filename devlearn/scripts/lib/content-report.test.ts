@@ -34,3 +34,23 @@ describe('第 2 版の材料（検査 34・38）', () => {
 		expect(reviewsOf('/no/such/dir')).toEqual({});
 	});
 });
+
+describe('第 3 版（検査 41〜48）', () => {
+	it('第 3 版のレッスンの落ちた物を、検査の番号つきで出す', () => {
+		const bad = {
+			id: 'tst-v3',
+			field: 'net',
+			terms: [],
+			objs: {},
+			steps: [{ kind: 'problem' as const, title: 't', paras: [], layout: {}, first: [] }]
+		};
+		const r = report([validLesson('tst-001')], [bad]);
+		expect(r.ok).toBe(false);
+		expect(r.lines.some((x) => x.includes('tst-v3') && x.includes('検査 44'))).toBe(true);
+	});
+	it('第 3 版のレッスンが無ければ、検査 41〜48 の当てる物は無し', () => {
+		const r = report([validLesson('tst-001')], []);
+		expect(r.ok).toBe(true);
+		expect(r.lines.join('\n')).toContain('検査 41〜48 を当てる物：無し');
+	});
+});
