@@ -37,8 +37,8 @@
 	const t = $derived(tone ?? BY[name] ?? 'teal');
 	const body = $derived(prism(rrectPts(-30, -22, 60, 44, 10), 0, 22, localProj(x, y, s)));
 	const tp = $derived(localProj(x, y, s).at(0, 0, 22));
-	/** 名前の字の下（ベースライン）は、上の面の一番上から 8 上（輪郭に重ねない。判定 12 回目） */
-	const nameY = $derived(Math.min(...body.top.map((p) => p[1])) - 8 * uik);
+	/** 名前は上の面の真ん中に載せる（試作 learn11 の mem と同じ。判定 13 回目）。字の真ん中を面の真ん中に */
+	const nameY = $derived(tp[1] + 6 * uik);
 </script>
 
 <Base {x} {y} {s} {uik} w={60} d={44} tone={t} {hl} {lift} {op} {id} {term}>
