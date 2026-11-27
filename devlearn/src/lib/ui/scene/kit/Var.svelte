@@ -43,7 +43,7 @@
 	<Solid g={body} tone={t} top={hl ? 32 : 22} {uik} />
 	<Halo
 		x={tp[0]}
-		y={tp[1] - 24 * uik}
+		y={tp[1] - 12 * uik}
 		text={name}
 		size={16}
 		{uik}

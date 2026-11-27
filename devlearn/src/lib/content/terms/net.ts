@@ -15,6 +15,14 @@ const net = (id: string, t: string, m: string[], d: string, refs?: string[]): Te
 
 export const NET_TERMS: Term[] = [
 	// 言葉をそろえるステップ（段 0 から上がる人の言葉）
+	net('app', 'アプリ', ['アプリ'], 'PC やスマホで動くプログラム。通信したい時は、OS に頼む。'),
+	net(
+		'sendq',
+		'送信キュー',
+		['送信キュー', 'sk_write_queue'],
+		'まだ送り終えていないデータが並んで待つ列。カーネルの中に、接続ごとに 1 本ある。',
+		['include/net/sock.h（Linux v6.6）']
+	),
 	net(
 		'send',
 		'send()',

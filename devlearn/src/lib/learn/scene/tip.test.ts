@@ -28,3 +28,12 @@ describe('吹き出しの置き場（placeTip）', () => {
 		expect(p.top + 80).toBeLessThanOrEqual(520 - 8);
 	});
 });
+
+describe('画面の上の外枠から、枠の中の外枠へ（localRect）', () => {
+	it('枠の左上を引く', async () => {
+		const { localRect } = await import('./tip');
+		expect(
+			localRect({ left: 130, top: 250, width: 40, height: 30 }, { left: 100, top: 200 })
+		).toEqual({ x: 30, y: 50, w: 40, h: 30 });
+	});
+});

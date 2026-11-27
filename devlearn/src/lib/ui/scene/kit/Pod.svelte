@@ -18,6 +18,8 @@
 		name?: string;
 		label?: string;
 		term?: string;
+		/** 測る印（data-obj） */
+		id?: string;
 	};
 	let {
 		x,
@@ -30,25 +32,27 @@
 		state = 'ready',
 		name,
 		label,
-		term = 'pod'
+		term = 'pod',
+		id
 	}: Props = $props();
 	const tone = $derived(POD[state][0]);
 	const paper = $derived(state === 'paper');
 	const R = $derived(r * s);
-	const h = $derived(paper ? 3 : (R > 22 ? 54 : 14) * s);
+	const h = $derived((paper ? 10 : R > 22 ? 54 : 14) * s);
 	const body = $derived(prism(hexPts(R), 0, h, localProj(x, y - lift, 1)));
 	const lb = $derived(label ?? POD[state][1]);
 </script>
 
-<g opacity={op} data-term={term} class="help">
+<g opacity={op} data-term={term} data-obj={id} class="help">
 	<g data-body>
 		<Solid
 			g={body}
 			{tone}
-			top={paper ? 8 : state === 'gray' ? 14 : 26}
+			top={paper ? 20 : state === 'gray' ? 14 : 26}
 			{uik}
 			shadow={!paper}
-			sw={paper ? 2 : 1.5}
+			sw={paper ? 2.2 : 1.5}
+			stroke={paper ? edge(tone) : undefined}
 			dash={paper ? `${6 * uik} ${4 * uik}` : undefined}
 		/>
 	</g>

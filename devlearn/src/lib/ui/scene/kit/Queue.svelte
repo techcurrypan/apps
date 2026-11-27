@@ -49,7 +49,7 @@
 	const cp = $derived.by(() => {
 		if (!items.length) return P.at(78, 0, f[2] + 40);
 		const q = itemAt(1);
-		return [q[0] + 21 * uik, q[1] - 17 * s - 16 * uik] as const;
+		return [q[0] + 21 * uik, q[1] - 17 * s - 8 * uik] as const;
 	});
 </script>
 
@@ -66,7 +66,7 @@
 	{/each}
 	{#each items as it, i (i)}
 		{@const q = itemAt(i + 1)}
-		<Token x={q[0]} y={q[1] - 2 * s} label={it} scale={0.8 * s} {uik} gap={16} />
+		<Token x={q[0]} y={q[1] - 2 * s} label={it} scale={0.8 * s} {uik} gap={8} />
 	{/each}
 	{#if clock}
 		<circle

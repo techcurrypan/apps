@@ -19,3 +19,11 @@ export function placeTip(
 	if (below + tip.h <= box.h - PAD) return { left, top: below, below: true };
 	return { left, top: Math.max(PAD, Math.min(box.h - tip.h - PAD, above)), below: false };
 }
+
+/** 画面の上の外枠（getBoundingClientRect）を、枠の左上からの外枠にする */
+export function localRect(
+	r: { left: number; top: number; width: number; height: number },
+	box: { left: number; top: number }
+): Rect {
+	return { x: r.left - box.left, y: r.top - box.top, w: r.width, h: r.height };
+}

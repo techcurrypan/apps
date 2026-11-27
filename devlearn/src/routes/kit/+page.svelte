@@ -33,6 +33,7 @@
 	import type { Layout } from '#lib/learn/scene/layout.ts';
 	import { flowAt } from '#lib/learn/player.ts';
 	import { LABEL_PX, zoomView } from '#lib/ui/scene/label/uik.ts';
+	import { NET_TERMS } from '#lib/content/terms/net.ts';
 
 	const schemes = ['light', 'dark'] as const;
 	let hov = $state('');
@@ -41,10 +42,10 @@
 
 	/** 構図の移り変わり（16.1 S5）：2 つの構図を 3.5 秒ごとに行き来する。描く時刻だけで決まる */
 	const demoObjs: Record<string, SceneObj> = {
-		app: { kind: 'laptop', name: 'アプリ' },
-		kern: { kind: 'func', name: 'カーネル', tone: 'blue', glyph: 'ƒ' },
-		q: { kind: 'queue', name: '送信キュー' },
-		nic: { kind: 'nic', name: 'NIC' }
+		app: { kind: 'laptop', name: 'アプリ', term: 'app' },
+		kern: { kind: 'func', name: 'カーネル', tone: 'blue', glyph: 'ƒ', term: 'kernel' },
+		q: { kind: 'queue', name: '送信キュー', term: 'sendq' },
+		nic: { kind: 'nic', name: 'NIC', term: 'nic' }
 	};
 	const demoLayouts: Layout[] = [
 		{ app: [180, 250], kern: [500, 250], nic: [820, 250] },
@@ -125,7 +126,7 @@
 					<Pod x={500} y={640} s={0.62} state="dead" name="web-2" />
 					{@render name(430, 760, 'platform と pod')}
 					<Platform x={760} y={650} w={220} d={150} down />
-					<Pod x={760} y={650} s={0.45} state="paper" label="" />
+					<Pod x={760} y={650} s={0.55} state="paper" name="web-3" label="" />
 					{@render name(760, 760, '落ちたノード・紙の pod')}
 					<!-- 4 段目 -->
 					<Pod x={90} y={880} s={0.8} state="ready" name="web-a" />
@@ -252,6 +253,7 @@
 			]}
 			flow={flowAt(demoNow)}
 			label="構図の移り変わりの見本"
+			terms={NET_TERMS}
 		/>
 	</div>
 	<h2>字の大きさ（寄っても引いても同じ。16.3）</h2>
