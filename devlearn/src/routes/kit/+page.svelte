@@ -34,6 +34,8 @@
 	import { flowAt } from '#lib/learn/player.ts';
 	import { LABEL_PX, zoomView } from '#lib/ui/scene/label/uik.ts';
 	import { NET_TERMS } from '#lib/content/terms/net.ts';
+	import { LABS } from '#lib/learn/lab.ts';
+	import LabPanel from '#lib/ui/learn3/LabPanel.svelte';
 
 	const schemes = ['light', 'dark'] as const;
 	let hov = $state('');
@@ -261,6 +263,11 @@
 			terms={NET_TERMS}
 		/>
 	</div>
+	<h2>試す（第 19 章。つまみの値で計算し直す）</h2>
+	<div class="labs">
+		<LabPanel lab={LABS.tcp} />
+		<LabPanel lab={LABS.k8s} />
+	</div>
 	<h2>字の大きさ（寄っても引いても同じ。16.3）</h2>
 	<p>
 		同じ図（1000×600）を倍率 0.5・1・2 で描く。物は大きさが変わり、札の字は画面の上でいつも同じ
@@ -376,5 +383,11 @@
 		width: 1240px;
 		height: 2060px;
 		display: block;
+	}
+	.labs {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+		gap: 32px;
+		margin: 12px 0 32px;
 	}
 </style>
