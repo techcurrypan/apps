@@ -36,12 +36,10 @@
 	}: Props = $props();
 	const P = $derived(localProj(x, y, s));
 	const board = $derived(prism(rrectPts(-w / 2, -d / 2, w, d, 20), 0, 10, P));
-	/** 名前の小箱：板の奥に立つ小箱。名前の札は小箱の上に接して載せる（浮かせない。第 17 章 frame・判定 15 回目） */
-	const box = $derived(prism(rrectPts(-w / 2 + 14, -d / 2 + 10, 46, 30, 8), 10, 30, P));
-	const boxTop = $derived(Math.min(...box.top.map((q) => q[1])));
-	const tx = $derived(P.at(-w / 2 + 37, -d / 2 + 25, 30)[0]);
-	/** 札の高さ（Tag と同じ：字 13.5 ＋ 13）の半分だけ上に。札の下の縁が小箱の上に触れる */
-	const ty = $derived(boxTop - ((13.5 + 13) * uik) / 2 + 2 * uik);
+	/** 名前の小箱：名前の札そのものを、板の奥の縁に立てる（札の下の縁が板の上の面に触れる）。
+	 * 名前の無い小箱は var と見分けにくいので置かない（第 17 章 frame・判定 16 回目） */
+	const tx = $derived(P.at(-w / 2 + 70, -d / 2 + 18, 10)[0]);
+	const ty = $derived(P.at(-w / 2 + 70, -d / 2 + 18, 10)[1] - ((13.5 + 13) * uik) / 2 + 3 * uik);
 </script>
 
 <Base
@@ -59,7 +57,6 @@
 	{term}
 >
 	<Solid g={board} tone={current ? 'blue' : 'gray'} top={current ? 14 : 8} {uik} />
-	<Solid g={box} tone={current ? 'blue' : 'gray'} top={30} {uik} shadow={false} />
 	<Tag
 		x={tx}
 		y={ty}
