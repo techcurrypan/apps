@@ -37,13 +37,15 @@
 	const t = $derived(tone ?? BY[name] ?? 'teal');
 	const body = $derived(prism(rrectPts(-30, -22, 60, 44, 10), 0, 22, localProj(x, y, s)));
 	const tp = $derived(localProj(x, y, s).at(0, 0, 22));
+	/** 名前の字の下（ベースライン）は、上の面の一番上から 8 上（輪郭に重ねない。判定 12 回目） */
+	const nameY = $derived(Math.min(...body.top.map((p) => p[1])) - 8 * uik);
 </script>
 
 <Base {x} {y} {s} {uik} w={60} d={44} tone={t} {hl} {lift} {op} {id} {term}>
 	<Solid g={body} tone={t} top={hl ? 32 : 22} {uik} />
 	<Halo
 		x={tp[0]}
-		y={tp[1] - 12 * uik}
+		y={nameY}
 		text={name}
 		size={16}
 		{uik}
