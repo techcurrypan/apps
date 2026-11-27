@@ -1,0 +1,46 @@
+{
+ "base": "https://devlearn.techcurrybread.workers.dev",
+ "rows": [
+  {
+   "term": "kernel",
+   "x": 512.8910217285156,
+   "y": 369.27076721191406,
+   "tip": "kernel",
+   "w": 300,
+   "inside": true,
+   "lifted": true,
+   "ok": true
+  },
+  {
+   "term": "app",
+   "x": 414.99000549316406,
+   "y": 362.2207489013672,
+   "tip": "app",
+   "w": 300,
+   "inside": true,
+   "lifted": true,
+   "ok": true
+  },
+  {
+   "term": "nic",
+   "x": 1016.5900268554688,
+   "y": 400.24375915527344,
+   "tip": "nic",
+   "w": 300,
+   "inside": true,
+   "lifted": true,
+   "ok": true
+  },
+  {
+   "term": "sendq",
+   "x": 772.1899719238281,
+   "y": 445.3637237548828,
+   "tip": "sendq",
+   "w": 300,
+   "inside": true,
+   "lifted": true,
+   "ok": true
+  }
+ ],
+ "goneOnLeave": true
+}
