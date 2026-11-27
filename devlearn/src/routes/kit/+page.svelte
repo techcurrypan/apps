@@ -162,19 +162,19 @@
 					<Func x={200} y={1880} tone="blue" glyph="ƒ" hl />
 					<Func x={450} y={1880} tone="orange" glyph="⚡" hl />
 					<Tag x={325} y={1975} text="強めた func（主役）" size={14} />
-					<Panel x={30} y={1670} w={190} h={100} tone="teal" title="母集団">
+					<Panel x={30} y={1670} w={160} h={100} tone="teal" title="母集団">
 						{#each [0, 1, 2, 3, 4, 5, 6] as i (i)}
-							<Sphere x={58 + i * 22} y={1745 - (i % 2) * 10} r={9} tone="teal" />
+							<Sphere x={52 + i * 19} y={1745 - (i % 2) * 10} r={9} tone="teal" />
 						{/each}
 					</Panel>
-					<Panel x={240} y={1670} w={190} h={100} tone="blue" title="標本">
+					<Panel x={205} y={1670} w={160} h={100} tone="blue" title="標本">
 						{#each [0, 1, 2] as i (i)}
-							<Sphere x={295 + i * 45} y={1740} r={10} />
+							<Sphere x={245 + i * 40} y={1740} r={10} />
 						{/each}
 					</Panel>
-					<Panel x={450} y={1670} w={190} h={100} tone="orange" title="平均">
+					<Panel x={380} y={1670} w={160} h={100} tone="orange" title="平均">
 						{#each [18, 34, 50, 34, 18] as h, i (i)}
-							<Bar x={480 + i * 28} y={1756} w={20} {h} tone="orange" />
+							<Bar x={400 + i * 26} y={1756} w={20} {h} tone="orange" />
 						{/each}
 					</Panel>
 					<!-- 7 段目：札（label/） -->
@@ -209,11 +209,11 @@
 								style:stroke="var(--dl-ink)"
 								stroke-width={1.5 * uik}
 							/>
-							<g data-lk="name"><Tag x={420} y={380} text="tcp_sendmsg" {uik} /></g>
+							<g data-lk="name"><Tag x={420} y={400} text="tcp_sendmsg" {uik} /></g>
 							<g data-lk="sub">
 								<Halo
 									x={420}
-									y={380 + 26 * uik}
+									y={400 + 26 * uik}
 									text="データを写す"
 									size={LABEL_PX.sub}
 									{uik}
@@ -221,11 +221,11 @@
 									weight={700}
 								/>
 							</g>
-							<g data-lk="num"><Num x={600} y={220} text="cwnd 10" size={LABEL_PX.num} {uik} /></g>
+							<g data-lk="num"><Num x={720} y={170} text="cwnd 10" size={LABEL_PX.num} {uik} /></g>
 							<g data-lk="line">
 								<Halo
 									x={510}
-									y={290}
+									y={276}
 									text="写す"
 									size={LABEL_PX.line}
 									{uik}
@@ -234,7 +234,7 @@
 								/>
 							</g>
 							<g data-lk="note"
-								><Note x={420} y={215} text="40 µs で戻る" size={LABEL_PX.note} {uik} /></g
+								><Note x={290} y={170} text="40 µs で戻る" size={LABEL_PX.note} {uik} /></g
 							>
 						{/snippet}
 					</Stage>
