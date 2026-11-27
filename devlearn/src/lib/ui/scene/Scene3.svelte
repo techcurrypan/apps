@@ -23,6 +23,7 @@
 	import Tag from './label/Tag.svelte';
 	import Tip from './label/Tip.svelte';
 	import type { Term } from '../../learn/terms.ts';
+	import type { PodState } from './kit/paint.ts';
 	import { localRect, placeTip } from '../../learn/scene/tip.ts';
 
 	type Props = {
@@ -43,6 +44,10 @@
 		over?: Snippet<[number]>;
 		/** 吹き出しに出す言葉（data-term の ID で引く。LS3-H1） */
 		terms?: readonly Term[];
+		/** Pod の状態（物の ID → ready・dead・paper など。無ければ ready） */
+		pods?: Record<string, PodState>;
+		/** 黙ったノード（灰の点線の台） */
+		down?: string[];
 	};
 	let {
 		objs,
@@ -55,7 +60,9 @@
 		links = [],
 		flow = null,
 		over,
-		terms = []
+		terms = [],
+		pods = {},
+		down = []
 	}: Props = $props();
 	// 乗せた物（浮き上がり 8。LS3-M4）と吹き出し（LS3-H1）。Tab で移った時も同じ（U-10）
 	const LIFT = 8;
@@ -127,6 +134,7 @@
 						y={d.y}
 						s={d.s}
 						op={d.op}
+						state={pods[d.id] ?? 'ready'}
 						{uik}
 						name={d.name}
 						term={d.term}
@@ -173,6 +181,20 @@
 						id={d.id}
 						term={d.term}
 						lift={lift(d.id)}
+					/>
+				{:else if d.kind === 'platform'}
+					<Platform
+						x={d.x}
+						y={d.y}
+						s={d.s}
+						op={d.op}
+						{uik}
+						hl={h}
+						tone={d.tone}
+						id={d.id}
+						term={d.term}
+						lift={lift(d.id)}
+						down={down.includes(d.id)}
 					/>
 				{:else}
 					{@const C = PLAIN[d.kind]}

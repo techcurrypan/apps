@@ -27,4 +27,13 @@ describe('drawList', () => {
 		const l = drawList(objs, { nic: [100, 300], app: [900, 300] }, null, 5000);
 		expect(l.map((d) => d.id)).toEqual(['app', 'nic']);
 	});
+	it('台（platform・frame）は y に関わらず先に描く（上に乗る Pod や変数を隠さない）', () => {
+		const o2 = {
+			...objs,
+			n: { kind: 'platform', name: 'node-2' },
+			p: { kind: 'pod', name: 'web-a' }
+		} as const;
+		const l = drawList(o2, { p: [500, 372], n: [500, 380] }, null, 5000);
+		expect(l.map((d) => d.id)).toEqual(['n', 'p']);
+	});
 });

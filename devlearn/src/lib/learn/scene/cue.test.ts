@@ -34,4 +34,28 @@ describe('tokensAt（ステップの荷物の時刻ごとの置き場）', () =>
 	it('道の物が図に無ければ出さない', () => {
 		expect(tokensAt([{ ...tok[0], path: ['a', 'z'] }], at, 1500)).toEqual([]);
 	});
+	it('着いた荷物は、その物から次の荷物が出ると消える（受け渡し。名前が重ならない）', () => {
+		const at2 = {
+			a: { x: 0, y: 100, s: 1, op: 1 },
+			b: { x: 100, y: 100, s: 1, op: 1 },
+			c: { x: 200, y: 100, s: 1, op: 1 }
+		};
+		const cues = [
+			{ name: 'yaml', tone: 'blue' as const, path: ['a', 'b'], at: 0, d: 100 },
+			{ name: '紙', tone: 'purple' as const, path: ['b', 'c'], at: 300, d: 100 }
+		];
+		expect(tokensAt(cues, at2, 200).map((k) => k.name)).toEqual(['yaml']);
+		expect(tokensAt(cues, at2, 350).map((k) => k.name)).toEqual(['紙']);
+	});
+	it('同じ物に着いて並ぶ荷物は残す（キューの中の A・B・C）', () => {
+		const at2 = { a: { x: 0, y: 100, s: 1, op: 1 }, q: { x: 100, y: 100, s: 1, op: 1 } };
+		const cues = ['A', 'B'].map((name, i) => ({
+			name,
+			tone: 'blue' as const,
+			path: ['a', 'q'],
+			at: i * 50,
+			d: 100
+		}));
+		expect(tokensAt(cues, at2, 500).map((k) => k.name)).toEqual(['A', 'B']);
+	});
 });

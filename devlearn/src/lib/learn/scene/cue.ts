@@ -47,6 +47,10 @@ export function tokensAt(
 	const out: { name: string; tone: Tone; x: number; y: number; op: number }[] = [];
 	for (const c of cues) {
 		if (t < c.at) continue;
+		// 着いた荷物は、その物から後の荷物が出たら消える（受け渡し。LS3-K5）
+		const end = c.path[c.path.length - 1];
+		const passed = cues.some((n) => n !== c && n.at > c.at && t >= n.at && n.path[0] === end);
+		if (t >= c.at + c.d && passed) continue;
 		const ps = c.path.map((id) => at[id]);
 		if (ps.some((p) => !p)) continue;
 		const pts = (ps as Place[]).map((p) => ({ x: p.x, y: p.y - RIDE * p.s }));

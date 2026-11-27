@@ -19,6 +19,7 @@
 	import LabFigure from './LabFigure.svelte';
 	import TryPanel3 from './TryPanel3.svelte';
 	import TryFigure from './TryFigure.svelte';
+	import TryFigureK8s from './TryFigureK8s.svelte';
 	import RecallPanel3 from './RecallPanel3.svelte';
 	import RecallFigure from './RecallFigure.svelte';
 	import { LABS } from '../../learn/lab.ts';
@@ -261,6 +262,8 @@
 					links={st.links ?? []}
 					flow={flowAt(now, { reduce })}
 					terms={mine}
+					pods={st.pods}
+					down={st.down}
 				>
 					{#snippet over(uik)}
 						{#if st.intro}
@@ -289,10 +292,15 @@
 			{:else if mode === 'lab'}
 				<LabFigure {lab} vals={labVals} t={(now - labAt) / 1000} />
 			{:else if mode === 'try'}
-				<TryFigure scene={tryScene} st={tryState} t={now} />
+				{#if tryScene.id === 'k8s'}
+					<TryFigureK8s scene={tryScene} st={tryState} t={now} />
+				{:else}
+					<TryFigure scene={tryScene} st={tryState} t={now} />
+				{/if}
 			{:else}
 				<RecallFigure
 					q={recall.qs[rqi]}
+					set={lab}
 					answered={rhit !== null}
 					t={now}
 					onhit={(id) => (rhit = id)}

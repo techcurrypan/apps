@@ -3,12 +3,16 @@ import type { V3Lesson } from '../../learn/check-v3.ts';
 import type { RecallSet } from '../../learn/recall3.ts';
 import type { TryScene } from '../../learn/try3.ts';
 import type { Term } from '../../learn/terms.ts';
+import { K8S_TERMS } from '../terms/k8s.ts';
 import { NET_TERMS } from '../terms/net.ts';
+import { K8S_101_V3 } from './k8s-101.ts';
 import { NET_101_V3 } from './net-101.ts';
+import { RECALL_K8S } from './recall-k8s.ts';
 import { RECALL_TCP } from './recall-tcp.ts';
+import { TRY_K8S } from './try-k8s.ts';
 import { TRY_TCP } from './try-tcp.ts';
 
-export const V3_LESSONS: V3Lesson[] = [NET_101_V3];
+export const V3_LESSONS: V3Lesson[] = [NET_101_V3, K8S_101_V3];
 
 /** 第 3 版の画面で開くレッスンと、その 試す・やってみる・思い出す・言葉 */
 export type V3Bundle = {
@@ -19,7 +23,8 @@ export type V3Bundle = {
 	recall: RecallSet;
 };
 const BUNDLES: V3Bundle[] = [
-	{ lesson: NET_101_V3, terms: NET_TERMS, lab: 'tcp', tryScene: TRY_TCP, recall: RECALL_TCP }
+	{ lesson: NET_101_V3, terms: NET_TERMS, lab: 'tcp', tryScene: TRY_TCP, recall: RECALL_TCP },
+	{ lesson: K8S_101_V3, terms: K8S_TERMS, lab: 'k8s', tryScene: TRY_K8S, recall: RECALL_K8S }
 ];
 
 export const v3Of = (id: string): V3Bundle | undefined => BUNDLES.find((b) => b.lesson.id === id);

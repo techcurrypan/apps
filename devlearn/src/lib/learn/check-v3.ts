@@ -3,6 +3,7 @@
 // 専門語の辞書は src/lib/content/terms/jargon.ts。図の物の外枠は REACH（物の中心からの半径。線を止める所と同じ）
 import { REACH, type SceneObj } from './scene/draw.ts';
 import type { Layout } from './scene/layout.ts';
+import type { PodState } from '../ui/scene/kit/paint.ts';
 import type { Cue } from './scene/cue.ts';
 import type { WireKind } from './scene/wire.ts';
 import { firstPerStep, markTerms, type Term } from './terms.ts';
@@ -62,6 +63,10 @@ export type V3Step = {
 	names?: Record<string, string>;
 	/** 主役（台の色を濃くする） */
 	hl?: string[];
+	/** Pod の状態（物の ID → 状態。無ければ ready。第 17 章 pod） */
+	pods?: Record<string, PodState>;
+	/** 黙ったノード（platform の ID。灰の点線で描く） */
+	down?: string[];
 };
 export type V3Lesson = {
 	id: string;

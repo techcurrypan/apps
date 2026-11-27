@@ -36,7 +36,9 @@ export const CTX: Record<string, Tone> = {
 	other: 'gray'
 };
 /** Pod の状態の色と札 */
-export const POD: Record<string, [Tone, string]> = {
+/** Pod の状態（第 17 章 pod） */
+export type PodState = 'ready' | 'run' | 'create' | 'dead' | 'paper' | 'gray';
+export const POD: Record<PodState, [Tone, string]> = {
 	ready: ['green', 'Ready'],
 	run: ['green', '動いている'],
 	create: ['orange', '起動中'],

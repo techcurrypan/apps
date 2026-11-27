@@ -53,6 +53,8 @@ export const REACH: Record<ObjKind, number> = {
 	frame: 120,
 	var: 42
 };
+/** 床の部品（上に物を乗せる。先に描く） */
+const FLOOR: ReadonlySet<ObjKind> = new Set(['platform', 'frame']);
 /** 自分で名前を描く部品（pod・frame・var） */
 export const SELF_NAMED: ReadonlySet<ObjKind> = new Set(['pod', 'frame', 'var']);
 
@@ -69,5 +71,9 @@ export function drawList(
 		const ob = objs[id];
 		if (ob) out.push({ ...ob, ...p, id });
 	}
-	return out.sort((a, b) => a.y - b.y || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+	// 台（platform・frame）は床なので、上に乗る物より先に描く
+	const floor = (d: Drawn) => (FLOOR.has(d.kind) ? 0 : 1);
+	return out.sort(
+		(a, b) => floor(a) - floor(b) || a.y - b.y || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)
+	);
 }
