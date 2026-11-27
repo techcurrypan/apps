@@ -42,12 +42,76 @@ async function main() {
 		const described = await tab.eval<boolean>(
 			`[...document.querySelectorAll('.lab [data-knob]')].every(l => (l.getAttribute('title')||'').length > 0 && l.querySelector('small').textContent.trim().length > 0)`
 		);
-		const res = { base, before, after, halved, ans, answered, described };
+		// 図（第 19 章「つまみの値で計算し直した図」）：棒の数が往復の回数と同じ・値を変えると図が変わる・動き続ける
+		const bars = () =>
+			tab.eval<number>(
+				`document.querySelectorAll('.lab-fig')[0].querySelectorAll('[data-obj^="bar-"]').length`
+			);
+		const barsBefore = await bars();
+		await tab.eval(`(() => {
+			const i = document.querySelector('.lab [data-knob="loss"] input');
+			const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
+			set.call(i, '2'); i.dispatchEvent(new Event('input', { bubbles: true }));
+		})()`);
+		await sleep(300);
+		const rtts = Number(
+			((await rows()).find((r) => r.startsWith('往復の回数')) ?? '').replace(/\D/g, '')
+		);
+		const barsAfter = await bars();
+		const redrawn = barsBefore === 7 && barsAfter === rtts && barsAfter > 7;
+		const shape = () =>
+			tab.eval<string>(
+				`document.querySelectorAll('.lab-fig')[0].querySelector('svg').innerHTML.length + ':' + [...document.querySelectorAll('.lab-fig')[0].querySelectorAll('[data-obj^="bar-"] path')].slice(-1).map(p=>p.getAttribute('d')).join()`
+			);
+		await sleep(200);
+		const s1 = await shape();
+		await sleep(400);
+		const s2 = await shape();
+		const moving = s1 !== s2;
+		// k8s の図：Pod の数が「置けた」と Pending の和、台がノードの数
+		const pods = await tab.eval<number>(
+			`document.querySelectorAll('.lab-fig')[1].querySelectorAll('g[data-obj^="web-"]').length`
+		);
+		const nodes = await tab.eval<number>(
+			`document.querySelectorAll('.lab-fig')[1].querySelectorAll('[data-term="node"]').length`
+		);
+		const k8sOk = pods === 4 && nodes === 3;
+		for (const [i, n] of [
+			[0, 'tcp'],
+			[1, 'k8s']
+		] as const) {
+			await tab.eval(
+				`document.querySelectorAll('.lab-pair')[${i}].scrollIntoView({block:'start'})`
+			);
+			await sleep(1500);
+			await tab.shot(`docs/progress/shots/phase-10-P/lab-${n}.png`);
+		}
+		console.log(
+			`${redrawn ? 'o' : 'x'} 喪失率 2% で棒が ${barsBefore} → ${barsAfter} 本（往復 ${rtts} 回）`
+		);
+		console.log(`${moving ? 'o' : 'x'} 図が動き続ける（棒が育つ）`);
+		console.log(`${k8sOk ? 'o' : 'x'} k8s の図：Pod ${pods} 個・台 ${nodes} 台`);
+		const res = {
+			base,
+			before,
+			after,
+			halved,
+			ans,
+			answered,
+			described,
+			barsBefore,
+			barsAfter,
+			rtts,
+			redrawn,
+			moving,
+			pods,
+			nodes
+		};
 		writeFileSync(OUT, JSON.stringify(res, null, 1));
 		console.log(`${halved ? 'o' : 'x'} RTT 30→15 ms で 1 MB の時間が 210→105 ms`);
 		console.log(`${answered ? 'o' : 'x'} 予想の問いの当たり・外れと理由`);
 		console.log(`${described ? 'o' : 'x'} つまみに説明`);
-		if (!halved || !answered || !described) process.exitCode = 1;
+		if (!halved || !answered || !described || !redrawn || !moving || !k8sOk) process.exitCode = 1;
 	} finally {
 		chrome.kill();
 	}

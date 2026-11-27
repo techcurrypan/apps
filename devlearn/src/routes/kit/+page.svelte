@@ -36,6 +36,7 @@
 	import { NET_TERMS } from '#lib/content/terms/net.ts';
 	import { LABS } from '#lib/learn/lab.ts';
 	import LabPanel from '#lib/ui/learn3/LabPanel.svelte';
+	import LabFigure from '#lib/ui/learn3/LabFigure.svelte';
 
 	const schemes = ['light', 'dark'] as const;
 	let hov = $state('');
@@ -65,6 +66,10 @@
 		raf = requestAnimationFrame(f);
 		return () => cancelAnimationFrame(raf);
 	});
+	const startVals = (id: 'tcp' | 'k8s') =>
+		Object.fromEntries(LABS[id].knobs.map((k) => [k.k, k.v])) as Record<string, number>;
+	let labVals = $state({ tcp: startVals('tcp'), k8s: startVals('k8s') });
+	let labAt = $state({ tcp: 0, k8s: 0 });
 	const demoStep = $derived((((Math.floor(demoNow / DEMO_MS) % 2) + 2) % 2) as 0 | 1);
 </script>
 
@@ -128,7 +133,7 @@
 					<Pod x={360} y={625} s={0.8} state="ready" name="web-1" />
 					<Pod x={515} y={655} s={0.8} state="dead" name="web-2" />
 					<Tag x={300} y={720} text="node-1" dot="var(--dl-obj-green)" />
-					{@render name(430, 760, 'platform と pod')}
+					{@render name(560, 800, 'platform と pod')}
 					<Platform x={760} y={650} w={220} d={150} down />
 					<Pod x={760} y={650} s={0.55} state="paper" name="web-3" label="" />
 					{@render name(760, 760, '落ちたノード・紙の pod')}
@@ -137,7 +142,7 @@
 					<Pod x={235} y={880} s={0.8} state="create" name="web-b" />
 					<Pod x={380} y={880} s={0.8} state="dead" name="web-c" />
 					<Frame x={575} y={950} w={170} d={110} name="<module>" />
-					<Frame x={930} y={1020} w={170} d={110} name="フレーム add()" current id="frame" />
+					<Frame x={930} y={975} w={170} d={110} name="フレーム add()" current id="frame" />
 					<!-- 5 段目 -->
 					<List x={200} y={1160} vals={['1', '2', '3']} cap={5} newIdx={2} id="list" />
 					{@render name(200, 1250, 'list（容量 5）')}
@@ -267,8 +272,20 @@
 	</div>
 	<h2>試す（第 19 章。つまみの値で計算し直す）</h2>
 	<div class="labs">
-		<LabPanel lab={LABS.tcp} />
-		<LabPanel lab={LABS.k8s} />
+		{#each ['tcp', 'k8s'] as const as id (id)}
+			<div class="lab-pair">
+				<div class="lab-fig">
+					<LabFigure lab={id} vals={labVals[id]} t={(demoNow - labAt[id]) / 1000} />
+				</div>
+				<LabPanel
+					lab={LABS[id]}
+					onchange={(v) => {
+						labVals[id] = v;
+						labAt[id] = demoNow;
+					}}
+				/>
+			</div>
+		{/each}
 	</div>
 	<h2>字の大きさ（寄っても引いても同じ。16.3）</h2>
 	<p>
@@ -388,8 +405,19 @@
 	}
 	.labs {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
 		gap: 32px;
 		margin: 12px 0 32px;
+	}
+	/* 図が主役（1440×900 で図 940×520 以上）。右に つまみ の欄 */
+	.lab-pair {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) 360px;
+		gap: 24px;
+		align-items: start;
+	}
+	.lab-fig {
+		height: 560px;
+		background: var(--dl-scene-bg, transparent);
+		border-radius: 14px;
 	}
 </style>

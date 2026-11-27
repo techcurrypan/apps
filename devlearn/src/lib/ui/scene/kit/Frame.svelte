@@ -36,10 +36,20 @@
 	}: Props = $props();
 	const P = $derived(localProj(x, y, s));
 	const board = $derived(prism(rrectPts(-w / 2, -d / 2, w, d, 20), 0, 10, P));
-	/** 名前の小箱：名前の札そのものを、板の奥の縁に立てる（札の下の縁が板の上の面に触れる）。
+	/** 名前の札：試作 learn11 と同じく、板の手前の角の真下に離して置く（輪郭をまたがない。判定 18 回目）。
 	 * 名前の無い小箱は var と見分けにくいので置かない（第 17 章 frame・判定 16 回目） */
-	const tx = $derived(P.at(-w / 2 + 70, -d / 2 + 18, 10)[0]);
-	const ty = $derived(P.at(-w / 2 + 70, -d / 2 + 18, 10)[1] - ((13.5 + 13) * uik) / 2 + 3 * uik);
+	const front = $derived(
+		Math.max(
+			...[
+				[-w / 2, -d / 2],
+				[w / 2, -d / 2],
+				[w / 2, d / 2],
+				[-w / 2, d / 2]
+			].map(([a, b]) => P.at(a, b, 0)[1])
+		)
+	);
+	const tx = $derived(P.at(0, 0, 0)[0]);
+	const ty = $derived(front + 18 * uik + ((13.5 + 13) * uik) / 2);
 </script>
 
 <Base
