@@ -1,5 +1,5 @@
 {
- "base": "http://localhost:5199",
+ "base": "https://devlearn.techcurrybread.workers.dev",
  "before": [
   "往復の回数7 回",
   "1 MB が届くまで210 ms",
