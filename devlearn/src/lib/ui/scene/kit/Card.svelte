@@ -43,7 +43,7 @@
 		opacity: 0.16;
 	}
 	.bd {
-		fill: var(--dl-scene-pn);
+		fill: var(--dl-card-light);
 		stroke: var(--dl-ink);
 	}
 	.bd.dark {

@@ -176,6 +176,8 @@ button:disabled {
 	/* 暗い札（端末の出力・式の分解）の地。暗い配色では背景より明るくして見分ける */
 	--dl-card-dark: #15171c;
 	--dl-card-dark-edge: #1d1f24;
+	/* 明るい札（条件の札など）の地。暗い配色では暗い札より 2 段明るくして、2 種を見分ける */
+	--dl-card-light: #fffdf8;
 }
 @media (prefers-color-scheme: dark) {
 	:root:not([data-theme='light']) {
@@ -183,8 +185,9 @@ button:disabled {
 		--dl-scene-pn: #1c1f24;
 		--dl-scene-bg: #14161a;
 		--dl-scene-grid: rgba(200, 200, 220, 0.06);
-		--dl-card-dark: #323844;
-		--dl-card-dark-edge: #7d879a;
+		--dl-card-dark: #0b0d11;
+		--dl-card-dark-edge: #8a94a8;
+		--dl-card-light: #353c48;
 	}
 }
 :root[data-theme='dark'],
@@ -193,13 +196,15 @@ button:disabled {
 	--dl-scene-pn: #1c1f24;
 	--dl-scene-bg: #14161a;
 	--dl-scene-grid: rgba(200, 200, 220, 0.06);
-	--dl-card-dark: #323844;
-	--dl-card-dark-edge: #7d879a;
+	--dl-card-dark: #0b0d11;
+	--dl-card-dark-edge: #8a94a8;
+	--dl-card-light: #353c48;
 }
 :root[data-theme='light'] .dl-scene-dark {
 	--dl-ink: #ecebe6;
 	--dl-scene-pn: #1c1f24;
 	--dl-scene-bg: #14161a;
-	--dl-card-dark: #323844;
-	--dl-card-dark-edge: #7d879a;
+	--dl-card-dark: #0b0d11;
+	--dl-card-dark-edge: #8a94a8;
+	--dl-card-light: #353c48;
 }

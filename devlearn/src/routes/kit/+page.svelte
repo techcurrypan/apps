@@ -114,10 +114,13 @@
 					{@render name(120, 245, 'laptop')}
 					<Func x={370} y={150} tone="blue" glyph="ƒ" id="func" />
 					{@render name(370, 245, 'func（青）')}
-					<Func x={620} y={150} tone="orange" glyph="⚡" />
+					<Func x={620} y={150} tone="orange" glyph="⇉" />
 					{@render name(620, 245, 'func（橙）')}
 					<Block x={870} y={150} glyph="↻" id="block" />
 					{@render name(870, 245, 'block')}
+					<!-- block の記号のもう 1 つ（⌖：置き場を決める。第 17 章） -->
+					<Block x={1070} y={165} s={0.72} glyph="⌖" />
+					{@render name(1070, 245, 'block（⌖）')}
 					<!-- 2 段目 -->
 					<Queue x={160} y={418} clock items={['B', 'C']} id="queue" />
 					{@render name(160, 520, 'queue')}
@@ -143,8 +146,8 @@
 					<Pod x={440} y={628} s={0.8} state="ready" name="web-1" />
 					<Pod x={570} y={660} s={0.8} state="dead" name="web-2" />
 					<!-- 台の名前は台の手前の角の真下（試作の node-2 と同じ）。db の台から離す -->
-					<Tag x={560} y={808} text="node-1" dot="var(--dl-obj-green)" />
-					{@render name(760, 808, 'platform と pod')}
+					<!-- 部品の名前を台の名前の札に含め、別の札の行に紛れさせない（23 回目の判定 B） -->
+					<Tag x={660} y={795} text="node-1（platform と pod）" dot="var(--dl-obj-green)" />
 					<Platform x={820} y={650} w={200} d={140} down />
 					<Pod x={820} y={650} s={0.55} state="paper" name="web-3" label="" />
 					{@render name(820, 760, '落ちたノード・紙の pod')}
@@ -231,13 +234,13 @@
 					<!-- 名前の札と下の説明の 2 段（試作の物の札と同じ形） -->
 					<!-- 板の段の色（母集団・標本・平均） -->
 					<!-- 強めた状態（主役の物の下の台を物の色で淡く塗る） -->
-					<Func x={200} y={1935} tone="blue" glyph="ƒ" hl />
-					<Func x={450} y={1935} tone="orange" glyph="⚡" hl />
+					<Func x={200} y={1935} tone="blue" glyph="?" hl />
+					<Func x={450} y={1935} tone="orange" glyph="✓" hl />
 					<Tag x={325} y={2032} text="強めた func（主役）" size={14} />
 					<!-- 実行の文脈の残り 2 色（hardirq＝赤・その他＝灰。第 17 章 func） -->
-					<Func x={760} y={1950} s={0.8} tone="red" glyph="!" />
+					<Func x={760} y={1950} s={0.8} tone="red" glyph="⚡" />
 					{@render name(760, 2032, 'func（赤）hardirq')}
-					<Func x={1000} y={1950} s={0.8} tone="gray" glyph="ƒ" />
+					<Func x={1000} y={1950} s={0.8} tone="gray" glyph="IP" />
 					{@render name(1000, 2032, 'func（灰）その他')}
 					<Panel x={30} y={1660} w={170} h={120} tone="teal" title="母集団">
 						{#each [0, 1, 2, 3, 4, 5, 6] as i (i)}
