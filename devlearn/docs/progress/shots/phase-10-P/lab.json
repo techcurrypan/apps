@@ -1,5 +1,5 @@
 {
- "base": "https://devlearn.techcurrybread.workers.dev",
+ "base": "http://localhost:5199",
  "before": [
   "往復の回数7 回",
   "1 MB が届くまで210 ms",
@@ -20,5 +20,12 @@
   "外れ 落ちるたびに cwnd が 0.7 倍に減り、その後は 1 往復で 1 つずつしか増えない。試してみる：喪失率 1% と 2% で往復の回数を比べる"
  ],
  "answered": true,
- "described": true
+ "described": true,
+ "barsBefore": 7,
+ "barsAfter": 59,
+ "rtts": 59,
+ "redrawn": true,
+ "moving": true,
+ "pods": 4,
+ "nodes": 3
 }

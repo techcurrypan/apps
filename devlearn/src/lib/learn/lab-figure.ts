@@ -41,9 +41,8 @@ export type LabNode = {
 	pods: LabPod[];
 };
 
-/** 等角の向き（src/lib/ui/scene/iso.ts の ISO と同じ） */
+/** 等角の向き（src/lib/ui/scene/iso.ts の ISO.ax と同じ。台の高さは幅の半分） */
 const AX = 0.894;
-const AY = 0.447;
 /** 台の下の名前の札の分 */
 const TAG_H = 46;
 /** Pending の列の高さ */
