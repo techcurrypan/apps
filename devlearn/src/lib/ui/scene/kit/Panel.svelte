@@ -35,7 +35,7 @@
 		term,
 		children
 	}: Props = $props();
-	const depth = 8;
+	const depth = 14;
 	const r = 16;
 </script>
 
@@ -48,7 +48,7 @@
 			width={w}
 			height={h}
 			rx={r}
-			style:fill={face(tone, 34)}
+			style:fill={face(tone, 46)}
 			style:stroke="var(--dl-ink)"
 			stroke-width={1.5 * uik}
 		/>
@@ -64,10 +64,11 @@
 		/>
 		{#if title}<Halo
 				x={x + 16}
-				y={y + 26 * uik}
+				y={y + 28 * uik}
 				text={title}
-				size={12.5}
+				size={14}
 				{uik}
+				weight={800}
 				color="var(--dl-ink)"
 			/>{/if}
 		{#if children}{@render children()}{/if}

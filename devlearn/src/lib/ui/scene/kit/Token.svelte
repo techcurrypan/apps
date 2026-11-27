@@ -31,7 +31,7 @@
 	{#if label}
 		<Halo
 			{x}
-			y={y - hh * 0.55 - 8 * uik}
+			y={y - hh * 0.55 - 13 * uik}
 			text={label}
 			size={13}
 			{uik}

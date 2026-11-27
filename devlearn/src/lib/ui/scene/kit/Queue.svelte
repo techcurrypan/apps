@@ -40,7 +40,7 @@
 			rrectPts(-100 + i * 52, -30, 44, 60, 9).map((q) => P.at(q[0], q[1], f[2] + 0.5))
 		)
 	);
-	const cp = $derived(P.at(80, 0, f[2] + 50));
+	const cp = $derived(P.at(80, 0, f[2] + 82));
 </script>
 
 <Base {x} {y} {s} {uik} w={f[0]} d={f[1]} {tone} {hl} {lift} {op} {id} {term}>

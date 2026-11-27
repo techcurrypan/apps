@@ -27,9 +27,13 @@
 	import Num from '#lib/ui/scene/label/Num.svelte';
 	import Tag from '#lib/ui/scene/label/Tag.svelte';
 	import Halo from '#lib/ui/scene/label/Halo.svelte';
+	import Stage from '#lib/ui/scene/Stage.svelte';
+	import { LABEL_PX, zoomView } from '#lib/ui/scene/label/uik.ts';
 
 	const schemes = ['light', 'dark'] as const;
 	let hov = $state('');
+	/** 字の大きさの確かめ（16.3）：同じ図を倍率 0.5・1・2 で描く */
+	const zooms = [0.5, 1, 2];
 </script>
 
 <svelte:head><title>部品集 — devlearn</title></svelte:head>
@@ -90,8 +94,8 @@
 					<Pod x={100} y={880} s={0.8} state="ready" name="web-a" />
 					<Pod x={260} y={880} s={0.8} state="create" name="web-b" />
 					<Pod x={420} y={880} s={0.8} state="dead" name="web-c" />
-					<Frame x={630} y={965} w={190} d={120} name="<module>" />
-					<Frame x={915} y={990} w={190} d={120} name="フレーム add()" current id="frame" />
+					<Frame x={590} y={950} w={190} d={120} name="<module>" />
+					<Frame x={860} y={1000} w={190} d={120} name="フレーム add()" current id="frame" />
 					<!-- 5 段目 -->
 					<List x={200} y={1160} vals={['1', '2', '3']} cap={5} newIdx={2} id="list" />
 					{@render name(200, 1250, 'list（容量 5）')}
@@ -99,9 +103,9 @@
 					<Var x={575} y={1170} name="b" />
 					<Var x={720} y={1170} name="c" />
 					{@render name(575, 1250, 'var')}
-					<Token x={850} y={1160} label="A1" />
+					<Token x={840} y={1160} label="A1" />
 					<Token x={910} y={1160} label="A1′" kind="clone" />
-					<Token x={970} y={1160} label="ACK" kind="ack" />
+					<Token x={980} y={1160} label="ACK" kind="ack" />
 					<Packet x={870} y={1220} />
 					<Packet x={910} y={1220} kind="drop" />
 					{@render name(910, 1265, 'token・packet')}
@@ -158,8 +162,21 @@
 					<Func x={200} y={1880} tone="blue" glyph="ƒ" hl />
 					<Func x={450} y={1880} tone="orange" glyph="⚡" hl />
 					<Tag x={325} y={1975} text="強めた func（主役）" size={14} />
-					<Panel x={30} y={1680} w={120} h={60} tone="teal" title="母集団" />
-					<Panel x={170} y={1680} w={120} h={60} tone="blue" title="標本" />
+					<Panel x={30} y={1670} w={190} h={100} tone="teal" title="母集団">
+						{#each [0, 1, 2, 3, 4, 5, 6] as i (i)}
+							<Sphere x={58 + i * 22} y={1745 - (i % 2) * 10} r={9} tone="teal" />
+						{/each}
+					</Panel>
+					<Panel x={240} y={1670} w={190} h={100} tone="blue" title="標本">
+						{#each [0, 1, 2] as i (i)}
+							<Sphere x={295 + i * 45} y={1740} r={10} />
+						{/each}
+					</Panel>
+					<Panel x={450} y={1670} w={190} h={100} tone="orange" title="平均">
+						{#each [18, 34, 50, 34, 18] as h, i (i)}
+							<Bar x={480 + i * 28} y={1756} w={20} {h} tone="orange" />
+						{/each}
+					</Panel>
 					<!-- 7 段目：札（label/） -->
 					<Tag x={110} y={1520} text="sk_write_queue" dot="var(--dl-obj-teal)" />
 					<Note x={360} y={1520} text="send() は 40 µs で戻る" />
@@ -168,6 +185,62 @@
 					<Clock x={750} y={1520} label="200 ms 後" />
 				</svg>
 			</section>
+		{/each}
+	</div>
+	<h2>字の大きさ（寄っても引いても同じ。16.3）</h2>
+	<p>
+		同じ図（1000×600）を倍率 0.5・1・2 で描く。物は大きさが変わり、札の字は画面の上でいつも同じ
+		px（名前
+		{LABEL_PX.name}px・説明 {LABEL_PX.sub}px・数 {LABEL_PX.num}px・線 {LABEL_PX.line}px）。
+	</p>
+	<div class="zooms dl-scene-light">
+		{#each zooms as z (z)}
+			<figure>
+				<div class="zbox">
+					<Stage view={zoomView(1000, 600, z)} zoom={z} label="倍率 {z} の図">
+						{#snippet children(uik)}
+							<Func x={420} y={300} s={1} tone="blue" glyph="ƒ" {uik} />
+							<Queue x={600} y={300} {uik} />
+							<line
+								x1={470}
+								y1={300}
+								x2={550}
+								y2={300}
+								style:stroke="var(--dl-ink)"
+								stroke-width={1.5 * uik}
+							/>
+							<g data-lk="name"><Tag x={420} y={380} text="tcp_sendmsg" {uik} /></g>
+							<g data-lk="sub">
+								<Halo
+									x={420}
+									y={380 + 26 * uik}
+									text="データを写す"
+									size={LABEL_PX.sub}
+									{uik}
+									anchor="middle"
+									weight={700}
+								/>
+							</g>
+							<g data-lk="num"><Num x={600} y={220} text="cwnd 10" size={LABEL_PX.num} {uik} /></g>
+							<g data-lk="line">
+								<Halo
+									x={510}
+									y={290}
+									text="写す"
+									size={LABEL_PX.line}
+									{uik}
+									anchor="middle"
+									weight={700}
+								/>
+							</g>
+							<g data-lk="note"
+								><Note x={420} y={215} text="40 µs で戻る" size={LABEL_PX.note} {uik} /></g
+							>
+						{/snippet}
+					</Stage>
+				</div>
+				<figcaption>倍率 {z}</figcaption>
+			</figure>
 		{/each}
 	</div>
 </main>
@@ -184,6 +257,27 @@
 		grid-template-columns: repeat(auto-fit, 1156px);
 		gap: 16px;
 		justify-content: center;
+	}
+	.zooms {
+		display: grid;
+		grid-template-columns: repeat(3, 460px);
+		gap: 16px;
+		justify-content: center;
+	}
+	.zooms figure {
+		margin: 0;
+		background: var(--dl-scene-bg);
+		border-radius: 16px;
+		padding: 8px;
+	}
+	.zbox {
+		width: 444px;
+		height: 266px;
+		overflow: hidden;
+	}
+	figcaption {
+		text-align: center;
+		color: var(--dl-ink);
 	}
 	section {
 		background: var(--dl-scene-bg);

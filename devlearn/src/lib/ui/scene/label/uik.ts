@@ -10,3 +10,27 @@ export function uikOf(viewW: number, viewH: number, boxW: number, boxH: number):
 	if (!(boxW > 0) || !(boxH > 0)) return 1;
 	return Math.max(viewW / boxW, viewH / boxH);
 }
+
+/** 札の種類ごとの、画面の上の字の大きさの範囲（px。16.3） */
+export const LABEL_RANGE = {
+	name: [13, 15],
+	sub: [12, 13],
+	num: [12, 14],
+	line: [12, 13],
+	note: [12, 15]
+} as const satisfies Record<keyof typeof LABEL_PX, readonly [number, number]>;
+
+export type LabelKind = keyof typeof LABEL_RANGE;
+
+/** 画面の上の字の大きさ px が、札の種類の範囲に入るか（小数の誤差 0.05 を許す） */
+export function labelOk(kind: LabelKind, px: number): boolean {
+	const [lo, hi] = LABEL_RANGE[kind];
+	return px >= lo - 0.05 && px <= hi + 0.05;
+}
+
+/** 図（w×h）を中心を保って zoom 倍に寄せた viewBox [x, y, 幅, 高さ]。zoom < 1 は引く */
+export function zoomView(w: number, h: number, zoom: number): [number, number, number, number] {
+	const vw = w / zoom;
+	const vh = h / zoom;
+	return [(w - vw) / 2, (h - vh) / 2, vw, vh];
+}
