@@ -41,6 +41,9 @@
 	import TryFigure from '#lib/ui/learn3/TryFigure.svelte';
 	import { startTry, typeLine } from '#lib/learn/try3.ts';
 	import { TRY_TCP } from '#lib/content/v3/try-tcp.ts';
+	import RecallPanel3 from '#lib/ui/learn3/RecallPanel3.svelte';
+	import RecallFigure from '#lib/ui/learn3/RecallFigure.svelte';
+	import { RECALL_TCP } from '#lib/content/v3/recall-tcp.ts';
 
 	const schemes = ['light', 'dark'] as const;
 	let hov = $state('');
@@ -75,6 +78,8 @@
 	let labVals = $state({ tcp: startVals('tcp'), k8s: startVals('k8s') });
 	let labAt = $state({ tcp: 0, k8s: 0 });
 	let tryState = $state(startTry(TRY_TCP));
+	let rqi = $state(0);
+	let rhit = $state<string | null>(null);
 	const demoStep = $derived((((Math.floor(demoNow / DEMO_MS) % 2) + 2) % 2) as 0 | 1);
 </script>
 
@@ -299,6 +304,26 @@
 			scene={TRY_TCP}
 			st={tryState}
 			onsend={(l) => (tryState = typeLine(TRY_TCP, tryState, l))}
+		/>
+	</div>
+	<h2>思い出す（第 19 章。選ぶ・並べる・図を押す・数・説明）</h2>
+	<div class="lab-pair recall-pair">
+		<div class="lab-fig">
+			<RecallFigure
+				q={RECALL_TCP.qs[rqi]}
+				answered={rhit !== null}
+				t={demoNow}
+				onhit={(id) => (rhit = id)}
+			/>
+		</div>
+		<RecallPanel3
+			set={RECALL_TCP}
+			qi={rqi}
+			onqi={(i) => {
+				rqi = i;
+				rhit = null;
+			}}
+			hitPick={rhit}
 		/>
 	</div>
 	<h2>字の大きさ（寄っても引いても同じ。16.3）</h2>
