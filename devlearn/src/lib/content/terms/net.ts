@@ -40,7 +40,12 @@ export const NET_TERMS: Term[] = [
 	net('buf', 'buf', ['buf'], '送る中身を置いたメモリの場所。send() は、ここから中身を写す。', [
 		'send(2)'
 	]),
-	net('byte', 'バイト（B）', ['バイト'], 'データの量の単位。英字 1 文字がおよそ 1 バイト。'),
+	net(
+		'byte',
+		'バイト（B）',
+		['バイト'],
+		'データの量の単位で、記号は B。英字 1 文字がおよそ 1 つ分。'
+	),
 	net(
 		'kernel',
 		'カーネル',
@@ -53,7 +58,7 @@ export const NET_TERMS: Term[] = [
 		['NIC'],
 		'線や電波につながる部品（network interface card）。データを信号にして外へ出す。'
 	),
-	net('socket', 'ソケット', ['ソケット'], '通信の口。アプリはソケットを開き、fd でそれを指す。', [
+	net('socket', 'ソケット', ['ソケット'], '通信の口。アプリはこの口を開き、fd の番号で指す。', [
 		'socket(7)'
 	]),
 	net(
@@ -71,7 +76,7 @@ export const NET_TERMS: Term[] = [
 		'skb',
 		'skb',
 		['sk_buff', 'skb'],
-		'カーネルがデータの塊を持つ入れ物（struct sk_buff）。頭の余白と断片の表を持つ。',
+		'カーネルがデータの塊を持つ入れ物。頭の余白と、中身の断片の表を持つ。',
 		['include/linux/skbuff.h']
 	),
 	net('cwnd', 'cwnd', ['cwnd'], '確かめずに一度に送ってよい区切りの数。ACK で増え、喪失で減る。', [
@@ -113,5 +118,70 @@ export const NET_TERMS: Term[] = [
 		'bufferbloat',
 		['bufferbloat'],
 		'待ち行列が大きすぎて、喪失なしに待ちだけが伸びること。'
+	),
+	// 見本 1（net-101 第 3 版）の図の物の言葉（吹き出し。検査 46）。出典：Linux v6.6 の net/ipv4/。確認日 2026-11-28
+	net(
+		'packet',
+		'パケット',
+		['パケット'],
+		'線の上を運ばれるデータの小包。1 枚はおよそ 1,500 バイトまで。',
+		['RFC 894']
+	),
+	net(
+		'sendmsg',
+		'tcp_sendmsg_locked()',
+		['tcp_sendmsg_locked()'],
+		'send() を受けて、送る中身をカーネルの置き場に写す関数。写し終えると戻る。',
+		['net/ipv4/tcp.c（Linux v6.6）']
+	),
+	net(
+		'xmit',
+		'tcp_write_xmit()',
+		['tcp_write_xmit()'],
+		'送信キューの先頭を見て、今送ってよいかを決める関数。',
+		['net/ipv4/tcp_output.c（Linux v6.6）']
+	),
+	net(
+		'txskb',
+		'tcp_transmit_skb()',
+		['tcp_transmit_skb()'],
+		'送る塊を写し、TCP の見出しを付けて下の係へ渡す関数。',
+		['net/ipv4/tcp_output.c（Linux v6.6）']
+	),
+	net(
+		'rtxq',
+		'再送キュー',
+		['再送キュー', 'tcp_rtx_queue'],
+		'送ったが、まだ ACK が来ていない塊を残しておく列。落ちたらここから送り直す。',
+		['net/ipv4/tcp_output.c（Linux v6.6）']
+	),
+	net('tcpack', 'tcp_ack()', ['tcp_ack()'], '届いた ACK を読み、確かめられた塊を片付ける関数。', [
+		'net/ipv4/tcp_input.c（Linux v6.6）'
+	]),
+	net(
+		'ipq',
+		'ip_queue_xmit()',
+		['ip_queue_xmit()'],
+		'IP の見出しを付け、行き先への道を決めて送り出す関数。',
+		['net/ipv4/ip_output.c（Linux v6.6）']
+	),
+	net(
+		'ring',
+		'送信リング',
+		['送信リング'],
+		'NIC が直接読む、輪になった置き場。ドライバが塊を置き、NIC が取り出す。'
+	),
+	net(
+		'irq',
+		'割り込み',
+		['割り込み', 'hardirq'],
+		'部品が CPU に「今すぐ見て」と知らせる合図。短く済ませ、残りは後に回す。'
+	),
+	net(
+		'rcvest',
+		'tcp_rcv_established()',
+		['tcp_rcv_established()'],
+		'受け手で、届いた塊の並びを確かめて ACK を返す関数。',
+		['net/ipv4/tcp_input.c（Linux v6.6）']
 	)
 ];

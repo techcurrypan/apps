@@ -3,6 +3,8 @@
 // 専門語の辞書は src/lib/content/terms/jargon.ts。図の物の外枠は REACH（物の中心からの半径。線を止める所と同じ）
 import { REACH, type SceneObj } from './scene/draw.ts';
 import type { Layout } from './scene/layout.ts';
+import type { Cue } from './scene/cue.ts';
+import type { WireKind } from './scene/wire.ts';
 import { firstPerStep, markTerms, type Term } from './terms.ts';
 
 export type V3Kind =
@@ -19,7 +21,15 @@ export type V3Kind =
 	| 'ops'
 	| 'teach'
 	| 'summary';
-export type Anatomy = { text: string; note?: string; term?: string; color?: string };
+/** 式の分解の部分。pre・post は部分の前後の記号（「(」「, 」「)」。意味の札を持たない） */
+export type Anatomy = {
+	text: string;
+	note?: string;
+	term?: string;
+	color?: string;
+	pre?: string;
+	post?: string;
+};
 export type V3Step = {
 	kind: V3Kind;
 	title: string;
@@ -30,15 +40,42 @@ export type V3Step = {
 	/** このステップで初めて出る言葉（言葉の ID。計算と一致すること。検査 42） */
 	first: string[];
 	intro?: { terms: string[]; anatomy: Anatomy[]; analogy: string };
+	/** 下の帯の短い名前 */
+	short?: string;
+	/** 段落ごとの始まりの時刻（ms。今の段落が光る） */
+	at?: number[];
+	/** 動きの長さ（ms）。終わると 2.6 秒置いて繰り返す（LS3-M1） */
+	dur?: number;
+	/** 物と物を結ぶ線（LS3-K4） */
+	links?: { from: string; to: string; kind?: WireKind; both?: boolean }[];
+	/** 物から物へ進む荷物（LS3-K5） */
+	tokens?: Cue[];
+	/** このステップで変わる指標の値 */
+	metrics?: Record<string, string>;
+	/** 囲み（題・本文） */
+	callout?: [string, string];
+	/** 変わったこと（+ 足した・- 消えた・~ 変わった） */
+	changes?: ['+' | '-' | '~', string][];
+	/** 中身まで（実装の名前と数。畳む） */
+	deep?: string;
+	/** このステップだけの物の名前（言葉をそろえるステップの分かる名前など） */
+	names?: Record<string, string>;
+	/** 主役（台の色を濃くする） */
+	hl?: string[];
 };
 export type V3Lesson = {
 	id: string;
 	field: string;
+	title: string;
+	/** できるようになること */
+	goal: string;
+	/** 上の小さな題（分野・段・見せ方） */
+	kick: string;
 	/** このレッスンで使う言葉（言葉の ID） */
 	terms: string[];
 	objs: Record<string, SceneObj>;
 	steps: V3Step[];
-	metrics?: { key: string; label: string; term?: string }[];
+	metrics?: { key: string; label: string; term?: string; desc?: string }[];
 	knobs?: { id: string; label: string; term?: string; desc?: string }[];
 	commands?: { cmd: string; term?: string; desc?: string }[];
 };
@@ -62,7 +99,7 @@ function hasWord(text: string, w: string): boolean {
 
 /** ステップの中で言葉を探す文（本文・図の物の名前・式の分解） */
 function stepTexts(l: V3Lesson, s: V3Step): string[] {
-	const names = Object.keys(s.layout).map((id) => l.objs[id]?.name ?? '');
+	const names = Object.keys(s.layout).map((id) => s.names?.[id] ?? l.objs[id]?.name ?? '');
 	const ana = (s.intro?.anatomy ?? []).flatMap((a) => [a.text, a.note ?? '']);
 	return [...s.paras, ...names, ...ana].filter(Boolean);
 }

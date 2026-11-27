@@ -33,6 +33,9 @@ const layout: Layout = { app: [150, 300], kern: [500, 300], nic: [850, 300] };
 const ok = (): V3Lesson => ({
 	id: 'x-101',
 	field: 'x',
+	title: 'x',
+	goal: 'x',
+	kick: 'x',
 	terms: [...DICT.map((t) => t.id)],
 	objs: structuredClone(objs),
 	metrics: [{ key: 'cwnd', label: 'cwnd', term: 'cwnd' }],

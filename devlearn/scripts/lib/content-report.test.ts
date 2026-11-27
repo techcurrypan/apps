@@ -40,6 +40,9 @@ describe('第 3 版（検査 41〜48）', () => {
 		const bad = {
 			id: 'tst-v3',
 			field: 'net',
+			title: 't',
+			goal: 'g',
+			kick: 'k',
 			terms: [],
 			objs: {},
 			steps: [{ kind: 'problem' as const, title: 't', paras: [], layout: {}, first: [] }]
