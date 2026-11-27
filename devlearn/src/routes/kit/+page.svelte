@@ -28,12 +28,40 @@
 	import Tag from '#lib/ui/scene/label/Tag.svelte';
 	import Halo from '#lib/ui/scene/label/Halo.svelte';
 	import Stage from '#lib/ui/scene/Stage.svelte';
+	import Scene3 from '#lib/ui/scene/Scene3.svelte';
+	import type { SceneObj } from '#lib/learn/scene/draw.ts';
+	import type { Layout } from '#lib/learn/scene/layout.ts';
 	import { LABEL_PX, zoomView } from '#lib/ui/scene/label/uik.ts';
 
 	const schemes = ['light', 'dark'] as const;
 	let hov = $state('');
 	/** 字の大きさの確かめ（16.3）：同じ図を倍率 0.5・1・2 で描く */
 	const zooms = [0.5, 1, 2];
+
+	/** 構図の移り変わり（16.1 S5）：2 つの構図を 3.5 秒ごとに行き来する。描く時刻だけで決まる */
+	const demoObjs: Record<string, SceneObj> = {
+		app: { kind: 'laptop', name: 'アプリ' },
+		kern: { kind: 'func', name: 'カーネル', tone: 'blue', glyph: 'ƒ' },
+		q: { kind: 'queue', name: '送信キュー' },
+		nic: { kind: 'nic', name: 'NIC' }
+	};
+	const demoLayouts: Layout[] = [
+		{ app: [180, 250], kern: [500, 250], nic: [820, 250] },
+		{ kern: [260, 230, 0.9], q: [560, 300], nic: [840, 360, 0.9] }
+	];
+	const DEMO_MS = 3500;
+	let demoNow = $state(0);
+	$effect(() => {
+		let raf = 0;
+		const t0 = performance.now();
+		const f = (n: number) => {
+			demoNow = n - t0;
+			raf = requestAnimationFrame(f);
+		};
+		raf = requestAnimationFrame(f);
+		return () => cancelAnimationFrame(raf);
+	});
+	const demoStep = $derived(Math.floor(demoNow / DEMO_MS) % 2);
 </script>
 
 <svelte:head><title>部品集 — devlearn</title></svelte:head>
@@ -94,8 +122,8 @@
 					<Pod x={90} y={880} s={0.8} state="ready" name="web-a" />
 					<Pod x={235} y={880} s={0.8} state="create" name="web-b" />
 					<Pod x={380} y={880} s={0.8} state="dead" name="web-c" />
-					<Frame x={620} y={975} w={190} d={120} name="<module>" />
-					<Frame x={875} y={1010} w={190} d={120} name="フレーム add()" current id="frame" />
+					<Frame x={575} y={950} w={170} d={110} name="<module>" />
+					<Frame x={880} y={1020} w={170} d={110} name="フレーム add()" current id="frame" />
 					<!-- 5 段目 -->
 					<List x={200} y={1160} vals={['1', '2', '3']} cap={5} newIdx={2} id="list" />
 					{@render name(200, 1250, 'list（容量 5）')}
@@ -123,9 +151,10 @@
 						y={1360}
 						w={190}
 						lines={[
-							'ss -tim',
-							{ text: 'cwnd:10', color: 'var(--dl-obj-blue)' },
-							{ text: 'retrans:0', op: 0.6 }
+							'送ってよいか',
+							{ text: '✓ cwnd に空き（10）', color: 'var(--dl-obj-green)' },
+							{ text: '✓ 相手の窓 64 KB', color: 'var(--dl-obj-green)' },
+							{ text: '✗ 再送を待つ物 0', op: 0.6 }
 						]}
 					/>
 					<Card
@@ -186,6 +215,17 @@
 				</svg>
 			</section>
 		{/each}
+	</div>
+	<h2>構図の移り変わり（16.1 S5。3.5 秒ごとに次の構図へ）</h2>
+	<div class="demo dl-scene-light" data-demo-step={demoStep}>
+		<Scene3
+			objs={demoObjs}
+			layout={demoLayouts[demoStep]}
+			prev={demoLayouts[1 - demoStep]}
+			t={demoNow % DEMO_MS}
+			hl={['kern']}
+			label="構図の移り変わりの見本"
+		/>
 	</div>
 	<h2>字の大きさ（寄っても引いても同じ。16.3）</h2>
 	<p>
@@ -257,6 +297,13 @@
 		grid-template-columns: repeat(auto-fit, 1156px);
 		gap: 16px;
 		justify-content: center;
+	}
+	.demo {
+		width: 940px;
+		height: 564px;
+		margin: 0 auto 16px;
+		background: var(--dl-scene-bg);
+		border-radius: 16px;
 	}
 	.zooms {
 		display: grid;

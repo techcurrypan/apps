@@ -2,7 +2,7 @@
 
 <script lang="ts">
 	// 数の札（例：「cwnd 10」「参照 2」）：等幅の字の角の丸い札。色の地に白い字（LS3-K6）。x, y は左の中ほど（center で中心）
-	import { edge, textWidth, type Tone } from '../kit/paint';
+	import { col, textWidth, type Tone } from '../kit/paint';
 	import { LABEL_PX } from './uik';
 	type Props = {
 		x: number;
@@ -39,7 +39,7 @@
 		width={w}
 		height={h}
 		rx={7 * uik}
-		style:fill={edge(tone)}
+		style:fill="color-mix(in srgb, {col(tone)} 66%, #15181d)"
 		style:stroke="var(--dl-ink)"
 		stroke-width={1.2 * uik}
 	/>
