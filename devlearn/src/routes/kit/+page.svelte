@@ -76,7 +76,7 @@
 		{#each schemes as sc (sc)}
 			<section class="dl-scene-{sc}" data-scheme={sc}>
 				<svg
-					viewBox="-70 0 1140 2020"
+					viewBox="-70 0 1240 2020"
 					role="img"
 					aria-label="部品の一覧（{sc === 'light' ? '明るい' : '暗い'}配色）"
 				>
@@ -102,12 +102,12 @@
 					<!-- 2 段目 -->
 					<Queue x={160} y={418} clock items={['B', 'C']} id="queue" />
 					{@render name(160, 505, 'queue')}
-					<Ring x={440} y={400} id="ring" />
-					{@render name(440, 490, 'ring')}
-					<Nic x={700} y={400} id="nic" />
-					{@render name(700, 490, 'nic')}
-					<Hex x={950} y={400} glyph="⇉" s={0.85} id="hex" />
-					<Tag x={950} y={490} text="kube-apiserver" dot="var(--dl-obj-teal)" />
+					<Ring x={475} y={400} id="ring" />
+					{@render name(475, 490, 'ring')}
+					<Nic x={765} y={400} id="nic" />
+					{@render name(765, 490, 'nic')}
+					<Hex x={1040} y={400} glyph="⇉" s={0.85} id="hex" />
+					<Tag x={1040} y={490} text="kube-apiserver" dot="var(--dl-obj-teal)" />
 					<Halo
 						x={950}
 						y={516}
@@ -131,7 +131,7 @@
 					<Pod x={235} y={880} s={0.8} state="create" name="web-b" />
 					<Pod x={380} y={880} s={0.8} state="dead" name="web-c" />
 					<Frame x={575} y={950} w={170} d={110} name="<module>" />
-					<Frame x={880} y={1020} w={170} d={110} name="フレーム add()" current id="frame" />
+					<Frame x={930} y={1020} w={170} d={110} name="フレーム add()" current id="frame" />
 					<!-- 5 段目 -->
 					<List x={200} y={1160} vals={['1', '2', '3']} cap={5} newIdx={2} id="list" />
 					{@render name(200, 1250, 'list（容量 5）')}
@@ -139,12 +139,12 @@
 					<Var x={580} y={1170} name="b" />
 					<Var x={740} y={1170} name="c" />
 					{@render name(580, 1250, 'var')}
-					<Token x={865} y={1160} label="A1" />
-					<Token x={935} y={1160} label="A1′" kind="clone" />
-					<Token x={1005} y={1160} label="ACK" kind="ack" />
-					<Packet x={900} y={1220} />
-					<Packet x={960} y={1220} kind="drop" />
-					{@render name(935, 1265, 'token・packet')}
+					<Token x={905} y={1160} label="A1" />
+					<Token x={975} y={1160} label="A1′" kind="clone" />
+					<Token x={1045} y={1160} label="ACK" kind="ack" />
+					<Packet x={940} y={1220} />
+					<Packet x={1000} y={1220} kind="drop" />
+					{@render name(975, 1265, 'token・packet')}
 					<!-- 6 段目：板・棒・球・札・式の分解 -->
 					<Panel x={30} y={1300} w={420} h={130} tone="orange" title="平均の分布" id="panel">
 						{#each [14, 32, 56, 77, 63, 38, 21, 9] as h, i (i)}
@@ -300,7 +300,7 @@
 	/* 図の 1 単位を画面の 1px にする（字の大きさを本番の図と同じにして比べる） */
 	.pair {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, 1156px);
+		grid-template-columns: repeat(auto-fit, 1256px);
 		gap: 16px;
 		justify-content: center;
 	}
@@ -340,7 +340,7 @@
 	}
 	svg {
 		/* 図の 1 単位 ＝ 画面の 1px（viewBox と同じ大きさ） */
-		width: 1140px;
+		width: 1240px;
 		height: 2020px;
 		display: block;
 	}
