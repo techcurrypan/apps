@@ -72,8 +72,8 @@
 					<Block x={870} y={150} glyph="↻" id="block" />
 					{@render name(870, 245, 'block')}
 					<!-- 2 段目 -->
-					<Queue x={160} y={400} clock items={['B', 'C']} id="queue" />
-					{@render name(160, 490, 'queue')}
+					<Queue x={160} y={418} clock items={['B', 'C']} id="queue" />
+					{@render name(160, 505, 'queue')}
 					<Ring x={450} y={400} id="ring" />
 					{@render name(450, 490, 'ring')}
 					<Nic x={680} y={400} id="nic" />

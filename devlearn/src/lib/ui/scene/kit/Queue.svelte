@@ -46,8 +46,8 @@
 	);
 	/** 時計は待つ物（先頭の荷物、無ければ一番右の溝）の真上に、縁から細い柱で立てる */
 	const cx = $derived(items.length ? -78 : 78);
-	const cp = $derived(P.at(cx, 0, f[2] + (items.length ? 92 : 74)));
-	const cb = $derived(P.at(cx, 0, f[2] + (items.length ? 60 : 2)));
+	const cp = $derived(P.at(cx, 0, f[2] + (items.length ? 80 : 74)));
+	const cb = $derived(P.at(cx, 0, f[2] + (items.length ? 56 : 2)));
 	const itemAt = (i: number) => P.at(-78 + i * 52, 0, f[2]);
 </script>
 
