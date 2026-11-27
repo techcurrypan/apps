@@ -2,14 +2,14 @@
 
 状態: **進行中**（10-0 済。**今は 10-P（D-25。learn11 を本番の部品に）**。順は 10-P → 10-B → 10-R → 10-C → 9-2 → 10-D → 10-E → 10-W → 11 → 12。止まらない）
 
-## 次の実行が読む所（10-P。2026-11-27 に更新）
+## 次の実行が読む所（10-P。2026-11-27 の 2 回目の実行で更新）
 
-1. `docs/learn-standard.md` 第 16〜20 章（構図・部品集・言葉・4 つの使い方・本番へ移す表）。第 21 章（完成の線）
-2. `docs/prototype/learn/README.md` の learn11 の節。作りの元 `learn11-src/core.js` の 48〜130 行（slab・tag・drawObj・部品）と 300〜380 行（言葉・再生）
-3. この頁の「10-P」の表（下）と「測る道具の結果」。`decisions.md`「自分で決めたこと」の 2026-11-26 の 3 項（窓口 `__l3`・型ごとの線・試作の欠け）
-4. `explanation-standard.md` 第 10・11 章（手順 7 の言葉の仕組みに入る時）
-5. 手順 3 は判定を続ける（表は下の「手順 3 の判定」。`npx tsx scripts/look-kit.ts` で公開 URL を撮り、作った本人ではない判定者 2 人に頼む）。手順 4・5 は済、6・7 は一部
-6. 次は手順 8（4 つの使い方。`learn-standard.md` 第 19 章）と手順 9（見本の題を `content/v3` の `V3Lesson` で書き、`Scene3`・`Tip`・`player.ts` で並べる。検査 41〜48 を通す）。`learn/check-v3.ts` の型 `V3Lesson`・`V3Step` が第 3 版のレッスンの形
+1. `docs/learn-standard.md` 第 15.1（判定の場面 P-1〜P-9）・第 19 章（4 つの使い方）・第 20 章（移す表）・第 21 章（完成の線）
+2. この頁の「10-P」の表（下）。手順 8 は部品が揃った（/kit の 試す・やってみる・思い出す）。次は手順 9
+3. 手順 9：見本の題（net-101・k8s-101）を `content/v3` の `V3Lesson`（`learn/check-v3.ts`）で書き、`Scene3`・`Tip`・`player.ts`・`learn3/*` で学習画面に並べる。上の帯の 4 つの釦・最後の「次へ」で次の使い方へ（第 19 章）。検査 41〜48 を通す
+4. `explanation-standard.md` 第 10・11 章（言葉）・第 13 章（「はじめて」）・検査 41〜48・57〜62（手順 9 の本文を書く時）
+5. 手順 3 は判定を続ける（下の「手順 3 の判定」。`npx tsx scripts/look-kit.ts` で公開 URL を撮り、作った本人ではない判定者 2 人に頼む。字の大きさの目測は `look-uik.ts --kit` の測りで確かめる）
+6. 公開 URL の確かめの台本：`look-kit.ts`・`look-uik.ts`・`look-lab.ts`・`look-try.ts`・`look-recall.ts`・`look-move.ts`・`look-tip.ts`
 
 ## 10-P　試作 learn11 を本番に移す（D-25。2026-11-26 に始めた。進行中）
 
@@ -25,7 +25,7 @@
 | 5 構図と移り変わり `learn/scene/layout.ts` | 部品はできた（2026-11-27）：`sceneAt`（単体テスト 8 本）・`drawList`（物の表と構図から奥→手前の描く並び。単体テスト 4 本）・`Scene3.svelte`（Stage の中に等角の部品と名前の札）。`/kit` の「構図の移り変わり」で公開 URL の `look-move.ts`：0.1 秒ごとに 8 秒、6 件の動きで飛んだ物 0（`move.json`）。学習画面への組み込みは手順 9 で | `2aa40a1` |
 | 6 再生（繰り返し・一時停止・速さ・数え上げ・線の点） | 一部（2026-11-27）：純粋な関数 `learn/player.ts`（`tick`・`countAt`・`flowAt`）はある。線 `learn/scene/wire.ts`（手前で止める・点の位置。単体テスト 5 本）と `kit/Wire.svelte`（矢じり・行き来・点線・流れる点）、`Scene3` の `links`・`flow`。/kit の見本で線の点が流れる。繰り返し・一時停止・速さ・数え上げの画面への組み込みは手順 9 と一緒に | `da254c1` |
 | 7 言葉 `terms.ts`・`content/terms/`・検査 41〜48 | 一部（2026-11-27）：net の言葉の一覧 `src/lib/content/terms/net.ts`（25 語。言葉をそろえるステップの send・fd・buf・バイト・カーネル・NIC・ソケット・システムコール・TCP・ACK と、net-101 の 15 語。出典つき）と検査 43 の単体テスト（80 字以内・1〜2 文・ID が重ならない）。`src/lib/learn/terms.ts`（`Term`・`termIndex`・`markTerms`（長い書き方から・段落で 1 回・英字は単語の途中で当てない）・`firstPerStep`。単体テスト 4 本）。吹き出し（2026-11-27）：`learn/scene/tip.ts`（`placeTip`・`localRect`。単体テスト 6 本）・`label/Tip.svelte`・`Scene3` の `terms`（乗せる・Tab で物が 8 浮き、言葉と説明が出る。外すと消える）。公開 URL の `look-tip.ts` で 4 件とも o（`tip.json`）。検査 41〜48：`learn/check-v3.ts`（単体テスト 11 本）を content:check に足した（当てる物は `content/v3` の `V3_LESSONS`。今は無し。見本は手順 9）。専門語の辞書 `content/terms/jargon.ts`。残り：本文の点線の下線・ステップの番号・使い方の釦・指標・つまみの吹き出し（手順 8・9 の画面と一緒に） | `cbd4417`・`93623ed`・`209ad3b` |
-| 8 4 つの使い方 | 一部（2026-11-27）：試す の計算 `learn/lab.ts`（単体テスト 9 本）・板 `learn3/LabPanel.svelte`（つまみ・説明・結果の表・予想の問い）・図 `learn3/LabFigure.svelte` と `learn/lab-figure.ts`（TCP は往復ごとの cwnd の棒・落ちた往復は赤、k8s はノードの台（2 列の格子）と Pod・Pending。値を変えると 0.9 秒で育ち 6 秒ごとに繰り返す。単体テスト 12 本）。/kit に図と板を並べた。`look-lab.ts` で 6 項目（RTT で時間が半分・予想の当たり外れ・つまみの説明・棒の数＝往復の回数・動き続ける・Pod と台の数）。やってみる・思い出す は未 | `c30f8b4`・`86cfc14`・`be14be4` |
+| 8 4 つの使い方 | 部品はできた（2026-11-27）。**試す**：`learn/lab.ts`・`lab-figure.ts`（単体テスト 21 本）、`learn3/LabPanel`・`LabFigure`（TCP の cwnd の棒・k8s の台と Pod。値で計算し直し育つ動きを繰り返す）。公開 URL の `look-lab.ts` 6 項目 o。**やってみる**：`learn/try3.ts`（履歴・補完・Ctrl+L・やることの ✓。単体テスト 10 本）と `content/v3/try-tcp.ts`（ss・nstat・tc・ethtool・sysctl。出力は本物の形）、`learn3/TryPanel3`・`TryFigure`（qdisc が pfifo_fast→fq、cwnd 9→86 で図が変わる）。公開 URL の `look-try.ts` 9 項目 o。**思い出す**：`learn/recall3.ts`（選ぶ・並べる・図を押す・数・説明・点。単体テスト 12 本）と `content/v3/recall-tcp.ts`（5 問・手帳の 1 枚）、`learn3/RecallPanel3`・`RecallFigure`（押せる置き場が光り、答えると正しい物が緑）。`look-recall.ts` 3 項目。全て /kit に並べた。残り：上の帯の 4 つの釦で行き来・最後の釦で次の使い方へ（手順 9 の学習画面で）、k8s・mem・stat の やってみる・思い出す（手順 9 の見本の題で） | `86cfc14`・`be14be4`・`3442c9e`・`ca7dbe0` |
 | 9 見本の題で並べる | 未 | |
 | 10 判定（P-1〜P-9、判定者 2 人） | 未 | |
 | 11 見てもらう材料 | 未 | |
@@ -53,7 +53,8 @@
 | 17（配信 `fa0cb95`） | 19/20（< は platform：台の上の Pod が単体より小さく、窮屈で、台に名前が無い） | **20/20** | 台の上の Pod を単体と同じ縮尺 0.8 にし、台を広げ、台に名前の札 node-1（次のコミット） |
 | 18（配信 `c928133`） | 18/20（< は platform：札「platform と pod」が台の手前の角に掛かる・frame：名前の札が板の奥の輪郭をまたぐ） | 18/20（< は platform・frame。同じ理由） | frame の名前の札を試作と同じく板の手前の角の真下に 18 離して置き、platform の札を台から離す（`be14be4`） |
 | 19（配信 `3375da0`） | 18/20（< は queue・list：名前の札が台の輪郭に触れる。db もぎりぎり） | 19/20（< は queue：荷物の名前 B・C が約 11px で溝の点線に乗る。数の札も 10〜11px と目測。公開 URL の `look-uik.ts --kit` で測ると B・C・数の札とも 13px。大きさは否定） | queue・db・list の札を台から 12〜16 離す、queue の荷物の名前を箱から 11 上げて点線から離す（次のコミット） |
-| 20 | ROUND20A | ROUND20B | |
+| 20（配信 `3442c9e`） | 18/20（< は queue：名前 B・C が溝の点線に乗る・時計が縁に重なる、platform：落ちたノードの台が node-1 の台に重なり、web-2 の × が台の縁に乗る） | 18/20（< は queue：同じ、frame：上に名前の小箱（変数）が立っていない） | 溝の点線を名前の札の 4px 手前で切る（mask）・時計を上げる、落ちたノードを右へ離し web-2 を台の内へ、フレームの上に変数 a・b・c を立てる（次のコミット） |
+| 21 | ROUND21A | ROUND21B | |
 
 - 字の大きさが寄っても引いても 13〜15px か（16.3）の証拠は手順 4（`UIK`）で取る（判定者 B の指摘）
 
