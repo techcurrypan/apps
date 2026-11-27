@@ -1,0 +1,13 @@
+{
+ "base": "http://localhost:5199",
+ "first": true,
+ "hist": true,
+ "comp": true,
+ "err": true,
+ "cleared": true,
+ "card": true,
+ "all": true,
+ "news": "全て済んだ。頼みに応えられた",
+ "figChanged": true,
+ "refOk": true
+}

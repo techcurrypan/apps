@@ -62,7 +62,7 @@
 	{/each}
 	{#each items as it, i (i)}
 		{@const q = itemAt(i + 1)}
-		<Token x={q[0]} y={q[1] - 2 * s} label={it} scale={0.8 * s} {uik} gap={8} />
+		<Token x={q[0]} y={q[1] - 2 * s} label={it} scale={0.8 * s} {uik} gap={11} />
 	{/each}
 	{#if clock}
 		<circle

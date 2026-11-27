@@ -37,6 +37,10 @@
 	import { LABS } from '#lib/learn/lab.ts';
 	import LabPanel from '#lib/ui/learn3/LabPanel.svelte';
 	import LabFigure from '#lib/ui/learn3/LabFigure.svelte';
+	import TryPanel3 from '#lib/ui/learn3/TryPanel3.svelte';
+	import TryFigure from '#lib/ui/learn3/TryFigure.svelte';
+	import { startTry, typeLine } from '#lib/learn/try3.ts';
+	import { TRY_TCP } from '#lib/content/v3/try-tcp.ts';
 
 	const schemes = ['light', 'dark'] as const;
 	let hov = $state('');
@@ -70,6 +74,7 @@
 		Object.fromEntries(LABS[id].knobs.map((k) => [k.k, k.v])) as Record<string, number>;
 	let labVals = $state({ tcp: startVals('tcp'), k8s: startVals('k8s') });
 	let labAt = $state({ tcp: 0, k8s: 0 });
+	let tryState = $state(startTry(TRY_TCP));
 	const demoStep = $derived((((Math.floor(demoNow / DEMO_MS) % 2) + 2) % 2) as 0 | 1);
 </script>
 
@@ -110,7 +115,7 @@
 					{@render name(870, 245, 'block')}
 					<!-- 2 段目 -->
 					<Queue x={160} y={418} clock items={['B', 'C']} id="queue" />
-					{@render name(160, 505, 'queue')}
+					{@render name(160, 520, 'queue')}
 					<Ring x={475} y={400} id="ring" />
 					{@render name(475, 490, 'ring')}
 					<Nic x={765} y={400} id="nic" />
@@ -127,7 +132,7 @@
 					/>
 					<!-- 3 段目 -->
 					<Db x={120} y={660} id="db" />
-					{@render name(120, 740, 'db')}
+					{@render name(120, 752, 'db')}
 					<Platform x={430} y={650} w={330} d={210} id="platform" />
 					<!-- 台の上の Pod は単体の Pod と同じ大きさ（同じ物は同じ形。第 17 章） -->
 					<Pod x={360} y={625} s={0.8} state="ready" name="web-1" />
@@ -145,7 +150,7 @@
 					<Frame x={930} y={975} w={170} d={110} name="フレーム add()" current id="frame" />
 					<!-- 5 段目 -->
 					<List x={200} y={1160} vals={['1', '2', '3']} cap={5} newIdx={2} id="list" />
-					{@render name(200, 1250, 'list（容量 5）')}
+					{@render name(200, 1266, 'list（容量 5）')}
 					<Var x={420} y={1170} name="a" id="var" />
 					<Var x={580} y={1170} name="b" />
 					<Var x={740} y={1170} name="c" />
@@ -286,6 +291,15 @@
 				/>
 			</div>
 		{/each}
+	</div>
+	<h2>やってみる（第 19 章。命令で図が変わる）</h2>
+	<div class="lab-pair try-pair">
+		<div class="lab-fig"><TryFigure scene={TRY_TCP} st={tryState} t={demoNow} /></div>
+		<TryPanel3
+			scene={TRY_TCP}
+			st={tryState}
+			onsend={(l) => (tryState = typeLine(TRY_TCP, tryState, l))}
+		/>
 	</div>
 	<h2>字の大きさ（寄っても引いても同じ。16.3）</h2>
 	<p>
