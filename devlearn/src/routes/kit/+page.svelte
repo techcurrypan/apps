@@ -123,9 +123,11 @@
 					<!-- 3 段目 -->
 					<Db x={120} y={660} id="db" />
 					{@render name(120, 740, 'db')}
-					<Platform x={430} y={650} w={300} d={190} id="platform" />
-					<Pod x={355} y={612} s={0.62} state="ready" name="web-1" />
-					<Pod x={500} y={640} s={0.62} state="dead" name="web-2" />
+					<Platform x={430} y={650} w={330} d={210} id="platform" />
+					<!-- 台の上の Pod は単体の Pod と同じ大きさ（同じ物は同じ形。第 17 章） -->
+					<Pod x={360} y={625} s={0.8} state="ready" name="web-1" />
+					<Pod x={515} y={655} s={0.8} state="dead" name="web-2" />
+					<Tag x={300} y={720} text="node-1" dot="var(--dl-obj-green)" />
 					{@render name(430, 760, 'platform と pod')}
 					<Platform x={760} y={650} w={220} d={150} down />
 					<Pod x={760} y={650} s={0.55} state="paper" name="web-3" label="" />
