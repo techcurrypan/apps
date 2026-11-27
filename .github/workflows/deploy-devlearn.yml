@@ -47,6 +47,14 @@ jobs:
       - name: 説明の中身の検査
         run: npm run content:check
 
+      # 版の tag のソースは変わらないので、取った物を残して次からは取りに行かない（取得先の一時的な失敗で公開を止めない。D-24）
+      - name: 版を決めたソースの置き場を戻す
+        uses: actions/cache@v4
+        with:
+          path: devlearn/.cache/impl
+          key: impl-${{ hashFiles('devlearn/src/lib/content/**/*.ts') }}
+          restore-keys: impl-
+
       - name: 実装の名前を版を決めたソースで確かめる（検査 39）
         run: npm run impl:verify
 
