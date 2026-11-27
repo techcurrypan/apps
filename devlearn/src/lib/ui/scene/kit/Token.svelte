@@ -5,7 +5,7 @@
 	import { localProj, prism, rrectPts } from '../iso';
 	import Halo from '../label/Halo.svelte';
 	import Solid from './Solid.svelte';
-	import { TOKEN, type Tone } from './paint';
+	import { TOKEN, edge, type Tone } from './paint';
 	type Props = {
 		x: number;
 		y: number;
@@ -51,7 +51,7 @@
 			weight={800}
 			anchor="middle"
 			mono
-			color="var(--dl-ink)"
+			color={edge(t)}
 		/>
 	{/if}
 </g>

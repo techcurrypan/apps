@@ -47,11 +47,10 @@
 		x={tp[0]}
 		y={nameY}
 		text={name}
-		size={16}
+		size={15}
 		{uik}
 		weight={800}
 		anchor="middle"
-		mono
 		color="var(--dl-ink)"
 	/>
 </Base>
