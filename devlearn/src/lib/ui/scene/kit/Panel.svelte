@@ -35,7 +35,7 @@
 		term,
 		children
 	}: Props = $props();
-	const depth = 14;
+	const depth = 20;
 	const r = 16;
 </script>
 

@@ -147,11 +147,22 @@
 					<Packet x={1000} y={1220} kind="drop" />
 					{@render name(975, 1265, 'token・packet')}
 					<!-- 6 段目：板・棒・球・札・式の分解 -->
-					<Panel x={30} y={1300} w={420} h={130} tone="orange" title="平均の分布" id="panel">
+					<Panel x={30} y={1290} w={420} h={160} tone="orange" title="平均の分布" id="panel">
 						{#each [14, 32, 56, 77, 63, 38, 21, 9] as h, i (i)}
 							<Bar x={60 + i * 44} y={1415} w={30} {h} />
 						{/each}
 						<line x1={48} y1={1420} x2={420} y2={1420} class="axis" />
+						{#each [0, 5, 10] as v, i (v)}
+							<line x1={75 + i * 155} y1={1420} x2={75 + i * 155} y2={1426} class="axis" />
+							<Halo
+								x={75 + i * 155}
+								y={1442}
+								text="{v} 分"
+								size={12.5}
+								anchor="middle"
+								weight={700}
+							/>
+						{/each}
 					</Panel>
 					{#each [0, 1, 2, 3, 4, 5] as i (i)}
 						<Sphere x={500 + i * 22} y={1330} />
@@ -180,7 +191,7 @@
 					/>
 					<!-- 式の分解（言葉をそろえる。第 18.1）：式を全て大きく書き、部分 3 つを意味の札と結ぶ -->
 					<Anatomy
-						x={700}
+						x={820}
 						y={1640}
 						parts={[
 							{ text: 'send', color: '#6ea0ff', note: '送る' },
