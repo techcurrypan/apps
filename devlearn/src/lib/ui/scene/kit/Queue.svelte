@@ -44,13 +44,9 @@
 			rrectPts(-100 + i * 52, -30, 44, 60, 9).map((q) => P.at(q[0], q[1], f[2] + 0.5))
 		)
 	);
-	/** 時計は待つ物の印：荷物があれば先頭の荷物の名前の右に、無ければ一番右の溝の上に添える */
+	/** 時計は待つ物の印：荷物の名前から離し、列の右端（次の荷物が入る溝）の上に添える（判定 15 回目） */
 	const itemAt = (i: number) => P.at(-78 + i * 52, 0, f[2]);
-	const cp = $derived.by(() => {
-		if (!items.length) return P.at(78, 0, f[2] + 40);
-		const q = itemAt(1);
-		return [q[0] + 21 * uik, q[1] - 17 * s - 8 * uik] as const;
-	});
+	const cp = $derived(P.at(78, 0, f[2] + 40));
 </script>
 
 <Base {x} {y} {s} {uik} w={f[0]} d={f[1]} {tone} {hl} {lift} {op} {id} {term}>

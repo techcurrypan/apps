@@ -14,10 +14,10 @@
 		uik?: number;
 		op?: number;
 	};
-	let { x, y, lines, w = 240, lh = 21, size = 14, dark = false, uik = 1, op = 1 }: Props = $props();
+	let { x, y, lines, w = 240, lh = 26, size = 14, dark = false, uik = 1, op = 1 }: Props = $props();
 	const W = $derived(w * uik);
 	const LH = $derived(lh * uik);
-	const H = $derived(lines.length * LH + 18 * uik);
+	const H = $derived(lines.length * LH + 22 * uik);
 	const rows = $derived(lines.map((l) => (typeof l === 'string' ? { text: l } : l)));
 </script>
 
@@ -27,12 +27,12 @@
 	{#each rows as r, i (i)}
 		<text
 			x={x + 14 * uik}
-			y={y + 9 * uik + (i + 1) * LH - 5 * uik}
+			y={y + 11 * uik + (i + 1) * LH - 7 * uik}
 			class:dark
 			style:font-size="{size * uik}px"
 			style:fill={r.color}
 			opacity={r.op ?? 1}
-			font-weight="700">{r.text}</text
+			font-weight="800">{r.text}</text
 		>
 	{/each}
 </g>
