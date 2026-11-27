@@ -39,7 +39,7 @@
 	const board = $derived(prism(rrectPts(-w / 2, -d / 2, w, d, 20), 0, 10, P));
 	const box = $derived(prism(rrectPts(-w / 2 + 14, -d / 2 + 10, 46, 30, 8), 10, 30, P));
 	/** 名前は上に立つ小箱の真上に（第 17 章 frame「上に名前の小箱が立つ」） */
-	const tp = $derived(P.at(-w / 2 + 37, -d / 2 + 25, 40));
+	const tp = $derived(P.at(-w / 2 + 37, -d / 2 + 25, 56));
 </script>
 
 <Base

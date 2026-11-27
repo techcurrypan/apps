@@ -55,13 +55,13 @@
 		let raf = 0;
 		const t0 = performance.now();
 		const f = (n: number) => {
-			demoNow = n - t0;
+			demoNow = Math.max(0, n - t0);
 			raf = requestAnimationFrame(f);
 		};
 		raf = requestAnimationFrame(f);
 		return () => cancelAnimationFrame(raf);
 	});
-	const demoStep = $derived(Math.floor(demoNow / DEMO_MS) % 2);
+	const demoStep = $derived((((Math.floor(demoNow / DEMO_MS) % 2) + 2) % 2) as 0 | 1);
 </script>
 
 <svelte:head><title>部品集 — devlearn</title></svelte:head>
@@ -102,18 +102,26 @@
 					<!-- 2 段目 -->
 					<Queue x={160} y={418} clock items={['B', 'C']} id="queue" />
 					{@render name(160, 505, 'queue')}
-					<Ring x={450} y={400} id="ring" />
-					{@render name(450, 490, 'ring')}
-					<Nic x={680} y={400} id="nic" />
-					{@render name(680, 490, 'nic')}
-					<Hex x={940} y={400} glyph="⇉" s={0.85} id="hex" />
-					{@render name(940, 490, 'hex')}
+					<Ring x={440} y={400} id="ring" />
+					{@render name(440, 490, 'ring')}
+					<Nic x={700} y={400} id="nic" />
+					{@render name(700, 490, 'nic')}
+					<Hex x={950} y={400} glyph="⇉" s={0.85} id="hex" />
+					<Tag x={950} y={490} text="kube-apiserver" dot="var(--dl-obj-teal)" />
+					<Halo
+						x={950}
+						y={516}
+						text="hex・ただ 1 つの入口"
+						size={12.5}
+						anchor="middle"
+						weight={700}
+					/>
 					<!-- 3 段目 -->
 					<Db x={120} y={660} id="db" />
 					{@render name(120, 740, 'db')}
 					<Platform x={430} y={650} w={300} d={190} id="platform" />
-					<Pod x={385} y={630} s={0.62} state="ready" name="web-1" />
-					<Pod x={485} y={670} s={0.62} state="dead" name="web-2" />
+					<Pod x={380} y={615} s={0.62} state="ready" name="web-1" />
+					<Pod x={480} y={648} s={0.62} state="dead" name="web-2" />
 					{@render name(430, 760, 'platform と pod')}
 					<Platform x={760} y={650} w={220} d={150} down />
 					<Pod x={760} y={650} s={0.45} state="paper" label="" />
@@ -127,19 +135,19 @@
 					<!-- 5 段目 -->
 					<List x={200} y={1160} vals={['1', '2', '3']} cap={5} newIdx={2} id="list" />
 					{@render name(200, 1250, 'list（容量 5）')}
-					<Var x={430} y={1170} name="a" id="var" />
-					<Var x={575} y={1170} name="b" />
-					<Var x={720} y={1170} name="c" />
-					{@render name(575, 1250, 'var')}
-					<Token x={840} y={1160} label="A1" />
-					<Token x={910} y={1160} label="A1′" kind="clone" />
-					<Token x={980} y={1160} label="ACK" kind="ack" />
-					<Packet x={870} y={1220} />
-					<Packet x={910} y={1220} kind="drop" />
-					{@render name(910, 1265, 'token・packet')}
+					<Var x={420} y={1170} name="a" id="var" />
+					<Var x={580} y={1170} name="b" />
+					<Var x={740} y={1170} name="c" />
+					{@render name(580, 1250, 'var')}
+					<Token x={865} y={1160} label="A1" />
+					<Token x={935} y={1160} label="A1′" kind="clone" />
+					<Token x={1005} y={1160} label="ACK" kind="ack" />
+					<Packet x={900} y={1220} />
+					<Packet x={960} y={1220} kind="drop" />
+					{@render name(935, 1265, 'token・packet')}
 					<!-- 6 段目：板・棒・球・札・式の分解 -->
 					<Panel x={30} y={1300} w={420} h={130} tone="orange" title="平均の分布" id="panel">
-						{#each [20, 45, 80, 110, 90, 55, 30, 12] as h, i (i)}
+						{#each [14, 32, 56, 77, 63, 38, 21, 9] as h, i (i)}
 							<Bar x={60 + i * 44} y={1415} w={30} {h} />
 						{/each}
 					</Panel>
@@ -154,7 +162,7 @@
 							'送ってよいか',
 							{ text: '✓ cwnd に空き（10）', color: 'var(--dl-obj-green)' },
 							{ text: '✓ 相手の窓 64 KB', color: 'var(--dl-obj-green)' },
-							{ text: '✗ 再送を待つ物 0', op: 0.6 }
+							{ text: '✗ 前の ACK を待つ', color: 'var(--dl-obj-red)' }
 						]}
 					/>
 					<Card
@@ -184,13 +192,11 @@
 						]}
 					/>
 					<!-- 名前の札と下の説明の 2 段（試作の物の札と同じ形） -->
-					<Tag x={160} y={1620} text="kube-apiserver" dot="var(--dl-obj-teal)" />
-					<Halo x={160} y={1646} text="ただ 1 つの入口" size={12.5} anchor="middle" weight={700} />
 					<!-- 板の段の色（母集団・標本・平均） -->
 					<!-- 強めた状態（主役の物の下の台を物の色で淡く塗る） -->
-					<Func x={200} y={1880} tone="blue" glyph="ƒ" hl />
-					<Func x={450} y={1880} tone="orange" glyph="⚡" hl />
-					<Tag x={325} y={1975} text="強めた func（主役）" size={14} />
+					<Func x={200} y={1895} tone="blue" glyph="ƒ" hl />
+					<Func x={450} y={1895} tone="orange" glyph="⚡" hl />
+					<Tag x={325} y={1992} text="強めた func（主役）" size={14} />
 					<Panel x={30} y={1670} w={150} h={100} tone="teal" title="母集団">
 						{#each [0, 1, 2, 3, 4, 5, 6] as i (i)}
 							<Sphere x={50 + i * 18} y={1745 - (i % 2) * 10} r={9} tone="teal" />
