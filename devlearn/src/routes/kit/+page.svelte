@@ -136,15 +136,15 @@
 						weight={700}
 					/>
 					<!-- 3 段目 -->
-					<Db x={120} y={660} id="db" />
-					{@render name(120, 752, 'db')}
-					<Platform x={480} y={650} w={300} d={200} id="platform" />
+					<Db x={95} y={660} id="db" />
+					{@render name(95, 752, 'db')}
+					<Platform x={490} y={650} w={340} d={230} id="platform" />
 					<!-- 台の上の Pod は単体の Pod と同じ大きさ（同じ物は同じ形。第 17 章） -->
-					<Pod x={410} y={640} s={0.8} state="ready" name="web-1" />
-					<Pod x={545} y={690} s={0.8} state="dead" name="web-2" />
+					<Pod x={440} y={628} s={0.8} state="ready" name="web-1" />
+					<Pod x={570} y={660} s={0.8} state="dead" name="web-2" />
 					<!-- 台の名前は台の手前の角の真下（試作の node-2 と同じ）。db の台から離す -->
-					<Tag x={480} y={792} text="node-1" dot="var(--dl-obj-green)" />
-					{@render name(480, 826, 'platform と pod')}
+					<Tag x={560} y={808} text="node-1" dot="var(--dl-obj-green)" />
+					{@render name(760, 808, 'platform と pod')}
 					<Platform x={820} y={650} w={200} d={140} down />
 					<Pod x={820} y={650} s={0.55} state="paper" name="web-3" label="" />
 					{@render name(820, 760, '落ちたノード・紙の pod')}
@@ -154,7 +154,7 @@
 					<Pod x={380} y={880} s={0.8} state="dead" name="web-c" />
 					<Frame x={575} y={950} w={170} d={110} name="<module>" />
 					<Var x={520} y={932} s={0.6} name="a" />
-					<Var x={635} y={968} s={0.6} name="b" />
+					<Var x={615} y={962} s={0.6} name="b" />
 					<Frame x={930} y={975} w={170} d={110} name="フレーム add()" current id="frame" />
 					<Var x={930} y={963} s={0.6} name="c" />
 					<!-- 5 段目 -->
