@@ -8,7 +8,8 @@
 2. `docs/prototype/learn/README.md` の learn11 の節。作りの元 `learn11-src/core.js` の 48〜130 行（slab・tag・drawObj・部品）と 300〜380 行（言葉・再生）
 3. この頁の「10-P」の表（下）と「測る道具の結果」。`decisions.md`「自分で決めたこと」の 2026-11-26 の 3 項（窓口 `__l3`・型ごとの線・試作の欠け）
 4. `explanation-standard.md` 第 10・11 章（手順 7 の言葉の仕組みに入る時）
-5. 次は手順 3 の 3 回目の判定（`npx tsx scripts/look-kit.ts` で公開 URL を撮り直し、新しい判定者 2 人に 1・2 回目と同じ手順で頼む。表は下の「手順 3 の判定」）。全て ≥ なら手順 4（札と字の大きさ・`UIK`。寄っても引いても 13〜15px の証拠を倍率 0.5・1・2 で測る）。部品は `src/lib/ui/scene/kit/`、札は `label/`
+5. 手順 3 は判定を続ける（表は下の「手順 3 の判定」。`npx tsx scripts/look-kit.ts` で公開 URL を撮り、作った本人ではない判定者 2 人に頼む）。手順 4・5 は済、6・7 は一部
+6. 次は手順 8（4 つの使い方。`learn-standard.md` 第 19 章）と手順 9（見本の題を `content/v3` の `V3Lesson` で書き、`Scene3`・`Tip`・`player.ts` で並べる。検査 41〜48 を通す）。`learn/check-v3.ts` の型 `V3Lesson`・`V3Step` が第 3 版のレッスンの形
 
 ## 10-P　試作 learn11 を本番に移す（D-25。2026-11-26 に始めた。進行中）
 
@@ -23,7 +24,7 @@
 | 4 札と字の大きさ `label/`（UIK） | 済（2026-11-27。`Stage.svelte` が枠を測って UIK。公開 URL の `/kit` の倍率 0.5・1・2 で札 15 件が全て範囲の中：名前 14・説明 12.5・数 13・線 12.5・説明の札 13px。`look-uik.ts`・`uik.json`） | `2d7e1a4` |
 | 5 構図と移り変わり `learn/scene/layout.ts` | 部品はできた（2026-11-27）：`sceneAt`（単体テスト 8 本）・`drawList`（物の表と構図から奥→手前の描く並び。単体テスト 4 本）・`Scene3.svelte`（Stage の中に等角の部品と名前の札）。`/kit` の「構図の移り変わり」で公開 URL の `look-move.ts`：0.1 秒ごとに 8 秒、6 件の動きで飛んだ物 0（`move.json`）。学習画面への組み込みは手順 9 で | `2aa40a1` |
 | 6 再生（繰り返し・一時停止・速さ・数え上げ・線の点） | 一部（2026-11-27）：純粋な関数 `learn/player.ts`（`tick`・`countAt`・`flowAt`）はある。線 `learn/scene/wire.ts`（手前で止める・点の位置。単体テスト 5 本）と `kit/Wire.svelte`（矢じり・行き来・点線・流れる点）、`Scene3` の `links`・`flow`。/kit の見本で線の点が流れる。繰り返し・一時停止・速さ・数え上げの画面への組み込みは手順 9 と一緒に | `da254c1` |
-| 7 言葉 `terms.ts`・`content/terms/`・検査 41〜48 | 一部（2026-11-27）：net の言葉の一覧 `src/lib/content/terms/net.ts`（25 語。言葉をそろえるステップの send・fd・buf・バイト・カーネル・NIC・ソケット・システムコール・TCP・ACK と、net-101 の 15 語。出典つき）と検査 43 の単体テスト（80 字以内・1〜2 文・ID が重ならない）。`src/lib/learn/terms.ts`（`Term`・`termIndex`・`markTerms`（長い書き方から・段落で 1 回・英字は単語の途中で当てない）・`firstPerStep`。単体テスト 4 本）。吹き出し（2026-11-27）：`learn/scene/tip.ts`（`placeTip`・`localRect`。単体テスト 6 本）・`label/Tip.svelte`・`Scene3` の `terms`（乗せる・Tab で物が 8 浮き、言葉と説明が出る。外すと消える）。/kit の構図の見本で公開 URL の `look-tip.ts` を通す（`tip.json`）。分野ごとの言葉の一覧（net 以外）・本文の点線の下線・検査 41〜48 は未 | `cbd4417`・`93623ed` |
+| 7 言葉 `terms.ts`・`content/terms/`・検査 41〜48 | 一部（2026-11-27）：net の言葉の一覧 `src/lib/content/terms/net.ts`（25 語。言葉をそろえるステップの send・fd・buf・バイト・カーネル・NIC・ソケット・システムコール・TCP・ACK と、net-101 の 15 語。出典つき）と検査 43 の単体テスト（80 字以内・1〜2 文・ID が重ならない）。`src/lib/learn/terms.ts`（`Term`・`termIndex`・`markTerms`（長い書き方から・段落で 1 回・英字は単語の途中で当てない）・`firstPerStep`。単体テスト 4 本）。吹き出し（2026-11-27）：`learn/scene/tip.ts`（`placeTip`・`localRect`。単体テスト 6 本）・`label/Tip.svelte`・`Scene3` の `terms`（乗せる・Tab で物が 8 浮き、言葉と説明が出る。外すと消える）。公開 URL の `look-tip.ts` で 4 件とも o（`tip.json`）。検査 41〜48：`learn/check-v3.ts`（単体テスト 11 本）を content:check に足した（当てる物は `content/v3` の `V3_LESSONS`。今は無し。見本は手順 9）。専門語の辞書 `content/terms/jargon.ts`。残り：本文の点線の下線・ステップの番号・使い方の釦・指標・つまみの吹き出し（手順 8・9 の画面と一緒に） | `cbd4417`・`93623ed`・`209ad3b` |
 | 8 4 つの使い方 | 未 | |
 | 9 見本の題で並べる | 未 | |
 | 10 判定（P-1〜P-9、判定者 2 人） | 未 | |
@@ -44,7 +45,8 @@
 | 9（配信 `6ae7c5b`） | 18/20（< は queue の名前が箱から離れ C が溝をまたぐ・pod の状態 12.5px） | 18/20（< は queue・panel が窮屈で軸が無い）。暗い配色で上の面が横の面より暗い（光の向きが明暗で逆）の指摘あり。部品は ≥ なので今は直さない | 荷物を溝の中に置き名前を箱のすぐ上に、時計は先頭の荷物の名前に添える、Pod の状態 13px、panel を広げ軸の線と余白（`cbd4417`） |
 | 10（配信 `cbd4417`） | 18/20（< は panel・anatomy：広げた panel が式の分解の札「送る」を隠す） | 17/20（< は queue・panel・anatomy） | 式の分解を右へ離す、panel を厚く・分布に目盛り（0・5・10 分）、queue の荷物を中の溝に・時計を名前の右に（`5885d30`・`6ba69d2`） |
 | 11（配信 `6ba69d2`） | 19/20（< は queue：B・C の名前が箱から離れ、B が時計に接する） | 18/20（< は pod：紙だけの Pod が紫の点線でなく小さく名前が無い・var：名前が箱から離れる）。備考：func の hardirq（赤）・その他（灰）が /kit に無い | 紙の Pod を紫の輪郭の点線・厚み 10・名前つきに、var の名前を箱に寄せる、queue の荷物の名前の間を 16→8（`93623ed`） |
-| 12（配信 `93623ed`） | ROUND12A | ROUND12B | |
+| 12（配信 `9b30f26`） | 19/20（< は var：名前が上の輪郭に重なる） | 19/20（< は var）。備考：func の赤・灰が無い、queue の時計が窮屈 | var の名前を上の面の一番上から 8 上に（`842ec05`）、部品集に func の赤（hardirq）・灰（その他）（`b332363`） |
+| 13（配信 `209ad3b`） | ROUND13A | ROUND13B | |
 
 - 字の大きさが寄っても引いても 13〜15px か（16.3）の証拠は手順 4（`UIK`）で取る（判定者 B の指摘）
 

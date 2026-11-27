@@ -438,6 +438,7 @@
 - 2026-11-27（10-P 手順 7）言葉の一覧の置き場は `src/lib/content/terms/<分野>.ts`（仕様の `src/content/terms/` は、このリポジトリの内容の置き場 `src/lib/content/` に合わせた）。型 `Term` は `src/lib/learn/terms.ts`。英字の書き方は単語の途中では当てない（`tcp_sendmsg` の `send` を言葉にしない）。理由：explanation-standard.md 10.1・learn-standard.md 第 20 章の表（言葉は terms.ts と分野ごとの一覧）
 - 2026-11-27（10-P 手順 5）構図から描く物の並びは `drawList`（奥＝y が小さい物から、同じ y は ID の順）。物の名前の札は物の真下（`NAME_DROP`）、線は物の外枠の手前（`REACH`）で止める。描く部品は `Scene3.svelte`。理由：learn-standard.md 16.1 S2・S4・S6、16.2 K4
 - 2026-11-27（10-P 手順 7）図の吹き出しは `Scene3` が持つ（`terms` を受け取り、`data-term` の物に乗せる・Tab で移ると、その物を 8 浮かせ、`placeTip` で物の上、入らなければ下、枠の中に置く）。吹き出しの中は言葉の見出しと説明 1〜2 文だけ（長い説明・たとえは言葉の一覧の頁へ）。理由：learn-standard.md 18.3 H1・LS3-M4・U-10
+- 2026-11-27（10-P 手順 7）検査 41〜48 は第 3 版のレッスンの形 `V3Lesson`（`learn/check-v3.ts`。`terms` は言葉の ID・`steps[].first` は初めて出る言葉・`steps[].layout`・`intro`）に当てる。第 2 版の `Lesson.terms`（{word, mean}）とは別の形にし、見本を第 3 版で書き直す時（手順 9）に移す。物の重なり（検査 48）は物の中心からの半径 `REACH`（線を止める所と同じ）で数え、中に物を乗せる台（platform・frame）は数えない。辞書は `src/lib/content/terms/jargon.ts`（仕様の `src/content/` は、このリポジトリの置き場に合わせた）。理由：explanation-standard.md 検査 41〜48・第 11 章
 
 ## 未決
 
