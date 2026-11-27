@@ -1,0 +1,24 @@
+{
+ "base": "https://devlearn.techcurrybread.workers.dev",
+ "before": [
+  "往復の回数7 回",
+  "1 MB が届くまで210 ms",
+  "平均の速さ39.9 Mbps",
+  "最後の cwnd640 MSS",
+  "RTT30 ms"
+ ],
+ "after": [
+  "往復の回数7 回",
+  "1 MB が届くまで105 ms",
+  "平均の速さ79.9 Mbps",
+  "最後の cwnd640 MSS",
+  "RTT15 ms"
+ ],
+ "halved": true,
+ "ans": [
+  "当たり 1 MB の時間の大半は、cwnd が育つまでの往復の回数で決まる。帯域ではなく RTT が効く。試してみる：RTT を 30 → 15 ms にして、時間が半分になるのを見る",
+  "外れ 落ちるたびに cwnd が 0.7 倍に減り、その後は 1 往復で 1 つずつしか増えない。試してみる：喪失率 1% と 2% で往復の回数を比べる"
+ ],
+ "answered": true,
+ "described": true
+}
