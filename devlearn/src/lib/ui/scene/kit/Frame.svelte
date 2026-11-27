@@ -3,8 +3,7 @@
 <script lang="ts">
 	// 関数のフレーム：角の丸い板。上に名前の小箱が立つ。灰（今のフレームは青。第 17 章 frame）
 	import { localProj, prism, rrectPts } from '../iso';
-	import Halo from '../label/Halo.svelte';
-	import { textWidth } from './paint';
+	import Tag from '../label/Tag.svelte';
 	import Base from './Base.svelte';
 	import Solid from './Solid.svelte';
 	type Props = {
@@ -37,11 +36,12 @@
 	}: Props = $props();
 	const P = $derived(localProj(x, y, s));
 	const board = $derived(prism(rrectPts(-w / 2, -d / 2, w, d, 20), 0, 10, P));
-	/** 名前の小箱：板の奥の縁に立つ。幅は名前に合わせ、名前は小箱の上の面に書く（第 17 章 frame。判定 15 回目） */
-	const bw = $derived(Math.min(w - 20, (textWidth(name, 13.5) * uik) / s + 24));
-	const bx = $derived(-w / 2 + 12);
-	const box = $derived(prism(rrectPts(bx, -d / 2 + 10, bw, 28, 8), 10, 26, P));
-	const tp = $derived(P.at(bx + bw / 2, -d / 2 + 24, 36));
+	/** 名前の小箱：板の奥に立つ小箱。名前の札は小箱の上に接して載せる（浮かせない。第 17 章 frame・判定 15 回目） */
+	const box = $derived(prism(rrectPts(-w / 2 + 14, -d / 2 + 10, 46, 30, 8), 10, 30, P));
+	const boxTop = $derived(Math.min(...box.top.map((q) => q[1])));
+	const tx = $derived(P.at(-w / 2 + 37, -d / 2 + 25, 30)[0]);
+	/** 札の高さ（Tag と同じ：字 13.5 ＋ 13）の半分だけ上に。札の下の縁が小箱の上に触れる */
+	const ty = $derived(boxTop - ((13.5 + 13) * uik) / 2 + 2 * uik);
 </script>
 
 <Base
@@ -60,14 +60,12 @@
 >
 	<Solid g={board} tone={current ? 'blue' : 'gray'} top={current ? 14 : 8} {uik} />
 	<Solid g={box} tone={current ? 'blue' : 'gray'} top={30} {uik} shadow={false} />
-	<Halo
-		x={tp[0]}
-		y={tp[1] + 5 * uik}
+	<Tag
+		x={tx}
+		y={ty}
 		text={name}
 		size={13.5}
 		{uik}
-		weight={800}
-		anchor="middle"
-		color="var(--dl-ink)"
+		dot={`var(--dl-obj-${current ? 'blue' : 'gray'})`}
 	/>
 </Base>
