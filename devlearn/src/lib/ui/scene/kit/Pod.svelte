@@ -78,7 +78,7 @@
 	{/if}
 	{#if state === 'dead'}
 		<path
-			d="M{x + 14 * uik} {y - lift - h - 34 * uik}l{16 * uik} {16 * uik}m0 {-16 * uik}l{-16 *
+			d="M{x + 14 * uik} {y - lift - h - 48 * uik}l{16 * uik} {16 * uik}m0 {-16 * uik}l{-16 *
 				uik} {16 * uik}"
 			style:stroke="var(--dl-obj-red)"
 			stroke-width={3 * uik}

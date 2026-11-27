@@ -16,8 +16,21 @@
 		scale?: number;
 		uik?: number;
 		op?: number;
+		/** 名前と箱の上の間（図の単位。縮尺 1 の時） */
+		gap?: number;
 	};
-	let { x, y, label, kind = 'data', tone, w = 44, scale = 1, uik = 1, op = 1 }: Props = $props();
+	let {
+		x,
+		y,
+		label,
+		kind = 'data',
+		tone,
+		w = 44,
+		scale = 1,
+		uik = 1,
+		op = 1,
+		gap = 13
+	}: Props = $props();
 	const t = $derived(tone ?? TOKEN[kind]);
 	const ww = $derived(w * 0.7 * scale);
 	const hh = $derived(24 * scale);
@@ -31,7 +44,7 @@
 	{#if label}
 		<Halo
 			{x}
-			y={y - hh * 0.55 - 13 * uik}
+			y={y - hh * 0.55 - gap * uik}
 			text={label}
 			size={13}
 			{uik}

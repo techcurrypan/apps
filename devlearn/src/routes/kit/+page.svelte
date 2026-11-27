@@ -31,6 +31,7 @@
 	import Scene3 from '#lib/ui/scene/Scene3.svelte';
 	import type { SceneObj } from '#lib/learn/scene/draw.ts';
 	import type { Layout } from '#lib/learn/scene/layout.ts';
+	import { flowAt } from '#lib/learn/player.ts';
 	import { LABEL_PX, zoomView } from '#lib/ui/scene/label/uik.ts';
 
 	const schemes = ['light', 'dark'] as const;
@@ -110,7 +111,7 @@
 					<Tag x={1040} y={490} text="kube-apiserver" dot="var(--dl-obj-teal)" />
 					<Halo
 						x={1040}
-						y={516}
+						y={524}
 						text="hex・ただ 1 つの入口"
 						size={12.5}
 						anchor="middle"
@@ -120,8 +121,8 @@
 					<Db x={120} y={660} id="db" />
 					{@render name(120, 740, 'db')}
 					<Platform x={430} y={650} w={300} d={190} id="platform" />
-					<Pod x={380} y={615} s={0.62} state="ready" name="web-1" />
-					<Pod x={480} y={648} s={0.62} state="dead" name="web-2" />
+					<Pod x={355} y={612} s={0.62} state="ready" name="web-1" />
+					<Pod x={500} y={640} s={0.62} state="dead" name="web-2" />
 					{@render name(430, 760, 'platform と pod')}
 					<Platform x={760} y={650} w={220} d={150} down />
 					<Pod x={760} y={650} s={0.45} state="paper" label="" />
@@ -230,6 +231,13 @@
 			prev={demoLayouts[1 - demoStep]}
 			t={demoNow % DEMO_MS}
 			hl={['kern']}
+			links={[
+				{ from: 'app', to: 'kern' },
+				{ from: 'kern', to: 'nic' },
+				{ from: 'kern', to: 'q' },
+				{ from: 'q', to: 'nic', kind: 'ack', both: true }
+			]}
+			flow={flowAt(demoNow)}
 			label="構図の移り変わりの見本"
 		/>
 	</div>

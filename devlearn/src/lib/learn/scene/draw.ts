@@ -38,6 +38,21 @@ export const NAME_DROP: Record<ObjKind, number> = {
 	frame: 0,
 	var: 0
 };
+/** 線を物の外枠の手前で止める長さ（図の単位。縮尺 1 の時。LS3-K4） */
+export const REACH: Record<ObjKind, number> = {
+	laptop: 92,
+	func: 86,
+	block: 90,
+	queue: 142,
+	ring: 88,
+	nic: 112,
+	hex: 88,
+	db: 82,
+	platform: 200,
+	pod: 46,
+	frame: 120,
+	var: 42
+};
 /** 自分で名前を描く部品（pod・frame・var） */
 export const SELF_NAMED: ReadonlySet<ObjKind> = new Set(['pod', 'frame', 'var']);
 
