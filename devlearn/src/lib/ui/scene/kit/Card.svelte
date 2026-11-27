@@ -14,7 +14,7 @@
 		uik?: number;
 		op?: number;
 	};
-	let { x, y, lines, w = 240, lh = 20, size = 13, dark = false, uik = 1, op = 1 }: Props = $props();
+	let { x, y, lines, w = 240, lh = 21, size = 14, dark = false, uik = 1, op = 1 }: Props = $props();
 	const W = $derived(w * uik);
 	const LH = $derived(lh * uik);
 	const H = $derived(lines.length * LH + 18 * uik);

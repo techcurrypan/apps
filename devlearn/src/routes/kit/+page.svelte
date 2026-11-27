@@ -72,7 +72,7 @@
 					<Block x={870} y={150} glyph="↻" id="block" />
 					{@render name(870, 245, 'block')}
 					<!-- 2 段目 -->
-					<Queue x={160} y={400} clock id="queue" />
+					<Queue x={160} y={400} clock items={['B', 'C']} id="queue" />
 					{@render name(160, 490, 'queue')}
 					<Ring x={450} y={400} id="ring" />
 					{@render name(450, 490, 'ring')}
@@ -91,11 +91,11 @@
 					<Pod x={760} y={650} s={0.45} state="paper" label="" />
 					{@render name(760, 760, '落ちたノード・紙の pod')}
 					<!-- 4 段目 -->
-					<Pod x={100} y={880} s={0.8} state="ready" name="web-a" />
-					<Pod x={260} y={880} s={0.8} state="create" name="web-b" />
-					<Pod x={420} y={880} s={0.8} state="dead" name="web-c" />
-					<Frame x={590} y={950} w={190} d={120} name="<module>" />
-					<Frame x={860} y={1000} w={190} d={120} name="フレーム add()" current id="frame" />
+					<Pod x={90} y={880} s={0.8} state="ready" name="web-a" />
+					<Pod x={235} y={880} s={0.8} state="create" name="web-b" />
+					<Pod x={380} y={880} s={0.8} state="dead" name="web-c" />
+					<Frame x={620} y={975} w={190} d={120} name="<module>" />
+					<Frame x={875} y={1010} w={190} d={120} name="フレーム add()" current id="frame" />
 					<!-- 5 段目 -->
 					<List x={200} y={1160} vals={['1', '2', '3']} cap={5} newIdx={2} id="list" />
 					{@render name(200, 1250, 'list（容量 5）')}

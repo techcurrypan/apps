@@ -7,7 +7,12 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { labelOk, type LabelKind } from '../src/lib/ui/scene/label/uik.ts';
 import { openChrome, sleep } from './lib/cdp.ts';
 
-const base = (process.argv[2] ?? 'https://devlearn.techcurrybread.workers.dev').replace(/\/$/, '');
+const args = process.argv.slice(2);
+/** --kit：部品集の全ての字の画面の上の大きさを小さい順に並べる（判定者の目測を確かめる） */
+const KIT = args.includes('--kit');
+const base = (
+	args.find((a) => !a.startsWith('--')) ?? 'https://devlearn.techcurrybread.workers.dev'
+).replace(/\/$/, '');
 const OUT = 'docs/progress/shots/phase-10-P';
 
 type Row = { zoom: number; kind: LabelKind; text: string; px: number; ok: boolean };
@@ -27,6 +32,11 @@ const MEASURE = `(() => {
 	return out;
 })()`;
 
+const KIT_ALL = `[...document.querySelectorAll('section[data-scheme=light] svg text')].map((t) => {
+	const m = t.getScreenCTM();
+	return [parseFloat(getComputedStyle(t).fontSize) * Math.hypot(m.a, m.b), t.textContent.trim().slice(0, 30)];
+})`;
+
 async function main() {
 	mkdirSync(OUT, { recursive: true });
 	const { tab, chrome } = await openChrome(9358, { gpu: false, headless: true });
@@ -35,6 +45,11 @@ async function main() {
 		await tab.size(1440, 900, false);
 		await tab.go(`${base}/kit`);
 		await sleep(2500);
+		if (KIT) {
+			const all = await tab.eval<[number, string][]>(KIT_ALL);
+			for (const [px, t] of all.sort((a, b) => a[0] - b[0])) console.log(px.toFixed(1), t);
+			return;
+		}
 		const raw = await tab.eval<Omit<Row, 'ok'>[]>(MEASURE);
 		const rows: Row[] = (raw ?? []).map((r) => ({
 			...r,

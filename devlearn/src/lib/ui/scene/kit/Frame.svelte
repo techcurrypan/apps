@@ -38,7 +38,8 @@
 	const P = $derived(localProj(x, y, s));
 	const board = $derived(prism(rrectPts(-w / 2, -d / 2, w, d, 20), 0, 10, P));
 	const box = $derived(prism(rrectPts(-w / 2 + 14, -d / 2 + 10, 46, 30, 8), 10, 30, P));
-	const tp = $derived(P.at(w / 2 - 20, d / 2, 0));
+	/** 名前は上に立つ小箱の真上に（第 17 章 frame「上に名前の小箱が立つ」） */
+	const tp = $derived(P.at(-w / 2 + 37, -d / 2 + 25, 40));
 </script>
 
 <Base
@@ -57,12 +58,5 @@
 >
 	<Solid g={board} tone={current ? 'blue' : 'gray'} top={current ? 14 : 8} {uik} />
 	<Solid g={box} tone={current ? 'blue' : 'gray'} top={30} {uik} shadow={false} />
-	<Tag
-		x={tp[0] - 30 * uik}
-		y={tp[1] + 22 * uik}
-		text={name}
-		size={13.5}
-		{uik}
-		dot={`var(--dl-obj-${tone})`}
-	/>
+	<Tag x={tp[0]} y={tp[1] - 20 * uik} text={name} size={13.5} {uik} dot={`var(--dl-obj-${tone})`} />
 </Base>
