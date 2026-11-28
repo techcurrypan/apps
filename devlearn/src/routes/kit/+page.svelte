@@ -116,12 +116,12 @@
 					{@render name(350, 245, 'func（青）')}
 					<Func x={590} y={150} tone="orange" glyph="⇉" />
 					{@render name(590, 245, 'func（橙）')}
-					<Block x={830} y={150} glyph="↻" id="block" />
-					{@render name(830, 245, 'block')}
+					<Block x={810} y={150} glyph="↻" id="block" />
+					{@render name(810, 245, 'block')}
 					<!-- block の記号のもう 1 つ（⌖：置き場を決める。第 17 章） -->
 					<!-- 2 つの台を離す・札は字形の化けない言葉で（24 回目の判定 A・B） -->
-					<Block x={1080} y={165} s={0.7} glyph="⌖" />
-					{@render name(1080, 245, 'block（置き場の印）')}
+					<Block x={1040} y={165} s={0.7} glyph="⌖" />
+					{@render name(1040, 245, 'block（置き場の印）')}
 					<!-- 2 段目 -->
 					<Queue x={160} y={418} clock items={['B', 'C']} id="queue" />
 					{@render name(160, 520, 'queue')}
