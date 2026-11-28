@@ -23,6 +23,7 @@
 	import RecallPanel3 from './RecallPanel3.svelte';
 	import RecallFigure from './RecallFigure.svelte';
 	import { LABS } from '../../learn/lab.ts';
+	import { makeL3 } from './probe.ts';
 	import { startTry, tasksDone, typeLine, type TryScene } from '../../learn/try3.ts';
 	import type { RecallSet } from '../../learn/recall3.ts';
 	import { loadProgress, markDone, saveProgress } from '../../progress.ts';
@@ -150,6 +151,23 @@
 		return () => cancelAnimationFrame(raf);
 	});
 
+	// 測る道具の窓口（look-learn.ts。読むだけ）
+	$effect(() => {
+		const w = window as unknown as { __l3?: unknown };
+		w.__l3 = makeL3({
+			steps: lesson.steps,
+			termName: (id) => termOf.get(id)?.t,
+			kindName: (k) => KINDS[k] ?? k,
+			state: () => ({ step, t: clock.t, playing: clock.playing }),
+			go,
+			mode: setMode,
+			root: () => root ?? null
+		});
+		return () => {
+			delete w.__l3;
+		};
+	});
+
 	function onkey(e: KeyboardEvent) {
 		const tg = e.target as HTMLElement | null;
 		if (tg && (tg.tagName === 'INPUT' || tg.tagName === 'TEXTAREA')) return;
@@ -209,6 +227,7 @@
 	data-testid="learn-v3"
 	data-mode={mode}
 	data-step={step}
+	data-view={lesson.view ?? 'stack'}
 	role="presentation"
 	onpointerover={pickTerm}
 	onfocusin={pickTerm}
@@ -219,7 +238,7 @@
 			<h1>{lesson.title}</h1>
 			<p>{lesson.goal}</p>
 		</div>
-		<nav class="modes" aria-label="使い方">
+		<nav class="modes" aria-label="使い方" data-l3-modes>
 			{#each MODES as m, i (m.id)}
 				<button
 					type="button"
@@ -231,9 +250,9 @@
 			{/each}
 		</nav>
 		{#if mode === 'watch'}
-			<dl class="mets">
+			<dl class="mets" data-l3-metrics>
 				{#each lesson.metrics ?? [] as m (m.key)}
-					<div class="met">
+					<div class="met" data-metric={m.key}>
 						<dt>
 							<button
 								type="button"
@@ -263,7 +282,7 @@
 		{/each}
 	{/snippet}
 
-	<div class="main">
+	<div class="main" data-l3-side>
 		<div class="figcol">
 			<section class="fig" aria-label="図">
 				{#if mode === 'watch'}
@@ -371,7 +390,7 @@
 					</div>
 					<h2>{st.title}</h2>
 					{#if st.intro}
-						<div class="words">
+						<div class="words terms big">
 							<h3>この教材で使う言葉</h3>
 							<dl>
 								{#each introTerms as t (t.id)}
@@ -386,7 +405,7 @@
 					{#if !st.intro}{@render narr()}{/if}
 					{#if !st.intro && firsts.length}
 						<!-- 初めて出る言葉は名前の札で並べ、説明は乗せる・押す・Tab で吹き出しに出す（LS3-T5・H4。内側のスクロールを作らない） -->
-						<div class="words small" data-testid="firsts">
+						<div class="words small terms" data-testid="firsts">
 							<h3>このステップで初めて出る言葉<small>（乗せると説明）</small></h3>
 							<ul class="chips">
 								{#each firsts as t (t.id)}
@@ -455,7 +474,7 @@
 	</div>
 
 	{#if mode === 'watch'}
-		<nav class="steps" aria-label="ステップ">
+		<nav class="steps" aria-label="ステップ" data-l3-steps>
 			{#each lesson.steps as s, i (i)}
 				<button
 					type="button"

@@ -76,6 +76,8 @@ export type V3Lesson = {
 	goal: string;
 	/** 上の小さな題（分野・段・見せ方） */
 	kick: string;
+	/** 見せ方の型（learn-standard.md 14.1。測る道具の線が型で変わる） */
+	view?: 'stack' | 'cluster' | 'memory' | 'chart';
 	/** このレッスンで使う言葉（言葉の ID） */
 	terms: string[];
 	objs: Record<string, SceneObj>;

@@ -10,6 +10,7 @@ export const K8S_101_V3: V3Lesson = {
 	field: 'k8s',
 	title: 'Pod が落ちても元に戻る仕組み',
 	goal: '「3 つ動かして」と書いた紙から、Pod が起き、落ち、戻るまでを、係と帳簿と待ち時間で説明できる',
+	view: 'cluster',
 	kick: 'Kubernetes ・ 段 3（設計と障害対応）・ 見せ方：クラスタと係',
 	terms: [
 		'container',

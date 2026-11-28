@@ -9,6 +9,7 @@ export const NET_101_V3: V3Lesson = {
 	field: 'net',
 	title: 'カーネルの中の TCP 送信と ACK',
 	goal: '1 つの send() を、関数とキューの単位で ACK まで追い、遅さと再送の原因を図と数で読める',
+	view: 'stack',
 	kick: 'ネットワーク ・ 段 3（設計と障害対応）・ 見せ方：層とキュー',
 	terms: [
 		'app',

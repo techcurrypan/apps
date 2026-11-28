@@ -297,7 +297,7 @@ export const SNAP_SCENE = `(() => {
 export const SNAP_SIDE = `(() => {
 	const side = document.querySelector('#side, [data-l3-side]'); if (!side) return null;
 	const box = side.querySelector('.terms'); const big = side.querySelector('.terms.big');
-	const shown = box ? [...box.querySelectorAll('dt')].map((d) => d.textContent.trim()) : [];
+	const shown = box ? [...box.querySelectorAll('dt, .chip')].map((d) => d.textContent.trim()) : [];
 	const paras = [...side.querySelectorAll('.para')];
 	let marks = 0, dup = 0; for (const p of paras) { const ws = [...p.querySelectorAll('.tw')].map((w) => w.textContent.trim()); marks += ws.length; dup += ws.length - new Set(ws).size; }
 	const analogy = [...side.querySelectorAll('.callout, .co, aside, div')].some((e) => /^たとえると/.test(e.textContent.trim()));
@@ -307,7 +307,7 @@ export const SNAP_SIDE = `(() => {
 /** 指標の帯の数と、説明の有る数 */
 export const SNAP_METRICS = `(() => {
 	const ms = [...document.querySelectorAll('#metrics .met, [data-l3-metrics] [data-metric]')];
-	return { n: ms.length, tips: ms.filter((m) => (m.getAttribute('title') || m.dataset.d || m.querySelector('[title],[data-d]'))).length };
+	return { n: ms.length, tips: ms.filter((m) => (m.getAttribute('title') || m.dataset.d || m.querySelector('[title],[data-d],[data-tw]'))).length };
 })()`;
 
 /** 式の分解の部分の数（暗い札の上の大きな字）。本番は data-anatomy の部分 */
