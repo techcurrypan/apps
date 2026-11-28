@@ -341,16 +341,14 @@
 					{#if st.intro}
 						<div class="callout"><b>たとえると</b>{st.intro.analogy}</div>
 					{:else if firsts.length}
-						<div class="words small">
-							<h3>このステップで初めて出る言葉</h3>
-							<dl>
+						<!-- 初めて出る言葉は名前の札で並べ、説明は乗せる・押す・Tab で吹き出しに出す（LS3-T5・H4。内側のスクロールを作らない） -->
+						<div class="words small" data-testid="firsts">
+							<h3>このステップで初めて出る言葉<small>（乗せると説明）</small></h3>
+							<ul class="chips">
 								{#each firsts as t (t.id)}
-									<div>
-										<dt>{t.t}</dt>
-										<dd>{t.d}</dd>
-									</div>
+									<li><button type="button" class="chip" data-tw={t.id}>{t.t}</button></li>
 								{/each}
-							</dl>
+							</ul>
 						</div>
 					{/if}
 					{#if st.callout && !st.intro}
@@ -584,7 +582,7 @@
 		cursor: pointer;
 	}
 	.side {
-		flex: 0 0 400px;
+		flex: 0 0 440px;
 		display: flex;
 		flex-direction: column;
 		min-height: 0;
@@ -677,6 +675,33 @@
 	}
 	.words dd {
 		margin: 0;
+	}
+	.words h3 small {
+		font-weight: 400;
+		color: var(--dl-text-muted);
+		margin-left: 4px;
+	}
+	.chips {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 6px;
+	}
+	.chip {
+		font: 700 13px/1.4 var(--dl-font);
+		color: var(--dl-ink);
+		padding: 3px 10px;
+		border-radius: 999px;
+		border: 1px dotted var(--dl-border-strong);
+		background: var(--dl-surface);
+		cursor: help;
+	}
+	.chip:hover,
+	.chip:focus-visible {
+		border-style: solid;
+		background: var(--dl-surface-raised);
 	}
 	.callout {
 		margin: 8px 0;

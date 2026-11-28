@@ -112,15 +112,16 @@
 						<Laptop x={120} y={150} lift={hov === 'laptop' ? 8 : 0} id="laptop" />
 					</g>
 					{@render name(120, 245, 'laptop')}
-					<Func x={370} y={150} tone="blue" glyph="ƒ" id="func" />
-					{@render name(370, 245, 'func（青）')}
-					<Func x={620} y={150} tone="orange" glyph="⇉" />
-					{@render name(620, 245, 'func（橙）')}
-					<Block x={870} y={150} glyph="↻" id="block" />
-					{@render name(870, 245, 'block')}
+					<Func x={350} y={150} tone="blue" glyph="ƒ" id="func" />
+					{@render name(350, 245, 'func（青）')}
+					<Func x={590} y={150} tone="orange" glyph="⇉" />
+					{@render name(590, 245, 'func（橙）')}
+					<Block x={830} y={150} glyph="↻" id="block" />
+					{@render name(830, 245, 'block')}
 					<!-- block の記号のもう 1 つ（⌖：置き場を決める。第 17 章） -->
-					<Block x={1070} y={165} s={0.72} glyph="⌖" />
-					{@render name(1070, 245, 'block（⌖）')}
+					<!-- 2 つの台を離す・札は字形の化けない言葉で（24 回目の判定 A・B） -->
+					<Block x={1080} y={165} s={0.7} glyph="⌖" />
+					{@render name(1080, 245, 'block（置き場の印）')}
 					<!-- 2 段目 -->
 					<Queue x={160} y={418} clock items={['B', 'C']} id="queue" />
 					{@render name(160, 520, 'queue')}
@@ -144,13 +145,14 @@
 					<Platform x={490} y={650} w={340} d={230} id="platform" />
 					<!-- 台の上の Pod は単体の Pod と同じ大きさ（同じ物は同じ形。第 17 章） -->
 					<Pod x={440} y={628} s={0.8} state="ready" name="web-1" />
-					<Pod x={570} y={660} s={0.8} state="dead" name="web-2" />
+					<!-- web-2 と × を台の内へ（× が奥の縁に乗っていた。24 回目の判定 A・B） -->
+					<Pod x={545} y={695} s={0.8} state="dead" name="web-2" />
 					<!-- 台の名前は台の手前の角の真下（試作の node-2 と同じ）。db の台から離す -->
 					<!-- 部品の名前を台の名前の札に含め、別の札の行に紛れさせない（23 回目の判定 B） -->
 					<Tag x={660} y={795} text="node-1（platform と pod）" dot="var(--dl-obj-green)" />
-					<Platform x={820} y={650} w={200} d={140} down />
-					<Pod x={820} y={650} s={0.55} state="paper" name="web-3" label="" />
-					{@render name(820, 760, '落ちたノード・紙の pod')}
+					<Platform x={900} y={650} w={200} d={140} down />
+					<Pod x={900} y={650} s={0.55} state="paper" name="web-3" label="" />
+					{@render name(900, 760, '落ちたノード・紙の pod')}
 					<!-- 4 段目 -->
 					<Pod x={90} y={880} s={0.8} state="ready" name="web-a" />
 					<Pod x={235} y={880} s={0.8} state="create" name="web-b" />

@@ -54,7 +54,22 @@
 		stroke-width={1.1 * uik}
 		opacity="0.95"
 	/>
-	{#if glyph}
+	{#if glyph === '⌖'}
+		<!-- ⌖ は字形が書体によって ♦ に化けるので、円と 4 本の線で描く（24 回目の判定 A・B） -->
+		<g
+			style:stroke={edge(tone)}
+			stroke-width={3 * s}
+			stroke-linecap="round"
+			fill="none"
+			data-glyph="aim"
+		>
+			<circle cx={gp[0]} cy={gp[1]} r={9 * s} />
+			<path
+				d="M{gp[0]} {gp[1] - 15 * s}v{9 * s}M{gp[0]} {gp[1] + 6 * s}v{9 * s}M{gp[0] -
+					15 * s} {gp[1]}h{9 * s}M{gp[0] + 6 * s} {gp[1]}h{9 * s}"
+			/>
+		</g>
+	{:else if glyph}
 		<text
 			x={gp[0]}
 			y={gp[1] + 9 * s}
