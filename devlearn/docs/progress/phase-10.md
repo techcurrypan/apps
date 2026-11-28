@@ -2,14 +2,14 @@
 
 状態: **進行中**（10-0 済。**今は 10-P（D-25。learn11 を本番の部品に）**。順は 10-P → 10-B → 10-R → 10-C → 9-2 → 10-D → 10-E → 10-W → 11 → 12。止まらない）
 
-## 次の実行が読む所（10-P。2026-11-28 の 2 回目の実行で更新）
+## 次の実行が読む所（10-P。2026-11-28 の 3 回目の実行で更新）
 
-1. `docs/learn-standard.md` 第 15.1（P-1〜P-9）・第 16 章・第 18 章・第 19 章・第 21 章
-2. この頁の「10-P」の表（下）。見本 1（net-101）・見本 2（k8s-101）とも `/lesson/<id>` で第 3 版の画面で開く（`content/v3/`。k8s は言葉 `content/terms/k8s.ts`・やってみる `try-k8s.ts`＋`TryFigureK8s`・思い出す `recall-k8s.ts`＋`RecallFigure` の `set`）
-3. 手順 9 の残り：`prg`（mem）と `sta`（stat）の題を第 3 版で（試作 `learn11-src/mem.js`・`stat.js`。物は frame・var・list・panel・bar・sphere。Scene3 は list・panel・bar・sphere をまだ描かない → 足す）、ステップ固有の札（条件の札・時計・ss の札・ふるいの × と点の札）を合図に足す、`window.__l3` を LearnV3 に持たせて `look-learn.ts --scene/--loop/--hover/--terms` を本番で通す（`scripts/lib/learn3-measure.ts` の `PROTO_SHIM` が形の手本）
-4. `look-v3.ts` の `over`（画面の外に出た要素）：右の欄・やってみる の欄が内側でスクロールしている（net-101 の try 18・k8s-101 の lab 8・try 11）。CLAUDE.md 第 9 章「内側のスクロールを作らない」に当たるかを手順 10 の前に確かめて直す
-5. 手順 10 の判定：`npx tsx scripts/look-v3.ts <URL> <id>` で公開 URL を撮り、試作の P-1〜P-9 と比べて判定者 2 人に頼む
-6. 手順 3 は 24 回目の判定の結果を下の表で見て、「<」を直す（`look-kit.ts` で撮る）
+1. `docs/learn-standard.md` 第 15.1（P-1〜P-9）・第 16 章・第 17 章・第 18 章（T4・T5）・第 19 章・第 21 章
+2. この頁の「10-P」の表（下）。見本 1（net-101）・見本 2（k8s-101）とも `/lesson/<id>` で第 3 版の画面で開く
+3. 手順 3：25 回目の判定の結果を下の表で見て、「<」を直す（`look-kit.ts` で撮る）
+4. **内側のスクロール（CLAUDE.md 第 9 章）**：`look-v3.ts` の `inner`（px）が全ステップ・全使い方で 0 になるまで直す。配信 `1d1ec81` の公開 URL で残りは、net-101：言葉をそろえる 647・ステップ 2〜10 で 51〜202・やってみる 220／k8s-101：言葉をそろえる 678・ステップ 4〜11 で 28〜178・試す 202・やってみる 279。案：囲み（たとえ・変わったこと）を図の隅の札へ、言葉をそろえるステップの段落を短く（一覧 LS3-T4 は説明つきのまま）、やってみる の端末（640×520 以上）以外のやること・見本を図の側へ
+5. 手順 9 の残り：`prg`（mem）と `sta`（stat）の題を第 3 版で（試作 `learn11-src/mem.js`・`stat.js`。Scene3 は list・panel・bar・sphere をまだ描かない → 足す）、ステップ固有の札、`window.__l3` を LearnV3 に持たせて `look-learn.ts --scene/--loop/--hover/--terms` を本番で通す（`scripts/lib/learn3-measure.ts` の `PROTO_SHIM` が形の手本）
+6. 手順 10 の判定：`npx tsx scripts/look-v3.ts <URL> <id>` で公開 URL を撮り、試作の P-1〜P-9 と比べて判定者 2 人に頼む
 7. `explanation-standard.md` 第 10・11 章・検査 41〜48（本文を書く時）
 
 ## 10-P　試作 learn11 を本番に移す（D-25。2026-11-26 に始めた。進行中）
@@ -58,7 +58,8 @@
 | 21（配信 `5505f3c`） | 18/20（< は db：台が platform の台に約 30px 重なる・platform：node-1 の札が台の外の隙間に浮き db の札に見える） | 18/20（< は frame：a・b の床が重なる・db：台が platform の下に潜る）。備考：時計の数に丸い札が無い | platform を右へ・幅 300 にして db と離し、node-1 を台の手前の角の真下に、frame の a・b を離す（`b73bcba`） |
 | 22（配信 `aac121c`） | 18/20（< は platform：web-1 が台の端に寄り、札「platform と pod」が web-c の × に重なる・pod：単体の Pod に台が無い） | 16/20（< は platform：台が小さく「落ちた」が側面に乗る・pod：同じ × の重なり・frame：b の床が板からはみ出す・queue：小箱が溝の境にまたがり時計が皿の外） | 台を 340×230 に広げ db を左へ、Pod を台の内へ、node-1 と札を台の右手前の下に並べて web-c から離す、b を板の内へ（次のコミット）。queue の時計の位置は 15・19・20 回目で行き来したので今回は動かさない。単体の Pod の台は試作にも無い（試作の Pod は台の上にしか出ない）ので足さない |
 | 23（配信 `bfaa0e0`） | 17/20（< は func：記号が ƒ・⚡・! だけで ⇉・?・✓・IP・block の ⌖ が無い、token：名前 11px・anatomy：意味の札 12px（どちらも目測）） | 18/20（< は platform：node-1 の札が「platform と pod」と同じ行に並び、どの物の札か分からない、card：暗い配色で明るい札と暗い札が同じに見える） | token・anatomy の字は `uik-kit.txt` の測りで 13px・13.5px（範囲の中）なので否定。func の見本の記号を ƒ・⇉・?・✓・⚡（hardirq）・IP に、block に ⌖ を足す。台の名前の札を「node-1（platform と pod）」1 枚にして手前の角の下に。暗い配色の明るい札を `--dl-card-light`（#353c48）、暗い札を #0b0d11 に（次のコミット） |
-| 24 | | | |
+| 24（配信 `f7cc3f1`） | 18/20（< は block：⌖ が ♦ に化け 2 つの台が重なる・platform：web-2 の × が台の縁に乗り、落ちたノードの台に接する） | 18/20（< は block・platform。同じ理由） | ⌖ を字に頼らず円と 4 本の線で描く（`kit/glyph.test.ts`）、2 つの block を離し札を「block（置き場の印）」に、web-2 を台の内へ、落ちたノードを右へ 80 離す（`1d1ec81`） |
+| 25（配信 `1d1ec81`） | | | |
 
 - 字の大きさが寄っても引いても 13〜15px か（16.3）の証拠は手順 4（`UIK`）で取る（判定者 B の指摘）
 
