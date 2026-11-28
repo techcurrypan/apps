@@ -1,6 +1,7 @@
 <script lang="ts">
 	// 部品集の一覧（learn-standard.md 第 17 章。開発用。本番の目次には出さない）。
 	// 全部の部品を明るい配色と暗い配色で並べ、試作 learn11 の同じ部品と比べる（10-P 手順 3）
+	import { ROW1, ROW_HL } from './rows.ts';
 	import Anatomy from '#lib/ui/scene/kit/Anatomy.svelte';
 	import Bar from '#lib/ui/scene/kit/Bar.svelte';
 	import Block from '#lib/ui/scene/kit/Block.svelte';
@@ -109,19 +110,25 @@
 						onmouseenter={() => (hov = 'laptop')}
 						onmouseleave={() => (hov = '')}
 					>
-						<Laptop x={120} y={150} lift={hov === 'laptop' ? 8 : 0} id="laptop" />
+						<Laptop
+							x={ROW1[0].x}
+							y={150}
+							s={ROW1[0].s}
+							lift={hov === 'laptop' ? 8 : 0}
+							id="laptop"
+						/>
 					</g>
-					{@render name(120, 245, 'laptop')}
-					<Func x={350} y={150} tone="blue" glyph="ƒ" id="func" />
-					{@render name(350, 245, 'func（青）')}
-					<Func x={590} y={150} tone="orange" glyph="⇉" />
-					{@render name(590, 245, 'func（橙）')}
-					<Block x={810} y={150} glyph="↻" id="block" />
-					{@render name(810, 245, 'block')}
+					{@render name(ROW1[0].x, 245, 'laptop')}
+					<Func x={ROW1[1].x} y={150} s={ROW1[1].s} tone="blue" glyph="ƒ" id="func" />
+					{@render name(ROW1[1].x, 245, 'func（青）')}
+					<Func x={ROW1[2].x} y={150} s={ROW1[2].s} tone="orange" glyph="⇉" />
+					{@render name(ROW1[2].x, 245, 'func（橙）')}
+					<Block x={ROW1[3].x} y={150} s={ROW1[3].s} glyph="↻" id="block" />
+					{@render name(ROW1[3].x, 245, 'block')}
 					<!-- block の記号のもう 1 つ（⌖：置き場を決める。第 17 章） -->
 					<!-- 2 つの台を離す・札は字形の化けない言葉で（24 回目の判定 A・B） -->
-					<Block x={1040} y={165} s={0.7} glyph="⌖" />
-					{@render name(1040, 245, 'block（置き場の印）')}
+					<Block x={ROW1[4].x} y={165} s={ROW1[4].s} glyph="⌖" />
+					{@render name(ROW1[4].x, 245, 'block（置き場の印）')}
 					<!-- 2 段目 -->
 					<Queue x={160} y={418} clock items={['B', 'C']} id="queue" />
 					{@render name(160, 520, 'queue')}
@@ -236,14 +243,14 @@
 					<!-- 名前の札と下の説明の 2 段（試作の物の札と同じ形） -->
 					<!-- 板の段の色（母集団・標本・平均） -->
 					<!-- 強めた状態（主役の物の下の台を物の色で淡く塗る） -->
-					<Func x={200} y={1935} tone="blue" glyph="?" hl />
-					<Func x={450} y={1935} tone="orange" glyph="✓" hl />
-					<Tag x={325} y={2032} text="強めた func（主役）" size={14} />
+					<Func x={ROW_HL[0].x} y={1935} tone="blue" glyph="?" hl />
+					<Func x={ROW_HL[1].x} y={1935} tone="orange" glyph="✓" hl />
+					<Tag x={(ROW_HL[0].x + ROW_HL[1].x) / 2} y={2032} text="強めた func（主役）" size={14} />
 					<!-- 実行の文脈の残り 2 色（hardirq＝赤・その他＝灰。第 17 章 func） -->
-					<Func x={760} y={1950} s={0.8} tone="red" glyph="⚡" />
-					{@render name(760, 2032, 'func（赤）hardirq')}
-					<Func x={1000} y={1950} s={0.8} tone="gray" glyph="IP" />
-					{@render name(1000, 2032, 'func（灰）その他')}
+					<Func x={ROW_HL[2].x} y={1950} s={ROW_HL[2].s} tone="red" glyph="⚡" />
+					{@render name(ROW_HL[2].x, 2032, 'func（赤）hardirq')}
+					<Func x={ROW_HL[3].x} y={1950} s={ROW_HL[3].s} tone="gray" glyph="IP" />
+					{@render name(ROW_HL[3].x, 2032, 'func（灰）その他')}
 					<Panel x={30} y={1660} w={170} h={120} tone="teal" title="母集団">
 						{#each [0, 1, 2, 3, 4, 5, 6] as i (i)}
 							<Sphere x={58 + i * 20} y={1748 - (i % 2) * 12} r={9} tone="teal" />

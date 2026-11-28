@@ -1,122 +1,136 @@
 [
  {
+  "inner": 647,
   "step": "0",
   "mode": "watch",
-  "figW": 992,
+  "figW": 952,
   "figH": 709,
-  "over": 23,
+  "over": 21,
   "tokens": 0,
   "dots": 0
  },
  {
+  "inner": 51,
   "step": "1",
   "mode": "watch",
-  "figW": 992,
+  "figW": 952,
   "figH": 709,
-  "over": 1,
+  "over": 0,
   "tokens": 0,
   "dots": 0
  },
  {
+  "inner": 56,
   "step": "2",
   "mode": "watch",
-  "figW": 992,
+  "figW": 952,
   "figH": 709,
-  "over": 7,
+  "over": 1,
   "tokens": 0,
   "dots": 0
  },
  {
+  "inner": 79,
   "step": "3",
   "mode": "watch",
-  "figW": 992,
+  "figW": 952,
   "figH": 709,
-  "over": 3,
+  "over": 1,
   "tokens": 0,
   "dots": 0
  },
  {
+  "inner": 51,
   "step": "4",
   "mode": "watch",
-  "figW": 992,
+  "figW": 952,
+  "figH": 709,
+  "over": 0,
+  "tokens": 0,
+  "dots": 0
+ },
+ {
+  "inner": 51,
+  "step": "5",
+  "mode": "watch",
+  "figW": 952,
   "figH": 709,
   "over": 1,
   "tokens": 0,
   "dots": 0
  },
  {
-  "step": "5",
+  "inner": 79,
+  "step": "6",
   "mode": "watch",
-  "figW": 992,
+  "figW": 952,
+  "figH": 709,
+  "over": 0,
+  "tokens": 0,
+  "dots": 0
+ },
+ {
+  "inner": 129,
+  "step": "7",
+  "mode": "watch",
+  "figW": 952,
+  "figH": 709,
+  "over": 1,
+  "tokens": 0,
+  "dots": 0
+ },
+ {
+  "inner": 125,
+  "step": "8",
+  "mode": "watch",
+  "figW": 952,
+  "figH": 709,
+  "over": 1,
+  "tokens": 0,
+  "dots": 0
+ },
+ {
+  "inner": 202,
+  "step": "9",
+  "mode": "watch",
+  "figW": 952,
   "figH": 709,
   "over": 3,
   "tokens": 0,
   "dots": 0
  },
  {
-  "step": "6",
-  "mode": "watch",
-  "figW": 992,
-  "figH": 709,
-  "over": 0,
-  "tokens": 0,
-  "dots": 0
- },
- {
-  "step": "7",
-  "mode": "watch",
-  "figW": 992,
-  "figH": 709,
-  "over": 10,
-  "tokens": 0,
-  "dots": 0
- },
- {
-  "step": "8",
-  "mode": "watch",
-  "figW": 992,
-  "figH": 709,
-  "over": 1,
-  "tokens": 0,
-  "dots": 0
- },
- {
-  "step": "9",
-  "mode": "watch",
-  "figW": 992,
-  "figH": 709,
-  "over": 9,
-  "tokens": 0,
-  "dots": 0
- },
- {
+  "inner": 0,
   "step": "10",
   "mode": "watch",
-  "figW": 992,
+  "figW": 952,
   "figH": 709,
   "over": 0,
   "tokens": 0,
   "dots": 0
  },
  {
+  "inner": 0,
   "step": "11",
   "mode": "watch",
-  "figW": 992,
+  "figW": 952,
   "figH": 709,
   "over": 0,
   "tokens": 0,
   "dots": 0
  },
  {
+  "inner": 0,
   "step": "11",
   "mode": "lab",
-  "figW": 982,
+  "figW": 952,
   "figH": 787,
   "over": 0,
   "tokens": 0,
   "dots": 0
  },
  {
+  "inner": 220,
   "step": "11",
   "mode": "try",
   "figW": 712,
@@ -126,9 +140,10 @@
   "dots": 0
  },
  {
+  "inner": 0,
   "step": "11",
   "mode": "quiz",
-  "figW": 992,
+  "figW": 952,
   "figH": 787,
   "over": 0,
   "tokens": 0,

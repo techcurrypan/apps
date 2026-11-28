@@ -7,7 +7,7 @@
 	import { markTerms, type Term } from '../../learn/terms.ts';
 	import { MODES, modeAfter, nextLabel, type Mode } from '../../learn/modes.ts';
 	import { countAt, flowAt, frameDt, replay, start, tick, togglePlay } from '../../learn/player.ts';
-	import { metricsUpTo, paraNow, splitNum, stepDur } from '../../learn/view3.ts';
+	import { metricsUpTo, paraNow, splitNum, stepDur, stripOf } from '../../learn/view3.ts';
 	import { sceneAt } from '../../learn/scene/layout.ts';
 	import { tokensAt } from '../../learn/scene/cue.ts';
 	import { localRect, placeTip } from '../../learn/scene/tip.ts';
@@ -196,6 +196,9 @@
 		(st.intro?.terms ?? []).map((id) => termOf.get(id)).filter((t): t is Term => !!t)
 	);
 	const last = $derived(step === lesson.steps.length - 1);
+	const strip = $derived(stripOf(st));
+	/** やってみる：打ちかけの行（頼みの欄と端末の欄で分け合う） */
+	let tryTyped = $state('');
 </script>
 
 <svelte:window onkeydown={onkey} />
@@ -248,65 +251,116 @@
 		{/if}
 	</header>
 
+	{#snippet narr()}
+		{#each st.paras as p, i (i)}
+			<p class="para" class:now={i === para} class:seen={i < para}>
+				{#each markTerms(p, mine) as part, j (j)}{#if part.term}<button
+							type="button"
+							class="tw"
+							data-tw={part.term}>{part.text}</button
+						>{:else}{part.text}{/if}{/each}
+			</p>
+		{/each}
+	{/snippet}
+
 	<div class="main">
-		<section class="fig" aria-label="図">
-			{#if mode === 'watch'}
-				<Scene3
-					{objs}
-					layout={st.layout}
-					prev={prevLayout}
-					t={clock.t}
-					{reduce}
-					label={st.title}
-					hl={st.hl ?? []}
-					links={st.links ?? []}
-					flow={flowAt(now, { reduce })}
-					terms={mine}
-					pods={st.pods}
-					down={st.down}
-				>
-					{#snippet over(uik)}
-						{#if st.intro}
-							<Anatomy x={500} y={110} parts={anatomyParts} t={clock.t} {uik} />
-						{/if}
-						{#each toks as k, i (i)}
-							<Token x={k.x} y={k.y} label={k.name} tone={k.tone} op={k.op} {uik} />
-						{/each}
-					{/snippet}
-				</Scene3>
-				<div class="play">
-					<button
-						type="button"
-						class="hov"
-						data-d="最初から流し直す（R）"
-						onclick={() => (clock = replay(clock))}>↻</button
+		<div class="figcol">
+			<section class="fig" aria-label="図">
+				{#if mode === 'watch'}
+					<Scene3
+						{objs}
+						layout={st.layout}
+						prev={prevLayout}
+						t={clock.t}
+						{reduce}
+						label={st.title}
+						hl={st.hl ?? []}
+						links={st.links ?? []}
+						flow={flowAt(now, { reduce })}
+						terms={mine}
+						pods={st.pods}
+						down={st.down}
 					>
-					<button
-						type="button"
-						class="hov"
-						data-d="動きを止める・動かす（Space）"
-						aria-pressed={!clock.playing}
-						onclick={() => (clock = togglePlay(clock))}>{clock.playing ? '❚❚' : '▶'}</button
-					>
-				</div>
-			{:else if mode === 'lab'}
-				<LabFigure {lab} vals={labVals} t={(now - labAt) / 1000} />
-			{:else if mode === 'try'}
-				{#if tryScene.id === 'k8s'}
-					<TryFigureK8s scene={tryScene} st={tryState} t={now} />
+						{#snippet over(uik)}
+							{#if st.intro}
+								<Anatomy x={500} y={110} parts={anatomyParts} t={clock.t} {uik} />
+							{/if}
+							{#each toks as k, i (i)}
+								<Token x={k.x} y={k.y} label={k.name} tone={k.tone} op={k.op} {uik} />
+							{/each}
+						{/snippet}
+					</Scene3>
+					<div class="play">
+						<button
+							type="button"
+							class="hov"
+							data-d="最初から流し直す（R）"
+							onclick={() => (clock = replay(clock))}>↻</button
+						>
+						<button
+							type="button"
+							class="hov"
+							data-d="動きを止める・動かす（Space）"
+							aria-pressed={!clock.playing}
+							onclick={() => (clock = togglePlay(clock))}>{clock.playing ? '❚❚' : '▶'}</button
+						>
+					</div>
+				{:else if mode === 'lab'}
+					<LabFigure {lab} vals={labVals} t={(now - labAt) / 1000} />
+				{:else if mode === 'try'}
+					{#if tryScene.id === 'k8s'}
+						<TryFigureK8s scene={tryScene} st={tryState} t={now} />
+					{:else}
+						<TryFigure scene={tryScene} st={tryState} t={now} />
+					{/if}
 				{:else}
-					<TryFigure scene={tryScene} st={tryState} t={now} />
+					<RecallFigure
+						q={recall.qs[rqi]}
+						set={lab}
+						answered={rhit !== null}
+						t={now}
+						onhit={(id) => (rhit = id)}
+					/>
 				{/if}
-			{:else}
-				<RecallFigure
-					q={recall.qs[rqi]}
-					set={lab}
-					answered={rhit !== null}
-					t={now}
-					onhit={(id) => (rhit = id)}
-				/>
+			</section>
+			{#if mode === 'watch' && strip}
+				<!-- 図の下の帯：囲みと変わったこと（言葉をそろえるステップは語りも）。右の欄に内側のスクロールを作らない（LS-A6） -->
+				<div class="strip" data-testid="strip">
+					{#if strip.paras}
+						<div class="snarr">{@render narr()}</div>
+					{/if}
+					{#if strip.note}
+						<div class="callout"><b>{strip.note[0]}</b>{strip.note[1]}</div>
+					{/if}
+					{#if strip.changes.length}
+						<div class="chg">
+							<h4>変わったこと</h4>
+							<ul>
+								{#each strip.changes as [m, t], i (i)}
+									<li>
+										<i class="c{m === '+' ? 'p' : m === '-' ? 'm' : 't'}"
+											>{m === '-' ? '−' : m === '~' ? '〜' : '+'}</i
+										>{t}
+									</li>
+								{/each}
+							</ul>
+						</div>
+					{/if}
+				</div>
 			{/if}
-		</section>
+			{#if mode === 'lab'}
+				<!-- 予想の問いは図の下へ（答えると説明が足されて伸びる。右の欄に内側のスクロールを作らない） -->
+				<div class="strip tbrief" data-testid="strip">
+					<LabPanel part="preds" lab={LABS[lab]} />
+				</div>
+			{/if}
+			{#if mode === 'try'}
+				<!-- 頼み・やることは図の下へ。右の欄は見本と端末（640×520 以上。LS-P5。内側のスクロールを作らない） -->
+				<div class="strip tbrief" data-testid="strip">
+					<TryPanel3 scene={tryScene} st={tryState} {onsend} part="brief" bind:typed={tryTyped} />
+				</div>
+			{/if}
+		</div>
 
 		<aside class="side" class:wide={mode === 'try'}>
 			{#if mode === 'watch'}
@@ -329,41 +383,14 @@
 							</dl>
 						</div>
 					{/if}
-					{#each st.paras as p, i (i)}
-						<p class="para" class:now={i === para} class:seen={i < para}>
-							{#each markTerms(p, mine) as part, j (j)}{#if part.term}<button
-										type="button"
-										class="tw"
-										data-tw={part.term}>{part.text}</button
-									>{:else}{part.text}{/if}{/each}
-						</p>
-					{/each}
-					{#if st.intro}
-						<div class="callout"><b>たとえると</b>{st.intro.analogy}</div>
-					{:else if firsts.length}
+					{#if !st.intro}{@render narr()}{/if}
+					{#if !st.intro && firsts.length}
 						<!-- 初めて出る言葉は名前の札で並べ、説明は乗せる・押す・Tab で吹き出しに出す（LS3-T5・H4。内側のスクロールを作らない） -->
 						<div class="words small" data-testid="firsts">
 							<h3>このステップで初めて出る言葉<small>（乗せると説明）</small></h3>
 							<ul class="chips">
 								{#each firsts as t (t.id)}
 									<li><button type="button" class="chip" data-tw={t.id}>{t.t}</button></li>
-								{/each}
-							</ul>
-						</div>
-					{/if}
-					{#if st.callout && !st.intro}
-						<div class="callout"><b>{st.callout[0]}</b>{st.callout[1]}</div>
-					{/if}
-					{#if st.changes}
-						<div class="chg">
-							<h4>変わったこと</h4>
-							<ul>
-								{#each st.changes as [m, t], i (i)}
-									<li>
-										<i class="c{m === '+' ? 'p' : m === '-' ? 'm' : 't'}"
-											>{m === '-' ? '−' : m === '~' ? '〜' : '+'}</i
-										>{t}
-									</li>
 								{/each}
 							</ul>
 						</div>
@@ -375,10 +402,13 @@
 						</details>
 					{/if}
 				</div>
-				<div class="keys">← → ステップ ・ R もう一度 ・ Space 一時停止</div>
 				<div class="sfoot">
-					<button class="back" type="button" disabled={step === 0} onclick={() => go(step - 1)}
-						>←</button
+					<button
+						class="back hov"
+						type="button"
+						data-d="前のステップ（←）"
+						disabled={step === 0}
+						onclick={() => go(step - 1)}>←</button
 					>
 					<button class="next" type="button" data-testid="next" onclick={next}>
 						<span
@@ -392,6 +422,7 @@
 				<div class="sbody" class:fill={mode === 'try'}>
 					{#if mode === 'lab'}
 						<LabPanel
+							part="knobs"
 							lab={LABS[lab]}
 							onchange={(v) => {
 								labVals = v;
@@ -399,7 +430,7 @@
 							}}
 						/>
 					{:else if mode === 'try'}
-						<TryPanel3 scene={tryScene} st={tryState} {onsend} />
+						<TryPanel3 scene={tryScene} st={tryState} {onsend} part="term" bind:typed={tryTyped} />
 					{:else}
 						<RecallPanel3
 							set={recall}
@@ -556,9 +587,54 @@
 		gap: 14px;
 		min-height: 0;
 	}
+	/* 図と、図の下の帯（囲み・変わったこと。言葉をそろえるステップは語りも） */
+	.figcol {
+		flex: 1 1 auto;
+		min-width: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+	}
+	.strip {
+		flex: 0 0 auto;
+		display: flex;
+		gap: 10px;
+		align-items: stretch;
+		font-size: 13.5px;
+		line-height: 1.55;
+	}
+	.strip > div {
+		flex: 1 1 0;
+		min-width: 0;
+		margin: 0;
+		padding: 8px 12px;
+		border-radius: 14px;
+	}
+	.strip .snarr {
+		flex: 3 1 0;
+		padding: 0;
+	}
+	.strip .callout,
+	.strip .chg {
+		flex: 1.5 1 0;
+	}
+	.strip .snarr .para {
+		margin: 0 0 2px;
+		padding: 1px 8px;
+		font-size: 13.5px;
+		line-height: 1.55;
+	}
+	.strip .chg {
+		background: var(--dl-surface);
+		border: 1px solid var(--dl-border);
+	}
+	.strip .chg h4 {
+		margin: 0 0 2px;
+	}
 	.fig {
 		position: relative;
 		flex: 1 1 auto;
+		min-height: 0;
 		min-width: 0;
 		border-radius: 18px;
 		background: var(--dl-scene-bg);
@@ -592,10 +668,24 @@
 	}
 	/* やってみる は端末を大きく（第 19 章・LS-P5） */
 	.side.wide {
-		flex-basis: 680px;
+		flex-basis: 700px;
 	}
-	.fill :global(.out) {
-		height: max(220px, calc(100vh - 560px));
+	.tbrief {
+		display: block;
+		padding: 10px 14px;
+		border-radius: 14px;
+		background: var(--dl-surface);
+		border: 1px solid var(--dl-border);
+	}
+	/* やってみる：右の欄は端末だけで埋める（過去の出力だけがスクロールする） */
+	.sbody.fill {
+		display: flex;
+		flex-direction: column;
+		padding: 12px 14px;
+	}
+	.sbody.fill > :global(.try) {
+		flex: 1 1 auto;
+		min-height: 0;
 	}
 	.sbody {
 		flex: 1 1 auto;
@@ -666,8 +756,8 @@
 		grid-template-columns: 7.5em 1fr;
 		gap: 6px;
 		font-size: 13px;
-		line-height: 1.5;
-		padding: 2px 0;
+		line-height: 1.4;
+		padding: 1px 0;
 	}
 	.words dt {
 		font-weight: 700;
@@ -780,6 +870,7 @@
 	}
 	.next small {
 		display: block;
+		color: inherit;
 		font-size: 12px;
 		opacity: 0.8;
 	}

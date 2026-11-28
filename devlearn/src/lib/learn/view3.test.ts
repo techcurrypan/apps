@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { metricsUpTo, paraNow, stepDur, type StepLike } from './view3.ts';
+import { metricsUpTo, paraNow, stepDur, stripOf, type StepLike } from './view3.ts';
 
 const steps: StepLike[] = [
 	{ metrics: { cwnd: '10 MSS', rtt: '30 ms' }, at: [0, 1500], dur: 4000 },
@@ -26,5 +26,19 @@ describe('stepDur（ステップの動きの長さ）', () => {
 	it('書いた長さ、無ければ 4000', () => {
 		expect(stepDur(steps[0])).toBe(4000);
 		expect(stepDur(steps[2])).toBe(4000);
+	});
+});
+
+describe('stripOf（図の下の帯に置く物。右の欄に内側のスクロールを作らない）', () => {
+	it('ふつうのステップ：囲みと変わったことを帯に、語りは右の欄', () => {
+		const r = stripOf({ paras: ['a'], callout: ['なぜ', 'b'], changes: [['+', 'c']] });
+		expect(r).toEqual({ paras: false, note: ['なぜ', 'b'], changes: [['+', 'c']] });
+	});
+	it('言葉をそろえるステップ：語りとたとえを帯に（右の欄は言葉の一覧が一番上を占める）', () => {
+		const r = stripOf({ paras: ['a'], intro: { analogy: 'たとえ' }, changes: [['+', 'c']] });
+		expect(r).toEqual({ paras: true, note: ['たとえると', 'たとえ'], changes: [['+', 'c']] });
+	});
+	it('何も無ければ帯を出さない', () => {
+		expect(stripOf({ paras: ['a'] })).toBeNull();
 	});
 });

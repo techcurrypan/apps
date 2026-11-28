@@ -2,8 +2,13 @@
 	// 試す（learn-standard.md 第 19 章）：つまみ 2〜4 個・結果の表・予想の問い 2 つ。
 	// 結果はつまみの値だけから計算し直す（lab.ts。乱数なし）。つまみには何の値か・単位・範囲の説明（LS3-H5）
 	import { answerPred, snapKnob, type Lab } from '../../learn/lab.ts';
-	type Props = { lab: Lab; onchange?: (v: Record<string, number>) => void };
-	let { lab, onchange }: Props = $props();
+	// part：knobs＝題・つまみ・結果の表（右の欄）、preds＝予想の問い（図の下の帯。内側のスクロールを作らない）
+	type Props = {
+		lab: Lab;
+		onchange?: (v: Record<string, number>) => void;
+		part?: 'all' | 'knobs' | 'preds';
+	};
+	let { lab, onchange, part = 'all' }: Props = $props();
 	let vals = $derived<Record<string, number>>(Object.fromEntries(lab.knobs.map((k) => [k.k, k.v])));
 	const rows = $derived(Object.keys(vals).length ? lab.results(vals) : []);
 	let picked = $derived<(number | null)[]>(lab.preds.map(() => null));
@@ -15,64 +20,76 @@
 	}
 </script>
 
-<section class="lab" aria-label="試す：{lab.title}">
-	<h3>{lab.title}</h3>
-	<p class="intro">{lab.intro}</p>
-	<div class="knobs">
-		{#each lab.knobs as k (k.k)}
-			<label title={k.d} data-knob={k.k}>
-				<span class="name">{k.label}</span>
-				<input
-					type="range"
-					min={k.min}
-					max={k.max}
-					step={k.step}
-					value={vals[k.k] ?? k.v}
-					aria-describedby="knob-{k.k}"
-					oninput={(e) => set(k.k, Number(e.currentTarget.value))}
-				/>
-				<output>{vals[k.k] ?? k.v}{k.unit}</output>
-				<small id="knob-{k.k}">{k.d}</small>
-			</label>
-		{/each}
-	</div>
-	<table class="res">
-		<tbody>
-			{#each rows as r (r[0])}
-				<tr data-term={r[2]}><th>{r[0]}</th><td>{r[1]}</td></tr>
+<section class="lab p-{part}" aria-label="試す：{lab.title}">
+	{#if part !== 'preds'}
+		<h3>{lab.title}</h3>
+		<p class="intro">{lab.intro}</p>
+		<div class="knobs">
+			{#each lab.knobs as k (k.k)}
+				<label title={k.d} data-knob={k.k}>
+					<span class="name">{k.label}</span>
+					<input
+						type="range"
+						min={k.min}
+						max={k.max}
+						step={k.step}
+						value={vals[k.k] ?? k.v}
+						aria-describedby="knob-{k.k}"
+						oninput={(e) => set(k.k, Number(e.currentTarget.value))}
+					/>
+					<output>{vals[k.k] ?? k.v}{k.unit}</output>
+					<small id="knob-{k.k}">{k.d}</small>
+				</label>
 			{/each}
-		</tbody>
-	</table>
-	<ol class="preds">
-		{#each lab.preds as p, i (p.q)}
-			{@const a = picked[i] === null || picked[i] === undefined ? null : answerPred(p, picked[i])}
-			<li>
-				<p class="q">{p.q}</p>
-				<div class="opts">
-					{#each p.opts as o, j (o)}
-						<button
-							type="button"
-							class:on={picked[i] === j}
-							aria-pressed={picked[i] === j}
-							onclick={() => (picked = picked.map((x, q) => (q === i ? j : x)))}>{o}</button
-						>
-					{/each}
-				</div>
-				{#if a}
-					<p class="ans" class:ok={a.ok} role="status">
-						<b>{a.ok ? '当たり' : '外れ'}</b>
-						{a.why}<br /><span class="try">試してみる：{a.tryit}</span>
-					</p>
-				{/if}
-			</li>
-		{/each}
-	</ol>
+		</div>
+		<table class="res">
+			<tbody>
+				{#each rows as r (r[0])}
+					<tr data-term={r[2]}><th>{r[0]}</th><td>{r[1]}</td></tr>
+				{/each}
+			</tbody>
+		</table>
+	{/if}
+	{#if part !== 'knobs'}
+		<ol class="preds">
+			{#each lab.preds as p, i (p.q)}
+				{@const a = picked[i] === null || picked[i] === undefined ? null : answerPred(p, picked[i])}
+				<li>
+					<p class="q">{p.q}</p>
+					<div class="opts">
+						{#each p.opts as o, j (o)}
+							<button
+								type="button"
+								class:on={picked[i] === j}
+								aria-pressed={picked[i] === j}
+								onclick={() => (picked = picked.map((x, q) => (q === i ? j : x)))}>{o}</button
+							>
+						{/each}
+					</div>
+					{#if a}
+						<p class="ans" class:ok={a.ok} role="status">
+							<b>{a.ok ? '当たり' : '外れ'}</b>
+							{a.why}<br /><span class="try">試してみる：{a.tryit}</span>
+						</p>
+					{/if}
+				</li>
+			{/each}
+		</ol>
+	{/if}
 </section>
 
 <style>
 	.lab {
 		font: 14px/1.6 var(--dl-font);
 		color: var(--dl-ink);
+	}
+	/* 図の下の帯では 2 つの問いを横に並べる */
+	.p-preds .preds {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 16px;
+		font-size: 13.5px;
+		line-height: 1.5;
 	}
 	h3 {
 		margin: 0 0 4px;

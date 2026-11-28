@@ -18,13 +18,16 @@ type Probe = {
 	dots: number;
 	/** 内側のスクロールの量（px。端末の過去の出力 .out は除く。CLAUDE.md 第 9 章） */
 	inner: number;
+	/** やってみる の端末の大きさ（640×520 以上。LS-P5） */
+	term?: string;
 };
 const PROBE = `(() => {
 	const v = document.querySelector('[data-testid=learn-v3]');
 	const f = v?.querySelector('.fig')?.getBoundingClientRect();
 	const over = [...document.querySelectorAll('.v3 *')].filter((e) => { const r = e.getBoundingClientRect(); return r.width > 0 && (r.right > innerWidth + 1 || r.bottom > innerHeight + 1); }).length;
 	const inner = Math.max(0, ...[...document.querySelectorAll('.v3 *')].filter((e) => !e.closest('.out') && /auto|scroll/.test(getComputedStyle(e).overflowY)).map((e) => e.scrollHeight - e.clientHeight));
-	return { inner, step: v?.getAttribute('data-step') ?? '', mode: v?.getAttribute('data-mode') ?? '', figW: Math.round(f?.width ?? 0), figH: Math.round(f?.height ?? 0), over, tokens: document.querySelectorAll('.fig [data-token], .fig g.token').length, dots: document.querySelectorAll('.fig [data-flow]').length };
+	const tm = document.querySelector('.side div.term')?.getBoundingClientRect();
+	return { inner, term: tm ? Math.round(tm.width) + 'x' + Math.round(tm.height) : undefined, step: v?.getAttribute('data-step') ?? '', mode: v?.getAttribute('data-mode') ?? '', figW: Math.round(f?.width ?? 0), figH: Math.round(f?.height ?? 0), over, tokens: document.querySelectorAll('.fig [data-token], .fig g.token').length, dots: document.querySelectorAll('.fig [data-flow]').length };
 })()`;
 
 async function main() {
