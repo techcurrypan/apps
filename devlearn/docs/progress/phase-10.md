@@ -8,7 +8,8 @@
 2. この頁の「10-P」の表（下）。見本 1（net-101）・見本 2（k8s-101）とも `/lesson/<id>` で第 3 版の画面で開く
 3. 手順 3 は済（27 回目で A・B とも 20/20）。部品を変えたら `look-kit.ts` で撮り直し、同じ判定を頼む
 4. **内側のスクロール（CLAUDE.md 第 9 章）は済**：公開 URL（配信 `bc5350a`）の `look-v3.ts` で net-101・k8s-101 の 12 ステップ・4 つの使い方とも `inner` 0・はみ出し 0、図 952×536 以上、端末 672×542。「中身まで」は開くと図の下の方に札で重ねる（`look-v3.ts` が開いた時も測る）。新しい題も図の下の帯の形で書く
-5. 手順 9 の残り：`prg`（mem）と `sta`（stat）の題を第 3 版で（試作 `learn11-src/mem.js`・`stat.js`。Scene3 は list・panel・bar・sphere をまだ描かない → 足す）、ステップ固有の札。`window.__l3` は `92205f5` で入った（`ui/learn3/probe.ts`）。公開 URL の `look-learn.ts --scene net-101,k8s-101` で S3（物の幅）の × 6 件 → 物の倍率を上げた（次の配信で測り直す）。続けて `--loop`・`--hover`・`--terms`・`--perf` を本番で通す
+5. 手順 9 の残り：`prg`（mem。見せ方の型 memory。P-6）と `sta`（stat。型 chart。P-7）の題を第 3 版で書く（試作 `learn11-src/mem.js`・`stat.js` を手本に。12 ステップ・言葉の一覧・出典と版・やってみる・思い出す。図の下の帯の形）。Scene3 は `list` を描ける（`96bbe50`。ステップの `lists`）。panel・bar・sphere はまだ → 足す。ステップ固有の札も
+   - 本番の測り（公開 URL・配信 `b14dfb2`。`look-learn.ts`）：net-101・k8s-101 の `--scene`（全ステップ）・`--loop`・`--hover`・`--terms`・`--perf` が STEP=3 と 8 で全て o（k8s の 9 の M4 は、台の中心が Pod に隠れて乗せる点が Pod に当たっていた → 測りを物の見える所に乗せるよう直して o）
 6. 手順 10 の判定：`npx tsx scripts/look-v3.ts <URL> <id>` で公開 URL を撮り、試作の P-1〜P-9 と比べて判定者 2 人に頼む
 7. `explanation-standard.md` 第 10・11 章・検査 41〜48（本文を書く時）
 

@@ -323,7 +323,13 @@ export const SNAP_ANATOMY = `(() => {
 export const HOVER_TARGETS = `(() => {
 	const A = window.__l3; const c = (e) => { const r = e.getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + Math.min(r.height / 2, 30) }; };
 	const out = [];
-	for (const id of A.objs()) { const e = A.objEl(id); if (e) { const r = e.getBoundingClientRect(); out.push({ kind: 'obj', id, x: r.x + r.width / 2, y: r.y + r.height * 0.45 }); } }
+	// 物の見えている所に乗せる（台の上の Pod など、上に重なる物に当たる点は避ける）。中心に近い点から探す
+	const own = (e, x, y) => { const h = document.elementFromPoint(x, y); return !!h && h.closest('[data-obj]') === e; };
+	for (const id of A.objs()) { const e = A.objEl(id); if (!e) continue; const r = e.getBoundingClientRect();
+		let p = { x: r.x + r.width / 2, y: r.y + r.height * 0.45 };
+		if (!own(e, p.x, p.y)) { const c = []; for (let i = 1; i < 10; i++) for (let j = 1; j < 10; j++) c.push({ x: r.x + r.width * i / 10, y: r.y + r.height * j / 10 });
+			c.sort((u, v) => Math.hypot(u.x - p.x, u.y - p.y) - Math.hypot(v.x - p.x, v.y - p.y)); p = c.find((q) => own(e, q.x, q.y)) || p; }
+		out.push({ kind: 'obj', id, x: p.x, y: p.y }); }
 	[...document.querySelectorAll('#steps button, [data-l3-steps] button')].slice(0, 3).forEach((b, i) => out.push({ kind: 'step', id: String(i + 1), ...c(b) }));
 	[...document.querySelectorAll('#modes button, [data-l3-modes] button')].forEach((b) => out.push({ kind: 'mode', id: b.textContent.trim().slice(0, 8), ...c(b) }));
 	[...document.querySelectorAll('#metrics .met, [data-l3-metrics] [data-metric]')].forEach((m) => out.push({ kind: 'metric', id: m.textContent.trim().slice(0, 10), ...c(m) }));
