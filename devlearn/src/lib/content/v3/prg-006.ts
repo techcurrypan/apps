@@ -294,7 +294,9 @@ export const PRG_006_V3: V3Lesson = {
 				{ from: 'vxs', to: 'L1', kind: 'ref' }
 			],
 			lists: { L1: { vals: ['1', '2', '3'] } },
-			tokens: [{ name: '在りか', tone: 'yellow', path: ['va', 'vxs'], at: 600, d: 1400 }],
+			tokens: [
+				{ name: '在りか', tone: 'yellow', path: ['va', 'vxs'], at: 600, d: 1400, gone: true }
+			],
 			metrics: { objs: '1', same: 'true', out: '[ 1, 2, 3 ]', cap: '20' },
 			callout: ['ポイント', '関数に渡るのも在りか。xs は a の物を指す 3 枚目の名札になる。'],
 			changes: [
@@ -308,8 +310,9 @@ export const PRG_006_V3: V3Lesson = {
 			kind: 'internals',
 			short: '新しい物',
 			notes: [
-				{ obj: 'L1', text: '指す名前 1 つ（a）', tone: 'yellow', dy: -115 },
-				{ obj: 'L2', text: '新しい物 ・ 指す名前 1 つ（xs）', tone: 'blue', dy: -115 }
+				{ obj: 'L1', text: '指す名前 2 つ（a・b）', tone: 'yellow', dy: -115 },
+				{ obj: 'L2', text: '新しい物 ・ 指す名前 1 つ（xs）', tone: 'blue', dy: -115, at: 2600 },
+				{ obj: 'vxs', text: 'xs：#1 → #2 に付け替え', tone: 'teal', dy: 75, at: 2600 }
 			],
 			title: 'xs = [...xs, 4] は、新しい配列を作って xs を付け替える',
 			paras: [
@@ -319,10 +322,11 @@ export const PRG_006_V3: V3Lesson = {
 			],
 			at: [0, 2200, 4400],
 			dur: 6800,
-			code: { cur: [7, 8], done: [1, 2, 3, 4, 6, 10] },
+			code: { cur: [7], done: [1, 2, 3, 4, 6, 10] },
 			layout: {
 				mod: [480, 170, 0.6],
-				va: [480, 162],
+				va: [455, 140],
+				vb: [510, 205],
 				fadd: [480, 440, 0.6],
 				vxs: [480, 432],
 				L1: [800, 170, 0.85],
@@ -331,12 +335,13 @@ export const PRG_006_V3: V3Lesson = {
 			hl: ['L2'],
 			links: [
 				{ from: 'va', to: 'L1', kind: 'ref' },
+				{ from: 'vb', to: 'L1', kind: 'ref' },
 				{ from: 'vxs', to: 'L2', kind: 'ref' }
 			],
 			lists: { L1: { vals: ['1', '2', '3'] }, L2: { vals: ['1', '2', '3', '4'], newIdx: 3 } },
 			tokens: [
-				{ name: '1, 2, 3', tone: 'blue', path: ['L1', 'L2'], at: 500, d: 1500 },
-				{ name: '在りか', tone: 'yellow', path: ['L2', 'vxs'], at: 2600, d: 1300 }
+				{ name: '1, 2, 3', tone: 'blue', path: ['L1', 'L2'], at: 500, d: 1500, gone: true },
+				{ name: '在りか', tone: 'yellow', path: ['L2', 'vxs'], at: 2600, d: 1300, gone: true }
 			],
 			metrics: { objs: '2', same: 'true', out: '[ 1, 2, 3 ]', cap: '20' },
 			callout: ['ポイント', '= は名札を付け替えるだけ。物の中身は変えない。'],
@@ -350,7 +355,9 @@ export const PRG_006_V3: V3Lesson = {
 		{
 			kind: 'fail',
 			short: '失敗',
-			notes: [{ obj: 'L1', text: '指す名前 2 つ（a・xs）→ a も変わる', tone: 'red', dy: -115 }],
+			notes: [
+				{ obj: 'L1', text: '指す名前 3 つ（a・b・xs）→ a も b も変わる', tone: 'red', dy: -115 }
+			],
 			title: '中で xs.push(4) と書くと、呼んだ側の a まで変わる',
 			paras: [
 				'add の中を xs.push(4) にすると、配列 #1 そのものに 4 が足される。',
@@ -379,7 +386,8 @@ export const PRG_006_V3: V3Lesson = {
 			},
 			layout: {
 				mod: [480, 170, 0.6],
-				va: [480, 162],
+				va: [455, 140],
+				vb: [510, 205],
 				fadd: [480, 440, 0.6],
 				vxs: [480, 432],
 				L1: [810, 300]
@@ -387,6 +395,7 @@ export const PRG_006_V3: V3Lesson = {
 			hl: ['L1'],
 			links: [
 				{ from: 'va', to: 'L1', kind: 'ref' },
+				{ from: 'vb', to: 'L1', kind: 'ref' },
 				{ from: 'vxs', to: 'L1', kind: 'ref' }
 			],
 			lists: { L1: { vals: ['1', '2', '3', '4'], newIdx: 3 } },

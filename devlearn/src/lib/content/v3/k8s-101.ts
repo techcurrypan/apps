@@ -54,26 +54,70 @@ export const K8S_101_V3: V3Lesson = {
 	],
 	objs: {
 		kubectl: { kind: 'laptop', name: 'kubectl（あなたの端末）', tone: 'gray', term: 'kubectl' },
-		api: { kind: 'hex', name: 'kube-apiserver', tone: 'teal', glyph: '⇄', term: 'apiserver' },
-		etcd: { kind: 'db', name: 'etcd（帳簿）', tone: 'purple', term: 'etcd' },
+		api: {
+			kind: 'hex',
+			name: 'kube-apiserver',
+			tone: 'teal',
+			glyph: '⇄',
+			term: 'apiserver',
+			desc: 'ただ 1 つの入口'
+		},
+		etcd: {
+			kind: 'db',
+			name: 'etcd（帳簿）',
+			tone: 'purple',
+			term: 'etcd',
+			desc: '望む状態を書き留める'
+		},
 		ctrl: {
 			kind: 'block',
 			name: 'controller-manager',
 			tone: 'blue',
 			glyph: '↻',
-			term: 'ctrl'
+			term: 'ctrl',
+			desc: '数を合わせる係'
 		},
-		sched: { kind: 'block', name: 'kube-scheduler', tone: 'blue', glyph: '⌖', term: 'sched' },
-		kubelet: { kind: 'func', name: 'kubelet（node-2）', tone: 'blue', glyph: 'ƒ', term: 'kubelet' },
-		crt: { kind: 'func', name: 'containerd', tone: 'gray', glyph: '▣', term: 'cri' },
-		oom: { kind: 'func', name: 'OOM killer（Linux）', tone: 'red', glyph: '!', term: 'oom' },
+		sched: {
+			kind: 'block',
+			name: 'kube-scheduler',
+			tone: 'blue',
+			glyph: '⌖',
+			term: 'sched',
+			desc: '置くノードを決める'
+		},
+		kubelet: {
+			kind: 'func',
+			name: 'kubelet（node-2）',
+			tone: 'blue',
+			glyph: 'ƒ',
+			term: 'kubelet',
+			desc: 'Pod を起こして見張る'
+		},
+		crt: {
+			kind: 'func',
+			name: 'containerd',
+			tone: 'gray',
+			glyph: '▣',
+			term: 'cri',
+			desc: 'コンテナを動かす'
+		},
+		oom: {
+			kind: 'func',
+			name: 'OOM killer（Linux）',
+			tone: 'red',
+			glyph: '!',
+			term: 'oom',
+			desc: '上限を超えたら殺す'
+		},
 		n1: { kind: 'platform', name: 'node-1', tone: 'green', term: 'node' },
 		n2: { kind: 'platform', name: 'node-2', tone: 'green', term: 'node' },
 		n3: { kind: 'platform', name: 'node-3', tone: 'green', term: 'node' },
 		pa: { kind: 'pod', name: 'web-a', term: 'pod' },
 		pb: { kind: 'pod', name: 'web-b', term: 'pod' },
 		pc: { kind: 'pod', name: 'web-c', term: 'pod' },
-		pd: { kind: 'pod', name: 'web-d', term: 'pod' }
+		pd: { kind: 'pod', name: 'web-d', term: 'pod' },
+		b1: { kind: 'pod', name: 'batch-1', term: 'pod' },
+		b2: { kind: 'pod', name: 'batch-2', term: 'pod' }
 	},
 	metrics: [
 		{ key: 'want', label: '望む数', term: 'replicas' },
@@ -283,24 +327,42 @@ export const K8S_101_V3: V3Lesson = {
 			at: [0, 1700, 3600],
 			dur: 6200,
 			layout: {
+				etcd: [150, 130, 0.62],
 				sched: [500, 120, 0.72],
-				n1: [175, 430, 0.5],
-				n2: [500, 450, 0.5],
-				n3: [825, 430, 0.5],
-				pa: [500, 444, 0.5]
+				n1: [170, 430, 0.7],
+				n2: [500, 445, 0.7],
+				n3: [830, 430, 0.7],
+				b1: [125, 420, 0.62],
+				b2: [215, 440, 0.62],
+				pa: [500, 440, 0.62]
 			},
-			pods: { pa: 'paper' },
+			pods: { pa: 'paper', b1: 'gray', b2: 'gray' },
 			hl: ['sched', 'n2'],
+			subs: { n1: 'CPU 要求 3.8 / 4', n2: 'CPU 要求 1.0 / 4', n3: 'CPU 要求 1.25 / 4' },
+			crosses: [{ obj: 'n1', at: 3000 }],
+			notes: [
+				{ obj: 'n1', text: 'ふるい：3.8 + 0.25 > 4', tone: 'red', dy: -150, at: 3000 },
+				{ obj: 'n3', text: '✓ 点 82', tone: 'orange', dy: -150, at: 4700 },
+				{ obj: 'n2', text: '✓ 点 91 → ここに決める', tone: 'green', dy: -150, at: 4900 }
+			],
 			links: [
+				{ from: 'etcd', to: 'sched', kind: 'watch' },
 				{ from: 'sched', to: 'n1' },
 				{ from: 'sched', to: 'n2' },
 				{ from: 'sched', to: 'n3' }
 			],
 			tokens: [
-				{ name: '✗ 4.05 > 4', tone: 'red', path: ['sched', 'n1'], at: 1700, d: 1300 },
-				{ name: '点 82', tone: 'orange', path: ['sched', 'n3'], at: 3600, d: 1100 },
-				{ name: '点 91', tone: 'green', path: ['sched', 'n2'], at: 3800, d: 1100 },
-				{ name: 'bind', tone: 'blue', path: ['sched', 'pa'], at: 5000, d: 900 }
+				{ name: 'CPU 0.25', tone: 'red', path: ['sched', 'n1'], at: 1700, d: 1300, gone: true },
+				{
+					name: '点を付ける',
+					tone: 'orange',
+					path: ['sched', 'n3'],
+					at: 3600,
+					d: 1100,
+					gone: true
+				},
+				{ name: '点を付ける', tone: 'green', path: ['sched', 'n2'], at: 3800, d: 1100, gone: true },
+				{ name: 'bind', tone: 'blue', path: ['sched', 'pa'], at: 5000, d: 900, gone: true }
 			],
 			metrics: { want: '3', ready: '0' },
 			callout: [
@@ -412,16 +474,28 @@ export const K8S_101_V3: V3Lesson = {
 			},
 			pods: { pc: 'dead' },
 			hl: ['oom'],
+			meters: [{ obj: 'pc', label: 'メモリ', val: 300, max: 256, unit: 'Mi', dy: -120 }],
+			notes: [
+				{ obj: 'pc', text: 'CrashLoopBackOff（待っている）', tone: 'red', dy: -200, at: 3000 }
+			],
+			band: {
+				x: 330,
+				y: 560,
+				label: '待ち（秒）',
+				segs: ['10', '20', '40', '80', '160', '300'],
+				at: 3000,
+				every: 550
+			},
 			links: [
 				{ from: 'oom', to: 'pc' },
 				{ from: 'kubelet', to: 'pc', both: true }
 			],
 			tokens: [
-				{ name: '殺す', tone: 'red', path: ['oom', 'pc'], at: 600, d: 1100 },
-				{ name: '終了 137', tone: 'red', path: ['pc', 'kubelet'], at: 1900, d: 1000 },
-				{ name: '10 秒後に起こす', tone: 'orange', path: ['kubelet', 'pc'], at: 3100, d: 1100 },
-				{ name: '殺す', tone: 'red', path: ['oom', 'pc'], at: 4500, d: 900 },
-				{ name: '20 秒待つ', tone: 'orange', path: ['pc', 'kubelet'], at: 5500, d: 800 }
+				{ name: '殺す', tone: 'red', path: ['oom', 'pc'], at: 600, d: 1100, gone: true },
+				{ name: '終了 137', tone: 'red', path: ['pc', 'kubelet'], at: 1900, d: 1000, gone: true },
+				{ name: '起こす', tone: 'orange', path: ['kubelet', 'pc'], at: 3100, d: 1100, gone: true },
+				{ name: '殺す', tone: 'red', path: ['oom', 'pc'], at: 4500, d: 900, gone: true },
+				{ name: '終了 137', tone: 'red', path: ['pc', 'kubelet'], at: 5500, d: 800, gone: true }
 			],
 			metrics: { want: '3', ready: '2', restarts: '5 回', wait: '300 秒' },
 			callout: [

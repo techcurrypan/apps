@@ -177,4 +177,69 @@ describe('検査 41〜48（checkV3）', () => {
 		l.steps[1].notes = [{ obj: 'nope', text: 'cwnd 10' }];
 		expect(run(l).some((p) => p.check === 48 && p.msg.includes('札'))).toBe(true);
 	});
+	it('48：×・メーター・溝の荷物は構図にある物に、札の板と待ち時間の帯は 1000×600 の中に', () => {
+		const l = ok();
+		l.steps[1].crosses = [{ obj: 'kern' }];
+		l.steps[1].meters = [{ obj: 'kern', label: 'メモリ', val: 300, max: 256, unit: 'Mi' }];
+		l.steps[1].queues = { kern: ['A', 'B'] };
+		l.steps[1].cards = [{ x: 600, y: 60, title: '条件', rows: [{ text: 'cwnd', ok: false }] }];
+		l.steps[1].band = { x: 300, y: 560, label: '待ち', segs: ['10', '20'] };
+		expect(nums(l)).not.toContain(48);
+		l.steps[1].crosses = [{ obj: 'nope' }];
+		l.steps[1].meters = [{ obj: 'nope2', label: 'メモリ', val: 1, max: 2, unit: 'Mi' }];
+		l.steps[1].queues = { nope3: ['A'] };
+		l.steps[1].cards = [{ x: 900, y: 60, w: 240, title: '条件', rows: [] }];
+		l.steps[1].band = { x: 300, y: 640, label: '待ち', segs: ['10'] };
+		const msgs = run(l)
+			.filter((p) => p.check === 48)
+			.map((p) => p.msg)
+			.join(' / ');
+		for (const k of ['nope', 'nope2', 'nope3', '札の板', '待ち時間の帯']) expect(msgs).toContain(k);
+	});
+	it('48：台（platform）の上の Pod は台の部材で、物の数に入れない', () => {
+		const l = ok();
+		l.objs = {
+			...l.objs,
+			n1: { kind: 'platform', name: 'node-1' },
+			n2: { kind: 'platform', name: 'node-2' },
+			n3: { kind: 'platform', name: 'node-3' },
+			p1: { kind: 'pod', name: 'a' },
+			p2: { kind: 'pod', name: 'b' },
+			p3: { kind: 'pod', name: 'c' },
+			p4: { kind: 'pod', name: 'd' }
+		};
+		l.steps[1].layout = {
+			n1: [170, 400, 0.7],
+			n2: [500, 400, 0.7],
+			n3: [830, 400, 0.7],
+			p1: [130, 390, 0.6],
+			p2: [210, 410, 0.6],
+			p3: [500, 400, 0.6],
+			p4: [830, 400, 0.6]
+		};
+		expect(run(l).filter((p) => p.check === 48 && p.msg.includes('個'))).toEqual([]);
+	});
+	it('48：フレームの上の変数はフレームの部材で、物の数に入れない', () => {
+		const l = ok();
+		l.objs = {
+			...l.objs,
+			f1: { kind: 'frame', name: '外側' },
+			f2: { kind: 'frame', name: 'add' },
+			v1: { kind: 'var', name: 'a' },
+			v2: { kind: 'var', name: 'b' },
+			v3: { kind: 'var', name: 'xs' },
+			L1: { kind: 'list', name: '#1' },
+			L2: { kind: 'list', name: '#2' }
+		};
+		l.steps[1].layout = {
+			f1: [480, 170, 0.6],
+			v1: [455, 140],
+			v2: [510, 205],
+			f2: [480, 440, 0.6],
+			v3: [480, 432],
+			L1: [800, 170, 0.85],
+			L2: [800, 440, 0.85]
+		};
+		expect(run(l).filter((p) => p.check === 48 && p.msg.includes('個'))).toEqual([]);
+	});
 });

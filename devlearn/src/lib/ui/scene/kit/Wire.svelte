@@ -11,7 +11,7 @@
 		type Pt,
 		type WireKind
 	} from '../../../learn/scene/wire.ts';
-	import { col, edge } from './paint';
+	import { col, edge, type Tone } from './paint';
 	type Props = {
 		a: Pt;
 		b: Pt;
@@ -24,6 +24,8 @@
 		p?: number | null;
 		uik?: number;
 		op?: number;
+		/** 線の色（無ければ線の種類の色。参照の矢印は変数の色） */
+		color?: Tone;
 	};
 	let {
 		a,
@@ -34,10 +36,11 @@
 		both = false,
 		p = null,
 		uik = 1,
-		op = 1
+		op = 1,
+		color
 	}: Props = $props();
 	const t = $derived(trim(a, b, ia, ib));
-	const tone = $derived(WIRE_TONE[kind]);
+	const tone = $derived(color ?? WIRE_TONE[kind]);
 	const dots = $derived(dotsAt(t, p, both));
 	const head = (from: Pt, to: Pt) => {
 		const L = Math.hypot(to.x - from.x, to.y - from.y) || 1;

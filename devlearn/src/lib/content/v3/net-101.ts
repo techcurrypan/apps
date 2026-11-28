@@ -49,36 +49,112 @@ export const NET_101_V3: V3Lesson = {
 		'rto'
 	],
 	objs: {
-		app: { kind: 'laptop', name: 'send(fd, buf, 65536)', tone: 'blue', term: 'send' },
+		app: {
+			kind: 'laptop',
+			name: 'send(fd, buf, 65536)',
+			tone: 'blue',
+			term: 'send',
+			desc: 'あなたのプログラム'
+		},
 		kern: {
 			kind: 'func',
 			name: 'カーネル（OS の中心）',
 			tone: 'blue',
 			glyph: 'OS',
-			term: 'kernel'
+			term: 'kernel',
+			desc: '部品を動かす係'
 		},
-		smsg: { kind: 'func', name: 'tcp_sendmsg_locked()', tone: 'blue', glyph: 'ƒ', term: 'sendmsg' },
-		wq: { kind: 'queue', name: '送信キュー', tone: 'teal', term: 'sendq' },
-		xmit: { kind: 'func', name: 'tcp_write_xmit()', tone: 'blue', glyph: '?', term: 'xmit' },
-		tx: { kind: 'func', name: 'tcp_transmit_skb()', tone: 'blue', glyph: 'ƒ', term: 'txskb' },
-		rtx: { kind: 'queue', name: '再送キュー', tone: 'teal', term: 'rtxq' },
-		ipq: { kind: 'func', name: 'ip_queue_xmit()', tone: 'gray', glyph: 'IP', term: 'ipq' },
-		fq: { kind: 'queue', name: 'qdisc（fq）', tone: 'teal', term: 'qdisc' },
-		ring: { kind: 'ring', name: '送信リング', tone: 'gray', term: 'ring' },
-		nic: { kind: 'nic', name: 'NIC', tone: 'purple', term: 'nic' },
-		irq: { kind: 'func', name: '割り込み（hardirq）', tone: 'red', glyph: '⚡', term: 'irq' },
-		gro: { kind: 'func', name: 'NAPI と GRO', tone: 'orange', glyph: '⇉', term: 'gro' },
-		ack: { kind: 'func', name: 'tcp_ack()', tone: 'orange', glyph: '✓', term: 'tcpack' },
-		rnic: { kind: 'nic', name: '受け手の NIC', tone: 'purple', term: 'nic' },
-		rgro: { kind: 'func', name: '受け手の GRO', tone: 'orange', glyph: '⇉', term: 'gro' },
+		smsg: {
+			kind: 'func',
+			name: 'tcp_sendmsg_locked()',
+			tone: 'blue',
+			glyph: 'ƒ',
+			term: 'sendmsg',
+			desc: 'データを写して小分けにする'
+		},
+		wq: { kind: 'queue', name: '送信キュー', tone: 'teal', term: 'sendq', desc: '送る順を待つ列' },
+		xmit: {
+			kind: 'func',
+			name: 'tcp_write_xmit()',
+			tone: 'blue',
+			glyph: '?',
+			term: 'xmit',
+			desc: '送るか待つかを決める'
+		},
+		tx: {
+			kind: 'func',
+			name: 'tcp_transmit_skb()',
+			tone: 'blue',
+			glyph: 'ƒ',
+			term: 'txskb',
+			desc: 'TCP の見出しを付ける'
+		},
+		rtx: { kind: 'queue', name: '再送キュー', tone: 'teal', term: 'rtxq', desc: '返事を待つ控え' },
+		ipq: {
+			kind: 'func',
+			name: 'ip_queue_xmit()',
+			tone: 'gray',
+			glyph: 'IP',
+			term: 'ipq',
+			desc: '宛先の見出しを付ける'
+		},
+		fq: {
+			kind: 'queue',
+			name: 'qdisc（fq）',
+			tone: 'teal',
+			term: 'qdisc',
+			desc: '送る順と速さを整える'
+		},
+		ring: {
+			kind: 'ring',
+			name: '送信リング',
+			tone: 'gray',
+			term: 'ring',
+			desc: 'NIC が読み取る棚'
+		},
+		nic: { kind: 'nic', name: 'NIC', tone: 'purple', term: 'nic', desc: '線につながる部品' },
+		irq: {
+			kind: 'func',
+			name: '割り込み（hardirq）',
+			tone: 'red',
+			glyph: '⚡',
+			term: 'irq',
+			desc: 'NIC が CPU を呼ぶ'
+		},
+		gro: {
+			kind: 'func',
+			name: 'NAPI と GRO',
+			tone: 'orange',
+			glyph: '⇉',
+			term: 'gro',
+			desc: '着いた塊をまとめる'
+		},
+		ack: {
+			kind: 'func',
+			name: 'tcp_ack()',
+			tone: 'orange',
+			glyph: '✓',
+			term: 'tcpack',
+			desc: '返事を受けて片付ける'
+		},
+		rnic: { kind: 'nic', name: '受け手の NIC', tone: 'purple', term: 'nic', desc: '相手の線の口' },
+		rgro: {
+			kind: 'func',
+			name: '受け手の GRO',
+			tone: 'orange',
+			glyph: '⇉',
+			term: 'gro',
+			desc: '相手の側でまとめる'
+		},
 		rtcp: {
 			kind: 'func',
 			name: 'tcp_rcv_established()',
 			tone: 'orange',
 			glyph: 'ƒ',
-			term: 'rcvest'
+			term: 'rcvest',
+			desc: '相手の TCP が受ける'
 		},
-		rapp: { kind: 'laptop', name: '相手のアプリ', tone: 'blue', term: 'app' }
+		rapp: { kind: 'laptop', name: '相手のアプリ', tone: 'blue', term: 'app', desc: '受け取る側' }
 	},
 	metrics: [
 		{ key: 'cwnd', label: 'cwnd', term: 'cwnd' },
@@ -131,7 +207,7 @@ export const NET_101_V3: V3Lesson = {
 			],
 			at: [0, 1500, 3000, 4600],
 			dur: 7000,
-			layout: { app: [150, 440], kern: [430, 470], nic: [690, 480, 0.85], rapp: [890, 430, 0.85] },
+			layout: { app: [120, 440], kern: [380, 470], nic: [630, 480, 0.85], rapp: [890, 430, 0.85] },
 			names: { app: 'アプリ', nic: 'NIC（線につながる部品）' },
 			links: [
 				{ from: 'app', to: 'kern' },
@@ -139,8 +215,31 @@ export const NET_101_V3: V3Lesson = {
 				{ from: 'nic', to: 'rapp', both: true }
 			],
 			tokens: [
-				{ name: 'データ', tone: 'blue', path: ['app', 'kern', 'nic', 'rapp'], at: 4600, d: 1600 },
-				{ name: 'ACK', tone: 'green', path: ['rapp', 'nic'], at: 6200, d: 700 }
+				{
+					name: 'データ',
+					tone: 'blue',
+					path: ['app', 'kern', 'nic', 'rapp'],
+					at: 300,
+					d: 1800,
+					gone: true
+				},
+				{
+					name: 'ACK',
+					tone: 'green',
+					path: ['rapp', 'nic', 'kern'],
+					at: 2300,
+					d: 1100,
+					gone: true
+				},
+				{
+					name: 'データ',
+					tone: 'blue',
+					path: ['app', 'kern', 'nic', 'rapp'],
+					at: 3700,
+					d: 1800,
+					gone: true
+				},
+				{ name: 'ACK', tone: 'green', path: ['rapp', 'nic', 'kern'], at: 5700, d: 1100, gone: true }
 			],
 			metrics: { cwnd: '10 MSS', wq: '0 B', flight: '0 B', rtx: '0 回', rtt: '30 ms' },
 			callout: [
@@ -238,15 +337,31 @@ export const NET_101_V3: V3Lesson = {
 			],
 			at: [0, 1200, 3200],
 			dur: 5200,
-			layout: { wq: [230, 230], xmit: [520, 360], tx: [820, 280] },
+			layout: { wq: [210, 270], xmit: [500, 410], tx: [800, 320] },
 			hl: ['xmit'],
+			queues: { wq: ['B', 'C'] },
+			cards: [
+				{
+					x: 640,
+					y: 30,
+					w: 300,
+					title: '送ってよいか（4 つ）',
+					at: 1200,
+					rows: [
+						{ text: '相手の受け口：64 KB 空き', ok: true },
+						{ text: 'cwnd：14,480 B まで → 割る', ok: false },
+						{ text: '小さすぎる塊：ではない', ok: true },
+						{ text: '下の段の詰まり：無い', ok: true }
+					]
+				}
+			],
 			links: [
 				{ from: 'wq', to: 'xmit' },
 				{ from: 'xmit', to: 'tx' }
 			],
 			tokens: [
 				{ name: 'A', tone: 'blue', path: ['wq', 'xmit'], at: 200, d: 900 },
-				{ name: 'A2', tone: 'blue', path: ['xmit', 'wq'], at: 3300, d: 900 },
+				{ name: 'A2', tone: 'blue', path: ['xmit', 'wq'], at: 3300, d: 900, gone: true },
 				{ name: 'A1', tone: 'blue', path: ['xmit', 'tx'], at: 3500, d: 1000 }
 			],
 			callout: [
@@ -415,6 +530,22 @@ export const NET_101_V3: V3Lesson = {
 				wq: [850, 170, 0.85]
 			},
 			hl: ['ack'],
+			notes: [{ obj: 'ack', text: 'cwnd 10 → 20 MSS', tone: 'green', dx: 0, dy: -95, at: 2600 }],
+			cards: [
+				{
+					x: 20,
+					y: 30,
+					w: 330,
+					title: '誰が呼ぶか（文脈）',
+					at: 300,
+					rows: [
+						{ text: 'アプリの send() ではない' },
+						{ text: 'softirq：tcp_ack()' },
+						{ text: '→ tcp_data_snd_check()' },
+						{ text: '→ tcp_write_xmit()' }
+					]
+				}
+			],
 			links: [
 				{ from: 'irq', to: 'gro' },
 				{ from: 'gro', to: 'ack', kind: 'ack' },
@@ -424,9 +555,9 @@ export const NET_101_V3: V3Lesson = {
 			],
 			tokens: [
 				{ name: 'ACK', tone: 'green', path: ['irq', 'gro', 'ack'], at: 0, d: 1800 },
-				{ name: 'A1 を外す', tone: 'green', path: ['ack', 'rtx'], at: 2000, d: 900 },
-				{ name: 'A2', tone: 'blue', path: ['wq', 'xmit'], at: 4000, d: 1000 },
-				{ name: 'B', tone: 'blue', path: ['wq', 'xmit'], at: 4400, d: 1000 }
+				{ name: 'A1 を外す', tone: 'green', path: ['ack', 'rtx'], at: 2000, d: 900, gone: true },
+				{ name: 'A2', tone: 'blue', path: ['wq', 'xmit'], at: 4000, d: 1000, gone: true },
+				{ name: 'B', tone: 'blue', path: ['wq', 'xmit'], at: 4700, d: 1000, gone: true }
 			],
 			metrics: { cwnd: '20 MSS', wq: '22,096 B', flight: '28,960 B' },
 			callout: [

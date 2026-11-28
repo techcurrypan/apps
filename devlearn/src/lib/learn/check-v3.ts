@@ -71,7 +71,34 @@ export type V3Step = {
 	/** リストの中身（物の ID → 値の並び・席の数・今足したマス・解放した印。第 17 章 list） */
 	lists?: Record<string, ListState>;
 	/** このステップだけの札（説明・数の札。物の上に置く。LS3-K6）。dy は物の中心からの上下（図の単位。既定 −80） */
-	notes?: { obj: string; text: string; tone?: Tone; dx?: number; dy?: number }[];
+	notes?: { obj: string; text: string; tone?: Tone; dx?: number; dy?: number; at?: number }[];
+	/** 物の名前の札の下の一言（このステップだけ。無ければ物の desc） */
+	subs?: Record<string, string>;
+	/** 物に重ねる大きな赤い ×（ふるいで外れた・殺された。at の時刻から） */
+	crosses?: { obj: string; at?: number }[];
+	/** 物の上の棒（使う量 / 上限。超えると赤）。at から 1.2 秒で値まで伸びる */
+	meters?: {
+		obj: string;
+		label: string;
+		val: number;
+		max: number;
+		unit: string;
+		at?: number;
+		dy?: number;
+	}[];
+	/** キュー（queue）の溝に並ぶ荷物の名前（物の ID → 左の溝から） */
+	queues?: Record<string, string[]>;
+	/** 札の板（条件の ✓・✗、文脈の切り替えなど）。左上の位置（図の単位）。行は at から 0.35 秒ずつ出る */
+	cards?: {
+		x: number;
+		y: number;
+		w?: number;
+		title: string;
+		rows: { text: string; ok?: boolean }[];
+		at?: number;
+	}[];
+	/** 待ち時間の帯（区切りが every ms ごとに順に灯る。CrashLoopBackOff の倍々など）。x・y は左端の真ん中 */
+	band?: { x: number; y: number; label: string; segs: string[]; at?: number; every?: number };
 	/** 段（panel）の中身（見せ方の型 chart。物の ID → ヒストグラム・粒・曲線・帯・印） */
 	charts?: Record<string, ChartSpec>;
 	/** コードの札（memory の型）：今の行（光る）・済んだ行・画面の出力・このステップだけの行（書き換えた版）。無いステップは札を出さない */
@@ -229,10 +256,26 @@ export function checkV3(
 
 	// 48：物は 3〜6 個（intro は 3〜5、summary は 8 まで）。枠の中。重ならない
 	l.steps.forEach((s, i) => {
+		// 台（platform）の上の Pod・フレームの上の変数は、台とフレームの部材（LS3-S3）。物の数に入れない
+		const HOST = { pod: 'platform', var: 'frame' } as const;
+		const onPlat = (id: string) => {
+			const k = l.objs[id]?.kind;
+			const host = k === 'pod' || k === 'var' ? HOST[k] : null;
+			if (!host) return false;
+			const p = s.layout[id];
+			return Object.entries(s.layout).some(
+				([h, q]) =>
+					l.objs[h]?.kind === host &&
+					Math.abs(p[0] - q[0]) < REACH[host] * (q[2] ?? 1) * 0.8 &&
+					Math.abs(p[1] - q[1]) < 80
+			);
+		};
+		// 下の線（3 個）は全ての物で、上の線は部材を除いた主な物で数える（部材は台の上に乗り、画面を混ませない）
 		const ids = Object.keys(s.layout);
+		const main = ids.filter((id) => !onPlat(id)).length;
 		const max = s.kind === 'summary' ? 8 : s.kind === 'intro' ? 5 : 6;
-		if (ids.length < 3 || ids.length > max)
-			add(48, where(i), `図の物が ${ids.length} 個。3〜${max} 個にする`);
+		if (ids.length < 3 || main > max)
+			add(48, where(i), `図の物が ${ids.length} 個（主な物 ${main} 個）。3〜${max} 個にする`);
 		const at = ids.map((id) => {
 			const [x, y, sc = 1] = s.layout[id];
 			const k = l.objs[id]?.kind;
@@ -266,6 +309,25 @@ export function checkV3(
 				add(48, where(i), `物「${a.id}」が 1000×600 の外（${a.x}, ${a.y}）`);
 		for (const n of s.notes ?? [])
 			if (!s.layout[n.obj]) add(48, where(i), `札「${n.text}」の物「${n.obj}」が構図に無い`);
+		const onObj: [string, string][] = [
+			...(s.crosses ?? []).map((c): [string, string] => ['×', c.obj]),
+			...(s.meters ?? []).map((m): [string, string] => [`棒「${m.label}」`, m.obj]),
+			...Object.keys(s.queues ?? {}).map((k): [string, string] => ['溝の荷物', k]),
+			...Object.keys(s.subs ?? {}).map((k): [string, string] => ['名前の下の一言', k])
+		];
+		for (const [what, id] of onObj)
+			if (!s.layout[id]) add(48, where(i), `${what}の物「${id}」が構図に無い`);
+		for (const c of s.cards ?? []) {
+			const h = 22 + 26 * (c.rows.length + 1);
+			if (c.x < 0 || c.y < 0 || c.x + (c.w ?? 260) > VIEW.w || c.y + h > VIEW.h)
+				add(48, where(i), `札の板「${c.title}」が 1000×600 の外`);
+		}
+		if (s.band) {
+			const b = s.band;
+			const w = 120 + b.segs.length * 74;
+			if (b.x < 0 || b.y - 20 < 0 || b.x + w > VIEW.w || b.y + 20 > VIEW.h)
+				add(48, where(i), `待ち時間の帯「${b.label}」が 1000×600 の外`);
+		}
 		if (s.code) {
 			const n = (s.code.lines ?? l.code?.lines ?? []).length;
 			for (const k of [...s.code.cur, ...(s.code.done ?? [])])

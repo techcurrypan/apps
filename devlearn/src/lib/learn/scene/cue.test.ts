@@ -59,3 +59,16 @@ describe('tokensAt（ステップの荷物の時刻ごとの置き場）', () =>
 		expect(tokensAt(cues, at2, 500).map((k) => k.name)).toEqual(['A', 'B']);
 	});
 });
+
+describe('tokensAt の gone（着いたら消える荷物）', () => {
+	const at = { a: { x: 0, y: 100, s: 1, op: 1 }, b: { x: 100, y: 100, s: 1, op: 1 } };
+	const c = { name: 'A2', tone: 'blue' as const, path: ['a', 'b'], at: 0, d: 1000, gone: true };
+	it('着いてから 0.5 秒で薄れ、その後は出ない', () => {
+		expect(tokensAt([c], at, 1000)[0].op).toBe(1);
+		expect(tokensAt([c], at, 1250)[0].op).toBeCloseTo(0.5);
+		expect(tokensAt([c], at, 1600)).toHaveLength(0);
+	});
+	it('gone の無い荷物は着いた物の上に残る', () => {
+		expect(tokensAt([{ ...c, gone: undefined }], at, 5000)).toHaveLength(1);
+	});
+});

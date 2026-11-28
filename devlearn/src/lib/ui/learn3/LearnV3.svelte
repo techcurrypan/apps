@@ -20,7 +20,7 @@
 	import LabFigureMem from './LabFigureMem.svelte';
 	import LabFigureStat from './LabFigureStat.svelte';
 	import Code from '../scene/label/Code.svelte';
-	import Note from '../scene/label/Note.svelte';
+	import StepMarks from './StepMarks.svelte';
 	import TryPanel3 from './TryPanel3.svelte';
 	import TryFigure from './TryFigure.svelte';
 	import TryFigureK8s from './TryFigureK8s.svelte';
@@ -199,6 +199,17 @@
 		const box = root.getBoundingClientRect();
 		return placeTip(localRect(tip.rect, box), tipSize, { w: box.width, h: box.height });
 	});
+	// ステップの番号の説明（LS3-H2）。帯は横に流れる（overflow）ので、::after では切れる。帯の外に出す
+	let stepTip = $state<{ text: string; x: number; bottom: number } | null>(null);
+	function showStepTip(e: Event, text: string) {
+		const el = e.currentTarget as HTMLElement | null;
+		if (!el || !root) return;
+		const r = el.getBoundingClientRect();
+		const box = root.getBoundingClientRect();
+		const half = 150;
+		const x = Math.min(Math.max(r.left + r.width / 2 - box.left, half), box.width - half);
+		stepTip = { text, x, bottom: box.bottom - r.top + 8 };
+	}
 	function pickTerm(e: Event) {
 		const el = (e.target as Element | null)?.closest?.('[data-tw]');
 		const id = el?.getAttribute('data-tw');
@@ -312,6 +323,8 @@
 						down={st.down}
 						lists={st.lists}
 						charts={st.charts}
+						queues={st.queues}
+						subs={st.subs}
 					>
 						{#snippet over(uik)}
 							{#if st.intro}
@@ -328,19 +341,7 @@
 									{uik}
 								/>
 							{/if}
-							{#each st.notes ?? [] as n (n.obj + n.text)}
-								{@const at = st.layout[n.obj]}
-								{#if at}
-									<Note
-										x={at[0] + (n.dx ?? 0)}
-										y={at[1] + (n.dy ?? -80) * (at[2] ?? 1)}
-										text={n.text}
-										tone={n.tone ?? 'blue'}
-										op={Math.min(1, clock.t / 500)}
-										{uik}
-									/>
-								{/if}
-							{/each}
+							<StepMarks {st} {objs} t={clock.t} {uik} />
 							{#each toks as k, i (i)}
 								<Token x={k.x} y={k.y} label={k.name} tone={k.tone} op={k.op} {uik} />
 							{/each}
@@ -359,21 +360,6 @@
 							>
 						</div>
 					{/if}
-					<div class="play">
-						<button
-							type="button"
-							class="hov"
-							data-d="最初から流し直す（R）"
-							onclick={() => (clock = replay(clock))}>↻</button
-						>
-						<button
-							type="button"
-							class="hov"
-							data-d="動きを止める・動かす（Space）"
-							aria-pressed={!clock.playing}
-							onclick={() => (clock = togglePlay(clock))}>{clock.playing ? '❚❚' : '▶'}</button
-						>
-					</div>
 				{:else if mode === 'lab'}
 					{#if lab === 'mem'}
 						<LabFigureMem vals={labVals} t={(now - labAt) / 1000} />
@@ -402,16 +388,16 @@
 					/>
 				{/if}
 			</section>
-			{#if mode === 'watch' && strip}
+			{#if mode === 'watch'}
 				<!-- 図の下の帯：囲みと変わったこと（言葉をそろえるステップは語りも）。右の欄に内側のスクロールを作らない（LS-A6） -->
 				<div class="strip" data-testid="strip">
-					{#if strip.paras}
+					{#if strip?.paras}
 						<div class="snarr">{@render narr()}</div>
 					{/if}
-					{#if strip.note}
+					{#if strip?.note}
 						<div class="callout"><b>{strip.note[0]}</b>{strip.note[1]}</div>
 					{/if}
-					{#if strip.changes.length}
+					{#if strip?.changes.length}
 						<div class="chg">
 							<h4>変わったこと</h4>
 							<ul>
@@ -425,6 +411,21 @@
 							</ul>
 						</div>
 					{/if}
+					<div class="play">
+						<button
+							type="button"
+							class="hov"
+							data-d="最初から流し直す（R）"
+							onclick={() => (clock = replay(clock))}>↻</button
+						>
+						<button
+							type="button"
+							class="hov"
+							data-d="動きを止める・動かす（Space）"
+							aria-pressed={!clock.playing}
+							onclick={() => (clock = togglePlay(clock))}>{clock.playing ? '❚❚' : '▶'}</button
+						>
+					</div>
 				</div>
 			{/if}
 			{#if mode === 'lab'}
@@ -548,12 +549,26 @@
 					class:done={i < step}
 					data-d="{KINDS[s.kind]}：{s.title}"
 					aria-current={i === step ? 'step' : undefined}
+					onpointerenter={(e) => showStepTip(e, `${KINDS[s.kind]}：${s.title}`)}
+					onpointerleave={() => (stepTip = null)}
+					onfocus={(e) => showStepTip(e, `${KINDS[s.kind]}：${s.title}`)}
+					onblur={() => (stepTip = null)}
 					onclick={() => go(i)}><b>{i < step ? '✓' : i + 1}</b>{s.short ?? s.title}</button
 				>
 			{/each}
 		</nav>
 	{/if}
 
+	{#if stepTip && mode === 'watch'}
+		<div
+			class="steptip"
+			role="tooltip"
+			style:left="{stepTip.x}px"
+			style:bottom="{stepTip.bottom}px"
+		>
+			{stepTip.text}
+		</div>
+	{/if}
 	{#if tip && tipAt}
 		<Tip
 			term={tip.term}
@@ -725,11 +740,12 @@
 		border: 1px solid var(--dl-border);
 		overflow: hidden;
 	}
+	/* 再生の釦は図の外（図の物・段に重ねない） */
 	.play {
-		position: absolute;
-		right: 12px;
-		bottom: 12px;
+		flex: 0 0 auto;
+		margin-left: auto;
 		display: flex;
+		align-items: center;
 		gap: 6px;
 	}
 	.play button {
@@ -1051,9 +1067,24 @@
 		white-space: normal;
 		pointer-events: none;
 	}
-	.steps .hov[data-d]:hover::after {
-		top: auto;
-		bottom: calc(100% + 6px);
+	.steps .hov[data-d]:hover::after,
+	.steps .hov[data-d]:focus-visible::after {
+		content: none;
+	}
+	.steptip {
+		position: absolute;
+		transform: translateX(-50%);
+		z-index: 30;
+		width: max-content;
+		max-width: 300px;
+		padding: 6px 10px;
+		border-radius: 10px;
+		background: var(--dl-card-dark);
+		color: #f4f2ec;
+		font-size: 13px;
+		font-weight: 500;
+		line-height: 1.5;
+		pointer-events: none;
 	}
 	.toast {
 		position: absolute;

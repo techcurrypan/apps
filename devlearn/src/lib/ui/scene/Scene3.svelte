@@ -35,9 +35,11 @@
 	import Ring from './kit/Ring.svelte';
 	import Var from './kit/Var.svelte';
 	import Tag from './label/Tag.svelte';
+	import Halo from './label/Halo.svelte';
+	import { LABEL_PX } from './label/uik';
 	import Tip from './label/Tip.svelte';
 	import type { Term } from '../../learn/terms.ts';
-	import type { PodState } from './kit/paint.ts';
+	import { VAR_TONE, type PodState } from './kit/paint.ts';
 	import { localRect, placeTip } from '../../learn/scene/tip.ts';
 
 	type Props = {
@@ -66,6 +68,10 @@
 		lists?: Record<string, ListState>;
 		/** 段の中身（見せ方の型 chart） */
 		charts?: Record<string, ChartSpec>;
+		/** キューの溝の荷物（物の ID → 名前） */
+		queues?: Record<string, string[]>;
+		/** 名前の札の下の一言（このステップだけ。無ければ物の desc） */
+		subs?: Record<string, string>;
 	};
 	let {
 		objs,
@@ -82,7 +88,9 @@
 		pods = {},
 		down = [],
 		lists = {},
-		charts = {}
+		charts = {},
+		queues = {},
+		subs = {}
 	}: Props = $props();
 	// 乗せた物（浮き上がり 8。LS3-M4）と吹き出し（LS3-H1）。Tab で移った時も同じ（U-10）
 	const LIFT = 8;
@@ -289,6 +297,20 @@
 						lift={lift(d.id)}
 						down={down.includes(d.id)}
 					/>
+				{:else if d.kind === 'queue'}
+					<Queue
+						x={d.x}
+						y={d.y}
+						s={d.s}
+						op={d.op}
+						{uik}
+						hl={h}
+						tone={d.tone}
+						id={d.id}
+						term={d.term}
+						lift={lift(d.id)}
+						items={queues[d.id] ?? []}
+					/>
 				{:else}
 					{@const C = PLAIN[d.kind]}
 					<C
@@ -313,6 +335,19 @@
 						op={d.op}
 						term={d.term}
 					/>
+					{@const sub = subs[d.id] ?? d.desc}
+					{#if sub}
+						<Halo
+							x={d.x}
+							y={d.y + NAME_DROP[d.kind] * d.s + 30 * uik}
+							text={sub}
+							size={LABEL_PX.sub}
+							{uik}
+							anchor="middle"
+							color="var(--dl-text-muted)"
+							op={d.op}
+						/>
+					{/if}
 				{/if}
 			{/snippet}
 			<!-- 床（台・フレームの板）→ 参照の矢印（板に隠れない）→ 上に乗る物 -->
@@ -324,6 +359,7 @@
 				{@const b = byId.get(ln.to)}
 				{#if a && b}
 					<Wire
+						color={a.tone ?? VAR_TONE[a.name] ?? 'yellow'}
 						{a}
 						{b}
 						ia={reach(a, b)}

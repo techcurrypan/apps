@@ -65,7 +65,7 @@ export const STA_019_V3: V3Lesson = {
 			tone: 'orange',
 			term: 'sampdist',
 			w: 940,
-			h: 190
+			h: 230
 		},
 		popS: {
 			kind: 'panel',
@@ -191,7 +191,7 @@ export const STA_019_V3: V3Lesson = {
 			],
 			at: [0, 1600, 3400],
 			dur: 6400,
-			layout: { pop: [500, 85], smp: [500, 265], mean: [500, 485] },
+			layout: { pop: [500, 75], smp: [500, 228], mean: [500, 440] },
 			links: [
 				{ from: 'pop', to: 'smp' },
 				{ from: 'smp', to: 'mean' }
@@ -222,7 +222,7 @@ export const STA_019_V3: V3Lesson = {
 			],
 			at: [0, 1800, 3800],
 			dur: 6200,
-			layout: { pop: [500, 85], smp: [500, 265], mean: [500, 485] },
+			layout: { pop: [500, 75], smp: [500, 228], mean: [500, 440] },
 			links: [
 				{ from: 'pop', to: 'smp' },
 				{ from: 'smp', to: 'mean' }
@@ -251,7 +251,7 @@ export const STA_019_V3: V3Lesson = {
 			],
 			at: [0, 2200, 4000],
 			dur: 6000,
-			layout: { pop: [500, 85], smp: [500, 265], mean: [500, 485] },
+			layout: { pop: [500, 75], smp: [500, 228], mean: [500, 440] },
 			links: [
 				{ from: 'pop', to: 'smp' },
 				{ from: 'smp', to: 'mean' }
@@ -283,7 +283,7 @@ export const STA_019_V3: V3Lesson = {
 			],
 			at: [0, 3000, 6000],
 			dur: 9000,
-			layout: { pop: [500, 85], smp: [500, 265], mean: [500, 485] },
+			layout: { pop: [500, 75], smp: [500, 228], mean: [500, 440] },
 			links: [
 				{ from: 'pop', to: 'smp' },
 				{ from: 'smp', to: 'mean' }
@@ -316,7 +316,7 @@ export const STA_019_V3: V3Lesson = {
 			],
 			at: [0, 2400, 4600],
 			dur: 7200,
-			layout: { pop: [500, 85], smp: [500, 265], mean: [500, 485] },
+			layout: { pop: [500, 75], smp: [500, 228], mean: [500, 440] },
 			links: [
 				{ from: 'pop', to: 'smp' },
 				{ from: 'smp', to: 'mean' }
@@ -327,7 +327,9 @@ export const STA_019_V3: V3Lesson = {
 				smp: { kind: 'sample', shape: 0, n: 30, day: 0 },
 				mean: { kind: 'means', shape: 0, n: 30, days: 400, curve: true, band: true }
 			},
-			tokens: [{ name: '÷ √30', tone: 'teal', path: ['pop', 'mean'], at: 600, d: 1600 }],
+			tokens: [
+				{ name: '÷ √30', tone: 'teal', path: ['smp', 'mean'], at: 600, d: 1400, gone: true }
+			],
 			metrics: { n: '30', se: '0.73 分', days: '400', z: '—' },
 			callout: ['式', '標準誤差 = σ ÷ √n = 4 ÷ √30 ≈ 0.73 分'],
 			changes: [
@@ -382,7 +384,7 @@ export const STA_019_V3: V3Lesson = {
 			],
 			at: [0, 2200, 4600],
 			dur: 7000,
-			layout: { pop: [500, 85], smp: [500, 265], mean: [500, 485] },
+			layout: { pop: [500, 75], smp: [500, 228], mean: [500, 440] },
 			links: [
 				{ from: 'pop', to: 'smp' },
 				{ from: 'smp', to: 'mean' }
@@ -410,7 +412,7 @@ export const STA_019_V3: V3Lesson = {
 			],
 			at: [0, 2200, 4200],
 			dur: 8600,
-			layout: { pop: [500, 85], smp: [500, 265], mean: [500, 485] },
+			layout: { pop: [500, 75], smp: [500, 228], mean: [500, 440] },
 			links: [
 				{ from: 'pop', to: 'smp' },
 				{ from: 'smp', to: 'mean' }
@@ -443,7 +445,7 @@ export const STA_019_V3: V3Lesson = {
 			],
 			at: [0, 2400, 4600],
 			dur: 8600,
-			layout: { pop: [500, 85], smp: [500, 265], mean: [500, 485] },
+			layout: { pop: [500, 75], smp: [500, 228], mean: [500, 440] },
 			links: [
 				{ from: 'pop', to: 'smp' },
 				{ from: 'smp', to: 'mean' }
@@ -485,7 +487,7 @@ export const STA_019_V3: V3Lesson = {
 			],
 			at: [0, 2200, 4400],
 			dur: 7200,
-			layout: { pop: [500, 85], smp: [500, 265], mean: [500, 485] },
+			layout: { pop: [500, 75], smp: [500, 228], mean: [500, 440] },
 			links: [
 				{ from: 'pop', to: 'smp' },
 				{ from: 'smp', to: 'mean' }
@@ -514,7 +516,7 @@ export const STA_019_V3: V3Lesson = {
 			],
 			at: [0, 2000, 4000],
 			dur: 6400,
-			layout: { pop: [500, 85], smp: [500, 265], mean: [500, 485] },
+			layout: { pop: [500, 75], smp: [500, 228], mean: [500, 440] },
 			links: [
 				{ from: 'pop', to: 'smp' },
 				{ from: 'smp', to: 'mean' }

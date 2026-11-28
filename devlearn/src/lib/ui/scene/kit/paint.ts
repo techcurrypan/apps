@@ -57,3 +57,13 @@ export const TOKEN: Record<string, Tone> = {
 /** 字の幅の見積もり（全角は 1 字、半角は 0.6 字） */
 export const textWidth = (s: string, size: number) =>
 	[...s].reduce((a, ch) => a + (ch.charCodeAt(0) > 0x2000 ? size : size * 0.6), 0);
+
+/** 変数の名札の色（名前 → 色）。参照の矢印も同じ色にする（どの名前の矢印かが分かる） */
+export const VAR_TONE: Record<string, Tone> = {
+	a: 'blue',
+	b: 'orange',
+	c: 'green',
+	d: 'purple',
+	xs: 'teal',
+	ys: 'yellow'
+};

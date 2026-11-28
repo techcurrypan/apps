@@ -6,7 +6,7 @@
 	import Halo from '../label/Halo.svelte';
 	import Base from './Base.svelte';
 	import Solid from './Solid.svelte';
-	import { type Tone } from './paint';
+	import { VAR_TONE, type Tone } from './paint';
 	type Props = {
 		x: number;
 		y: number;
@@ -20,7 +20,6 @@
 		name: string;
 		tone?: Tone;
 	};
-	const BY: Record<string, Tone> = { a: 'blue', b: 'orange', c: 'green', d: 'purple' };
 	let {
 		x,
 		y,
@@ -34,7 +33,7 @@
 		name,
 		tone
 	}: Props = $props();
-	const t = $derived(tone ?? BY[name] ?? 'teal');
+	const t = $derived(tone ?? VAR_TONE[name] ?? 'teal');
 	const body = $derived(prism(rrectPts(-30, -22, 60, 44, 10), 0, 22, localProj(x, y, s)));
 	const tp = $derived(localProj(x, y, s).at(0, 0, 22));
 	/** 名前は上の面の真ん中に載せる（試作 learn11 の mem と同じ。判定 13 回目）。字の真ん中を面の真ん中に */

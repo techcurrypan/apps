@@ -27,6 +27,8 @@ export type SceneObj = {
 	tone?: Tone;
 	glyph?: string;
 	term?: string;
+	/** 名前の札の下の一言（「あなたのプログラム」など。LS3-K3） */
+	desc?: string;
 	/** 段（panel）の幅と高さ（図の単位。縮尺 1 の時）。置き場は段の真ん中 */
 	w?: number;
 	h?: number;

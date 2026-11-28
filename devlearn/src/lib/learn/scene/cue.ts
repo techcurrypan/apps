@@ -4,8 +4,17 @@ import type { Tone } from '../../ui/scene/kit/paint.ts';
 import type { Place } from './layout.ts';
 
 export type Pt = { x: number; y: number };
-/** 荷物：path の物を順に、at（ms）から d（ms）かけて進む。終わると最後の物の上に残る */
-export type Cue = { name: string; tone: Tone; path: string[]; at: number; d: number };
+/** 荷物：path の物を順に、at（ms）から d（ms）かけて進む。終わると最後の物の上に残る（gone は着いて 0.5 秒で消える） */
+export type Cue = {
+	name: string;
+	tone: Tone;
+	path: string[];
+	at: number;
+	d: number;
+	gone?: boolean;
+};
+/** gone の荷物が着いてから消えるまで（ms） */
+const GONE_MS = 500;
 /** 荷物は物の上（図の単位。縮尺 1 の時）に乗る */
 export const RIDE = 40;
 
@@ -51,12 +60,14 @@ export function tokensAt(
 		const end = c.path[c.path.length - 1];
 		const passed = cues.some((n) => n !== c && n.at > c.at && t >= n.at && n.path[0] === end);
 		if (t >= c.at + c.d && passed) continue;
+		if (c.gone && t >= c.at + c.d + GONE_MS) continue;
 		const ps = c.path.map((id) => at[id]);
 		if (ps.some((p) => !p)) continue;
 		const pts = (ps as Place[]).map((p) => ({ x: p.x, y: p.y - RIDE * p.s }));
 		const k = c.d > 0 ? ease(Math.min(1, (t - c.at) / c.d)) : 1;
 		const p = alongPath(pts, k);
-		const op = Math.min(...(ps as Place[]).map((q) => q.op));
+		const fadeK = c.gone ? Math.max(0, Math.min(1, 1 - (t - c.at - c.d) / GONE_MS)) : 1;
+		const op = Math.min(...(ps as Place[]).map((q) => q.op)) * fadeK;
 		out.push({ name: c.name, tone: c.tone, x: p.x, y: p.y, op });
 	}
 	return out;
