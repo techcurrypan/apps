@@ -69,5 +69,20 @@ export const JARGON: readonly string[] = [
 	'標準偏差',
 	'標準誤差',
 	'正規分布',
-	'信頼区間'
+	'信頼区間',
+	// prg（見本の題 prg-006。名前と物）
+	'JavaScript',
+	'let',
+	'console.log',
+	'push',
+	'===',
+	'return',
+	'null',
+	'structuredClone',
+	'V8',
+	'Node.js',
+	'Scavenge',
+	'ヒープ',
+	'スプレッド構文',
+	'マーク・スイープ'
 ];

@@ -2,5 +2,6 @@
 import type { Term } from '../../learn/terms.ts';
 import { K8S_TERMS } from './k8s.ts';
 import { NET_TERMS } from './net.ts';
+import { PRG_TERMS } from './prg.ts';
 
-export const TERMS: Record<string, Term[]> = { net: NET_TERMS, k8s: K8S_TERMS };
+export const TERMS: Record<string, Term[]> = { net: NET_TERMS, k8s: K8S_TERMS, prg: PRG_TERMS };

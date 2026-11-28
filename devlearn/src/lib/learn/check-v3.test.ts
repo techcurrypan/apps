@@ -143,4 +143,20 @@ describe('検査 41〜48（checkV3）', () => {
 		c.steps[1].layout = { ...layout, nic: [540, 320] };
 		expect(nums(c)).toContain(48);
 	});
+	it('48：コードの札の上に物を置くと落ちる（memory の型。札は左の 0〜CODE_W）', () => {
+		const l = ok();
+		l.code = { file: 'main.js', lines: ['let a = [1, 2];'] };
+		l.steps[1].code = { cur: [1] };
+		l.steps[1].layout = { app: [440, 300], kern: [660, 300], nic: [880, 300] };
+		expect(nums(l)).not.toContain(48);
+		l.steps[1].layout = { ...layout };
+		expect(run(l).some((p) => p.check === 48 && p.msg.includes('コードの札'))).toBe(true);
+	});
+	it('48：コードの札の行の番号は 1〜行の数', () => {
+		const l = ok();
+		l.code = { file: 'main.js', lines: ['let a = [1, 2];'] };
+		l.steps[1].code = { cur: [3] };
+		l.steps[1].layout = { app: [440, 300], kern: [660, 300], nic: [880, 300] };
+		expect(run(l).some((p) => p.check === 48 && p.msg.includes('行'))).toBe(true);
+	});
 });

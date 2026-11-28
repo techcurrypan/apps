@@ -11,7 +11,11 @@ export type LabKnob = {
 	unit: string;
 	/** 吹き出しの説明（何の値か。LS3-H5） */
 	d: string;
+	/** 選ぶつまみの名前（値 min, min+step, … の順）。あれば値の代わりに出す */
+	show?: string[];
 };
+/** 試すの題（見せ方の型ごとの見本の題） */
+export type LabId = 'tcp' | 'k8s' | 'mem';
 export type Pred = { q: string; opts: string[]; ans: number; why: string; tryit: string };
 /** 結果の表の 1 行：名前・値・言葉の ID（吹き出し） */
 export type LabRow = [string, string, string?];
@@ -27,6 +31,12 @@ export type Lab = {
 export function snapKnob(k: LabKnob, x: number): number {
 	const n = Math.round((Math.min(k.max, Math.max(k.min, x)) - k.min) / k.step);
 	return Number((k.min + n * k.step).toFixed(6));
+}
+
+/** つまみの今の値を書く（選ぶつまみは名前、数は単位つき） */
+export function knobText(k: LabKnob, v: number): string {
+	const i = Math.round((v - k.min) / k.step);
+	return k.show?.[i] ?? `${v}${k.unit}`;
 }
 
 export function answerPred(p: Pred, choice: number): { ok: boolean; why: string; tryit: string } {
@@ -84,7 +94,22 @@ export function k8sPlan(p: { rep: number; lim: number; peak: number; nodes: numb
 
 const fmt = (x: number) => (x >= 100 ? Math.round(x).toLocaleString('en-US') : x.toFixed(1));
 
-export const LABS: Record<string, Lab> = {
+export const MEM_MODES = ['b = a', 'b = [...a]', 'structuredClone(a)'] as const;
+/** a は長さ n の配列（中は数か、小さな配列 [i, i]）。b の作り方ごとに、同じ物か・b[0] を直すと a が変わるか・配列の数・写した値の数。
+ * 確かめ：Node.js v24.19.0 で const a = [[1], 2] の [...a][0] === a[0] は true、structuredClone(a)[0] === a[0] は false（確認日 2026-11-28） */
+export function memLab(p: { n: number; mode: number; nested: number }) {
+	const nested = p.nested === 1;
+	const same = p.mode === 0;
+	const deep = p.mode === 2;
+	const innerSame = !(deep && nested);
+	const aChanges = same || (p.mode === 1 && nested);
+	const inner = nested ? p.n : 0;
+	const arrays = 1 + inner + (same ? 0 : 1) + (deep ? inner : 0);
+	const copied = same ? 0 : p.n + (deep ? inner * 2 : 0);
+	return { n: p.n, nested, mode: p.mode, same, innerSame, aChanges, arrays, copied };
+}
+
+export const LABS: Record<LabId, Lab> = {
 	tcp: {
 		title: '1 MB を送る時間は何で決まるか',
 		intro:
@@ -219,6 +244,71 @@ export const LABS: Record<string, Lab> = {
 				ans: 1,
 				why: '1 台に 2,048 ÷ 1,024 = 2 個、3 台で 6 個。残りの 2 個は置き場が無い。',
 				tryit: 'ノードを 4 台にして、Pending が 0 になるのを見る'
+			}
+		]
+	},
+	mem: {
+		title: '写したつもりが、写っていない',
+		intro:
+			'a は長さ n の配列。中を数にするか、小さな配列 [i, i] にするかを選び、b の作り方を変える。その後 b[0] を直す（数なら b[0] = 9、配列なら b[0].push(9)）。a が巻き込まれるかが図と表に出る。',
+		knobs: [
+			{
+				k: 'n',
+				label: '長さ n',
+				min: 1,
+				max: 32,
+				step: 1,
+				v: 4,
+				unit: '',
+				d: '配列 a の要素の数。1〜32 個。'
+			},
+			{
+				k: 'mode',
+				label: 'b の作り方',
+				min: 0,
+				max: 2,
+				step: 1,
+				v: 1,
+				unit: '',
+				show: [...MEM_MODES],
+				d: 'b = a（同じ物に名前を足す）・[...a]（浅い写し）・structuredClone(a)（深い写し）から選ぶ。'
+			},
+			{
+				k: 'nested',
+				label: '中身',
+				min: 0,
+				max: 1,
+				step: 1,
+				v: 1,
+				unit: '',
+				show: ['数', '配列 [i, i]'],
+				d: 'a の要素を、数にするか、小さな配列にするか。'
+			}
+		],
+		results(v) {
+			const r = memLab({ n: v.n, mode: v.mode, nested: v.nested });
+			return [
+				['a === b', String(r.same), 'identity'],
+				['a[0] === b[0]', String(r.innerSame), 'identity'],
+				['b[0] を直すと a は', r.aChanges ? '変わる' : '変わらない', 'mutate'],
+				['ヒープの配列', `${r.arrays} 個`, 'heap'],
+				['写した値', `${r.copied} 個`, 'copy']
+			];
+		},
+		preds: [
+			{
+				q: '中身が配列・浅い写し。b[0].push(9) すると a[0] は？',
+				opts: ['変わらない', '変わる'],
+				ans: 1,
+				why: '浅い写しは外の配列だけを作り直す。中の配列は a と b で同じ物を指している。',
+				tryit: '作り方を structuredClone(a) にして「変わらない」になるのを見る'
+			},
+			{
+				q: '中身が配列・n = 4・structuredClone(a)。ヒープの配列は全部で何個？',
+				opts: ['2 個', '6 個', '10 個'],
+				ans: 2,
+				why: 'a 側に外 1 ＋ 中 4、b 側にも外 1 ＋ 中 4 で 10 個。深い写しは手間もメモリも倍になる。',
+				tryit: 'n を 32 にして、配列の数と写した値の増え方を見る'
 			}
 		]
 	}

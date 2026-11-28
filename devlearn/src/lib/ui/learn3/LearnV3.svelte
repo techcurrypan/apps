@@ -17,12 +17,15 @@
 	import Tip from '../scene/label/Tip.svelte';
 	import LabPanel from './LabPanel.svelte';
 	import LabFigure from './LabFigure.svelte';
+	import LabFigureMem from './LabFigureMem.svelte';
+	import Code from '../scene/label/Code.svelte';
 	import TryPanel3 from './TryPanel3.svelte';
 	import TryFigure from './TryFigure.svelte';
 	import TryFigureK8s from './TryFigureK8s.svelte';
+	import TryFigureMem from './TryFigureMem.svelte';
 	import RecallPanel3 from './RecallPanel3.svelte';
 	import RecallFigure from './RecallFigure.svelte';
-	import { LABS } from '../../learn/lab.ts';
+	import { LABS, type LabId } from '../../learn/lab.ts';
 	import { makeL3 } from './probe.ts';
 	import { startTry, tasksDone, typeLine, type TryScene } from '../../learn/try3.ts';
 	import type { RecallSet } from '../../learn/recall3.ts';
@@ -31,7 +34,7 @@
 	type Props = {
 		lesson: V3Lesson;
 		terms: readonly Term[];
-		lab: 'tcp' | 'k8s';
+		lab: LabId;
 		tryScene: TryScene;
 		recall: RecallSet;
 	};
@@ -310,6 +313,17 @@
 							{#if st.intro}
 								<Anatomy x={500} y={110} parts={anatomyParts} t={clock.t} {uik} />
 							{/if}
+							{#if st.code && lesson.code}
+								<Code
+									file={lesson.code.file}
+									lines={st.code.lines ?? lesson.code.lines}
+									cur={st.code.cur}
+									done={st.code.done}
+									out={st.code.out}
+									t={clock.t}
+									{uik}
+								/>
+							{/if}
 							{#each toks as k, i (i)}
 								<Token x={k.x} y={k.y} label={k.name} tone={k.tone} op={k.op} {uik} />
 							{/each}
@@ -344,10 +358,16 @@
 						>
 					</div>
 				{:else if mode === 'lab'}
-					<LabFigure {lab} vals={labVals} t={(now - labAt) / 1000} />
+					{#if lab === 'mem'}
+						<LabFigureMem vals={labVals} t={(now - labAt) / 1000} />
+					{:else}
+						<LabFigure {lab} vals={labVals} t={(now - labAt) / 1000} />
+					{/if}
 				{:else if mode === 'try'}
 					{#if tryScene.id === 'k8s'}
 						<TryFigureK8s scene={tryScene} st={tryState} t={now} />
+					{:else if tryScene.id === 'mem'}
+						<TryFigureMem st={tryState} t={now} />
 					{:else}
 						<TryFigure scene={tryScene} st={tryState} t={now} />
 					{/if}

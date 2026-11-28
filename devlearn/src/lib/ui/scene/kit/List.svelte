@@ -20,6 +20,8 @@
 		cap?: number;
 		newIdx?: number;
 		freed?: boolean;
+		/** 描かない残りの席の数（「＋more 席」の札） */
+		more?: number;
 	};
 	let {
 		x,
@@ -34,7 +36,8 @@
 		vals,
 		cap,
 		newIdx = -1,
-		freed = false
+		freed = false,
+		more = 0
 	}: Props = $props();
 	const n = $derived(Math.max(1, cap ?? vals.length));
 	const Lc = $derived(n * 44);
@@ -54,6 +57,8 @@
 			};
 		})
 	);
+	/** 「＋more 席」の札：台の右の端の先 */
+	const moreAt = $derived(P.at(Lc / 2 + 30, 0, 12));
 </script>
 
 <Base {x} {y} {s} {uik} w={Lc + 28} d={68} {tone} {hl} {lift} {op} {id} {term}>
@@ -87,4 +92,15 @@
 			/>
 		{/if}
 	{/each}
+	{#if more > 0}
+		<Halo
+			x={moreAt[0]}
+			y={moreAt[1] + 5 * uik}
+			text="＋{more} 席"
+			size={14}
+			{uik}
+			weight={800}
+			mono
+		/>
+	{/if}
 </Base>

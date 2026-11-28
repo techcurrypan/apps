@@ -1,16 +1,19 @@
 <script lang="ts">
 	// 思い出す の図（learn-standard.md 第 19 章：問いに合わせた図。図を押す問いは押せる物を光らせる）。
-	// 題ごとの置き場：TCP は送信キュー・再送キュー・qdisc・NIC、k8s は入口・帳簿・係・ノード。
+	// 題ごとの置き場：TCP は送信キュー・再送キュー・qdisc・NIC、k8s は入口・帳簿・係・ノード、mem は名前と配列。
 	// 押すと親に知らせる。答えた後は正しい物を緑で囲む
+	import type { LabId } from '../../learn/lab.ts';
 	import type { Recall3 } from '../../learn/recall3.ts';
 	import Block from '../scene/kit/Block.svelte';
 	import Db from '../scene/kit/Db.svelte';
 	import Defs from '../scene/kit/Defs.svelte';
 	import Hex from '../scene/kit/Hex.svelte';
+	import List from '../scene/kit/List.svelte';
 	import Nic from '../scene/kit/Nic.svelte';
 	import Platform from '../scene/kit/Platform.svelte';
 	import Pod from '../scene/kit/Pod.svelte';
 	import Queue from '../scene/kit/Queue.svelte';
+	import Var from '../scene/kit/Var.svelte';
 	import Wire from '../scene/kit/Wire.svelte';
 	import Note from '../scene/label/Note.svelte';
 	import Tag from '../scene/label/Tag.svelte';
@@ -22,11 +25,11 @@
 		t: number;
 		onhit: (id: string) => void;
 		/** 図の題（LearnV3 の lab と同じ） */
-		set?: 'tcp' | 'k8s';
+		set?: LabId;
 	};
 	let { q, answered, t, onhit, set = 'tcp' }: Props = $props();
 	type Obj = { id: string; name: string; x: number; y: number; k: string; drop: number };
-	const SETS: Record<'tcp' | 'k8s', { objs: Obj[]; wires: [string, string][]; label: string }> = {
+	const SETS: Record<LabId, { objs: Obj[]; wires: [string, string][]; label: string }> = {
 		tcp: {
 			label: '送信キュー・再送キュー・qdisc・NIC',
 			objs: [
@@ -54,6 +57,16 @@
 				['api', 'ctrl'],
 				['api', 'n2']
 			]
+		},
+		mem: {
+			label: '名前 a・xs と、ヒープの配列 2 つ',
+			objs: [
+				{ id: 'va', name: '変数 a', x: 190, y: 200, k: 'var', drop: 48 },
+				{ id: 'vxs', name: '変数 xs', x: 190, y: 430, k: 'var', drop: 48 },
+				{ id: 'L1', name: '配列 #1', x: 600, y: 200, k: 'list', drop: 70 },
+				{ id: 'L2', name: '配列 #2', x: 600, y: 430, k: 'list', drop: 70 }
+			],
+			wires: [['va', 'L1']]
 		}
 	};
 	const S = $derived(SETS[set]);
@@ -73,6 +86,7 @@
 				b={at(b)}
 				ia={110}
 				ib={110}
+				kind={set === 'mem' ? 'ref' : undefined}
 				p={i === S.wires.length - 1 && set === 'tcp' ? null : ((t + i * 900) % 1800) / 1800}
 				{uik}
 			/>
@@ -115,6 +129,17 @@
 					<Db x={o.x} y={o.y} s={0.8} hl={right} {uik} />
 				{:else if o.k === 'block'}
 					<Block x={o.x} y={o.y} s={0.8} glyph="↻" hl={right} {uik} />
+				{:else if o.k === 'var'}
+					<Var x={o.x} y={o.y} name={o.id === 'va' ? 'a' : 'xs'} hl={right} {uik} />
+				{:else if o.k === 'list'}
+					<List
+						x={o.x}
+						y={o.y}
+						s={0.85}
+						vals={o.id === 'L1' ? ['1', '2', '3'] : ['1', '2', '3', '4']}
+						hl={right}
+						{uik}
+					/>
 				{:else if o.k === 'platform'}
 					<Platform x={o.x} y={o.y} s={0.8} hl={right} {uik} />
 					<Pod x={o.x - 40} y={o.y - 14} s={0.6} name="web-a" {uik} />

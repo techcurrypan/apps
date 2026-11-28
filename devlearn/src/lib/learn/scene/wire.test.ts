@@ -26,7 +26,7 @@ describe('線（wire）', () => {
 		const t = trim({ x: 0, y: 0 }, { x: 100, y: 0 }, 0, 0);
 		expect(dotsAt(t, null)).toEqual([]);
 	});
-	it('点の色：データは青、ACK は緑、watch は紫（第 16.2 K4）', () => {
-		expect(WIRE_TONE).toEqual({ data: 'blue', ack: 'green', watch: 'purple' });
+	it('点の色：データは青、ACK は緑、watch は紫、参照は黄（第 16.2 K4）', () => {
+		expect(WIRE_TONE).toEqual({ data: 'blue', ack: 'green', watch: 'purple', ref: 'yellow' });
 	});
 });

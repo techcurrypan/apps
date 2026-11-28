@@ -223,6 +223,7 @@
 						cap={ls?.cap}
 						newIdx={ls?.newIdx}
 						freed={ls?.freed}
+						more={ls?.more}
 						id={d.id}
 						term={d.term}
 						lift={lift(d.id)}

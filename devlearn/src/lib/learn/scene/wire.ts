@@ -3,9 +3,15 @@
 import type { Tone } from '../../ui/scene/kit/paint.ts';
 
 export type Pt = { x: number; y: number };
-export type WireKind = 'data' | 'ack' | 'watch';
+/** ref は変数から物への参照の矢印（memory の型。第 17 章 var・list） */
+export type WireKind = 'data' | 'ack' | 'watch' | 'ref';
 /** 線の種類 → 点の色 */
-export const WIRE_TONE: Record<WireKind, Tone> = { data: 'blue', ack: 'green', watch: 'purple' };
+export const WIRE_TONE: Record<WireKind, Tone> = {
+	data: 'blue',
+	ack: 'green',
+	watch: 'purple',
+	ref: 'yellow'
+};
 /** ACK・watch の戻りは点線 */
 export const DASHED: ReadonlySet<WireKind> = new Set(['ack', 'watch']);
 

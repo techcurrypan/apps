@@ -69,8 +69,17 @@ export type V3Step = {
 	down?: string[];
 	/** リストの中身（物の ID → 値の並び・席の数・今足したマス・解放した印。第 17 章 list） */
 	lists?: Record<string, ListState>;
+	/** コードの札（memory の型）：今の行（光る）・済んだ行・画面の出力・このステップだけの行（書き換えた版）。無いステップは札を出さない */
+	code?: { cur: number[]; done?: number[]; out?: string[]; lines?: string[] };
 };
-export type ListState = { vals: string[]; cap?: number; newIdx?: number; freed?: boolean };
+/** more：描かない残りの席の数（席が多い時は cap まで描き、「＋more 席」の札を付ける） */
+export type ListState = {
+	vals: string[];
+	cap?: number;
+	newIdx?: number;
+	freed?: boolean;
+	more?: number;
+};
 export type V3Lesson = {
 	id: string;
 	field: string;
@@ -88,7 +97,11 @@ export type V3Lesson = {
 	metrics?: { key: string; label: string; term?: string; desc?: string }[];
 	knobs?: { id: string; label: string; term?: string; desc?: string }[];
 	commands?: { cmd: string; term?: string; desc?: string }[];
+	/** コードの札に出すプログラム（memory の型。左の 0〜CODE_W に置く） */
+	code?: { file: string; lines: string[] };
 };
+/** コードの札の右の端（図の単位）。札のあるステップは、物をこれより右に置く */
+export const CODE_W = 330;
 export type Add3 = (check: number, where: string, msg: string) => void;
 
 export const VIEW = { w: 1000, h: 600 } as const;
@@ -223,6 +236,14 @@ export function checkV3(
 		for (const a of at)
 			if (a.x < 0 || a.x > VIEW.w || a.y < 0 || a.y > VIEW.h)
 				add(48, where(i), `物「${a.id}」が 1000×600 の外（${a.x}, ${a.y}）`);
+		if (s.code) {
+			const n = (s.code.lines ?? l.code?.lines ?? []).length;
+			for (const k of [...s.code.cur, ...(s.code.done ?? [])])
+				if (k < 1 || k > n) add(48, where(i), `コードの札の行 ${k} が 1〜${n} の外`);
+			for (const a of at)
+				if (a.x - a.r * (a.hold ? 0.5 : 1) < CODE_W)
+					add(48, where(i), `物「${a.id}」がコードの札（左の 0〜${CODE_W}）に重なる`);
+		}
 		for (let p = 0; p < at.length; p++)
 			for (let q = p + 1; q < at.length; q++) {
 				const a = at[p];

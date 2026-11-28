@@ -1,7 +1,7 @@
 <script lang="ts">
 	// 試す（learn-standard.md 第 19 章）：つまみ 2〜4 個・結果の表・予想の問い 2 つ。
 	// 結果はつまみの値だけから計算し直す（lab.ts。乱数なし）。つまみには何の値か・単位・範囲の説明（LS3-H5）
-	import { answerPred, snapKnob, type Lab } from '../../learn/lab.ts';
+	import { answerPred, knobText, snapKnob, type Lab } from '../../learn/lab.ts';
 	// part：knobs＝題・つまみ・結果の表（右の欄）、preds＝予想の問い（図の下の帯。内側のスクロールを作らない）
 	type Props = {
 		lab: Lab;
@@ -37,7 +37,7 @@
 						aria-describedby="knob-{k.k}"
 						oninput={(e) => set(k.k, Number(e.currentTarget.value))}
 					/>
-					<output>{vals[k.k] ?? k.v}{k.unit}</output>
+					<output>{knobText(k, vals[k.k] ?? k.v)}</output>
 					<small id="knob-{k.k}">{k.d}</small>
 				</label>
 			{/each}

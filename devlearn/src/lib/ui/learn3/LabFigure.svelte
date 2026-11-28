@@ -1,7 +1,7 @@
 <script lang="ts">
 	// 試す の図（learn-standard.md 第 19 章：つまみの値で計算し直した図）。値を変えると棒・Pod が 0.9 秒で育ち、
 	// 6 秒ごとに最初から繰り返す（LS3-M1）。一時停止の時は t を止める（親が渡す）。図は 1000×600
-	import { k8sPlan, tcpSim } from '../../learn/lab.ts';
+	import { k8sPlan, tcpSim, type LabId } from '../../learn/lab.ts';
 	import { growAt, k8sFigure, tcpBars } from '../../learn/lab-figure.ts';
 	import Bar from '../scene/kit/Bar.svelte';
 	import Defs from '../scene/kit/Defs.svelte';
@@ -12,7 +12,7 @@
 	import Tag from '../scene/label/Tag.svelte';
 	import Stage from '../scene/Stage.svelte';
 
-	type Props = { lab: 'tcp' | 'k8s'; vals: Record<string, number>; t: number };
+	type Props = { lab: Exclude<LabId, 'mem'>; vals: Record<string, number>; t: number };
 	let { lab, vals, t }: Props = $props();
 	const BOX = { x: 90, y: 110, w: 860, h: 380 };
 	const tcp = $derived(

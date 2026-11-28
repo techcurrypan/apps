@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { LABS, answerPred, k8sPlan, snapKnob, tcpSim, type LabKnob } from './lab';
+import { LABS, answerPred, k8sPlan, knobText, memLab, snapKnob, tcpSim, type LabKnob } from './lab';
 
 // learn-standard.md 第 19 章「試す」・LS-L5：つまみの値で計算し直す（乱数なし。同じ値から同じ結果）
 const k: LabKnob = { k: 'rtt', label: 'RTT', min: 5, max: 200, step: 5, v: 30, unit: ' ms', d: '' };
@@ -63,5 +63,36 @@ describe('試すの中身（LABS）', () => {
 			const v = Object.fromEntries(lab.knobs.map((x) => [x.k, x.v]));
 			expect(lab.results(v).length, id).toBeGreaterThanOrEqual(3);
 		}
+	});
+});
+
+describe('JavaScript：写したつもりが写っていない（memLab）', () => {
+	it('b = a は同じ物。b[0] を直すと a も変わる。物は増えない', () => {
+		const r = memLab({ n: 4, mode: 0, nested: 1 });
+		expect(r).toMatchObject({ same: true, innerSame: true, aChanges: true, arrays: 5, copied: 0 });
+	});
+	it('浅い写し [...a]：外は別の物。中が配列なら中は同じ物で、a も変わる', () => {
+		expect(memLab({ n: 4, mode: 1, nested: 1 })).toMatchObject({
+			same: false,
+			innerSame: true,
+			aChanges: true,
+			arrays: 6,
+			copied: 4
+		});
+		expect(memLab({ n: 4, mode: 1, nested: 0 })).toMatchObject({ aChanges: false, arrays: 2 });
+	});
+	it('structuredClone：中まで作り直す。n = 4・中が配列なら配列は 10 個、写した値は 4 + 8', () => {
+		expect(memLab({ n: 4, mode: 2, nested: 1 })).toMatchObject({
+			same: false,
+			innerSame: false,
+			aChanges: false,
+			arrays: 10,
+			copied: 12
+		});
+	});
+	it('つまみの値を、選ぶつまみは名前で、数は単位つきで書く', () => {
+		const mode = LABS.mem.knobs.find((k) => k.k === 'mode');
+		expect(mode && knobText(mode, 2)).toBe('structuredClone(a)');
+		expect(knobText(LABS.tcp.knobs[0], 30)).toBe('30 ms');
 	});
 });
