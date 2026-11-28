@@ -39,3 +39,11 @@ export function dotsAt(t: { a: Pt; b: Pt }, p: number | null, both = false): Pt[
 	const at = (k: number) => ({ x: t.a.x + (t.b.x - t.a.x) * k, y: t.a.y + (t.b.y - t.a.y) * k });
 	return both ? [at(p), at(1 - p)] : [at(p)];
 }
+
+/** 四角い物（半幅 hw・半高 hh）の中心から、向き (dx, dy) に進んで外枠に着くまでの長さ（段 panel の線を辺で止める） */
+export function rectReach(hw: number, hh: number, dx: number, dy: number): number {
+	const L = Math.hypot(dx, dy) || 1;
+	const ux = Math.abs(dx / L);
+	const uy = Math.abs(dy / L);
+	return Math.min(ux > 1e-9 ? hw / ux : Infinity, uy > 1e-9 ? hh / uy : Infinity);
+}

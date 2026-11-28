@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { LABS, answerPred, k8sPlan, knobText, memLab, snapKnob, tcpSim, type LabKnob } from './lab';
+import {
+	LABS,
+	answerPred,
+	k8sPlan,
+	knobText,
+	memLab,
+	snapKnob,
+	statLab,
+	tcpSim,
+	type LabKnob
+} from './lab';
 
 // learn-standard.md 第 19 章「試す」・LS-L5：つまみの値で計算し直す（乱数なし。同じ値から同じ結果）
 const k: LabKnob = { k: 'rtt', label: 'RTT', min: 5, max: 200, step: 5, v: 30, unit: ' ms', d: '' };
@@ -94,5 +104,23 @@ describe('JavaScript：写したつもりが写っていない（memLab）', () 
 		const mode = LABS.mem.knobs.find((k) => k.k === 'mode');
 		expect(mode && knobText(mode, 2)).toBe('structuredClone(a)');
 		expect(knobText(LABS.tcp.knobs[0], 30)).toBe('30 ms');
+	});
+});
+
+describe('統計：平均のぶれ（statLab）', () => {
+	it('標準誤差は σ/√n。指数・n = 30 で 0.73 分、n = 120 で 0.37 分', () => {
+		expect(statLab({ n: 30, days: 400, shape: 0 }).se).toBeCloseTo(0.7303, 3);
+		expect(statLab({ n: 120, days: 400, shape: 0 }).se).toBeCloseTo(0.3651, 3);
+	});
+	it('模擬の散らばりは式に近く、95% の帯に入る日はおよそ 95%', () => {
+		const r = statLab({ n: 30, days: 400, shape: 0 });
+		expect(Math.abs(r.sd - r.se) / r.se).toBeLessThan(0.06);
+		expect(r.inBand).toBeGreaterThan(0.93);
+		expect(r.inBand).toBeLessThan(0.98);
+	});
+	it('結果の表と予想の問いがある（つまみは n・日数・母集団の形）', () => {
+		expect(LABS.stat.knobs.map((k) => k.k)).toEqual(['n', 'days', 'shape']);
+		const v = Object.fromEntries(LABS.stat.knobs.map((k) => [k.k, k.v]));
+		expect(LABS.stat.results(v)[0][1]).toMatch(/分$/);
 	});
 });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { WIRE_TONE, dotsAt, trim } from './wire';
+import { WIRE_TONE, dotsAt, trim, rectReach } from './wire';
 
 // learn-standard.md 16.2 LS3-K4・16.4 M2：線は物の外枠の手前で止め、線の上を点がいつも流れる
 describe('線（wire）', () => {
@@ -28,5 +28,13 @@ describe('線（wire）', () => {
 	});
 	it('点の色：データは青、ACK は緑、watch は紫、参照は黄（第 16.2 K4）', () => {
 		expect(WIRE_TONE).toEqual({ data: 'blue', ack: 'green', watch: 'purple', ref: 'yellow' });
+	});
+});
+
+describe('四角い物の外枠までの長さ（rectReach。段 panel の線）', () => {
+	it('縦に並ぶ時は上下の辺、横に並ぶ時は左右の辺で止める', () => {
+		expect(rectReach(400, 60, 0, 1)).toBeCloseTo(60, 6);
+		expect(rectReach(150, 120, 1, 0)).toBeCloseTo(150, 6);
+		expect(rectReach(100, 100, 1, 1)).toBeCloseTo(Math.SQRT2 * 100, 6);
 	});
 });

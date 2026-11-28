@@ -1,3 +1,4 @@
+import { SHAPES, SIGMA, sim, type Shape } from './stat-sim.ts';
 // 試す（learn-standard.md 第 19 章・LS-L5・mastery-standard.md EV-3）。つまみの値で結果を計算し直す。
 // 計算は決まった式だけ（乱数なし。CLAUDE.md 第 8 章）。式は試作 learn11 の「試す」を TypeScript に移した物
 export type LabKnob = {
@@ -15,7 +16,7 @@ export type LabKnob = {
 	show?: string[];
 };
 /** 試すの題（見せ方の型ごとの見本の題） */
-export type LabId = 'tcp' | 'k8s' | 'mem';
+export type LabId = 'tcp' | 'k8s' | 'mem' | 'stat';
 export type Pred = { q: string; opts: string[]; ans: number; why: string; tryit: string };
 /** 結果の表の 1 行：名前・値・言葉の ID（吹き出し） */
 export type LabRow = [string, string, string?];
@@ -93,6 +94,23 @@ export function k8sPlan(p: { rep: number; lim: number; peak: number; nodes: numb
 }
 
 const fmt = (x: number) => (x >= 100 ? Math.round(x).toLocaleString('en-US') : x.toFixed(1));
+
+/** 標本の大きさ n・積む日・母集団の形から、式の標準誤差・模擬の散らばり・95% の帯に入った日の割合・歪みの目安（指数の時 2/√n） */
+export function statLab(p: { n: number; days: number; shape: number }) {
+	const shape = Math.max(0, Math.min(2, Math.round(p.shape))) as Shape;
+	const se = SIGMA[shape] / Math.sqrt(p.n);
+	const r = sim(p.n, p.days, shape);
+	const inBand = r.means.filter((m) => Math.abs(m - 4) <= 1.96 * se).length / p.days;
+	return {
+		se,
+		sd: r.sd,
+		inBand,
+		lo: 4 - 1.96 * se,
+		hi: 4 + 1.96 * se,
+		skew: shape === 0 ? 2 / Math.sqrt(p.n) : null,
+		shape
+	};
+}
 
 export const MEM_MODES = ['b = a', 'b = [...a]', 'structuredClone(a)'] as const;
 /** a は長さ n の配列（中は数か、小さな配列 [i, i]）。b の作り方ごとに、同じ物か・b[0] を直すと a が変わるか・配列の数・写した値の数。
@@ -309,6 +327,70 @@ export const LABS: Record<LabId, Lab> = {
 				ans: 2,
 				why: 'a 側に外 1 ＋ 中 4、b 側にも外 1 ＋ 中 4 で 10 個。深い写しは手間もメモリも倍になる。',
 				tryit: 'n を 32 にして、配列の数と写した値の増え方を見る'
+			}
+		]
+	},
+	stat: {
+		title: '人数・日数・母集団の形を変えて、山の幅と形を見る',
+		intro:
+			'窓口の待ち時間（平均 4 分）から、1 日 n 人の平均を出して積む。n を増やすと山はどれだけ細くなるか。母集団の形を変えても山になるか。95% の帯に入る日の割合も数える（模擬。同じ値なら同じ結果）。',
+		knobs: [
+			{
+				k: 'n',
+				label: '標本の大きさ n',
+				min: 2,
+				max: 120,
+				step: 2,
+				v: 30,
+				unit: ' 人',
+				d: '1 日に測る人数。2〜120 人。'
+			},
+			{
+				k: 'days',
+				label: '積む日',
+				min: 50,
+				max: 800,
+				step: 50,
+				v: 400,
+				unit: ' 日',
+				d: '標本平均を出して積む日の数。50〜800 日。'
+			},
+			{
+				k: 'shape',
+				label: '母集団の形',
+				min: 0,
+				max: 2,
+				step: 1,
+				v: 0,
+				unit: '',
+				show: [...SHAPES],
+				d: '待ち時間の分布の形。どれも平均は 4 分。'
+			}
+		],
+		results(v) {
+			const r = statLab({ n: v.n, days: v.days, shape: v.shape });
+			return [
+				['標準誤差（σ/√n）', `${r.se.toFixed(2)} 分`, 'se'],
+				['模擬の散らばり', `${r.sd.toFixed(2)} 分`, 'sampdist'],
+				['95% の帯', `${r.lo.toFixed(2)}〜${r.hi.toFixed(2)} 分`, 'p95'],
+				['帯に入った日', `${(r.inBand * 100).toFixed(1)}%`, 'p95'],
+				['歪みの目安（指数の時 2/√n）', r.skew === null ? '—' : r.skew.toFixed(2), 'skew']
+			];
+		},
+		preds: [
+			{
+				q: '指数のまま、n を 30 → 120 にすると、山の幅（標準誤差）は？',
+				opts: ['変わらない', '半分', '4 分の 1'],
+				ans: 1,
+				why: '√120 は √30 の 2 倍。幅は σ/√n なので半分になる。4 分の 1 にするには 16 倍の人数が要る。',
+				tryit: 'n を 120 にして、標準誤差が 0.73 → 0.37 分になるのを見る'
+			},
+			{
+				q: '母集団を一様（0〜8 分）にして n = 30。平均の分布の形は？',
+				opts: ['平らなまま', '真ん中に山ができる', '右に長い'],
+				ans: 1,
+				why: '中心極限定理。母集団の形によらず、n が大きいと平均の分布は正規分布に近づく。',
+				tryit: '形を二山にしても、n = 30 なら山が 1 つになるのを見る'
 			}
 		]
 	}

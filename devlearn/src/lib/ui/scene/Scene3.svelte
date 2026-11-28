@@ -11,12 +11,15 @@
 		type Drawn,
 		type SceneObj
 	} from '../../learn/scene/draw.ts';
-	import type { WireKind } from '../../learn/scene/wire.ts';
+	import { rectReach, type WireKind } from '../../learn/scene/wire.ts';
 	import Wire from './kit/Wire.svelte';
 	import type { Layout } from '../../learn/scene/layout.ts';
 	import { pulseAt } from '../../learn/player.ts';
 	import type { ListState } from '../../learn/check-v3.ts';
 	import List from './kit/List.svelte';
+	import Panel from './kit/Panel.svelte';
+	import ChartBody from './kit/ChartBody.svelte';
+	import type { ChartSpec } from '../../learn/scene/chart.ts';
 	import Stage from './Stage.svelte';
 	import Block from './kit/Block.svelte';
 	import Db from './kit/Db.svelte';
@@ -61,6 +64,8 @@
 		down?: string[];
 		/** リストの中身（物の ID → 値・席の数・今足したマス） */
 		lists?: Record<string, ListState>;
+		/** 段の中身（見せ方の型 chart） */
+		charts?: Record<string, ChartSpec>;
 	};
 	let {
 		objs,
@@ -76,7 +81,8 @@
 		terms = [],
 		pods = {},
 		down = [],
-		lists = {}
+		lists = {},
+		charts = {}
 	}: Props = $props();
 	// 乗せた物（浮き上がり 8。LS3-M4）と吹き出し（LS3-H1）。Tab で移った時も同じ（U-10）
 	const LIFT = 8;
@@ -98,6 +104,11 @@
 		hover = { obj, term, anchor: el.getBoundingClientRect() };
 	}
 	const lift = (id: string) => (hover?.obj === id ? LIFT : 0);
+	/** 線を物の外枠の手前で止める長さ。段（panel）は四角の辺（下は厚み 20 の分だけ下げる）で止める */
+	const reach = (d: Drawn, o: Drawn) =>
+		d.kind === 'panel'
+			? rectReach(((d.w ?? 940) * d.s) / 2, ((d.h ?? 160) * d.s) / 2 + 12, o.x - d.x, o.y - d.y) + 8
+			: REACH[d.kind] * d.s;
 	const list = $derived(drawList(objs, layout, prev, t, { reduce }));
 	const byId = $derived(new Map(list.map((d) => [d.id, d])));
 	const pulse = $derived(pulseAt(t, { reduce }));
@@ -131,8 +142,8 @@
 					<Wire
 						{a}
 						{b}
-						ia={REACH[a.kind] * a.s}
-						ib={REACH[b.kind] * b.s}
+						ia={reach(a, b)}
+						ib={reach(b, a)}
 						kind={ln.kind}
 						both={ln.both}
 						p={flow}
@@ -145,7 +156,7 @@
 			{#if pulse}
 				{#each hl as id (id)}
 					{@const d = byId.get(id)}
-					{#if d && d.op >= 0.5 && d.kind !== 'pod'}
+					{#if d && d.op >= 0.5 && d.kind !== 'pod' && d.kind !== 'panel'}
 						{@const r = (64 + 40 * pulse.k) * d.s}
 						<ellipse
 							data-pulse={id}
@@ -236,6 +247,34 @@
 						term={d.term}
 						lift={lift(d.id)}
 					/>
+				{:else if d.kind === 'panel'}
+					{@const w = (d.w ?? 940) * d.s}
+					{@const hh = (d.h ?? 160) * d.s}
+					{@const spec = charts[d.id]}
+					<Panel
+						x={d.x - w / 2}
+						y={d.y - hh / 2}
+						{w}
+						h={hh}
+						{uik}
+						tone={d.tone}
+						title={d.name}
+						hl={h}
+						lift={lift(d.id)}
+						op={d.op}
+						id={d.id}
+						term={d.term}
+					>
+						{#if spec}
+							<ChartBody
+								{spec}
+								box={{ x: d.x - w / 2, y: d.y - hh / 2, w, h: hh }}
+								{t}
+								{uik}
+								tone={d.tone}
+							/>
+						{/if}
+					</Panel>
 				{:else if d.kind === 'platform'}
 					<Platform
 						x={d.x}
@@ -287,8 +326,8 @@
 					<Wire
 						{a}
 						{b}
-						ia={REACH[a.kind] * a.s}
-						ib={REACH[b.kind] * b.s}
+						ia={reach(a, b)}
+						ib={reach(b, a)}
 						kind={ln.kind}
 						both={ln.both}
 						p={flow}
@@ -300,6 +339,30 @@
 			{#each list.filter((d) => !isFloor(d.kind)) as d (d.id)}
 				{@render one(d)}
 			{/each}
+			<!-- 主役の段（panel）は外枠の輪が広がる（板の下の輪は見えないので上に描く。LS3-M1） -->
+			{#if pulse}
+				{#each hl as id (id)}
+					{@const d = byId.get(id)}
+					{#if d && d.op >= 0.5 && d.kind === 'panel'}
+						{@const w = (d.w ?? 940) * d.s}
+						{@const hh = (d.h ?? 160) * d.s}
+						{@const g = 4 + 14 * pulse.k}
+						<rect
+							data-pulse={id}
+							pointer-events="none"
+							x={d.x - w / 2 - g}
+							y={d.y - hh / 2 - g}
+							width={w + g * 2}
+							height={hh + 20 + g * 2}
+							rx={18 + g}
+							fill="none"
+							style:stroke="var(--dl-obj-blue)"
+							stroke-width={2.4 * uik}
+							opacity={pulse.op}
+						/>
+					{/if}
+				{/each}
+			{/if}
 			{@render over?.(uik)}
 		{/snippet}
 	</Stage>

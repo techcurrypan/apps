@@ -6,6 +6,7 @@ import type { Layout } from './scene/layout.ts';
 import type { PodState } from '../ui/scene/kit/paint.ts';
 import type { Cue } from './scene/cue.ts';
 import type { WireKind } from './scene/wire.ts';
+import type { ChartSpec } from './scene/chart.ts';
 import { firstPerStep, markTerms, type Term } from './terms.ts';
 
 export type V3Kind =
@@ -69,6 +70,8 @@ export type V3Step = {
 	down?: string[];
 	/** リストの中身（物の ID → 値の並び・席の数・今足したマス・解放した印。第 17 章 list） */
 	lists?: Record<string, ListState>;
+	/** 段（panel）の中身（見せ方の型 chart。物の ID → ヒストグラム・粒・曲線・帯・印） */
+	charts?: Record<string, ChartSpec>;
 	/** コードの札（memory の型）：今の行（光る）・済んだ行・画面の出力・このステップだけの行（書き換えた版）。無いステップは札を出さない */
 	code?: { cur: number[]; done?: number[]; out?: string[]; lines?: string[] };
 };
@@ -231,8 +234,31 @@ export function checkV3(
 		const at = ids.map((id) => {
 			const [x, y, sc = 1] = s.layout[id];
 			const k = l.objs[id]?.kind;
-			return { id, x, y, r: k ? REACH[k] * sc : 0, hold: !!k && HOLDERS.has(k) };
+			return { id, x, y, r: k ? REACH[k] * sc : 0, hold: !!k && (HOLDERS.has(k) || k === 'panel') };
 		});
+		// 段（panel）は四角で測る：枠の中・段どうしが重ならない
+		const rects = ids
+			.filter((id) => l.objs[id]?.kind === 'panel')
+			.map((id) => {
+				const [x, y, sc = 1] = s.layout[id];
+				const o = l.objs[id];
+				const w = (o?.w ?? 0) * sc;
+				const h = (o?.h ?? 0) * sc;
+				return { id, x0: x - w / 2, y0: y - h / 2, x1: x + w / 2, y1: y + h / 2 };
+			});
+		for (const r of rects)
+			if (r.x0 < 0 || r.y0 < 0 || r.x1 > VIEW.w || r.y1 > VIEW.h)
+				add(48, where(i), `段「${r.id}」が 1000×600 の枠の外`);
+		for (let p = 0; p < rects.length; p++)
+			for (let q = p + 1; q < rects.length; q++) {
+				const a = rects[p];
+				const b = rects[q];
+				if (
+					Math.min(a.x1, b.x1) > Math.max(a.x0, b.x0) &&
+					Math.min(a.y1, b.y1) > Math.max(a.y0, b.y0)
+				)
+					add(48, where(i), `段「${a.id}」と「${b.id}」が重なる`);
+			}
 		for (const a of at)
 			if (a.x < 0 || a.x > VIEW.w || a.y < 0 || a.y > VIEW.h)
 				add(48, where(i), `物「${a.id}」が 1000×600 の外（${a.x}, ${a.y}）`);

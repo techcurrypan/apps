@@ -7,11 +7,11 @@
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
-	const v3 = $derived(v3Of(data.lesson.id));
+	const v3 = $derived(v3Of(data.id));
 </script>
 
 <svelte:head>
-	<title>{data.lesson.title} | devlearn</title>
+	<title>{data.title} | devlearn</title>
 </svelte:head>
 
 <!-- 第 2 版で書いたレッスン（tier を持つ）は第 2 版の画面で開く（D-23）。第 1 版は 10-D で書き直すまで今の画面 -->
@@ -26,7 +26,7 @@
 			recall={v3.recall}
 		/>
 	{/key}
-{:else if isV2(data.lesson)}
+{:else if data.lesson && isV2(data.lesson)}
 	<LearnV2
 		lesson={data.lesson}
 		known={data.known}
@@ -34,6 +34,6 @@
 		index={data.index}
 		termLessons={data.termLessons}
 	/>
-{:else}
+{:else if data.lesson}
 	<LearnView lesson={data.lesson} known={data.known} />
 {/if}

@@ -18,11 +18,13 @@
 	import LabPanel from './LabPanel.svelte';
 	import LabFigure from './LabFigure.svelte';
 	import LabFigureMem from './LabFigureMem.svelte';
+	import LabFigureStat from './LabFigureStat.svelte';
 	import Code from '../scene/label/Code.svelte';
 	import TryPanel3 from './TryPanel3.svelte';
 	import TryFigure from './TryFigure.svelte';
 	import TryFigureK8s from './TryFigureK8s.svelte';
 	import TryFigureMem from './TryFigureMem.svelte';
+	import TryFigureStat from './TryFigureStat.svelte';
 	import RecallPanel3 from './RecallPanel3.svelte';
 	import RecallFigure from './RecallFigure.svelte';
 	import { LABS, type LabId } from '../../learn/lab.ts';
@@ -308,6 +310,7 @@
 						pods={st.pods}
 						down={st.down}
 						lists={st.lists}
+						charts={st.charts}
 					>
 						{#snippet over(uik)}
 							{#if st.intro}
@@ -360,6 +363,8 @@
 				{:else if mode === 'lab'}
 					{#if lab === 'mem'}
 						<LabFigureMem vals={labVals} t={(now - labAt) / 1000} />
+					{:else if lab === 'stat'}
+						<LabFigureStat vals={labVals} t={(now - labAt) / 1000} />
 					{:else}
 						<LabFigure {lab} vals={labVals} t={(now - labAt) / 1000} />
 					{/if}
@@ -368,6 +373,8 @@
 						<TryFigureK8s scene={tryScene} st={tryState} t={now} />
 					{:else if tryScene.id === 'mem'}
 						<TryFigureMem st={tryState} t={now} />
+					{:else if tryScene.id === 'stat'}
+						<TryFigureStat st={tryState} t={now} />
 					{:else}
 						<TryFigure scene={tryScene} st={tryState} t={now} />
 					{/if}

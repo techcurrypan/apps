@@ -3,9 +3,8 @@
 // 打った行は、エラーにならなかった物だけを覚え、毎回初めから走らせ直す（状態は打った行の並びだけで決まる。CLAUDE.md 第 8 章）。
 // 乱数と時計は決まった物に替える。止まらない繰り返しは決まった回数で止める（tools/js/guard.ts）
 import type { TryLine, TryResult, TryScene, TryState } from '../../learn/try3.ts';
-import { guardLoops } from '../../tools/js/guard.ts';
 import { inspect } from '../../tools/js/inspect.ts';
-import { JS_CLOCK_BASE, LOOP_LIMIT } from '../../tools/js/run.ts';
+import { runRepl } from '../../learn/js-repl.ts';
 
 const o = (text: string, kind: TryLine['kind'] = 'out'): TryLine => ({ text, kind });
 
@@ -13,78 +12,17 @@ const o = (text: string, kind: TryLine['kind'] = 'out'): TryLine => ({ text, kin
 const NAMES = ['a', 'b', 'c', 'd', 'e', 'xs', 'ys'];
 export type FigName = { name: string; obj: number; vals: string[] };
 
-class LoopStop extends Error {}
-
-type Ran = { out: string[]; value?: unknown; err?: string; fig: FigName[] };
-
-/** prev（済んだ行）の後に line を走らせ、line の値・書いた物・名前と物の表を返す */
-function runLines(prev: string[], line: string): Ran {
-	const out: string[] = [];
-	let on = false;
-	const log = (...a: unknown[]) => {
-		if (on) out.push(a.map((x) => inspect(x, true)).join(' '));
-	};
-	const console = { log, info: log, warn: log, error: log };
-	let steps = 0;
-	const __g = () => {
-		if (++steps > LOOP_LIMIT) throw new LoopStop();
-		return true;
-	};
-	function* __gi<T>(it: Iterable<T>): Generator<T> {
-		for (const v of it) {
-			__g();
-			yield v;
-		}
-	}
-	let seed = 20261110;
-	const FakeMath = Object.create(Math) as Math;
-	FakeMath.random = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648;
-	const FakeDate = class extends Date {
-		constructor(...a: unknown[]) {
-			if (a.length === 0) super(JS_CLOCK_BASE);
-			else super(...(a as ConstructorParameters<typeof Date>));
-		}
-		static now() {
-			return JS_CLOCK_BASE;
-		}
-	};
-	const before = prev.map((l) => guardLoops(l)).join('\n');
-	const probe = `(() => { const r = []; for (const k of ${JSON.stringify(NAMES)}) { let v; try { v = eval(k); } catch { continue; } if (Array.isArray(v)) r.push([k, v]); } return r; })()`;
-	const make = (body: string) =>
-		new Function('console', '__g', '__gi', '__on', 'Math', 'Date', body) as (
-			...a: unknown[]
-		) => unknown;
-	const args = (f: () => void) => [console, __g, __gi, f, FakeMath, FakeDate];
-	let value: unknown;
-	let err: string | undefined;
-	try {
-		// 値は直接の eval で取る（宣言の行は undefined）。書いた物は line の分だけ集める
-		value = make(`${before}\n__on();\nreturn eval(${JSON.stringify(guardLoops(line))});`)(
-			...args(() => (on = true))
-		);
-	} catch (e) {
-		err =
-			e instanceof LoopStop
-				? `Uncaught RangeError: 繰り返しが ${LOOP_LIMIT.toLocaleString('en-US')} 回を超えたので止めた`
-				: e instanceof Error
-					? `Uncaught ${e.name}: ${e.message}`
-					: `Uncaught ${inspect(e)}`;
-	}
-	let fig: FigName[];
-	try {
-		steps = 0;
-		on = false;
-		const lines = err ? before : `${before}\n${guardLoops(line)}`;
-		const got = make(`${lines}\nreturn ${probe};`)(...args(() => {})) as [string, unknown[]][];
-		const objs: unknown[] = [];
-		fig = got.map(([name, v]) => {
+/** prev の後に line を走らせ、名前ごとの配列の表（同じ物は同じ番号）を作る */
+function runLines(prev: string[], line: string) {
+	const r = runRepl(prev, line, { names: NAMES });
+	const objs: unknown[] = [];
+	const fig: FigName[] = r.vars
+		.filter((x): x is [string, unknown[]] => Array.isArray(x[1]))
+		.map(([name, v]) => {
 			if (!objs.includes(v)) objs.push(v);
 			return { name, obj: objs.indexOf(v), vals: v.slice(0, 6).map((x) => inspect(x)) };
 		});
-	} catch {
-		fig = [];
-	}
-	return { out, value, err, fig };
+	return { ...r, fig };
 }
 
 const linesOf = (s: TryState): string[] => (s.v.code ? (JSON.parse(s.v.code) as string[]) : []);

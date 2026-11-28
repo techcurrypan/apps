@@ -17,10 +17,20 @@ export type ObjKind =
 	| 'pod'
 	| 'frame'
 	| 'var'
-	| 'list';
+	| 'list'
+	| 'panel';
 
 /** レッスンの物：種類・名前・色。置き場は構図（Layout）が決める */
-export type SceneObj = { kind: ObjKind; name: string; tone?: Tone; glyph?: string; term?: string };
+export type SceneObj = {
+	kind: ObjKind;
+	name: string;
+	tone?: Tone;
+	glyph?: string;
+	term?: string;
+	/** 段（panel）の幅と高さ（図の単位。縮尺 1 の時）。置き場は段の真ん中 */
+	w?: number;
+	h?: number;
+};
 
 export type Drawn = SceneObj & Place & { id: string };
 
@@ -38,7 +48,8 @@ export const NAME_DROP: Record<ObjKind, number> = {
 	pod: 0,
 	frame: 0,
 	var: 0,
-	list: 64
+	list: 64,
+	panel: 0
 };
 /** 線を物の外枠の手前で止める長さ（図の単位。縮尺 1 の時。LS3-K4） */
 export const REACH: Record<ObjKind, number> = {
@@ -54,13 +65,14 @@ export const REACH: Record<ObjKind, number> = {
 	pod: 46,
 	frame: 120,
 	var: 42,
-	list: 140
+	list: 140,
+	panel: 0
 };
 /** 床の部品（上に物を乗せる。先に描く） */
 const FLOOR: ReadonlySet<ObjKind> = new Set(['platform', 'frame']);
 export const isFloor = (k: ObjKind): boolean => FLOOR.has(k);
-/** 自分で名前を描く部品（pod・frame・var） */
-export const SELF_NAMED: ReadonlySet<ObjKind> = new Set(['pod', 'frame', 'var']);
+/** 自分で名前を描く部品（pod・frame・var・panel） */
+export const SELF_NAMED: ReadonlySet<ObjKind> = new Set(['pod', 'frame', 'var', 'panel']);
 
 export function drawList(
 	objs: Record<string, SceneObj>,

@@ -12,7 +12,7 @@
 	import Tag from '../scene/label/Tag.svelte';
 	import Stage from '../scene/Stage.svelte';
 
-	type Props = { lab: Exclude<LabId, 'mem'>; vals: Record<string, number>; t: number };
+	type Props = { lab: Exclude<LabId, 'mem' | 'stat'>; vals: Record<string, number>; t: number };
 	let { lab, vals, t }: Props = $props();
 	const BOX = { x: 90, y: 110, w: 860, h: 380 };
 	const tcp = $derived(

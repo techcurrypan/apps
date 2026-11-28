@@ -159,4 +159,15 @@ describe('検査 41〜48（checkV3）', () => {
 		l.steps[1].layout = { app: [440, 300], kern: [660, 300], nic: [880, 300] };
 		expect(run(l).some((p) => p.check === 48 && p.msg.includes('行'))).toBe(true);
 	});
+	it('48：段（panel）は枠の中に置き、段どうしが重ならない', () => {
+		const l = ok();
+		l.objs.pa = { kind: 'panel', name: '母集団', term: 'app', w: 940, h: 150 };
+		l.objs.pb = { kind: 'panel', name: '標本', term: 'app', w: 940, h: 150 };
+		l.steps[1].layout = { ...layout, pa: [500, 90], pb: [500, 260] };
+		expect(nums(l)).not.toContain(48);
+		l.steps[1].layout = { ...layout, pa: [500, 90], pb: [500, 200] };
+		expect(run(l).some((p) => p.check === 48 && p.msg.includes('段'))).toBe(true);
+		l.steps[1].layout = { ...layout, pa: [500, 40], pb: [500, 260] };
+		expect(run(l).some((p) => p.check === 48 && p.msg.includes('枠の外'))).toBe(true);
+	});
 });

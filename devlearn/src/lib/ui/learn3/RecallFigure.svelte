@@ -13,6 +13,9 @@
 	import Platform from '../scene/kit/Platform.svelte';
 	import Pod from '../scene/kit/Pod.svelte';
 	import Queue from '../scene/kit/Queue.svelte';
+	import Panel from '../scene/kit/Panel.svelte';
+	import ChartBody from '../scene/kit/ChartBody.svelte';
+	import type { ChartSpec } from '../../learn/scene/chart.ts';
 	import Var from '../scene/kit/Var.svelte';
 	import Wire from '../scene/kit/Wire.svelte';
 	import Note from '../scene/label/Note.svelte';
@@ -67,6 +70,29 @@
 				{ id: 'L2', name: '配列 #2', x: 600, y: 430, k: 'list', drop: 70 }
 			],
 			wires: [['va', 'L1']]
+		},
+		stat: {
+			label: '母集団・標本・平均の分布の 3 段',
+			objs: [
+				{ id: 'pop', name: '母集団', x: 500, y: 100, k: 'panel', drop: 0 },
+				{ id: 'smp', name: '標本：ある日の 30 人', x: 500, y: 265, k: 'panel', drop: 0 },
+				{ id: 'mean', name: '平均の分布', x: 500, y: 455, k: 'panel', drop: 0 }
+			],
+			wires: []
+		}
+	};
+	/** 段の大きさと中身（stat） */
+	const PANEL: Record<
+		string,
+		{ w: number; h: number; tone: 'teal' | 'blue' | 'orange'; spec: ChartSpec }
+	> = {
+		pop: { w: 900, h: 140, tone: 'teal', spec: { kind: 'pop', shape: 0 } },
+		smp: { w: 900, h: 120, tone: 'blue', spec: { kind: 'sample', shape: 0, n: 30, day: 20 } },
+		mean: {
+			w: 900,
+			h: 200,
+			tone: 'orange',
+			spec: { kind: 'means', shape: 0, n: 30, days: 400, curve: true }
 		}
 	};
 	const S = $derived(SETS[set]);
@@ -109,7 +135,40 @@
 					}
 				}}
 			>
-				{#if can || right}
+				{#if o.k === 'panel'}
+					{@const P = PANEL[o.id]}
+					{#if can || right}
+						<rect
+							x={o.x - P.w / 2 - 10}
+							y={o.y - P.h / 2 - 10}
+							width={P.w + 20}
+							height={P.h + 40}
+							rx={22}
+							fill="none"
+							style:stroke={right ? 'var(--dl-obj-green)' : 'var(--dl-obj-blue)'}
+							stroke-width={(right ? 5 : 3) * uik}
+							opacity={right ? 1 : 0.35 + 0.55 * pulse}
+						/>
+					{/if}
+					<Panel
+						x={o.x - P.w / 2}
+						y={o.y - P.h / 2}
+						w={P.w}
+						h={P.h}
+						{uik}
+						tone={P.tone}
+						title={o.name}
+						hl={right}
+					>
+						<ChartBody
+							spec={P.spec}
+							box={{ x: o.x - P.w / 2, y: o.y - P.h / 2, w: P.w, h: P.h }}
+							t={60000}
+							{uik}
+							tone={P.tone}
+						/>
+					</Panel>
+				{:else if can || right}
 					<ellipse
 						cx={o.x}
 						cy={o.y + 10}
@@ -121,7 +180,9 @@
 						opacity={right ? 1 : 0.35 + 0.55 * pulse}
 					/>
 				{/if}
-				{#if o.k === 'nic'}
+				{#if o.k === 'panel'}
+					<!-- 段は上で描いた -->
+				{:else if o.k === 'nic'}
 					<Nic x={o.x} y={o.y} s={0.8} hl={right} {uik} />
 				{:else if o.k === 'hex'}
 					<Hex x={o.x} y={o.y} s={0.8} glyph="⇄" hl={right} {uik} />
@@ -155,7 +216,9 @@
 						{uik}
 					/>
 				{/if}
-				<Tag x={o.x} y={o.y + o.drop} text={o.name} {uik} />
+				{#if o.k !== 'panel'}
+					<Tag x={o.x} y={o.y + o.drop} text={o.name} {uik} />
+				{/if}
 			</g>
 		{/each}
 		{#if q?.k === 'hit' && !answered}
