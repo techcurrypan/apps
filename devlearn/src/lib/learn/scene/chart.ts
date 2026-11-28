@@ -126,7 +126,8 @@ export function chartGeom(s: ChartSpec, box: Box, t: number): ChartGeom {
 	if (s.curve)
 		for (let i = 0; i <= 120; i++) {
 			const v = (i / 120) * XMAX;
-			out.curve.push([X(v), bottom - ((days * MEAN_BW * normPdf(v, 4, se)) / peak) * H]);
+			// 曲線は積んだ日数（k）の尺。棒と一緒に育つ（途中で棒より高く出ない）
+			out.curve.push([X(v), bottom - ((k * MEAN_BW * normPdf(v, 4, se)) / peak) * H]);
 		}
 	if (s.band) {
 		const lo = 4 - 1.96 * se;

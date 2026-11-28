@@ -21,9 +21,10 @@
 	const bbr = $derived(st.v.cc === 'bbr');
 	const m = $derived(scene.metrics(st));
 	const fixed = $derived(!!st.f.ss2);
-	const X = { xmit: [110, 300], q: [365, 310], nic: [610, 300], peer: [885, 300] } as const;
+	// 端末に幅を譲った細い枠（約 690px）でも物が大きく見えるよう、700 の幅に 2 段で並べる（送る係 → qdisc → NIC → 相手。U の字）
+	const X = { xmit: [150, 210], q: [480, 225], nic: [480, 445], peer: [150, 445] } as const;
 	/** 物の縮尺（4 つが重ならず間が空く大きさ。LS3-S3） */
-	const S = 0.78;
+	const S = 0.92;
 	const k = $derived((t % 1600) / 1600);
 	const n = $derived(fixed ? 4 : 1);
 	const along = (a: readonly number[], b: readonly number[], p: number) =>
@@ -31,16 +32,16 @@
 	const pt = (a: readonly number[]) => ({ x: a[0], y: a[1] });
 </script>
 
-<Stage view={[0, 0, 1000, 600]} label="やってみる の図：送る係・qdisc・NIC・相手">
+<Stage view={[0, 0, 700, 640]} label="やってみる の図：送る係・qdisc・NIC・相手">
 	{#snippet children(uik: number)}
 		<Defs />
 		<Wire a={pt(X.xmit)} b={pt(X.q)} ia={70} ib={95} p={(t % 1800) / 1800} {uik} />
-		<Wire a={pt(X.q)} b={pt(X.nic)} ia={95} ib={70} p={((t + 600) % 1800) / 1800} {uik} />
-		<Wire a={pt(X.nic)} b={pt(X.peer)} ia={70} ib={60} p={null} {uik} op={0.6} />
+		<Wire a={pt(X.q)} b={pt(X.nic)} ia={75} ib={70} p={((t + 600) % 1800) / 1800} {uik} />
+		<Wire a={pt(X.nic)} b={pt(X.peer)} ia={90} ib={80} p={null} {uik} op={0.6} />
 		{#each Array.from({ length: n }, (_, i) => i) as i (i)}
 			{@const p = along(
-				[X.nic[0] + 70, X.nic[1]],
-				[X.peer[0] - 60, X.peer[1]],
+				[X.nic[0] - 90, X.nic[1]],
+				[X.peer[0] + 80, X.peer[1]],
 				(((t / 1800 + i / n) % 1) + 1) % 1
 			)}
 			<Packet x={p[0]} y={p[1]} kind="data" tone={fixed ? 'blue' : 'gray'} {uik} />
@@ -51,7 +52,7 @@
 		<Tag x={X.xmit[0]} y={X.xmit[1] + 90} text="tcp_write_xmit()" {uik} dot="var(--dl-obj-blue)" />
 		<Num
 			x={X.xmit[0]}
-			y={X.xmit[1] - 110}
+			y={X.xmit[1] - 120}
 			text="cwnd {m.cwnd}"
 			tone={fixed ? 'green' : 'red'}
 			center
@@ -68,8 +69,8 @@
 			dot="var(--dl-obj-teal)"
 		/>
 		<Note
-			x={X.q[0]}
-			y={X.q[1] - 120}
+			x={X.q[0] - 20}
+			y={X.q[1] - 140}
 			text={fq ? 'fq：間を空けて流す。溜めない' : 'pfifo_fast：溜まってあふれ、落とす'}
 			tone={fq ? 'green' : 'red'}
 			center
@@ -83,8 +84,8 @@
 		<g data-obj="peer"><Laptop x={X.peer[0]} y={X.peer[1]} s={S * 0.9} {uik} /></g>
 		<Tag x={X.peer[0]} y={X.peer[1] + 80} text="203.0.113.80" {uik} />
 		<Note
-			x={500}
-			y={500}
+			x={350}
+			y={605}
 			text={bbr
 				? '輻輳制御：BBR（落ちても縮めすぎない）'
 				: '輻輳制御：CUBIC（落ちると 0.7 倍に縮む）'}
@@ -92,7 +93,7 @@
 			center
 			{uik}
 		/>
-		<Num x={170} y={500} text="再送 {m.rtx}" tone={fixed ? 'green' : 'red'} center {uik} />
-		<Num x={830} y={500} text="RTT {m.rtt}" tone={fixed ? 'green' : 'orange'} center {uik} />
+		<Num x={70} y={605} text="再送 {m.rtx}" tone={fixed ? 'green' : 'red'} center {uik} />
+		<Num x={630} y={605} text="RTT {m.rtt}" tone={fixed ? 'green' : 'orange'} center {uik} />
 	{/snippet}
 </Stage>

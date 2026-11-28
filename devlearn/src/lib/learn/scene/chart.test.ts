@@ -49,4 +49,13 @@ describe('chartGeom', () => {
 		}
 		expect(g.marks.some((m) => m.v === 4.6)).toBe(true);
 	});
+	it('積んでいる途中（grow）の曲線は、積んだ日数の尺（棒と同じ尺。途中で棒より高く出ない）', () => {
+		const spec: ChartSpec = { kind: 'means', shape: 0, n: 30, days: 400, curve: true, grow: true };
+		const half = geom(spec, 100 * 20);
+		const full = geom(spec, 400 * 20);
+		const top = (g: ReturnType<typeof geom>) => Math.min(...g.curve.map(([, y]) => y));
+		const bottom = Math.max(...full.curve.map(([, y]) => y));
+		// 100 日分の曲線の山の高さは、400 日分の 1/4
+		expect((bottom - top(half)) / (bottom - top(full))).toBeCloseTo(0.25, 1);
+	});
 });

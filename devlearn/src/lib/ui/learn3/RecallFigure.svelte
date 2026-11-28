@@ -62,14 +62,18 @@
 			]
 		},
 		mem: {
-			label: '名前 a・xs と、ヒープの配列 2 つ',
+			label: '名前 a・b・xs と、ヒープの配列 2 つ',
 			objs: [
-				{ id: 'va', name: '変数 a', x: 190, y: 200, k: 'var', drop: 48 },
-				{ id: 'vxs', name: '変数 xs', x: 190, y: 430, k: 'var', drop: 48 },
-				{ id: 'L1', name: '配列 #1', x: 600, y: 200, k: 'list', drop: 70 },
-				{ id: 'L2', name: '配列 #2', x: 600, y: 430, k: 'list', drop: 70 }
+				{ id: 'va', name: '変数 a', x: 180, y: 130, k: 'var', drop: 48 },
+				{ id: 'vb', name: '変数 b', x: 180, y: 300, k: 'var', drop: 48 },
+				{ id: 'vxs', name: '変数 xs', x: 180, y: 470, k: 'var', drop: 48 },
+				{ id: 'L1', name: '配列 #1', x: 620, y: 210, k: 'list', drop: 70 },
+				{ id: 'L2', name: '配列 #2', x: 620, y: 450, k: 'list', drop: 70 }
 			],
-			wires: [['va', 'L1']]
+			wires: [
+				['va', 'L1'],
+				['vb', 'L1']
+			]
 		},
 		stat: {
 			label: '母集団・標本・平均の分布の 3 段',
@@ -110,8 +114,8 @@
 			<Wire
 				a={at(a)}
 				b={at(b)}
-				ia={110}
-				ib={110}
+				ia={set === 'mem' ? 50 : 110}
+				ib={set === 'mem' ? 125 : 110}
 				kind={set === 'mem' ? 'ref' : undefined}
 				p={i === S.wires.length - 1 && set === 'tcp' ? null : ((t + i * 900) % 1800) / 1800}
 				{uik}
@@ -191,7 +195,13 @@
 				{:else if o.k === 'block'}
 					<Block x={o.x} y={o.y} s={0.8} glyph="↻" hl={right} {uik} />
 				{:else if o.k === 'var'}
-					<Var x={o.x} y={o.y} name={o.id === 'va' ? 'a' : 'xs'} hl={right} {uik} />
+					<Var
+						x={o.x}
+						y={o.y}
+						name={o.id === 'va' ? 'a' : o.id === 'vb' ? 'b' : 'xs'}
+						hl={right}
+						{uik}
+					/>
 				{:else if o.k === 'list'}
 					<List
 						x={o.x}

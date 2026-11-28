@@ -44,7 +44,31 @@
 
 <section class="recall" aria-label="思い出す">
 	{#if !end && q}
-		<p class="no">問 {qi + 1} / {set.qs.length}</p>
+		<div class="prog">
+			<p class="no">問 {qi + 1} / {set.qs.length}</p>
+			<ol class="dots" aria-label="問いの進み具合">
+				{#each set.qs.keys() as i (i)}
+					<li>
+						<button
+							type="button"
+							class:now={i === qi}
+							class:ok={results[i]?.ok === true}
+							class:ng={results[i]?.ok === false}
+							aria-label="問 {i + 1}{results[i]
+								? results[i]?.ok
+									? '（当たり）'
+									: '（外れ）'
+								: ''}"
+							aria-current={i === qi ? 'step' : undefined}
+							onclick={() => {
+								typed = '';
+								onqi(i);
+							}}>{i + 1}</button
+						>
+					</li>
+				{/each}
+			</ol>
+		</div>
 		<h3>{q.q}</h3>
 		{#if q.k === 'pick'}
 			<div class="opts">
@@ -61,7 +85,7 @@
 			<ol class="ord">
 				{#each order as it, j (it)}
 					<li>
-						<span>{it}</span>
+						<span><b>{j + 1}.</b> {it}</span>
 						<button
 							type="button"
 							aria-label="上へ"
@@ -111,10 +135,24 @@
 					>{/if}
 				{#if q.k === 'text'}<br /><span>手本：{q.model}</span>{/if}
 			</div>
-			<button type="button" class="go" onclick={next}
-				>{qi + 1 < set.qs.length ? '次の問い' : '点を見る'} →</button
-			>
 		{/if}
+		<div class="nav">
+			{#if qi > 0}
+				<button
+					type="button"
+					class="back"
+					onclick={() => {
+						typed = '';
+						onqi(qi - 1);
+					}}>← 前の問い</button
+				>
+			{/if}
+			{#if res}
+				<button type="button" class="go" onclick={next}
+					>{qi + 1 < set.qs.length ? '次の問い' : '点を見る'} →</button
+				>
+			{/if}
+		</div>
 	{:else}
 		<h3>点：{score.right} / {score.total}</h3>
 		<div class="note">
@@ -179,6 +217,61 @@
 		padding-left: 1.6em;
 		display: grid;
 		gap: 4px;
+	}
+	/* ↑↓ の釦を行ごとにそろえる（字の長さで位置がずれない） */
+	.ord li {
+		display: grid;
+		grid-template-columns: 1fr auto auto;
+		align-items: center;
+		gap: 6px;
+	}
+	.prog {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+	}
+	.dots {
+		display: flex;
+		gap: 6px;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+	.dots button {
+		width: 26px;
+		height: 26px;
+		border-radius: 50%;
+		border: 1.5px solid var(--dl-border-strong, #8888);
+		background: transparent;
+		color: inherit;
+		font-size: 12.5px;
+		cursor: pointer;
+	}
+	.dots button.now {
+		border-color: var(--dl-obj-blue);
+		border-width: 2.5px;
+	}
+	.dots button.ok {
+		background: color-mix(in srgb, var(--dl-obj-green) 30%, transparent);
+	}
+	.dots button.ng {
+		background: color-mix(in srgb, var(--dl-obj-red) 30%, transparent);
+	}
+	.nav {
+		display: flex;
+		justify-content: space-between;
+		gap: 8px;
+	}
+	.nav .go {
+		margin-left: auto;
+	}
+	.back {
+		padding: 6px 12px;
+		border-radius: 10px;
+		border: 1px solid var(--dl-line, #8888);
+		background: transparent;
+		color: inherit;
+		cursor: pointer;
 	}
 	.ord li span {
 		display: inline-block;

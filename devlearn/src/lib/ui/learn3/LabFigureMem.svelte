@@ -8,6 +8,7 @@
 	import Wire from '../scene/kit/Wire.svelte';
 	import Halo from '../scene/label/Halo.svelte';
 	import Stage from '../scene/Stage.svelte';
+	import { localProj } from '../scene/iso';
 
 	type Props = { vals: Record<string, number>; t: number };
 	let { vals, t }: Props = $props();
@@ -29,9 +30,16 @@
 	const aVals = $derived(outerVals(r.same && edited ? 'b' : 'a'));
 	const inner = $derived(r.nested ? Math.min(r.n, 3) : 0);
 	const innerAt = (i: number, side: 'a' | 'b') => ({
-		x: 800,
-		y: (side === 'a' ? 90 : 340) + i * 78
+		x: 830,
+		y: (side === 'a' ? 75 : 355) + i * 100
 	});
+	/** 外の配列（縮尺 OS）の i 番目のマスの上の面の真ん中。中の配列への矢印はここから出す */
+	const OS = 0.85;
+	const cellTop = (o: { x: number; y: number }, i: number) => {
+		const Lc = shown * 44;
+		const q = localProj(o.x, o.y, OS).at(-Lc / 2 + 22 + i * 44, 0, 38);
+		return { x: q[0], y: q[1] };
+	};
 	const innerVals = (i: number, hit: boolean) =>
 		hit && i === 0 && edited ? [`${i}`, `${i}`, '9'] : [`${i}`, `${i}`];
 </script>
@@ -62,13 +70,13 @@
 		<Wire a={B} b={r.same ? OA : OB} ia={36} ib={150} kind="ref" p={flow} {uik} />
 		<!-- 外の配列から中の配列へ -->
 		{#each Array.from({ length: inner }, (_, i) => i) as i (i)}
-			<Wire a={OA} b={innerAt(i, 'a')} ia={150} ib={70} kind="ref" p={flow} {uik} />
+			<Wire a={cellTop(OA, i)} b={innerAt(i, 'a')} ia={6} ib={95} kind="ref" p={flow} {uik} />
 			{#if !r.same}
 				<Wire
-					a={OB}
+					a={cellTop(OB, i)}
 					b={innerAt(i, r.innerSame ? 'a' : 'b')}
-					ia={150}
-					ib={70}
+					ia={6}
+					ib={95}
 					kind="ref"
 					p={flow}
 					{uik}
@@ -78,11 +86,11 @@
 		<g data-obj="va" data-term="variable"><Var x={A.x} y={A.y} name="a" {uik} /></g>
 		<g data-obj="vb" data-term="variable"><Var x={B.x} y={B.y} name="b" {uik} /></g>
 		<g data-obj="oa" data-term="array">
-			<List x={OA.x} y={OA.y} s={0.85} vals={aVals} hl={r.same} {uik} />
+			<List x={OA.x} y={OA.y} s={OS} vals={aVals} hl={r.same} {uik} />
 		</g>
 		{#if !r.same}
 			<g data-obj="ob" data-term="copy">
-				<List x={OB.x} y={OB.y} s={0.85} vals={outerVals('b')} hl {uik} />
+				<List x={OB.x} y={OB.y} s={OS} vals={outerVals('b')} hl {uik} />
 			</g>
 		{/if}
 		{#if r.n > shown}
@@ -91,12 +99,12 @@
 		{#each Array.from({ length: inner }, (_, i) => i) as i (i)}
 			{@const pa = innerAt(i, 'a')}
 			<g data-obj="ia-{i}" data-term={r.innerSame ? 'shallow' : 'array'}>
-				<List x={pa.x} y={pa.y} s={0.55} vals={innerVals(i, r.innerSame)} newIdx={2} {uik} />
+				<List x={pa.x} y={pa.y} s={0.72} vals={innerVals(i, r.innerSame)} newIdx={2} {uik} />
 			</g>
 			{#if !r.innerSame}
 				{@const pb = innerAt(i, 'b')}
 				<g data-obj="ib-{i}" data-term="clone">
-					<List x={pb.x} y={pb.y} s={0.55} vals={innerVals(i, true)} newIdx={2} hl {uik} />
+					<List x={pb.x} y={pb.y} s={0.72} vals={innerVals(i, true)} newIdx={2} hl {uik} />
 				</g>
 			{/if}
 		{/each}
