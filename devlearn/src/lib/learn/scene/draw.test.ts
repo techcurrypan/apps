@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { drawList, type SceneObj } from './draw';
+import { NAME_DROP, REACH, drawList, type SceneObj } from './draw';
 
 // learn-standard.md 16.1 S2・S5：構図の置き場から、描く物の並び（奥から手前）を作る
 const objs: Record<string, SceneObj> = {
@@ -35,5 +35,12 @@ describe('drawList', () => {
 		} as const;
 		const l = drawList(o2, { p: [500, 372], n: [500, 380] }, null, 5000);
 		expect(l.map((d) => d.id)).toEqual(['n', 'p']);
+	});
+	it('リスト（list。メモリの型）も物として並べ、名前の札の下がりと線の止まりを持つ', () => {
+		const o3 = { xs: { kind: 'list', name: 'list', term: 'list' } } as const;
+		const l = drawList(o3, { xs: [600, 300] }, null, 5000);
+		expect(l[0]).toMatchObject({ id: 'xs', kind: 'list' });
+		expect(NAME_DROP.list).toBeGreaterThan(40);
+		expect(REACH.list).toBeGreaterThan(60);
 	});
 });

@@ -7,6 +7,8 @@
 	import Wire from './kit/Wire.svelte';
 	import type { Layout } from '../../learn/scene/layout.ts';
 	import { pulseAt } from '../../learn/player.ts';
+	import type { ListState } from '../../learn/check-v3.ts';
+	import List from './kit/List.svelte';
 	import Stage from './Stage.svelte';
 	import Block from './kit/Block.svelte';
 	import Db from './kit/Db.svelte';
@@ -49,6 +51,8 @@
 		pods?: Record<string, PodState>;
 		/** 黙ったノード（灰の点線の台） */
 		down?: string[];
+		/** リストの中身（物の ID → 値・席の数・今足したマス） */
+		lists?: Record<string, ListState>;
 	};
 	let {
 		objs,
@@ -63,7 +67,8 @@
 		over,
 		terms = [],
 		pods = {},
-		down = []
+		down = [],
+		lists = {}
 	}: Props = $props();
 	// 乗せた物（浮き上がり 8。LS3-M4）と吹き出し（LS3-H1）。Tab で移った時も同じ（U-10）
 	const LIFT = 8;
@@ -201,6 +206,23 @@
 						hl={h}
 						tone={d.tone}
 						glyph={d.glyph}
+						id={d.id}
+						term={d.term}
+						lift={lift(d.id)}
+					/>
+				{:else if d.kind === 'list'}
+					{@const ls = lists[d.id]}
+					<List
+						x={d.x}
+						y={d.y}
+						s={d.s}
+						op={d.op}
+						{uik}
+						hl={h}
+						vals={ls?.vals ?? []}
+						cap={ls?.cap}
+						newIdx={ls?.newIdx}
+						freed={ls?.freed}
 						id={d.id}
 						term={d.term}
 						lift={lift(d.id)}

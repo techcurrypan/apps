@@ -304,6 +304,7 @@
 						terms={mine}
 						pods={st.pods}
 						down={st.down}
+						lists={st.lists}
 					>
 						{#snippet over(uik)}
 							{#if st.intro}

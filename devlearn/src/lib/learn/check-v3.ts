@@ -67,7 +67,10 @@ export type V3Step = {
 	pods?: Record<string, PodState>;
 	/** 黙ったノード（platform の ID。灰の点線で描く） */
 	down?: string[];
+	/** リストの中身（物の ID → 値の並び・席の数・今足したマス・解放した印。第 17 章 list） */
+	lists?: Record<string, ListState>;
 };
+export type ListState = { vals: string[]; cap?: number; newIdx?: number; freed?: boolean };
 export type V3Lesson = {
 	id: string;
 	field: string;

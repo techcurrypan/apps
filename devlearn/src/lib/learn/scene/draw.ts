@@ -16,7 +16,8 @@ export type ObjKind =
 	| 'platform'
 	| 'pod'
 	| 'frame'
-	| 'var';
+	| 'var'
+	| 'list';
 
 /** レッスンの物：種類・名前・色。置き場は構図（Layout）が決める */
 export type SceneObj = { kind: ObjKind; name: string; tone?: Tone; glyph?: string; term?: string };
@@ -36,7 +37,8 @@ export const NAME_DROP: Record<ObjKind, number> = {
 	platform: 130,
 	pod: 0,
 	frame: 0,
-	var: 0
+	var: 0,
+	list: 64
 };
 /** 線を物の外枠の手前で止める長さ（図の単位。縮尺 1 の時。LS3-K4） */
 export const REACH: Record<ObjKind, number> = {
@@ -51,7 +53,8 @@ export const REACH: Record<ObjKind, number> = {
 	platform: 200,
 	pod: 46,
 	frame: 120,
-	var: 42
+	var: 42,
+	list: 140
 };
 /** 床の部品（上に物を乗せる。先に描く） */
 const FLOOR: ReadonlySet<ObjKind> = new Set(['platform', 'frame']);
