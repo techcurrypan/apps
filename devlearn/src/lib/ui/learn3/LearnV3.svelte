@@ -55,6 +55,8 @@
 
 	let mode = $state<Mode>('watch');
 	let step = $state(0);
+	/** 「中身まで」を開いているか（ステップを移ると閉じる） */
+	let deepOpen = $state(false);
 	let prev = $state<number | null>(null);
 	let clock = $state(start());
 	/** 描画の時刻（線の点・試すの育つ動き。状態は変えない） */
@@ -108,6 +110,7 @@
 		mFrom = metricsUpTo(lesson.steps, step);
 		prev = step;
 		step = i;
+		deepOpen = false;
 		clock = replay(clock);
 		mT = 0;
 	}
@@ -309,6 +312,19 @@
 							{/each}
 						{/snippet}
 					</Scene3>
+					{#if deepOpen && st.deep}
+						<div class="deepcard" role="note" data-testid="deepcard">
+							<b>中身まで（実装の名前と数）</b>
+							<p>{st.deep}</p>
+							<button
+								type="button"
+								class="hov"
+								data-d="閉じる"
+								aria-label="閉じる"
+								onclick={() => (deepOpen = false)}>×</button
+							>
+						</div>
+					{/if}
 					<div class="play">
 						<button
 							type="button"
@@ -415,10 +431,15 @@
 						</div>
 					{/if}
 					{#if st.deep}
-						<details class="deep">
-							<summary>中身まで（実装の名前と数）</summary>
-							<p>{st.deep}</p>
-						</details>
+						<!-- 開くと図の下の方に札で重ねる（右の欄を伸ばさない。内側のスクロールを作らない） -->
+						<button
+							type="button"
+							class="deep"
+							aria-expanded={deepOpen}
+							data-testid="deep"
+							onclick={() => (deepOpen = !deepOpen)}
+							>{deepOpen ? '▼' : '▶'} 中身まで（実装の名前と数）</button
+						>
 					{/if}
 				</div>
 				<div class="sfoot">
@@ -850,16 +871,43 @@
 	}
 	.deep {
 		margin-top: 8px;
+		min-height: 0;
+		min-width: 0;
+		padding: 2px 0;
+		border: 0;
+		background: none;
 		font-size: 13px;
-	}
-	.deep summary {
-		cursor: pointer;
 		font-weight: 700;
+		color: var(--dl-ink);
+		cursor: pointer;
 	}
-	.keys {
-		padding: 0 16px 4px;
-		font-size: 12px;
-		color: var(--dl-text-muted);
+	.deepcard {
+		position: absolute;
+		left: 12px;
+		right: 110px;
+		bottom: 12px;
+		padding: 10px 40px 10px 14px;
+		border-radius: 14px;
+		background: var(--dl-surface);
+		border: 1.5px solid var(--dl-border-strong);
+		box-shadow: 0 6px 20px rgb(0 0 0 / 0.15);
+		font-size: 13.5px;
+		line-height: 1.6;
+		z-index: 5;
+	}
+	.deepcard p {
+		margin: 2px 0 0;
+	}
+	.deepcard button {
+		position: absolute;
+		top: 6px;
+		right: 6px;
+		width: 28px;
+		height: 28px;
+		min-width: 0;
+		min-height: 0;
+		padding: 0;
+		border-radius: 50%;
 	}
 	.sfoot {
 		display: flex;

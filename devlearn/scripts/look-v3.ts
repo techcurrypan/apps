@@ -44,6 +44,17 @@ async function main() {
 			await sleep(3000);
 			rows.push(await tab.eval<Probe>(PROBE));
 			await tab.shot(`${OUT}/v3-${id}-watch-${i + 1}.png`);
+			// 「中身まで」を開いた時も、内側のスクロールが無く、札が図の中に収まるか
+			if (await tab.eval<boolean>('!!document.querySelector("[data-testid=deep]")')) {
+				await tab.eval('document.querySelector("[data-testid=deep]").click()');
+				await sleep(400);
+				const d = await tab.eval<Probe & { card: string }>(
+					`(() => { const p = ${PROBE}; const c = document.querySelector('[data-testid=deepcard]')?.getBoundingClientRect(); const f = document.querySelector('.fig')?.getBoundingClientRect(); p.card = c && f ? (c.top >= f.top && c.bottom <= f.bottom ? 'in' : 'out') : 'none'; return p; })()`
+				);
+				rows.push({ ...d, mode: 'watch+deep' });
+				if (i === 4) await tab.shot(`${OUT}/v3-${id}-watch-${i + 1}-deep.png`);
+				await tab.eval('document.querySelector("[data-testid=deep]").click()');
+			}
 			await tab.eval('document.querySelector("[data-testid=next]").click()');
 		}
 		for (const m of ['lab', 'try', 'quiz']) {

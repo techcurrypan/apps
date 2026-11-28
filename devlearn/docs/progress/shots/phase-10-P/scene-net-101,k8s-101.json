@@ -1,4 +1,174 @@
 {
- "net-101": "第 3 版の画面が無い（window.__l3）",
- "k8s-101": "第 3 版の画面が無い（window.__l3）"
+ "net-101": {
+  "1": {
+   "S1": true,
+   "S3": true,
+   "S4": true,
+   "字": true,
+   "はみ出し": true
+  },
+  "2": {
+   "S1": true,
+   "S3": true,
+   "S4": true,
+   "字": true,
+   "はみ出し": true
+  },
+  "3": {
+   "S1": true,
+   "S3": true,
+   "S4": true,
+   "字": true,
+   "はみ出し": true
+  },
+  "4": {
+   "S1": true,
+   "S3": true,
+   "S4": true,
+   "字": true,
+   "はみ出し": true
+  },
+  "5": {
+   "S1": true,
+   "S3": true,
+   "S4": true,
+   "字": true,
+   "はみ出し": true
+  },
+  "6": {
+   "S1": true,
+   "S3": true,
+   "S4": true,
+   "字": true,
+   "はみ出し": true
+  },
+  "7": {
+   "S1": true,
+   "S3": true,
+   "S4": true,
+   "字": true,
+   "はみ出し": true
+  },
+  "8": {
+   "S1": true,
+   "S3": true,
+   "S4": true,
+   "字": true,
+   "はみ出し": true
+  },
+  "9": {
+   "S1": true,
+   "S3": "xmit 幅 143.4・irq 幅 143.5・gro 幅 143.4",
+   "S4": true,
+   "字": true,
+   "はみ出し": true
+  },
+  "10": {
+   "S1": true,
+   "S3": true,
+   "S4": true,
+   "字": true,
+   "はみ出し": true
+  },
+  "11": {
+   "S1": true,
+   "S3": true,
+   "S4": true,
+   "字": true,
+   "はみ出し": true
+  },
+  "12": {
+   "S1": true,
+   "S3": "ack 幅 106.4",
+   "S4": true,
+   "字": true,
+   "はみ出し": true
+  }
+ },
+ "k8s-101": {
+  "1": {
+   "S1": true,
+   "S3": "etcd 幅 84.4",
+   "S4": true,
+   "字": true,
+   "はみ出し": true
+  },
+  "2": {
+   "S1": true,
+   "S3": "etcd 幅 87.4",
+   "S4": true,
+   "字": true,
+   "はみ出し": true
+  },
+  "3": {
+   "S1": true,
+   "S3": true,
+   "S4": true,
+   "字": true,
+   "はみ出し": true
+  },
+  "4": {
+   "S1": true,
+   "S3": true,
+   "S4": true,
+   "字": true,
+   "はみ出し": true
+  },
+  "5": {
+   "S1": true,
+   "S3": true,
+   "S4": true,
+   "字": true,
+   "はみ出し": true
+  },
+  "6": {
+   "S1": true,
+   "S3": true,
+   "S4": true,
+   "字": true,
+   "はみ出し": true
+  },
+  "7": {
+   "S1": true,
+   "S3": true,
+   "S4": true,
+   "字": true,
+   "はみ出し": true
+  },
+  "8": {
+   "S1": true,
+   "S3": true,
+   "S4": true,
+   "字": true,
+   "はみ出し": true
+  },
+  "9": {
+   "S1": true,
+   "S3": "etcd 幅 87.4",
+   "S4": true,
+   "字": true,
+   "はみ出し": true
+  },
+  "10": {
+   "S1": true,
+   "S3": true,
+   "S4": true,
+   "字": true,
+   "はみ出し": true
+  },
+  "11": {
+   "S1": true,
+   "S3": true,
+   "S4": true,
+   "字": true,
+   "はみ出し": true
+  },
+  "12": {
+   "S1": true,
+   "S3": "etcd 幅 80.6",
+   "S4": true,
+   "字": true,
+   "はみ出し": true
+  }
+ }
 }
