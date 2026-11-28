@@ -38,7 +38,8 @@ async function openProto(tab: Tab, lesson: string) {
 }
 async function openProd(tab: Tab, id: string) {
 	await tab.go(`${base}/lesson/${id}`);
-	await sleep(2500);
+	// 読み込みの直後は描く回りが詰まり、ステップの時計が遅れる。落ち着くまで待つ
+	await sleep(4500);
 }
 async function frames(tab: Tab, name: string, step: number) {
 	await tab.eval(`window.__l3.go(${step})`);

@@ -312,7 +312,7 @@ export const PRG_006_V3: V3Lesson = {
 			notes: [
 				{ obj: 'L1', text: '指す名前 2 つ（a・b）', tone: 'yellow', dy: -115 },
 				{ obj: 'L2', text: '新しい物 ・ 指す名前 1 つ（xs）', tone: 'blue', dy: -115, at: 2600 },
-				{ obj: 'vxs', text: 'xs：#1 → #2 に付け替え', tone: 'teal', dy: 75, at: 2600 }
+				{ obj: 'vxs', text: 'xs：#1 → #2 に付け替え', tone: 'teal', dy: -100, at: 2600 }
 			],
 			title: 'xs = [...xs, 4] は、新しい配列を作って xs を付け替える',
 			paras: [

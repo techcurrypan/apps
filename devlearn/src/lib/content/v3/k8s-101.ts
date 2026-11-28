@@ -474,9 +474,9 @@ export const K8S_101_V3: V3Lesson = {
 			},
 			pods: { pc: 'dead' },
 			hl: ['oom'],
-			meters: [{ obj: 'pc', label: 'メモリ', val: 300, max: 256, unit: 'Mi', dy: -120 }],
+			meters: [{ obj: 'pc', label: 'メモリ', val: 300, max: 256, unit: 'Mi', dy: -185 }],
 			notes: [
-				{ obj: 'pc', text: 'CrashLoopBackOff（待っている）', tone: 'red', dy: -200, at: 3000 }
+				{ obj: 'pc', text: 'CrashLoopBackOff（待っている）', tone: 'red', dy: -265, at: 3000 }
 			],
 			band: {
 				x: 330,

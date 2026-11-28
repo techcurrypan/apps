@@ -328,7 +328,7 @@ export const STA_019_V3: V3Lesson = {
 				mean: { kind: 'means', shape: 0, n: 30, days: 400, curve: true, band: true }
 			},
 			tokens: [
-				{ name: '÷ √30', tone: 'teal', path: ['smp', 'mean'], at: 600, d: 1400, gone: true }
+				{ name: '÷ √30', tone: 'teal', path: ['smp', 'mean'], at: 200, d: 1100, gone: true }
 			],
 			metrics: { n: '30', se: '0.73 分', days: '400', z: '—' },
 			callout: ['式', '標準誤差 = σ ÷ √n = 4 ÷ √30 ≈ 0.73 分'],

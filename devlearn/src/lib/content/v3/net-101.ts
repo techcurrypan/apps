@@ -346,7 +346,7 @@ export const NET_101_V3: V3Lesson = {
 					y: 30,
 					w: 300,
 					title: '送ってよいか（4 つ）',
-					at: 1200,
+					at: 300,
 					rows: [
 						{ text: '相手の受け口：64 KB 空き', ok: true },
 						{ text: 'cwnd：14,480 B まで → 割る', ok: false },
