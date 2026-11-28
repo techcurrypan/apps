@@ -3,7 +3,7 @@
 // 専門語の辞書は src/lib/content/terms/jargon.ts。図の物の外枠は REACH（物の中心からの半径。線を止める所と同じ）
 import { REACH, type SceneObj } from './scene/draw.ts';
 import type { Layout } from './scene/layout.ts';
-import type { PodState } from '../ui/scene/kit/paint.ts';
+import type { PodState, Tone } from '../ui/scene/kit/paint.ts';
 import type { Cue } from './scene/cue.ts';
 import type { WireKind } from './scene/wire.ts';
 import type { ChartSpec } from './scene/chart.ts';
@@ -70,6 +70,8 @@ export type V3Step = {
 	down?: string[];
 	/** リストの中身（物の ID → 値の並び・席の数・今足したマス・解放した印。第 17 章 list） */
 	lists?: Record<string, ListState>;
+	/** このステップだけの札（説明・数の札。物の上に置く。LS3-K6）。dy は物の中心からの上下（図の単位。既定 −80） */
+	notes?: { obj: string; text: string; tone?: Tone; dx?: number; dy?: number }[];
 	/** 段（panel）の中身（見せ方の型 chart。物の ID → ヒストグラム・粒・曲線・帯・印） */
 	charts?: Record<string, ChartSpec>;
 	/** コードの札（memory の型）：今の行（光る）・済んだ行・画面の出力・このステップだけの行（書き換えた版）。無いステップは札を出さない */
@@ -262,6 +264,8 @@ export function checkV3(
 		for (const a of at)
 			if (a.x < 0 || a.x > VIEW.w || a.y < 0 || a.y > VIEW.h)
 				add(48, where(i), `物「${a.id}」が 1000×600 の外（${a.x}, ${a.y}）`);
+		for (const n of s.notes ?? [])
+			if (!s.layout[n.obj]) add(48, where(i), `札「${n.text}」の物「${n.obj}」が構図に無い`);
 		if (s.code) {
 			const n = (s.code.lines ?? l.code?.lines ?? []).length;
 			for (const k of [...s.code.cur, ...(s.code.done ?? [])])

@@ -162,6 +162,7 @@ export const PRG_006_V3: V3Lesson = {
 		{
 			kind: 'problem',
 			short: '問題',
+			notes: [{ obj: 'L1', text: '指す名前 2 つ（a・b）', tone: 'yellow', dy: -115 }],
 			title: 'b を書き換えたのに、a まで変わった',
 			paras: [
 				'b = a と書いてから、b.push(3) で b に 3 を足す。push は配列の最後に要素を足す命令だ。',
@@ -198,6 +199,7 @@ export const PRG_006_V3: V3Lesson = {
 		{
 			kind: 'mechanism',
 			short: '= の意味',
+			notes: [{ obj: 'L1', text: '指す名前 2 つ（a・b）', tone: 'yellow', dy: -115 }],
 			title: 'let b = a は、在りかを写すだけ',
 			paras: [
 				'= の右が変数の時、写るのは在りかだ。物は 1 つのまま増えない。',
@@ -232,6 +234,7 @@ export const PRG_006_V3: V3Lesson = {
 		{
 			kind: 'mechanism',
 			short: 'push',
+			notes: [{ obj: 'L1', text: '指す名前 2 つ ・ 長さ 3 ・ 席 20', tone: 'yellow', dy: -115 }],
 			title: 'b.push(3) は、指した先の物を書き換える',
 			paras: [
 				'b.push(3) は、b が指す配列の最後に 3 を足す。新しい配列は作らない。',
@@ -266,6 +269,7 @@ export const PRG_006_V3: V3Lesson = {
 		{
 			kind: 'internals',
 			short: '呼び出し',
+			notes: [{ obj: 'L1', text: '指す名前 3 つ（a・b・xs）', tone: 'yellow', dy: -115 }],
 			title: 'add(a) を呼ぶと、新しいフレームができる',
 			paras: [
 				'関数 add を add(a) で呼ぶ。この呼び出しで、add 用のフレームが 1 枚できる。',
@@ -303,6 +307,10 @@ export const PRG_006_V3: V3Lesson = {
 		{
 			kind: 'internals',
 			short: '新しい物',
+			notes: [
+				{ obj: 'L1', text: '指す名前 1 つ（a）', tone: 'yellow', dy: -115 },
+				{ obj: 'L2', text: '新しい物 ・ 指す名前 1 つ（xs）', tone: 'blue', dy: -115 }
+			],
 			title: 'xs = [...xs, 4] は、新しい配列を作って xs を付け替える',
 			paras: [
 				'スプレッド構文 [...xs, 4] は、xs の要素を新しい配列へ並べ直し、最後に 4 を足す。',
@@ -342,6 +350,7 @@ export const PRG_006_V3: V3Lesson = {
 		{
 			kind: 'fail',
 			short: '失敗',
+			notes: [{ obj: 'L1', text: '指す名前 2 つ（a・xs）→ a も変わる', tone: 'red', dy: -115 }],
 			title: '中で xs.push(4) と書くと、呼んだ側の a まで変わる',
 			paras: [
 				'add の中を xs.push(4) にすると、配列 #1 そのものに 4 が足される。',
@@ -396,6 +405,10 @@ export const PRG_006_V3: V3Lesson = {
 		{
 			kind: 'fix',
 			short: '写し',
+			notes: [
+				{ obj: 'L1', text: '元：指す名前 1 つ（a）', tone: 'yellow', dy: -115 },
+				{ obj: 'L2', text: '写し：指す名前 1 つ（ys）', tone: 'blue', dy: -115 }
+			],
 			title: '写しを作ってから変える。浅い写しと深い写し',
 			paras: [
 				'中で変えたい時は、先に写しを作る。[...xs] は浅い写しだ。',
@@ -454,6 +467,10 @@ export const PRG_006_V3: V3Lesson = {
 		{
 			kind: 'internals',
 			short: '片付け',
+			notes: [
+				{ obj: 'L1', text: '指す名前 0 → 片付く', tone: 'red', dy: -115 },
+				{ obj: 'L2', text: '指す名前 1 つ（c）', tone: 'yellow', dy: -115 }
+			],
 			title: '誰からも辿れない物は、ガベージコレクションが片付ける',
 			paras: [
 				'a = null と b = null で、a と b は配列 #1 から離れる。add のフレームも、もう無い。',
@@ -499,6 +516,10 @@ export const PRG_006_V3: V3Lesson = {
 		{
 			kind: 'tradeoff',
 			short: '輪',
+			notes: [
+				{ obj: 'L2', text: '根から辿れる → 残る', tone: 'green', dy: -115 },
+				{ obj: 'L3', text: '外から指す名前 0（自分だけ）', tone: 'red', dy: -115 }
+			],
 			title: '輪になった参照も、根から辿れなければ片付く',
 			paras: [
 				'd.push(d) で、配列 #3 は自分自身を要素に持つ。輪になった参照だ。',
@@ -545,6 +566,7 @@ export const PRG_006_V3: V3Lesson = {
 		{
 			kind: 'realworld',
 			short: '実際には',
+			notes: [{ obj: 'L1g', text: '3 + (3 >> 1) + 16 = 20 席', tone: 'blue', dy: -115 }],
 			title: '実際には：席の数と、GC の記録',
 			paras: [
 				'Node.js の中の V8 は、配列のために席を先に取る。[1, 2] は席 2。push(3) で足りなくなる。',

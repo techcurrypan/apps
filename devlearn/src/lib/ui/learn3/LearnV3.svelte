@@ -20,6 +20,7 @@
 	import LabFigureMem from './LabFigureMem.svelte';
 	import LabFigureStat from './LabFigureStat.svelte';
 	import Code from '../scene/label/Code.svelte';
+	import Note from '../scene/label/Note.svelte';
 	import TryPanel3 from './TryPanel3.svelte';
 	import TryFigure from './TryFigure.svelte';
 	import TryFigureK8s from './TryFigureK8s.svelte';
@@ -327,6 +328,19 @@
 									{uik}
 								/>
 							{/if}
+							{#each st.notes ?? [] as n (n.obj + n.text)}
+								{@const at = st.layout[n.obj]}
+								{#if at}
+									<Note
+										x={at[0] + (n.dx ?? 0)}
+										y={at[1] + (n.dy ?? -80) * (at[2] ?? 1)}
+										text={n.text}
+										tone={n.tone ?? 'blue'}
+										op={Math.min(1, clock.t / 500)}
+										{uik}
+									/>
+								{/if}
+							{/each}
 							{#each toks as k, i (i)}
 								<Token x={k.x} y={k.y} label={k.name} tone={k.tone} op={k.op} {uik} />
 							{/each}

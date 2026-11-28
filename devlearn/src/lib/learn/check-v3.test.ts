@@ -170,4 +170,11 @@ describe('検査 41〜48（checkV3）', () => {
 		l.steps[1].layout = { ...layout, pa: [500, 40], pb: [500, 260] };
 		expect(run(l).some((p) => p.check === 48 && p.msg.includes('枠の外'))).toBe(true);
 	});
+	it('48：ステップの札（notes）は構図にある物に付ける', () => {
+		const l = ok();
+		l.steps[1].notes = [{ obj: 'kern', text: 'cwnd 10' }];
+		expect(nums(l)).not.toContain(48);
+		l.steps[1].notes = [{ obj: 'nope', text: 'cwnd 10' }];
+		expect(run(l).some((p) => p.check === 48 && p.msg.includes('札'))).toBe(true);
+	});
 });
