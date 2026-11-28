@@ -1,7 +1,7 @@
 <svelte:options namespace="svg" />
 
 <script lang="ts">
-	// 変数の名札：角の丸い小箱。上に名前。色は名前ごと（a＝青・b＝橙・c＝緑。第 17 章 var）
+	// 変数の名札：角の丸い小箱。上に名前。フレームの板に乗る部材（主な物に数えない。data-part）。色は名前ごと（a＝青・b＝橙・c＝緑。第 17 章 var）
 	import { localProj, prism, rrectPts } from '../iso';
 	import Halo from '../label/Halo.svelte';
 	import Base from './Base.svelte';
@@ -41,7 +41,7 @@
 	const nameY = $derived(tp[1] + 6 * uik);
 </script>
 
-<Base {x} {y} {s} {uik} w={60} d={44} tone={t} {hl} {lift} {op} {id} {term}>
+<Base {x} {y} {s} {uik} w={60} d={44} tone={t} {hl} {lift} {op} {id} {term} part>
 	<Solid g={body} tone={t} top={hl ? 32 : 22} {uik} />
 	<Halo
 		x={tp[0]}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { makeL3, type L3Ctx } from './probe.ts';
+import { isPart, makeL3, type L3Ctx } from './probe.ts';
 
 function ctx(over: Partial<L3Ctx> = {}): L3Ctx & { log: string[] } {
 	const log: string[] = [];
@@ -18,6 +18,14 @@ function ctx(over: Partial<L3Ctx> = {}): L3Ctx & { log: string[] } {
 		...over
 	};
 }
+
+describe('isPart（台・板に乗る部材は主な物に数えない。cluster の Pod・memory の変数の名札）', () => {
+	it('Pod と data-part の付いた物は部材', () => {
+		expect(isPart({ term: 'pod' })).toBe(true);
+		expect(isPart({ term: 'variable', part: '' })).toBe(true);
+		expect(isPart({ term: 'frame' })).toBe(false);
+	});
+});
 
 describe('window.__l3（測る道具の窓口。scripts/lib/learn3-measure.ts の PROTO_SHIM と同じ形）', () => {
 	it('ステップの数・今のステップ・時刻・再生中を返す', () => {

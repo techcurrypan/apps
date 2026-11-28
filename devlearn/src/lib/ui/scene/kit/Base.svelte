@@ -18,6 +18,8 @@
 		op?: number;
 		id?: string;
 		term?: string;
+		/** 台・板に乗る部材（主な物に数えない。測る印 data-part） */
+		part?: boolean;
 		pad?: boolean;
 		children: Snippet;
 	};
@@ -34,13 +36,20 @@
 		op = 1,
 		id,
 		term,
+		part = false,
 		pad = true,
 		children
 	}: Props = $props();
 	const on = $derived(hl || lift > 0);
 </script>
 
-<g opacity={op} data-obj={id} data-term={term} class:help={!!term}>
+<g
+	opacity={op}
+	data-obj={id}
+	data-term={term}
+	data-part={part ? '' : undefined}
+	class:help={!!term}
+>
 	{#if pad}
 		<Pad
 			{x}

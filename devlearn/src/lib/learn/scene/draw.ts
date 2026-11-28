@@ -58,6 +58,7 @@ export const REACH: Record<ObjKind, number> = {
 };
 /** 床の部品（上に物を乗せる。先に描く） */
 const FLOOR: ReadonlySet<ObjKind> = new Set(['platform', 'frame']);
+export const isFloor = (k: ObjKind): boolean => FLOOR.has(k);
 /** 自分で名前を描く部品（pod・frame・var） */
 export const SELF_NAMED: ReadonlySet<ObjKind> = new Set(['pod', 'frame', 'var']);
 

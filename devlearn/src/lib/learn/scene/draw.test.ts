@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { NAME_DROP, REACH, drawList, type SceneObj } from './draw';
+import { NAME_DROP, REACH, drawList, isFloor, type SceneObj } from './draw';
 
 // learn-standard.md 16.1 S2・S5：構図の置き場から、描く物の並び（奥から手前）を作る
 const objs: Record<string, SceneObj> = {
@@ -42,5 +42,14 @@ describe('drawList', () => {
 		expect(l[0]).toMatchObject({ id: 'xs', kind: 'list' });
 		expect(NAME_DROP.list).toBeGreaterThan(40);
 		expect(REACH.list).toBeGreaterThan(60);
+	});
+});
+
+describe('床の物（isFloor）', () => {
+	it('台とフレームは床。参照の矢印は床の上・乗る物の下に描く', () => {
+		expect(isFloor('platform')).toBe(true);
+		expect(isFloor('frame')).toBe(true);
+		expect(isFloor('var')).toBe(false);
+		expect(isFloor('list')).toBe(false);
 	});
 });

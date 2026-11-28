@@ -49,7 +49,7 @@
 </script>
 
 {#if t.len > 0}
-	<g opacity={op} data-wire={kind}>
+	<g opacity={op} data-wire={kind} pointer-events="none">
 		<line
 			x1={t.a.x}
 			y1={t.a.y}

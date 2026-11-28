@@ -2,7 +2,15 @@
 	// 学習画面 第 3 版の図（learn-standard.md 16.1・第 17 章）。ステップの構図から、ある時刻の物を等角の部品で描く。
 	// 物の位置・縮尺・透明度は drawList（sceneAt）が (今の構図, 前の構図, 経過時間) だけで決める（CLAUDE.md 第 8 章）
 	import type { Snippet } from 'svelte';
-	import { NAME_DROP, REACH, SELF_NAMED, drawList, type SceneObj } from '../../learn/scene/draw.ts';
+	import {
+		NAME_DROP,
+		REACH,
+		SELF_NAMED,
+		drawList,
+		isFloor,
+		type Drawn,
+		type SceneObj
+	} from '../../learn/scene/draw.ts';
 	import type { WireKind } from '../../learn/scene/wire.ts';
 	import Wire from './kit/Wire.svelte';
 	import type { Layout } from '../../learn/scene/layout.ts';
@@ -116,7 +124,7 @@
 	<Stage view={[0, 0, 1000, 600]} {label}>
 		{#snippet children(uik)}
 			<Defs />
-			{#each links as ln (ln.from + '>' + ln.to)}
+			{#each links.filter((l) => l.kind !== 'ref') as ln (ln.from + '>' + ln.to)}
 				{@const a = byId.get(ln.from)}
 				{@const b = byId.get(ln.to)}
 				{#if a && b}
@@ -154,7 +162,7 @@
 					{/if}
 				{/each}
 			{/if}
-			{#each list as d (d.id)}
+			{#snippet one(d: Drawn)}
 				{@const h = hl.includes(d.id)}
 				{#if d.kind === 'pod'}
 					<Pod
@@ -267,6 +275,30 @@
 						term={d.term}
 					/>
 				{/if}
+			{/snippet}
+			<!-- 床（台・フレームの板）→ 参照の矢印（板に隠れない）→ 上に乗る物 -->
+			{#each list.filter((d) => isFloor(d.kind)) as d (d.id)}
+				{@render one(d)}
+			{/each}
+			{#each links.filter((l) => l.kind === 'ref') as ln (ln.from + '>' + ln.to)}
+				{@const a = byId.get(ln.from)}
+				{@const b = byId.get(ln.to)}
+				{#if a && b}
+					<Wire
+						{a}
+						{b}
+						ia={REACH[a.kind] * a.s}
+						ib={REACH[b.kind] * b.s}
+						kind={ln.kind}
+						both={ln.both}
+						p={flow}
+						{uik}
+						op={Math.min(a.op, b.op)}
+					/>
+				{/if}
+			{/each}
+			{#each list.filter((d) => !isFloor(d.kind)) as d (d.id)}
+				{@render one(d)}
 			{/each}
 			{@render over?.(uik)}
 		{/snippet}

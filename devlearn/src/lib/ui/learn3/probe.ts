@@ -17,6 +17,10 @@ export type L3 = ReturnType<typeof makeL3>;
 
 const MODE_OF: Record<string, Mode> = { watch: 'watch', lab: 'lab', try: 'try', recall: 'quiz' };
 
+/** 台・板に乗る部材（cluster の Pod、memory の変数の名札 data-part）。主な物に数えない（decisions.md 2026-11-26・2026-11-28） */
+export const isPart = (d: { term?: string; part?: string }): boolean =>
+	d.term === 'pod' || d.part !== undefined;
+
 export function makeL3(c: L3Ctx) {
 	const svg = (): SVGSVGElement | null => c.root()?.querySelector('.fig svg') ?? null;
 	/** 今の図に出ている物（外側の data-obj。Pod は台に乗る部材なので数えない。薄い物・小さな物は出ていないとする） */
@@ -26,7 +30,7 @@ export function makeL3(c: L3Ctx) {
 		const out: SVGGElement[] = [];
 		for (const g of s.querySelectorAll<SVGGElement>('g[data-obj]')) {
 			if (g.parentElement?.closest('g[data-obj]')) continue;
-			if (g.dataset.term === 'pod') continue;
+			if (isPart(g.dataset)) continue;
 			let op = 1;
 			for (let n: Element | null = g; n && n !== s; n = n.parentElement)
 				op *= Number(getComputedStyle(n).opacity);

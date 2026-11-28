@@ -134,19 +134,16 @@ async function hover(tab: Tab, step: number): Promise<{ res: Res; hits: HoverHit
 		await sleep(250);
 		const before =
 			t.kind === 'obj'
-				? await tab.eval<number>(
-						`window.__l3.objEl(${JSON.stringify(t.id)})?.getBoundingClientRect().y ?? 0`
-					)
+				? await tab.eval<number>(`window.__l3.objBox(${JSON.stringify(t.id)})?.y ?? 0`)
 				: 0;
 		await mouse(tab, t.x, t.y);
 		await sleep(400);
 		const tip = await tab.eval<string>(READ_TIP(t.x, t.y));
 		const after =
 			t.kind === 'obj'
-				? await tab.eval<number>(
-						`window.__l3.objEl(${JSON.stringify(t.id)})?.getBoundingClientRect().y ?? 0`
-					)
+				? await tab.eval<number>(`window.__l3.objBox(${JSON.stringify(t.id)})?.y ?? 0`)
 				: 0;
+		// 浮き上がりは立体の部分（data-body。objBox）で測る。下の台は浮かない（LS3-M4）
 		hits.push({ kind: t.kind, id: t.id, tip: tip.slice(0, 80), lift: before - after });
 	}
 	await mouse(tab, 2, 2);
