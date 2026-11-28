@@ -39,7 +39,7 @@
 	);
 </script>
 
-<g opacity={op} data-packet>
+<g opacity={op} data-packet pointer-events="none">
 	<Solid g={body} tone={t} top={45} {uik} shadow={false} />
 	{#if label}
 		<Halo

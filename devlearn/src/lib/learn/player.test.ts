@@ -4,6 +4,8 @@ import {
 	LOOP_GAP,
 	countAt,
 	flowAt,
+	PULSE_MS,
+	pulseAt,
 	frameDt,
 	start,
 	tick,
@@ -69,5 +71,18 @@ describe('線の点の流れ（LS3-M2）', () => {
 	});
 	it('動きを減らす設定では点を止める（null）', () => {
 		expect(flowAt(800, { reduce: true })).toBeNull();
+	});
+});
+
+describe('主役の物の下の輪（LS3-M1。留まっている間も動く。試作の pulse）', () => {
+	it('周 PULSE_MS で広がりながら薄くなり、また始めに戻る', () => {
+		expect(pulseAt(0)).toEqual({ k: 0, op: 1 });
+		const h = pulseAt(PULSE_MS / 2);
+		expect(h?.k).toBeCloseTo(0.5);
+		expect(h?.op).toBeCloseTo(0.5);
+		expect(pulseAt(PULSE_MS)?.k).toBe(0);
+	});
+	it('動きを減らす設定では出さない', () => {
+		expect(pulseAt(300, { reduce: true })).toBeNull();
 	});
 });

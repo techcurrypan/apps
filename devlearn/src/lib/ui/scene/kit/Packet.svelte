@@ -17,6 +17,6 @@
 	const body = $derived(prism(rrectPts(-8, -8, 16, 16, 4, 2), 0, 12, localProj(x, y + 6, 1)));
 </script>
 
-<g opacity={op}>
+<g opacity={op} pointer-events="none">
 	<Solid g={body} tone={tone ?? TOKEN[kind]} top={50} {uik} shadow={false} />
 </g>

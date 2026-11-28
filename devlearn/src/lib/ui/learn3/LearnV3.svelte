@@ -255,15 +255,17 @@
 		{#if mode === 'watch'}
 			<dl class="mets" data-l3-metrics>
 				{#each lesson.metrics ?? [] as m (m.key)}
-					<div class="met" data-metric={m.key}>
+					<!-- 札の全体（名前と値）に乗せると説明（LS3-T7・H4） -->
+					<div
+						class="met"
+						class:hov={!m.term}
+						data-metric={m.key}
+						data-tw={m.term}
+						data-d={m.term ? undefined : m.desc}
+					>
 						<dt>
-							<button
-								type="button"
-								class="mlab"
-								class:tl={!!m.term}
-								class:hov={!m.term}
-								data-tw={m.term}
-								data-d={m.term ? undefined : m.desc}>{m.label}</button
+							<button type="button" class="mlab" class:tl={!!m.term} data-tw={m.term}
+								>{m.label}</button
 							>
 						</dt>
 						<dd>{showMetric(m.key)}</dd>
@@ -987,7 +989,8 @@
 		position: relative;
 	}
 	.hov[data-d]:hover::after,
-	.hov[data-d]:focus-visible::after {
+	.hov[data-d]:focus-visible::after,
+	.met.hov[data-d]:focus-within::after {
 		content: attr(data-d);
 		position: absolute;
 		left: 50%;

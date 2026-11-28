@@ -86,6 +86,7 @@
 				style:fill={col(tone)}
 				style:stroke="var(--dl-scene-pn)"
 				stroke-width={1.5 * uik}
+				pointer-events="none"
 				data-dot
 			/>
 		{/each}

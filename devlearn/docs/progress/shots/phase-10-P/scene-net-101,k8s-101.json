@@ -58,7 +58,7 @@
   },
   "9": {
    "S1": true,
-   "S3": "xmit 幅 143.4・irq 幅 143.5・gro 幅 143.4",
+   "S3": true,
    "S4": true,
    "字": true,
    "はみ出し": true
@@ -79,7 +79,7 @@
   },
   "12": {
    "S1": true,
-   "S3": "ack 幅 106.4",
+   "S3": true,
    "S4": true,
    "字": true,
    "はみ出し": true
@@ -88,14 +88,14 @@
  "k8s-101": {
   "1": {
    "S1": true,
-   "S3": "etcd 幅 84.4",
+   "S3": true,
    "S4": true,
    "字": true,
    "はみ出し": true
   },
   "2": {
    "S1": true,
-   "S3": "etcd 幅 87.4",
+   "S3": true,
    "S4": true,
    "字": true,
    "はみ出し": true
@@ -144,7 +144,7 @@
   },
   "9": {
    "S1": true,
-   "S3": "etcd 幅 87.4",
+   "S3": true,
    "S4": true,
    "字": true,
    "はみ出し": true
@@ -165,7 +165,7 @@
   },
   "12": {
    "S1": true,
-   "S3": "etcd 幅 80.6",
+   "S3": true,
    "S4": true,
    "字": true,
    "はみ出し": true

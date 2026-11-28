@@ -46,3 +46,14 @@ export function flowAt(now: number, o: { reduce?: boolean; period?: number } = {
 	const p = o.period ?? FLOW_MS;
 	return (((now % p) + p) % p) / p;
 }
+
+/** 主役の物の下の輪が 1 回広がる長さ（試作 learn11 の pulse と同じ 1.4 秒） */
+export const PULSE_MS = 1400;
+
+/** 主役の物の下の輪（LS3-M1：動きが終わって留まっている間も動き続ける）。k は広がり 0〜1、op は濃さ。
+ * ステップの時計 t で回すので、一時停止で止まる。動きを減らす設定では null */
+export function pulseAt(t: number, o: { reduce?: boolean } = {}): { k: number; op: number } | null {
+	if (o.reduce) return null;
+	const k = (((t % PULSE_MS) + PULSE_MS) % PULSE_MS) / PULSE_MS;
+	return { k, op: 1 - k };
+}

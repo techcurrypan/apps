@@ -6,6 +6,7 @@
 	import type { WireKind } from '../../learn/scene/wire.ts';
 	import Wire from './kit/Wire.svelte';
 	import type { Layout } from '../../learn/scene/layout.ts';
+	import { pulseAt } from '../../learn/player.ts';
 	import Stage from './Stage.svelte';
 	import Block from './kit/Block.svelte';
 	import Db from './kit/Db.svelte';
@@ -86,6 +87,7 @@
 	const lift = (id: string) => (hover?.obj === id ? LIFT : 0);
 	const list = $derived(drawList(objs, layout, prev, t, { reduce }));
 	const byId = $derived(new Map(list.map((d) => [d.id, d])));
+	const pulse = $derived(pulseAt(t, { reduce }));
 	const GLYPHED = { func: Func, block: Block, hex: Hex } as const;
 	const PLAIN = {
 		laptop: Laptop,
@@ -126,6 +128,27 @@
 					/>
 				{/if}
 			{/each}
+			<!-- 主役の物の下で広がる輪（留まっている間も動く。LS3-M1・試作の pulse） -->
+			{#if pulse}
+				{#each hl as id (id)}
+					{@const d = byId.get(id)}
+					{#if d && d.op >= 0.5 && d.kind !== 'pod'}
+						{@const r = (64 + 40 * pulse.k) * d.s}
+						<ellipse
+							data-pulse={id}
+							pointer-events="none"
+							cx={d.x}
+							cy={d.y}
+							rx={r * 1.6}
+							ry={r * 0.8}
+							fill="none"
+							style:stroke="var(--dl-obj-blue)"
+							stroke-width={2.4 * uik}
+							opacity={pulse.op}
+						/>
+					{/if}
+				{/each}
+			{/if}
 			{#each list as d (d.id)}
 				{@const h = hl.includes(d.id)}
 				{#if d.kind === 'pod'}
